@@ -54,7 +54,9 @@ public class XMLGetter extends Result implements Runnable {
     public void response(final String value) {
         try {
             xmlvo.setXML(value);
-            display.callSerially(eventDispatchThreadRunnable);
+            if (eventDispatchThreadRunnable != null) {
+                display.callSerially(eventDispatchThreadRunnable);
+            }
         } catch (Exception e) {
             Log.log("XMLGetter HTTP response problem at " + url + " : " + e);
             e.printStackTrace();

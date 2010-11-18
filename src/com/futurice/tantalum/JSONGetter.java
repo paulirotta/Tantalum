@@ -20,27 +20,26 @@
  * limitations under the License.
  *
  */
-
 package com.futurice.tantalum;
 
 import javax.microedition.lcdui.Display;
 
 /**
  *
- * @author phou
+ * @author Paul Houghton
  */
 public class JSONGetter extends Result implements Runnable {
 
     final Display display;
     final String url;
-    final XMLVO xmlvo;
+    final JSONVO jsonvo;
     final Runnable eventDispatchThreadRunnable;
     final int retriesRemaining;
 
-    public JSONGetter(Display display, String url, XMLVO xmlvo, Runnable eventDisplatchThreadRunnable, int retriesRemaining) {
+    public JSONGetter(Display display, String url, JSONVO jsonvo, Runnable eventDisplatchThreadRunnable, int retriesRemaining) {
         this.display = display;
         this.url = url;
-        this.xmlvo = xmlvo;
+        this.jsonvo = jsonvo;
         this.eventDispatchThreadRunnable = eventDisplatchThreadRunnable;
         this.retriesRemaining = retriesRemaining;
     }
@@ -50,15 +49,21 @@ public class JSONGetter extends Result implements Runnable {
         httpGetter.run();
     }
 
-    public void response(final String value) {
+    public void response( String value) {
         try {
-            xmlvo.setXML(value);
-            display.callSerially(eventDispatchThreadRunnable);
+            value = value.trim();
+            if (value.startsWith("[")) {
+                // Parser expects non-array base object- add one
+                value = "{\"base:\"" + value + "}";
+            }
+            jsonvo.setJSON(value);
+            if (eventDispatchThreadRunnable != null) {
+                display.callSerially(eventDispatchThreadRunnable);
+            }
         } catch (Exception e) {
             Log.log("JSONGetter HTTP response problem at " + url + " : " + e);
             e.printStackTrace();
             this.exception(e);
         }
     }
-
 }

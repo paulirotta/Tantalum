@@ -20,28 +20,27 @@
  * limitations under the License.
  *
  */
-
 package com.futurice.tantalum;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Vector;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import javax.microedition.lcdui.Display;
+import org.json.me.JSONException;
+import org.json.me.JSONObject;
 
 /**
  *
- * @author phou
+ * @author Paul Houghton
  */
-public abstract class JSONVO extends DefaultHandler {
-    final private Vector qnameStack = new Vector();
-    final private Vector charStack = new Vector();
-    final private Vector attributeStack = new Vector();
+public class JSONVO {
+    private static Display display;
+
+    private JSONObject jsonObject = new JSONObject();
+    private static final Hashtable bindings = new Hashtable();
+
+    public static void setDisplay(Display display) {
+        JSONVO.display = display;
+    }
 
     /**
      * Null constructor is an empty placeholder
@@ -49,44 +48,66 @@ public abstract class JSONVO extends DefaultHandler {
     public JSONVO() {
     }
 
-    public synchronized void setXML(String xml) throws ParserConfigurationException, SAXException, IOException {
-        final SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
-        final InputStream in = new ByteArrayInputStream(xml.getBytes());
+    public void bind(String key, Runnable binding) {
+        bindings.put(key, binding);
+    }
 
-        try {
-            parser.parse(in, this);
-        } catch (Throwable t) {
-            Log.logThrowable(t, "parser error");
-        } finally {
-            in.close();
+    public void unbind(String key) {
+        bindings.remove(key);
+    }
+
+    public void setJSON(String json) throws JSONException {
+        synchronized (bindings) {
+            jsonObject = new JSONObject(json);
+            notifyBoundObjects();
         }
     }
 
-    /**
-     * Implement this method to store fields of interest in your value object
-     *
-     * @param chars
-     * @param qnameStack
-     * @param attributeStack
-     */
-    abstract protected void element(Vector charStack, Vector qnameStack, Vector attributeStack);
+    public void notifyBoundObjects() {
+        synchronized (bindings) {
+            final Enumeration enu = bindings.keys();
 
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-        qnameStack.addElement(qName);
-        attributeStack.addElement(attributes);
-        charStack.addElement("");
+            while (enu.hasMoreElements()) {
+                notifyBoundObject((String) enu.nextElement());
+            }
+        }
     }
 
-    public void characters(char[] ch, int start, int length) throws SAXException {
-        final String chars = new String(ch, start, length);
-        charStack.setElementAt(chars, charStack.size() - 1);
-        Log.log("chars: " + chars);
+    public void notifyBoundObject(String key) {
+        synchronized (bindings) {
+            if (bindings.contains(key)) {
+                display.callSerially((Runnable) bindings.get(key));
+            }
+        }
     }
 
-    public void endElement(String uri, String localName, String qName) throws SAXException {
-        element(charStack, qnameStack, attributeStack);
-        qnameStack.removeElementAt(qnameStack.size() - 1);
-        attributeStack.removeElementAt(attributeStack.size() - 1);
-        charStack.removeElementAt(charStack.size() - 1);
+    public boolean getBoolean(String key) throws JSONException {
+        synchronized (bindings) {
+            return jsonObject.getBoolean(key);
+        }
+    }
+
+    public String getString(String key) throws JSONException {
+        synchronized (bindings) {
+            return jsonObject.getString(key);
+        }
+    }
+
+    public double getDouble(String key) throws JSONException {
+        synchronized (bindings) {
+            return jsonObject.getDouble(key);
+        }
+    }
+
+    public int getInt(String key) throws JSONException {
+        synchronized (bindings) {
+            return jsonObject.getInt(key);
+        }
+    }
+
+    public long getLong(String key) throws JSONException {
+        synchronized (bindings) {
+            return jsonObject.getLong(key);
+        }
     }
 }

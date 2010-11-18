@@ -53,7 +53,7 @@ public abstract class XMLVO extends DefaultHandler {
         try {
             parser.parse(in, this);
         } catch (Throwable t) {
-            Log.logThrowable(t, "parser error");
+            Log.logThrowable(t, "XML parser error");
         } finally {
             in.close();
         }

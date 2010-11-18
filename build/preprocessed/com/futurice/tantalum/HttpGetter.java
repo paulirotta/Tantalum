@@ -30,7 +30,7 @@ import javax.microedition.io.HttpConnection;
 
 /**
  *
- * @author Paul Eugene Houghton
+ * @author Paul Houghton
  */
 public class HttpGetter implements Runnable {
     public static final int HTTP_RETRIES = 3;
