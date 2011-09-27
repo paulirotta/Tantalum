@@ -1,3 +1,6 @@
+MIDlet-3: LWUIT RSS Reader,,com.futurice.lwuitrssreader.RSSReader
+MIDlet-2: Form RSS Reader,,com.futurice.formrssreader.RSSReader
+MIDlet-1: Sky News,,com.futurice.skynewsreader.SkyNewsReader
 MIDlet-Vendor: Vendor
 MIDlet-Name: MobileUtilityLibrary
 MIDlet-Version: 1.0

@@ -49,14 +49,14 @@ public class JSONGetter extends Result implements Runnable {
         httpGetter.run();
     }
 
-    public void response(final String value) {
+    public void response( String value) {
         try {
-            String v2 = value.trim();
-            if (v2.startsWith("[")) {
+            value = value.trim();
+            if (value.startsWith("[")) {
                 // Parser expects non-array base object- add one
-                v2 = "{base:" + value + "}";
+                value = "{\"base:\"" + value + "}";
             }
-            jsonvo.setJSON(v2);
+            jsonvo.setJSON(value);
             if (eventDispatchThreadRunnable != null) {
                 display.callSerially(eventDispatchThreadRunnable);
             }

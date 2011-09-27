@@ -20,11 +20,8 @@
  * limitations under the License.
  *
  */
-package com.futurice.tantalum;
+package com.futurice.tantalum2.net;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import javax.microedition.lcdui.Display;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
@@ -33,14 +30,9 @@ import org.json.me.JSONObject;
  * @author Paul Houghton
  */
 public class JSONVO {
-    private static Display display;
+    private static final Object MUTEX = new Object();
 
     private JSONObject jsonObject = new JSONObject();
-    private static final Hashtable bindings = new Hashtable();
-
-    public static void setDisplay(Display display) {
-        JSONVO.display = display;
-    }
 
     /**
      * Null constructor is an empty placeholder
@@ -48,80 +40,39 @@ public class JSONVO {
     public JSONVO() {
     }
 
-    public void bind(String key, Binding binding) {
-        bindings.put(key, binding);
-    }
-
-    public void unbind(String key) {
-        bindings.remove(key);
-    }
-
     public void setJSON(String json) throws JSONException {
-        synchronized (bindings) {
+        synchronized (MUTEX) {
             jsonObject = new JSONObject(json);
-            notifyBoundObjects();
-        }
-    }
-
-    public void notifyBoundObjects() throws JSONException {
-        synchronized (bindings) {
-            final Enumeration enu = bindings.keys();
-
-            while (enu.hasMoreElements()) {
-                notifyBoundObject((String) enu.nextElement());
-            }
-        }
-    }
-
-    public void notifyBoundObject(String key) throws JSONException {
-        synchronized (bindings) {
-            Object o = this.jsonObject.get(key);
-            if (o != null) {
-                display.callSerially((Binding) bindings.get(key));
-            }
         }
     }
 
     public boolean getBoolean(String key) throws JSONException {
-        synchronized (bindings) {
+        synchronized (MUTEX) {
             return jsonObject.getBoolean(key);
         }
     }
 
     public String getString(String key) throws JSONException {
-        synchronized (bindings) {
+        synchronized (MUTEX) {
             return jsonObject.getString(key);
         }
     }
 
     public double getDouble(String key) throws JSONException {
-        synchronized (bindings) {
+        synchronized (MUTEX) {
             return jsonObject.getDouble(key);
         }
     }
 
     public int getInt(String key) throws JSONException {
-        synchronized (bindings) {
+        synchronized (MUTEX) {
             return jsonObject.getInt(key);
         }
     }
 
     public long getLong(String key) throws JSONException {
-        synchronized (bindings) {
+        synchronized (MUTEX) {
             return jsonObject.getLong(key);
         }
-    }
-
-    public static abstract class Binding implements Runnable {
-        protected Object value = null;
-
-        public Binding() {
-        }
-
-        public void setValue(Object value) {
-            this.value = value;
-        }
-
-        public abstract void run();
     }
 }
