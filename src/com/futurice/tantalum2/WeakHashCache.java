@@ -1,6 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * A weak reference cache for keeping images in a RAM hashtable with automatic
+ * garbage collection as needed by the virtual machine.
+ * 
  */
 package com.futurice.tantalum2;
 

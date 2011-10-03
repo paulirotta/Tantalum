@@ -15,7 +15,6 @@ import com.sun.lwuit.animations.CommonTransitions;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.events.ActionEvent;
 import java.util.Vector;
-import javax.microedition.lcdui.Font;
 
 /**
  *

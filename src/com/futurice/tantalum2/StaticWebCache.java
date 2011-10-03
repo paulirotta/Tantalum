@@ -11,14 +11,15 @@ import com.futurice.tantalum2.rms.StaticCache;
 import java.util.Hashtable;
 
 /**
- *
+ * A cache of remote http contents backed by local flash memory storage
+ * 
  * @author tsaa
  */
 public class StaticWebCache extends StaticCache {
 
     private static final int RETRIES = 3;
-    private int timeOutInMins;
-    private Hashtable timestamps = new Hashtable();
+    private final int timeOutInMins;
+    private final Hashtable timestamps = new Hashtable();
 
     public StaticWebCache(String name, int priority, int timeOutInMins, DataTypeHandler handler) {
         super(name, priority, handler);
@@ -31,6 +32,15 @@ public class StaticWebCache extends StaticCache {
         updateTimestamp(url);
     }
 
+    /**
+     * Retrieve the object from
+     * 1. RAM if available
+     * 2. RMS if available
+     * 3. WEB
+     * 
+     * @param url
+     * @param cacheGetResult 
+     */
     public synchronized void get(final String url, final CacheGetResult cacheGetResult) {
         
         // RAM
@@ -45,16 +55,10 @@ public class StaticWebCache extends StaticCache {
         }
 
         // RMS
-
-        //FIXME Error, this is SYNCHRONOUS on the EDT, not on Worker
-        // If RMS is busy writing on other thread, this will block
-        // calling thread (EDT) possibly for a long time, resulting in
-        // the stuttering we saw in the demo
         final byte[] bytes = getFromRMS(url);
         if (bytes != null) {
             Log.log("Hit in RMS");
             Worker.queue(new Workable() {
-
                 public boolean work() {
                     Object converted = handler.convertToUseForm(bytes);
                     cacheGetResult.setResult(converted);
@@ -67,21 +71,39 @@ public class StaticWebCache extends StaticCache {
         }
         
         // NET
-        Worker.queue(new HttpGetter(url, RETRIES, cacheGetResult, handler, this));
+        update(url, cacheGetResult);
     }
 
+    /**
+     * Retrieve the object from WEB, replacing any existing version when the new
+     * version arrives.
+     * 
+     * @param url
+     * @param cacheGetResult 
+     */
     public synchronized void update(final String url, final CacheGetResult cacheGetResult) {
         Worker.queue(new HttpGetter(url, RETRIES, cacheGetResult, handler, this));
     }
-
+    
+    /**
+     * Remove the object from the cache
+     * 
+     * @param url 
+     */
     public synchronized void remove(String url) {
         super.remove(url);
+        
         if (timestamps.contains(url)) {
             timestamps.remove(url);
         }
     }
 
-    public synchronized void updateTimestamp(String url) {
+    /**
+     * Update the freshness timestamp associated with the cached object
+     * 
+     * @param url 
+     */
+    public synchronized void updateTimestamp(final String url) {
         timestamps.put(url, new Long(System.currentTimeMillis()));
     }
 

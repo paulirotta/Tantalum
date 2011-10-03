@@ -1,5 +1,6 @@
 package com.futurice.tantalum2.rms;
 
+import com.futurice.tantalum2.Log;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -296,10 +297,14 @@ public final class RMSResourceDB {
      * @return internal id or -1
      */
     private int getInternalId(final RMSResourceType type, final String id) {
+        try {
         Hashtable indexTable = getIndexTable(type);
         if (indexTable != null) {
             Integer intId = (Integer) indexTable.get(id);
             return (intId != null ? intId.intValue() : -1);
+        }
+        } catch (Exception e) {
+            Log.logNonfatalThrowable(e, "Can not getInternalId from RMS for \"" + id + "\"");
         }
         return -1;
     }

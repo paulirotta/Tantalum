@@ -17,7 +17,11 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
 
 /**
- *
+ * GET something from a URL on the Worker thread
+ * 
+ * Implement Runnable if you want to automatically update the UI on the EDT
+ * after the GET completes
+ * 
  * @author pahought
  */
 public class HttpGetter implements Workable {

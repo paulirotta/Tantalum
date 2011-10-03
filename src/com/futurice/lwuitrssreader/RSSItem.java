@@ -1,7 +1,6 @@
 package com.futurice.lwuitrssreader;
 
 
-import com.sun.lwuit.Font;
 import com.sun.lwuit.Image;
 
 /**

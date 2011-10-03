@@ -1,8 +1,12 @@
 package com.futurice.lwuitrssreader;
 
+import com.futurice.formrssreader.ListView;
 import com.futurice.tantalum2.net.XMLAttributes;
 import com.futurice.tantalum2.net.XMLVO;
+import java.io.IOException;
 import java.util.Vector;
+import javax.xml.parsers.ParserConfigurationException;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -16,6 +20,13 @@ public class RSSVO extends XMLVO {
     public RSSVO(ListModel listModel) {
         this.listModel = listModel;
     }
+
+    public synchronized void setXML(final String xml)  throws ParserConfigurationException, SAXException, IOException {
+        super.setXML(xml);
+        listModel.repaint();
+        ListView.getInstance().notifyListChanged();
+    }
+    
 
     protected void element(Vector charStack, Vector qnameStack, Vector attributeStack) {
         try {

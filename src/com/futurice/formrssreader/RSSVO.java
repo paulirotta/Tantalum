@@ -3,7 +3,9 @@ package com.futurice.formrssreader;
 import com.futurice.tantalum2.Log;
 import com.futurice.tantalum2.net.XMLAttributes;
 import com.futurice.tantalum2.net.XMLVO;
+import java.io.IOException;
 import java.util.Vector;
+import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -11,11 +13,19 @@ import org.xml.sax.SAXException;
  * RSS Value Object for parsing RSS
  * @author ssaa
  */
-public class RSSVO extends XMLVO {
+public final class RSSVO extends XMLVO {
 
     private final Vector items = new Vector();
     private RSSItem currentItem;
 
+    public synchronized void setXML(final String xml)  throws ParserConfigurationException, SAXException, IOException {
+        super.setXML(xml);
+        final ListView listView = ListView.getInstance();
+        if (listView instanceof ListView) {
+            listView.notifyListChanged();
+        }
+    }
+    
     public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
 
@@ -34,7 +44,7 @@ public class RSSVO extends XMLVO {
 
             if (qName.equals("item")) {
                 items.addElement(currentItem);
-                ListView.getInstance().notifyListChanged();
+//                ListView.getInstance().notifyListChanged();
             } else if (currentItem != null) {
                 if (qName.equals("title")) {
                     currentItem.setTitle(chars);

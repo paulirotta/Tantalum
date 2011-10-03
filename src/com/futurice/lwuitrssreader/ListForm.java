@@ -1,7 +1,6 @@
 package com.futurice.lwuitrssreader;
 
 import com.futurice.tantalum2.DefaultCacheGetResult;
-import com.futurice.tantalum2.Log;
 import com.futurice.tantalum2.StaticWebCache;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Command;

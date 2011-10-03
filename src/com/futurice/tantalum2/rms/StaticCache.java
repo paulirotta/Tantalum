@@ -27,8 +27,8 @@ public class StaticCache {
     private static final Vector caches = new Vector();
     private static final int TOTAL_SIZE_BYTES_MAX = 150 * 1024;
     private static int sumOfPriorities = 0;
-    protected final Hashtable cache;
-    protected final Vector accessOrder;
+    protected final Hashtable cache = new Hashtable();
+    protected final Vector accessOrder = new Vector();
     protected final String name;
     protected final int priority; // defines the size of reserved space for this cache
     protected final DataTypeHandler handler;
@@ -36,10 +36,18 @@ public class StaticCache {
     protected Hashtable objectSizes = new Hashtable();
 
     private static long SESSION_ID;
-    
+
+    /**
+     * Create a named cache
+     * 
+     * Caches with higher priority are more likely to keep their data when space
+     * is limited.
+     * 
+     * @param name
+     * @param priority, a positive integer
+     * @param handler 
+     */
     public StaticCache(String name, int priority, DataTypeHandler handler) {
-        this.cache = new Hashtable();
-        this.accessOrder = new Vector();
         this.name = name;
         this.priority = priority;
         this.handler = handler;
@@ -49,6 +57,12 @@ public class StaticCache {
         caches.addElement(this);
     }
 
+    /**
+     * Asynchronously put the hash object using a worker thread
+     * 
+     * @param key
+     * @param o 
+     */
     public void put(final String key, final Object o) {
         remove(key);
         accessOrder.addElement(key);
@@ -65,7 +79,13 @@ public class StaticCache {
         });
     }
 
-    public synchronized Object get(String key) {
+    /**
+     * Synchronously return the hash object
+     * 
+     * @param key
+     * @return 
+     */
+    public synchronized Object get(final String key) {
         if (containsKey(key)) {
             Log.log("Hit in RAM");
             int index = this.accessOrder.indexOf(key);
@@ -85,11 +105,14 @@ public class StaticCache {
         return null;
     }
 
-    /*
+    /**
      * Removes items until there is space to store the needed item
      * returns null if cannot make space
+     * 
+     * @param spaceNeeded
+     * @return 
      */
-    public synchronized static boolean makeSpace(int spaceNeeded) {
+    public synchronized static boolean makeSpace(final int spaceNeeded) {
         if (spaceNeeded > TOTAL_SIZE_BYTES_MAX) {
             return false;
         }
@@ -108,16 +131,20 @@ public class StaticCache {
         return total;
     }
 
-    /*
-     * Removes an item from StaticCache which exceeds its reserved space most
+    /**
+     * Removes an item from the StaticCache which most exceeds its reserved space
+     * according to available space and assigned priority number
+     * 
      */
     private synchronized static void removeMostUseless() {
         StaticCache mostExceedingCache = (StaticCache) caches.elementAt(0);
         double biggestRatio = (double) mostExceedingCache.sizeAsBytes / (double) mostExceedingCache.getSizeOfReservedSpace();
+        
         if (caches.size() > 1) {
             for (int i = 1; i < caches.size(); i++) {
-                StaticCache candidate = (StaticCache) caches.elementAt(i);
-                double candidateRatio = (double) candidate.sizeAsBytes / (double) candidate.getSizeOfReservedSpace();
+                final StaticCache candidate = (StaticCache) caches.elementAt(i);
+                final double candidateRatio = (double) candidate.sizeAsBytes / (double) candidate.getSizeOfReservedSpace();
+                
                 if (candidateRatio > biggestRatio) {
                     mostExceedingCache = candidate;
                     biggestRatio = candidateRatio;
@@ -135,9 +162,16 @@ public class StaticCache {
         return (new RMSGetter(SESSION_ID, RMSResourceType.BYTE_ARRAY, key)).get();
     }
 
+    /**
+     * Store a value to nonvolatile memory
+     * 
+     * @param key
+     * @param bytes 
+     */
     public synchronized void storeToRMS(String key, byte[] bytes) {
-        ByteArrayStorableResource res = new ByteArrayStorableResource(0, key, bytes);
-        int recordLength = res.serialize().length;
+        final ByteArrayStorableResource res = new ByteArrayStorableResource(0, key, bytes);
+        final int recordLength = res.serialize().length;
+        
         if (makeSpace(recordLength)) {
             try {
                 RMSResourceDB.getInstance().storeResource(res, null);
@@ -182,23 +216,65 @@ public class StaticCache {
             removeFromRMS(key);
         }
     }
-
-    public synchronized boolean containsKey(final String key) {
-        return this.cache.containsKey(key);
+    
+    /**
+     * Remove all elements from this cache
+     * 
+     */
+    public synchronized void clear() {
+        while (this.accessOrder.size() > 0) {
+            removeOldest();
+        }
     }
 
+    /**
+     * Does this cache contain an object matching the key?
+     * 
+     * @param key
+     * @return 
+     */
+    public synchronized boolean containsKey(final String key) {
+        if (key instanceof String) {
+            return this.cache.containsKey(key);
+        }
+        
+        return false;
+    }
+
+    /**
+     * The number of items in the cache
+     * 
+     * @return 
+     */
     public synchronized int getSize() {
         return this.cache.size();
     }
 
+    /**
+     * The relative priority used for allocating RMS space between multiple caches.
+     * Higher priority caches get more space.
+     * 
+     * @return 
+     */
     public synchronized int getPriority() {
         return priority;
     }
 
+    /**
+     * Provide the handler which this caches uses for converting between in-memory
+     * and binary formats
+     * 
+     * @return 
+     */
     public DataTypeHandler getHandler() {
         return handler;
     }
 
+    /**
+     * For debugging use
+     * 
+     * @return 
+     */
     public synchronized String toString() {
         String str;
         str = "StaticCache " + name + " --- priority: " + priority + " size: " + getSize() + " size (bytes): " + sizeAsBytes + " space: " + this.getSizeOfReservedSpace() + "\n";

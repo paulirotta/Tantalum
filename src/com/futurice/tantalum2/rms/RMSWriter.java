@@ -1,6 +1,7 @@
 package com.futurice.tantalum2.rms;
 
 import com.futurice.tantalum2.Workable;
+import com.futurice.tantalum2.Worker;
 import javax.microedition.lcdui.Display;
 
 /**
@@ -29,7 +30,7 @@ public class RMSWriter implements Workable {
         } else {
             RMSUtils.write(this.recordStoreName, this.value);
         }
-        display.callSerially(eventDispatchThreadRunnable);
+        Worker.queueEDT(eventDispatchThreadRunnable);
         
         return true;
     }

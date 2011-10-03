@@ -4,8 +4,6 @@
  */
 package com.futurice.tantalum2;
 
-
-
 /**
  * Utility class for logging.
  * 
@@ -33,22 +31,22 @@ public class DefaultLogger implements Logger {
      * @param th throwable to log
      */
     public void log(final String tag, final String message, final Throwable th) {
-    	printMessage(getMessage(tag, message) + ", EXCEPTION: " + th);
-    	if (th != null) {
-    		//th.printStackTrace();
-    	}
+        printMessage(getMessage(tag, message) + ", EXCEPTION: " + th);
+        if (th != null) {
+            //th.printStackTrace();
+        }
     }
-    
-    /**
-	 * Prints given string to system out.
-	 * 
-	 * @param string string to print
-	 */
-	protected void printMessage(final String string) {
-		System.out.println(string);
-	}
 
-	/**
+    /**
+     * Prints given string to system out.
+     * 
+     * @param string string to print
+     */
+    protected void printMessage(final String string) {
+        System.out.println(string);
+    }
+
+    /**
      * Get formatted message string.
      * 
      * @return message string
@@ -56,8 +54,8 @@ public class DefaultLogger implements Logger {
     private String getMessage(final String tag, final String message) {
         return currentTime() + " (" + Thread.currentThread().getName() + "): " + tag + ": " + message;
     }
-    
-	/**
+
+    /**
      * Return current time and thread name as string.
      * 
      * @return current time as string

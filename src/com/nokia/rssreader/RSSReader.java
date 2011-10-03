@@ -1,6 +1,7 @@
 package com.nokia.rssreader;
 
 import com.futurice.tantalum2.Log;
+import com.futurice.tantalum2.Worker;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
@@ -34,7 +35,7 @@ public class RSSReader extends MIDlet implements CommandListener {
      */
     private void initialize() {
         Log.init(this);
-        com.futurice.tantalum2.Worker.init(this, 2);
+        Worker.init(this, 2);
         INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
     }
 
