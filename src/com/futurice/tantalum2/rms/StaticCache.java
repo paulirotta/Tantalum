@@ -1,5 +1,6 @@
 package com.futurice.tantalum2.rms;
 
+import com.futurice.tantalum2.WeakHashCache;
 import com.futurice.tantalum2.log.Log;
 
 import java.util.Hashtable;
@@ -25,7 +26,7 @@ public class StaticCache {
     private static final Vector caches = new Vector();
     private static final int TOTAL_SIZE_BYTES_MAX = 150 * 1024;
     private static int sumOfPriorities = 0;
-    protected final Hashtable cache = new Hashtable();
+    protected final WeakHashCache cache = new WeakHashCache();
     protected final Vector accessOrder = new Vector();
     protected final String name;
     protected final int priority; // defines the size of reserved space for this cache

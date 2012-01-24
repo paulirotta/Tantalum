@@ -12,31 +12,36 @@ import java.util.Hashtable;
  *
  * @author phou
  */
-public class WeakHashCache {
+public final class WeakHashCache {
 
     private final Hashtable hash = new Hashtable();
 
-    public final Object get(String key) {
+    public Object get(String key) {
         synchronized (hash) {
             Object o = null;
             final WeakReference reference = (WeakReference) hash.get(key);
 
             if (reference != null) {
                 o = reference.get();
-                if (o == null) {
-                    remove(key);
-                }
             }
 
             return o;
         }
     }
 
-    public final void put(String key, Object value) {
+    public void put(String key, Object value) {
         hash.put(key, new WeakReference(value));
     }
 
     public void remove(String key) {
         hash.remove(key);
+    }
+    
+    public boolean containsKey(String key) {
+        return hash.containsKey(key);
+    }
+    
+    public int size() {
+        return hash.size();
     }
 }

@@ -7,7 +7,6 @@ package com.futurice.tantalum2.net;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
-import com.futurice.tantalum2.net.HttpGetter;
 import com.futurice.tantalum2.rms.CacheGetResult;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
@@ -15,7 +14,7 @@ import java.util.Hashtable;
 
 /**
  * A cache of remote http contents backed by local flash memory storage
- * 
+ *
  * @author tsaa
  */
 public class StaticWebCache extends StaticCache {
@@ -36,16 +35,13 @@ public class StaticWebCache extends StaticCache {
     }
 
     /**
-     * Retrieve the object from
-     * 1. RAM if available
-     * 2. RMS if available
-     * 3. WEB
-     * 
+     * Retrieve the object from 1. RAM if available 2. RMS if available 3. WEB
+     *
      * @param url
-     * @param cacheGetResult 
+     * @param cacheGetResult
      */
     public synchronized void get(final String url, final CacheGetResult cacheGetResult) {
-        
+
         // RAM
         if (containsKey(url)) {
             Log.log("Hit in RAM");
@@ -53,8 +49,10 @@ public class StaticWebCache extends StaticCache {
             this.accessOrder.removeElementAt(index);
             this.accessOrder.addElement(url);
             cacheGetResult.setResult(this.cache.get(url));
-            Worker.queueEDT(cacheGetResult);
-            return;
+            if (cacheGetResult.getResult() != null) {
+                Worker.queueEDT(cacheGetResult);
+                return;
+            }
         }
 
         // RMS
@@ -62,6 +60,7 @@ public class StaticWebCache extends StaticCache {
         if (bytes != null) {
             Log.log("Hit in RMS");
             Worker.queue(new Workable() {
+
                 public boolean work() {
                     Object converted = handler.convertToUseForm(bytes);
                     cacheGetResult.setResult(converted);
@@ -72,7 +71,7 @@ public class StaticWebCache extends StaticCache {
             });
             return;
         }
-        
+
         // NET
         update(url, cacheGetResult);
     }
@@ -80,22 +79,22 @@ public class StaticWebCache extends StaticCache {
     /**
      * Retrieve the object from WEB, replacing any existing version when the new
      * version arrives.
-     * 
+     *
      * @param url
-     * @param cacheGetResult 
+     * @param cacheGetResult
      */
     public synchronized void update(final String url, final CacheGetResult cacheGetResult) {
         Worker.queue(new HttpGetter(url, RETRIES, cacheGetResult, handler, this));
     }
-    
+
     /**
      * Remove the object from the cache
-     * 
-     * @param url 
+     *
+     * @param url
      */
     public synchronized void remove(String url) {
         super.remove(url);
-        
+
         if (timestamps.contains(url)) {
             timestamps.remove(url);
         }
@@ -103,8 +102,8 @@ public class StaticWebCache extends StaticCache {
 
     /**
      * Update the freshness timestamp associated with the cached object
-     * 
-     * @param url 
+     *
+     * @param url
      */
     public synchronized void updateTimestamp(final String url) {
         timestamps.put(url, new Long(System.currentTimeMillis()));
