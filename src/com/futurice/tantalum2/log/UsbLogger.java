@@ -1,4 +1,4 @@
-package com.futurice.tantalum2;
+package com.futurice.tantalum2.log;
 
 import java.io.IOException;
 import java.io.OutputStream;

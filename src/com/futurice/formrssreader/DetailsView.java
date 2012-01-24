@@ -4,9 +4,9 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.DefaultCacheGetResult;
-import com.futurice.tantalum2.Log;
-import com.futurice.tantalum2.StaticWebCache;
+import com.futurice.tantalum2.rms.DefaultCacheGetResult;
+import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
 import javax.microedition.lcdui.Form;
 import javax.microedition.io.ConnectionNotFoundException;

@@ -4,8 +4,8 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.DefaultCacheGetResult;
-import com.futurice.tantalum2.StaticWebCache;
+import com.futurice.tantalum2.rms.DefaultCacheGetResult;
+import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Label;

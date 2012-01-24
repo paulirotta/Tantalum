@@ -2,8 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.futurice.tantalum2;
+package com.futurice.tantalum2.net;
 
+import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.Workable;
+import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.net.HttpGetter;
 import com.futurice.tantalum2.rms.CacheGetResult;
 import com.futurice.tantalum2.rms.DataTypeHandler;

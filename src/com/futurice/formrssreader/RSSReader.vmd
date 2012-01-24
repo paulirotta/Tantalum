@@ -30,7 +30,5 @@
             <Component componentID="21" typeID="C#DatabindingCategory"/>
         </Component>
     </Document>
-    <FlowScene version="1">
-        <Node componentID="2" descriptorID="componentNode2" x="34" y="32"/>
-    </FlowScene>
+    <FlowScene version="1"/>
 </VisualDesign>

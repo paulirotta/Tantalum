@@ -22,8 +22,7 @@
  */
 package com.futurice.tantalum2.net;
 
-import com.futurice.tantalum2.Log;
-import com.futurice.tantalum2.ResultHandler;
+import com.futurice.tantalum2.log.Log;
 
 /**
  *

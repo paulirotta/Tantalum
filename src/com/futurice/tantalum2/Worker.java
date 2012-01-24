@@ -4,6 +4,7 @@
  */
 package com.futurice.tantalum2;
 
+import com.futurice.tantalum2.log.Log;
 import java.util.Vector;
 import javax.microedition.lcdui.Display;
 import javax.microedition.midlet.MIDlet;

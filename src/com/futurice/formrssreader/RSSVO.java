@@ -1,6 +1,6 @@
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.Log;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.XMLAttributes;
 import com.futurice.tantalum2.net.XMLVO;
 import java.io.IOException;

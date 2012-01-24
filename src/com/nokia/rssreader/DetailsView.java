@@ -1,9 +1,9 @@
 package com.nokia.rssreader;
 
 import com.futurice.rssreader.common.StringUtils;
-import com.futurice.tantalum2.DefaultCacheGetResult;
-import com.futurice.tantalum2.Log;
-import com.futurice.tantalum2.StaticWebCache;
+import com.futurice.tantalum2.rms.DefaultCacheGetResult;
+import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;

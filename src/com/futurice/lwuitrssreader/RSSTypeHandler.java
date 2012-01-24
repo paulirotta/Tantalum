@@ -4,7 +4,7 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.Log;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 
 /**

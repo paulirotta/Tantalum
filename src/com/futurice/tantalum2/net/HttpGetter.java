@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum2.net;
 
-import com.futurice.tantalum2.Log;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.rms.CacheGetResult;

@@ -4,7 +4,7 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.Log;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.Worker;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;

@@ -1,6 +1,6 @@
 package com.nokia.rssreader;
 
-import com.futurice.tantalum2.Log;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.XMLAttributes;
 import com.futurice.tantalum2.net.XMLVO;
 import java.util.Vector;

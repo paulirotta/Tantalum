@@ -1,8 +1,8 @@
 package com.nokia.rssreader;
 
-import com.futurice.tantalum2.DefaultCacheGetResult;
-import com.futurice.tantalum2.Log;
-import com.futurice.tantalum2.StaticWebCache;
+import com.futurice.tantalum2.rms.DefaultCacheGetResult;
+import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.RMSUtils;
 import javax.microedition.lcdui.Command;

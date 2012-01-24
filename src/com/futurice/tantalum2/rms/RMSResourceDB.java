@@ -1,6 +1,6 @@
 package com.futurice.tantalum2.rms;
 
-import com.futurice.tantalum2.Log;
+import com.futurice.tantalum2.log.Log;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -49,7 +49,7 @@ public final class RMSResourceDB {
      * 
      * @return instance of RMSResourceDB
      */
-    public static final RMSResourceDB getInstance() {
+    public static RMSResourceDB getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new RMSResourceDB();
         }
@@ -98,7 +98,7 @@ public final class RMSResourceDB {
      * @param listener listener to be invoked when write is complete
      * @throws IllegalArgumentException if resource is null or if payload is exceeded
      */
-    public int storeResource(final RMSRecord resource, final RMSCallbackListener listener) {
+    int storeResource(final RMSRecord resource, final RMSCallbackListener listener) {
 
         if (resource == null) {
             throw new IllegalArgumentException("resource cannot be null");
@@ -370,8 +370,7 @@ public final class RMSResourceDB {
     private Hashtable getIndexTable(final RMSResourceType type) {
         String name = INDEX_TABLE_NAME_PREFIX + type.toString();
 
-        if (this.indexes != null) {
-            Hashtable indexes = this.indexes;
+        if (indexes != null) {
             Hashtable index = (Hashtable) indexes.get(name);
             if (index == null) {
                 index = new Hashtable();
@@ -389,17 +388,17 @@ public final class RMSResourceDB {
      */
     private Hashtable initIndexTablesFromRMS() {
 
-        Hashtable indexes = new Hashtable();
+        Hashtable indexHash = new Hashtable();
 
         String[] names = RMSResourceDB.listRecordStores();
         if (names != null) {
             for (int i = 0; i < names.length; i++) {
                 if (names[i].startsWith(INDEX_TABLE_NAME_PREFIX)) {
-                    indexes.put(names[i], readRMSIndexTable(names[i]));
+                    indexHash.put(names[i], readRMSIndexTable(names[i]));
                 }
             }
         }
-        return indexes;
+        return indexHash;
     }
 
     /**

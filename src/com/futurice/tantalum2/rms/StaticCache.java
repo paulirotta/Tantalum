@@ -1,6 +1,6 @@
 package com.futurice.tantalum2.rms;
 
-import com.futurice.tantalum2.Log;
+import com.futurice.tantalum2.log.Log;
 
 import java.util.Hashtable;
 import java.util.Vector;
