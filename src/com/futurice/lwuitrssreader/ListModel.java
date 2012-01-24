@@ -21,11 +21,9 @@ public class ListModel extends DefaultListModel implements DataChangedListener {
     }
 
     public void dataChanged(int type, int index) {
-//        if (type != ListModel.REMOVED) {
-//            listForm.repaint();
-//        }
+        listForm.repaint();
     }
-    
+
     public void repaint() {
         listForm.repaint();
     }

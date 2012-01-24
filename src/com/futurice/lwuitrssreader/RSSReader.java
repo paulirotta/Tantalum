@@ -47,6 +47,7 @@ public class RSSReader extends MIDlet {
     }
 
     public void destroyApp(boolean unconditional) {
+        this.notifyDestroyed();
     }
 
     public void setUrl(String url) {

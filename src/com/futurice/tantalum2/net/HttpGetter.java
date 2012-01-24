@@ -18,10 +18,10 @@ import javax.microedition.io.HttpConnection;
 
 /**
  * GET something from a URL on the Worker thread
- * 
+ *
  * Implement Runnable if you want to automatically update the UI on the EDT
  * after the GET completes
- * 
+ *
  * @author pahought
  */
 public class HttpGetter implements Workable {
@@ -68,13 +68,13 @@ public class HttpGetter implements Workable {
             if (converted != null) {
                 cacheGetResult.setResult(converted);
                 Worker.queueEDT(cacheGetResult);
-                Worker.queueEDT(new Runnable() {
+//                Worker.queueEDT(new Runnable() {
 
-                    public void run() {
-                        cache.put(url, converted);
-                        cache.storeToRMS(url, bytes);
-                    }
-                });
+//                    public void run() {
+                cache.put(url, converted);
+                cache.storeToRMS(url, bytes);
+//                    }
+//                });
                 success = true;
                 Log.log("HttpGetter complete (" + bytes.length + ") bytes, " + url);
             } else {
@@ -93,27 +93,20 @@ public class HttpGetter implements Workable {
             //this.exception(e);
         } finally {
             try {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
+                inputStream.close();
             } catch (Exception e) {
                 Log.logThrowable(e, "HttpGetter close error: " + url);
             }
             try {
-                if (bos != null) {
-                    bos.close();
-                }
+                bos.close();
             } catch (Exception e) {
                 Log.logThrowable(e, "HttpGetter close error: " + url);
             }
             try {
-                if (httpConnection != null) {
-                    httpConnection.close();
-                }
+                httpConnection.close();
             } catch (Exception e) {
                 Log.logThrowable(e, "HttpGetter close error: " + url);
             }
-
             inputStream = null;
             bos = null;
             httpConnection = null;

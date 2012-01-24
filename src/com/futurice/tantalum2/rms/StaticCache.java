@@ -1,8 +1,6 @@
 package com.futurice.tantalum2.rms;
 
 import com.futurice.tantalum2.Log;
-import com.futurice.tantalum2.Workable;
-import com.futurice.tantalum2.Worker;
 
 import java.util.Hashtable;
 import java.util.Vector;
@@ -58,25 +56,22 @@ public class StaticCache {
     }
 
     /**
-     * Asynchronously put the hash object using a worker thread
+     * Synchronously put the hash object to the RAM cache.
+     * 
+     * If you also want the object stored in RMS, call
+     * storeToRMS()
      * 
      * @param key
      * @param o 
      */
     public void put(final String key, final Object o) {
+        if (o == null) {
+            Log.logNonfatalThrowable(new NullPointerException(), "Null put for key " + key);
+            return;
+        }
         remove(key);
         accessOrder.addElement(key);
         cache.put(key, o);
-        Worker.queue(new Workable() {
-
-            public boolean work() {
-                //TODO Test that at the time this runs a bit later on the Worker thread, this is still the most recent value found in the hashtable
-                synchronized (StaticCache.this) {
-                    //storeToRMS(key, o);
-                    return true;
-                }
-            }
-        });
     }
 
     /**

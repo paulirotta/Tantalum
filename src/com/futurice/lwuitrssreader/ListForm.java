@@ -21,11 +21,10 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
     static Command settingsCommand = new Command("Settings");
     static Command reloadCommand = new Command("Reload");
     static Command exitCommand = new Command("Exit");
-    public List list;
-    private ListModel listModel;
+    public final List list;
+    private final ListModel listModel;
     private RSSReader midlet;
     private boolean isReloading = false;
-    private RSSVO rssvo;
     private StaticWebCache cache;
 
     public ListForm(String title, RSSReader midlet) {
@@ -44,8 +43,8 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
         setTransitionOutAnimator(
                 CommonTransitions.createSlide(
                 CommonTransitions.SLIDE_HORIZONTAL, false, 200));
-        list.setListCellRenderer(this);
-        setCommandListener(this);
+        list.setRenderer(this);
+        this.addCommandListener(this);
         reload(false);
     }
 
@@ -60,7 +59,7 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
                 reload(true);
             }
             if (cmdStr.equals("Exit")) {
-                midlet.notifyDestroyed();
+                midlet.destroyApp(true);
             }
         } else {
             int selectedIndex = ((List) ae.getSource()).getSelectedIndex();
@@ -103,7 +102,7 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
 
     public Component getListCellRendererComponent(List list, Object value, int index, boolean isSelected) {
         Container c = new Container();
-        Label titleLabel = new Label(((RSSItem) value).getTruncatedTitle());
+        Label titleLabel = new Label(((RSSItem) value).getTitle());
         titleLabel.getStyle().setFont(RSSReader.plainFont);
         c.addComponent(titleLabel);
         return c;

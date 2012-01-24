@@ -9,3 +9,8 @@ dist/*
 
 syntax: regexp
 .*\#.*\#$
+\.orig\..*$
+\.orig$
+\.chg\..*$
+\.rej$
+\.conflict\~$
