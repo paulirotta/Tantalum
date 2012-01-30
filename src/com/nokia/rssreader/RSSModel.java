@@ -2,7 +2,7 @@ package com.nokia.rssreader;
 
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.XMLAttributes;
-import com.futurice.tantalum2.net.XMLVO;
+import com.futurice.tantalum2.net.XMLModel;
 import java.util.Vector;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -11,7 +11,7 @@ import org.xml.sax.SAXException;
  * RSS Value Object for parsing RSS
  * @author ssaa
  */
-public class RSSVO extends XMLVO {
+public class RSSModel extends XMLModel {
 
     private final Vector items = new Vector();
     private RSSItem currentItem;

@@ -29,7 +29,7 @@ import org.json.me.JSONObject;
  *
  * @author Paul Houghton
  */
-public class JSONVO {
+public class JSONModel {
     private static final Object MUTEX = new Object();
 
     private JSONObject jsonObject = new JSONObject();
@@ -37,7 +37,7 @@ public class JSONVO {
     /**
      * Null constructor is an empty placeholder
      */
-    public JSONVO() {
+    public JSONModel() {
     }
 
     public void setJSON(String json) throws JSONException {

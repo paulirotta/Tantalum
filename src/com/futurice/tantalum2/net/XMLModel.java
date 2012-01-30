@@ -22,7 +22,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * 
  * @author pahought
  */
-public abstract class XMLVO extends DefaultHandler {
+public abstract class XMLModel extends DefaultHandler {
     final private Vector qnameStack = new Vector();
     final private Vector charStack = new Vector();
     final private Vector attributeStack = new Vector();
@@ -30,7 +30,7 @@ public abstract class XMLVO extends DefaultHandler {
     /**
      * Null constructor is an empty placeholder
      */
-    public XMLVO() {
+    public XMLModel() {
     }
 
     public synchronized void setXML(final String xml) throws ParserConfigurationException, SAXException, IOException {

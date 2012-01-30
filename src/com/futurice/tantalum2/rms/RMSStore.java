@@ -14,24 +14,32 @@ import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 
 /**
- * Data access layer to RMS.
- * Provides store, get, and delete methods to write and read from RMS.
- * 
+ * Data access layer to RMS. Provides store, get, and delete methods to write
+ * and read from RMS.
+ *
  * @author mark voit
  */
 final class RMSStore {
 
-    /** Log tag */
+    /**
+     * Log tag
+     */
     private static final String LOG_TAG = "RMSStore";
-    /** RMS doesn't allow names longer than 32 characters */
+    /**
+     * RMS doesn't allow names longer than 32 characters
+     */
     private static final int MAX_STORAGE_KEY_NAME_LENGTH = 32;
-    /** hashtable keeping all open stores */
+    /**
+     * hashtable keeping all open stores
+     */
     private Hashtable openStores;
-    /** synchronized handle */
+    /**
+     * synchronized handle
+     */
     private Object mutex = new Object();
 
     /**
-     * Constructor. 
+     * Constructor.
      */
     public RMSStore() {
         this.openStores = new Hashtable();
@@ -39,9 +47,10 @@ final class RMSStore {
 
     /**
      * Writes resource to the store.
-     * 
+     *
      * @param name name of record store
-     * @param intId internal id of record; should be -1 if record doesn't exist yet.
+     * @param intId internal id of record; should be -1 if record doesn't exist
+     * yet.
      * @param record data to be stored
      * @param listener listener to be invoked when write is complete
      */
@@ -51,7 +60,7 @@ final class RMSStore {
 
     /**
      * Reads record with given id from store.
-     * 
+     *
      * @param name name of record store
      * @param intId internal id of record to be retrieved
      * @return found record or null
@@ -82,7 +91,7 @@ final class RMSStore {
 
     /**
      * Reads all records from store.
-     * 
+     *
      * @param name name of record store
      * @return vector of byte[] or null
      * @throws IllegalArgumentException if name is null
@@ -118,7 +127,7 @@ final class RMSStore {
 
     /**
      * Deletes record with given id from store.
-     * 
+     *
      * @param name name of record store
      * @param intId internal id of record to be deleted
      * @throws IllegalArgumentException if name is null
@@ -142,17 +151,19 @@ final class RMSStore {
     }
 
     /**
-     * Writes record to the store defined by its type. 
-     * If intId is greater -1, existing record will be overwritten.
-     * 
+     * Writes record to the store defined by its type. If intId is greater -1,
+     * existing record will be overwritten.
+     *
      * Deletes all existing records if record store becomes full.
-     * 
+     *
      * @param name name of record store
-     * @param intId internal id of record; should be -1 if record doesn't exist yet.
+     * @param intId internal id of record; should be -1 if record doesn't exist
+     * yet.
      * @param record data to be written
      * @return internal record id
      * @throws IllegalArgumentException if record is null
-     * @throws IllegalArgumentException serialized data exceeds configured size limit
+     * @throws IllegalArgumentException serialized data exceeds configured size
+     * limit
      * @throws RecordStoreException if record could not be stored
      */
     private int writeRecord(final String name, final int intId, final byte[] record) throws RecordStoreException {
@@ -203,11 +214,12 @@ final class RMSStore {
 
     /**
      * Opens record store with given name. Creates a new one if needed.
-     * 
+     *
      * @param name name of record store
      * @return record store
      * @throws RecordStoreException
-     * @throws IllegalArgumentException if name is null or longer than 32 characters
+     * @throws IllegalArgumentException if name is null or longer than 32
+     * characters
      */
     private RecordStore openRecordStore(final String name) throws RecordStoreException {
 
@@ -246,7 +258,7 @@ final class RMSStore {
 
     /**
      * Closes given record store.
-     * 
+     *
      * @param store to be closed
      */
     private void closeRecordStore(final RecordStore store) {
@@ -274,7 +286,7 @@ final class RMSStore {
 
     /**
      * Deletes given record store after closing it.
-     * 
+     *
      * @param name name of store to be deleted
      */
     public void deleteRecordStore(final String name) {
@@ -302,7 +314,7 @@ final class RMSStore {
 
     /**
      * Returns array of all record store names.
-     * 
+     *
      * @return all record store names
      */
     public static String[] listRecordStores() {
@@ -346,20 +358,20 @@ final class RMSStore {
                 if (null != listener) {
                     listener.notifyRMSWriteCompleted(id);
                 }
-                
+
                 return true;
             } catch (RecordStoreFullException ex) {
-                Log.log("RMSWriter exception while storing resource to store '" + name + "':" + intId + " " +  ex);
+                Log.log("RMSWriter exception while storing resource to store '" + name + "':" + intId + " " + ex);
                 if (null != listener) {
                     listener.notifyRecordStoreFull(name, ex);
-                    
+
                     //FIXME- we should still write the record after space is cleared
                 }
             } catch (Throwable e) {
                 Log.logThrowable(e, "RMSWriter exception while storing resource to store '" + name + "':" + intId);
             }
-                
-                return false;
+
+            return false;
         }
 
         public String toString() {

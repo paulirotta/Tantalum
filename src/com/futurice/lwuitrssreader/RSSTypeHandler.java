@@ -21,7 +21,7 @@ public class RSSTypeHandler implements DataTypeHandler {
 
     public Object convertToUseForm(byte[] bytes) {
         try {
-            RSSVO rssvo = new RSSVO(model);
+            RSSModel rssvo = new RSSModel(model);
             rssvo.setXML(new String(bytes));
             return rssvo;
         } catch (Exception e) {

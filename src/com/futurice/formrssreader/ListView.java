@@ -30,7 +30,7 @@ public class ListView extends Form implements CommandListener {
     private final RSSReader rssReader;
     private final DetailsView detailsView;
     private StaticWebCache staticWebCache;
-    private RSSVO rSSVO;
+    private RSSModel rSSVO;
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
@@ -46,7 +46,7 @@ public class ListView extends Form implements CommandListener {
         this.rssReader = rssReader;
         this.instance = ListView.this;
         this.detailsView = new DetailsView(rssReader, title);
-        this.rSSVO = new RSSVO();
+        this.rSSVO = new RSSModel();
         this.staticWebCache = new StaticWebCache("rss", 1, 10, new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {

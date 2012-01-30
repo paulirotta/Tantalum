@@ -10,9 +10,9 @@ package com.futurice.tantalum2.net;
  */
 public class XMLGetter /*extends HttpGetter*/ {
 
-    protected final XMLVO xmlvo;
+    protected final XMLModel xmlvo;
 
-    public XMLGetter(final String url, final int retriesRemaining, final XMLVO xmlvo) {
+    public XMLGetter(final String url, final int retriesRemaining, final XMLModel xmlvo) {
         //super(url, retriesRemaining);
 
         this.xmlvo = xmlvo;

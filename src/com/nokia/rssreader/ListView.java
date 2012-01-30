@@ -19,7 +19,7 @@ public class ListView extends View {
             + RSSReaderCanvas.FONT_DATE.getHeight() + 2*RSSReaderCanvas.MARGIN;
     
     private StaticWebCache staticWebCache;
-    private RSSVO rSSVO;
+    private RSSModel rSSVO;
 
     private boolean loading = true;
     private int selectedIndex = -1;
@@ -30,7 +30,7 @@ public class ListView extends View {
 
     public ListView(RSSReaderCanvas canvas) {
         super(canvas);
-        rSSVO = new RSSVO();
+        rSSVO = new RSSModel();
         staticWebCache = new StaticWebCache("rss", 1, 10, new DataTypeHandler() {
             public Object convertToUseForm(byte[] bytes) {
                   try {
@@ -204,11 +204,11 @@ public class ListView extends View {
         }
     }
 
-    public RSSVO getRssVO() {
+    public RSSModel getRssVO() {
         return rSSVO;
     }
 
-    public void setRssVO(RSSVO rssVO) {
+    public void setRssVO(RSSModel rssVO) {
         this.rSSVO = rssVO;
     }
 

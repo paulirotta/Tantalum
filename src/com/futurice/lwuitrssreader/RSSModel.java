@@ -2,7 +2,7 @@ package com.futurice.lwuitrssreader;
 
 import com.futurice.formrssreader.ListView;
 import com.futurice.tantalum2.net.XMLAttributes;
-import com.futurice.tantalum2.net.XMLVO;
+import com.futurice.tantalum2.net.XMLModel;
 import java.io.IOException;
 import java.util.Vector;
 import javax.xml.parsers.ParserConfigurationException;
@@ -12,12 +12,12 @@ import org.xml.sax.SAXException;
  *
  * @author tsaa
  */
-public class RSSVO extends XMLVO {
+public class RSSModel extends XMLModel {
 
     private RSSItem current;
     private ListModel listModel;
 
-    public RSSVO(ListModel listModel) {
+    public RSSModel(ListModel listModel) {
         this.listModel = listModel;
     }
 

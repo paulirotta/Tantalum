@@ -2,7 +2,7 @@ package com.futurice.formrssreader;
 
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.XMLAttributes;
-import com.futurice.tantalum2.net.XMLVO;
+import com.futurice.tantalum2.net.XMLModel;
 import java.io.IOException;
 import java.util.Vector;
 import javax.xml.parsers.ParserConfigurationException;
@@ -13,7 +13,7 @@ import org.xml.sax.SAXException;
  * RSS Value Object for parsing RSS
  * @author ssaa
  */
-public final class RSSVO extends XMLVO {
+public final class RSSModel extends XMLModel {
 
     private final Vector items = new Vector();
     private RSSItem currentItem;

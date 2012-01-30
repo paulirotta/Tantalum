@@ -31,9 +31,9 @@ import com.futurice.tantalum2.log.Log;
 public class JSONGetter /*implements ResultHandler*/ {
 
     private final HttpGetter httpGetter;
-    private final JSONVO jsonvo;
+    private final JSONModel jsonvo;
 
-    public JSONGetter(final String url, final JSONVO jsonvo, final int retriesRemaining) {
+    public JSONGetter(final String url, final JSONModel jsonvo, final int retriesRemaining) {
         this.httpGetter = null;//new HttpGetter(url, retriesRemaining);
         this.jsonvo = jsonvo;
     }
