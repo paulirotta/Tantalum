@@ -1,0 +1,6 @@
+MIDlet-Permissions: javax.microedition.io.Connector.http, javax.microedition.io.Connector.https
+MIDlet-Vendor: Tantalum Project
+MIDlet-Name: Tantalum2
+MIDlet-Version: 2.1
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0

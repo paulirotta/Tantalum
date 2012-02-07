@@ -1,0 +1,16 @@
+syntax: glob
+*.orig
+*.rej
+*.class
+*~
+*.o
+tests/*.err
+dist/*
+
+syntax: regexp
+.*\#.*\#$
+\.orig\..*$
+\.orig$
+\.chg\..*$
+\.rej$
+\.conflict\~$
