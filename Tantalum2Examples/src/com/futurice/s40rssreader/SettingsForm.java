@@ -1,4 +1,4 @@
-package com.nokia.rssreader;
+package com.futurice.s40rssreader;
 
 import com.futurice.tantalum2.rms.RMSUtils;
 import javax.microedition.lcdui.Command;

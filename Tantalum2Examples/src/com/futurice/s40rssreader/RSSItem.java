@@ -1,4 +1,4 @@
-package com.nokia.rssreader;
+package com.futurice.s40rssreader;
 
 import com.futurice.rssreader.common.StringUtils;
 import javax.microedition.lcdui.Image;

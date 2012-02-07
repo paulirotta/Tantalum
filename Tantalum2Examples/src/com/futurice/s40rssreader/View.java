@@ -1,4 +1,4 @@
-package com.nokia.rssreader;
+package com.futurice.s40rssreader;
 
 import com.nokia.mid.ui.DirectGraphics;
 import com.nokia.mid.ui.DirectUtils;
