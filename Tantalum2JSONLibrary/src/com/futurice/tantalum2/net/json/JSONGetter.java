@@ -1,4 +1,4 @@
-/**
+/*
  * Tantalum Mobile Toolset
  * https://projects.forum.nokia.com/Tantalum
  *
@@ -20,7 +20,7 @@
  * limitations under the License.
  *
  */
-package com.futurice.tantalum2.net;
+package com.futurice.tantalum2.net.json;
 
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.HttpGetter;

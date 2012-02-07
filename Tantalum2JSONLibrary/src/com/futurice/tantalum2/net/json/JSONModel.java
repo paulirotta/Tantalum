@@ -20,7 +20,7 @@
  * limitations under the License.
  *
  */
-package com.futurice.tantalum2.net;
+package com.futurice.tantalum2.net.json;
 
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
