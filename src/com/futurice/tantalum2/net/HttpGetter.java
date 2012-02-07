@@ -7,7 +7,7 @@ package com.futurice.tantalum2.net;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
-import com.futurice.tantalum2.rms.CacheGetResult;
+import com.futurice.tantalum2.rms.GetResult;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
 import java.io.ByteArrayOutputStream;
@@ -27,15 +27,15 @@ import javax.microedition.io.HttpConnection;
 public class HttpGetter implements Workable {
 
     private final String url;
+    private final GetResult getResult;
+    private final DataTypeHandler handler;
+    private final StaticCache cache;
     private int retriesRemaining;
-    private CacheGetResult cacheGetResult;
-    private DataTypeHandler handler;
-    private StaticCache cache;
 
-    public HttpGetter(String url, int retriesRemaining, CacheGetResult cacheGetResult, DataTypeHandler handler, StaticCache cache) {
+    public HttpGetter(String url, int retriesRemaining, GetResult getResult, DataTypeHandler handler, StaticCache cache) {
         this.url = url;
         this.retriesRemaining = retriesRemaining;
-        this.cacheGetResult = cacheGetResult;
+        this.getResult = getResult;
         this.handler = handler;
         this.cache = cache;
     }
@@ -62,35 +62,39 @@ public class HttpGetter implements Workable {
             while ((bytesRead = inputStream.read(readBuffer)) != -1) {
                 bos.write(readBuffer, 0, bytesRead);
             }
-            final byte[] bytes = bos.toByteArray();
-            final Object converted = handler.convertToUseForm(bytes);
+            final Object converted;
+            byte[] bytes = bos.toByteArray();
+            bos.close();
+            bos = null;
+            if (handler != null) {
+                converted = handler.convertToUseForm(bytes);
+            } else {
+                converted = bytes;
+            }
 
             if (converted != null) {
-                cacheGetResult.setResult(converted);
-                Worker.queueEDT(cacheGetResult);
-//                Worker.queueEDT(new Runnable() {
-
-//                    public void run() {
-                cache.put(url, converted);
-                cache.storeToRMS(url, bytes);
-//                    }
-//                });
+                getResult.setResult(converted);
+                Worker.queueEDT(getResult);
+                if (cache != null) {
+                    cache.put(url, converted);
+                    cache.storeToRMS(url, bytes);
+                }
                 success = true;
                 Log.log("HttpGetter complete (" + bytes.length + ") bytes, " + url);
             } else {
                 success = false;
             }
+            bytes = null;
         } catch (IOException e) {
             Log.logNonfatalThrowable(e, url + "(retries = " + retriesRemaining);
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
             } else {
-                //this.exception(new Exception("No more http retries: " + e));
+                Log.log("HttpGetter no more retries: " + url);
             }
         } catch (Exception e) {
             Log.logThrowable(e, "HttpGetter has a problem: " + url);
-            //this.exception(e);
         } finally {
             try {
                 inputStream.close();
@@ -98,7 +102,9 @@ public class HttpGetter implements Workable {
                 Log.logThrowable(e, "HttpGetter close error: " + url);
             }
             try {
-                bos.close();
+                if (bos != null) {
+                    bos.close();
+                }
             } catch (Exception e) {
                 Log.logThrowable(e, "HttpGetter close error: " + url);
             }

@@ -1,6 +1,6 @@
 package com.nokia.rssreader;
 
-import com.futurice.tantalum2.rms.DefaultCacheGetResult;
+import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.DataTypeHandler;
@@ -173,7 +173,7 @@ public class ListView extends View {
 
         String feedUrl = RMSUtils.readString("settings");
         if ("".equals(feedUrl)) feedUrl = RSSReader.INITIAL_FEED_URL;
-        staticWebCache.get(feedUrl, new DefaultCacheGetResult() {
+        staticWebCache.get(feedUrl, new DefaultGetResult() {
             public void run() {
                 notifyListChanged();
             }

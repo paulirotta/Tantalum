@@ -4,14 +4,14 @@
  */
 package com.futurice.tantalum2.rms;
 
-import com.futurice.tantalum2.rms.CacheGetResult;
+import com.futurice.tantalum2.rms.GetResult;
 
 /**
- * A convenient and common implementation of the cache get result as an Object.
+ * A convenient and common implementation of the cache and http get result as an Object.
  * 
  * @author tsaa
  */
-public class DefaultCacheGetResult implements CacheGetResult {
+public class DefaultGetResult implements GetResult {
     
     private Object result;
 

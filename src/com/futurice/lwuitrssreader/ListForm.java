@@ -1,6 +1,6 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.rms.DefaultCacheGetResult;
+import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Command;
@@ -79,14 +79,14 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
             }
 
             if (fromNet) {
-                cache.update(midlet.getUrl(), new DefaultCacheGetResult() {
+                cache.update(midlet.getUrl(), new DefaultGetResult() {
 
                     public void run() {
                         isReloading = false;
                     }
                 });
             } else {
-                cache.get(midlet.getUrl(), new DefaultCacheGetResult() {
+                cache.get(midlet.getUrl(), new DefaultGetResult() {
 
                     public void run() {
                         isReloading = false;

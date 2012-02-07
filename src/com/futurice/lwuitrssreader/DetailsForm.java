@@ -4,7 +4,7 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.rms.DefaultCacheGetResult;
+import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
 import com.sun.lwuit.Command;
@@ -84,7 +84,7 @@ public class DetailsForm extends Form implements ActionListener {
         addLabels(descriptionLabels);
         addComponent(imgLabel);
 
-        cache.get(item.getImgSrc(), new DefaultCacheGetResult() {
+        cache.get(item.getImgSrc(), new DefaultGetResult() {
             public void run() {
                 item.setImg(Image.createImage((javax.microedition.lcdui.Image) getResult()));
                 midlet.getDetailsForm().repaintImg();

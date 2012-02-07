@@ -5,86 +5,88 @@ import javax.microedition.lcdui.Image;
 
 /**
  * RSS Item object
+ *
  * @author ssaa
  */
 public class RSSItem {
-    private volatile String title = "";
-    private volatile String truncatedTitle = "";
-    private volatile String description = "";
-    private volatile String link = "";
-    private volatile String pubDate = "";
-    private volatile String thumbnail = "";
-    private volatile Image thumbnailImage = null;
-    private volatile boolean loadingImage = false;
+
+    private String title = "";
+    private String truncatedTitle = "";
+    private String description = "";
+    private String link = "";
+    private String pubDate = "";
+    private String thumbnail = "";
+    private Image thumbnailImage = null;
+    private boolean loadingImage = false;
 
     public String toString() {
         return "RSSItem- title:" + title + " truncatedTitle:" + truncatedTitle + " description:" + description + " link:" + link + " pubDate:" + pubDate + " thumbnail:" + thumbnail;
     }
 
-    public String getDescription() {
+    public synchronized String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public synchronized void setDescription(String description) {
         this.description = description;
     }
 
-    public String getLink() {
+    public synchronized String getLink() {
         return link;
     }
 
-    public void setLink(String link) {
+    public synchronized void setLink(String link) {
         this.link = link;
     }
 
-    public String getPubDate() {
+    public synchronized String getPubDate() {
         return pubDate;
     }
 
-    public void setPubDate(String pubDate) {
+    public synchronized void setPubDate(String pubDate) {
         this.pubDate = pubDate;
     }
 
-    public String getThumbnail() {
+    public synchronized String getThumbnail() {
         return thumbnail;
     }
 
-    public void setThumbnail(String thumbnail) {
+    public synchronized void setThumbnail(String thumbnail) {
         this.thumbnail = thumbnail;
     }
 
-    public String getTitle() {
+    public synchronized String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
+    public synchronized void setTitle(String title) {
         this.title = title;
 
         //set the truncated title
-        this.truncatedTitle = StringUtils.truncate(title, RSSReaderCanvas.FONT_TITLE, RSSReaderCanvas.getInstance().getWidth() - 2*RSSReaderCanvas.MARGIN);
+        this.truncatedTitle = StringUtils.truncate(title, RSSReaderCanvas.FONT_TITLE, RSSReaderCanvas.getInstance().getWidth() - 2 * RSSReaderCanvas.MARGIN);
     }
 
-    public String getTruncatedTitle() {
+    public synchronized String getTruncatedTitle() {
         return truncatedTitle;
     }
 
-    public void setTruncatedTitle(String truncatedTitle) {
+    public synchronized void setTruncatedTitle(String truncatedTitle) {
         this.truncatedTitle = truncatedTitle;
     }
 
-    public Image getThumbnailImage() {
+    public synchronized Image getThumbnailImage() {
         return thumbnailImage;
     }
 
-    public void setThumbnailImage(Image thumbnailImage) {
+    public synchronized void setThumbnailImage(Image thumbnailImage) {
         this.thumbnailImage = thumbnailImage;
     }
 
-    public boolean isLoadingImage() {
+    public synchronized boolean isLoadingImage() {
         return loadingImage;
     }
 
-    public void setLoadingImage(boolean loadingImage) {
+    public synchronized void setLoadingImage(boolean loadingImage) {
         this.loadingImage = loadingImage;
     }
 }

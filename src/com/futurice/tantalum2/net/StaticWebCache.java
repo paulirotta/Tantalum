@@ -7,7 +7,7 @@ package com.futurice.tantalum2.net;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
-import com.futurice.tantalum2.rms.CacheGetResult;
+import com.futurice.tantalum2.rms.GetResult;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
 import java.util.Hashtable;
@@ -40,7 +40,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param cacheGetResult
      */
-    public synchronized void get(final String url, final CacheGetResult cacheGetResult) {
+    public synchronized void get(final String url, final GetResult cacheGetResult) {
 
         // RAM
         if (containsKey(url)) {
@@ -83,7 +83,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param cacheGetResult
      */
-    public synchronized void update(final String url, final CacheGetResult cacheGetResult) {
+    public synchronized void update(final String url, final GetResult cacheGetResult) {
         Worker.queue(new HttpGetter(url, RETRIES, cacheGetResult, handler, this));
     }
 

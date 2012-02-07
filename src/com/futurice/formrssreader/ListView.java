@@ -4,7 +4,7 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.rms.DefaultCacheGetResult;
+import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.Worker;
@@ -95,7 +95,7 @@ public class ListView extends Form implements CommandListener {
         if ("".equals(feedUrl)) {
             feedUrl = RSSReader.INITIAL_FEED_URL;
         }
-        staticWebCache.get(feedUrl, new DefaultCacheGetResult() {
+        staticWebCache.get(feedUrl, new DefaultGetResult() {
 
             public void run() {
                 notifyListChanged();
