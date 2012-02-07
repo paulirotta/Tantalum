@@ -6,6 +6,7 @@ syntax: glob
 *.o
 tests/*.err
 dist/*
+build/*
 
 syntax: regexp
 .*\#.*\#$
