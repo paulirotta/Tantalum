@@ -1,0 +1,11 @@
+MIDlet-3: LWUIT RSS Reader,,com.futurice.lwuitrssreader.RSSReader
+MIDlet-2: S40 RSS Reader,,com.nokia.rssreader.RSSReader
+MIDlet-1: Form RSS Reader,,com.futurice.formrssreader.RSSReader
+MIDlet-Permissions: javax.microedition.io.Connector.http
+MIDlet-Vendor: Tantalum Project
+MIDlet-Name: TantalumExamples
+RSS-Feed-Url: http://feeds.bbci.co.uk/news/rss.xml
+Nokia-UI-Enhancement: CanvasHasBackground
+MIDlet-Version: 2.1
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0
