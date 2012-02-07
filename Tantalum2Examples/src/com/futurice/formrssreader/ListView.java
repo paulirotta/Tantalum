@@ -30,7 +30,7 @@ public class ListView extends Form implements CommandListener {
     private final RSSReader rssReader;
     private final DetailsView detailsView;
     private StaticWebCache staticWebCache;
-    private RSSModel rSSVO;
+    private final RSSModel rssModel = new RSSModel();
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
@@ -43,17 +43,17 @@ public class ListView extends Form implements CommandListener {
 
     public ListView(RSSReader rssReader, String title) {
         super(title);
+        
+        ListView.instance = ListView.this;
         this.rssReader = rssReader;
-        this.instance = ListView.this;
         this.detailsView = new DetailsView(rssReader, title);
-        this.rSSVO = new RSSModel();
         this.staticWebCache = new StaticWebCache("rss", 1, 10, new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
                 try {
-                    rSSVO.getItems().removeAllElements();
-                    rSSVO.setXML(new String(bytes));
-                    return rSSVO;
+                    rssModel.getItems().removeAllElements();
+                    rssModel.setXML(new String(bytes));
+                    return rssModel;
                 } catch (Exception e) {
                     Log.log("Error in parsing XML.");
                     return null;
@@ -135,7 +135,7 @@ public class ListView extends Form implements CommandListener {
             return;
         }
 
-        if (rSSVO.getItems().isEmpty()) {
+        if (rssModel.getItems().isEmpty()) {
             if (startIndex == 0) {
                 deleteAll();
             }
@@ -152,9 +152,9 @@ public class ListView extends Form implements CommandListener {
             deleteAll();
         }
 
-        final int len = rSSVO.getItems().size();
+        final int len = rssModel.getItems().size();
         for (int i = startIndex; i < len; i++) {
-            final RSSItem rSSItem = (RSSItem) rSSVO.getItems().elementAt(i);
+            final RSSItem rSSItem = (RSSItem) rssModel.getItems().elementAt(i);
 
             Worker.queueEDT(new Runnable() {
 

@@ -53,7 +53,15 @@ public class RSSModel extends XMLModel {
         }
     }
 
-    public Vector getItems() {
-        return items;
+    public void removeAllElements() {
+        items.removeAllElements();
+    }
+    
+    public int size() {
+        return items.size();
+    }
+    
+    public RSSItem elementAt(int i) {
+        return (RSSItem) items.elementAt(i);
     }
 }

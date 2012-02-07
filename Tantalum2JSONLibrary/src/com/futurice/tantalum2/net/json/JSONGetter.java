@@ -1,4 +1,4 @@
-/*
+/**
  * Tantalum Mobile Toolset
  * https://projects.forum.nokia.com/Tantalum
  *
@@ -35,9 +35,9 @@ public class JSONGetter /*implements ResultHandler*/ {
     private final HttpGetter httpGetter;
     private final JSONModel jsonvo;
 
-    public JSONGetter(final String url, final JSONModel jsonvo, final int retriesRemaining) {
+    public JSONGetter(final String url, final JSONModel jsonModel, final int retriesRemaining) {
         this.httpGetter = null;//new HttpGetter(url, retriesRemaining);
-        this.jsonvo = jsonvo;
+        this.jsonvo = jsonModel;
     }
 
     public void setHttpGetter(HttpGetter httpGetter) {

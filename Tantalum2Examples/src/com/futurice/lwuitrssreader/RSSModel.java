@@ -23,6 +23,7 @@ public class RSSModel extends XMLModel {
 
     public synchronized void setXML(final String xml)  throws ParserConfigurationException, SAXException, IOException {
         super.setXML(xml);
+        
         listModel.repaint();
         ListView.getInstance().notifyListChanged();
     }

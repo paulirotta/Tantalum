@@ -11,32 +11,32 @@ import javax.microedition.lcdui.Graphics;
 
 /**
  * View for rendering list of RSS items
+ *
  * @author ssaa
  */
-public class ListView extends View {
+public final class ListView extends View {
 
     private final int ITEM_HEIGHT = RSSReaderCanvas.FONT_TITLE.getHeight()
-            + RSSReaderCanvas.FONT_DATE.getHeight() + 2*RSSReaderCanvas.MARGIN;
-    
-    private StaticWebCache staticWebCache;
-    private RSSModel rSSVO;
-
+            + RSSReaderCanvas.FONT_DATE.getHeight() + 2 * RSSReaderCanvas.MARGIN;
+    private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
+    private final Command reloadCommand = new Command("Reload", Command.ITEM, 0);
+    private final Command settingsCommand = new Command("Settings", Command.ITEM, 1);
+    private final RSSModel rssModel = new RSSModel();
+    private final StaticWebCache staticWebCache;
     private boolean loading = true;
     private int selectedIndex = -1;
 
-    private Command exitCommand = new Command("Exit", Command.EXIT, 0);
-    private Command reloadCommand = new Command("Reload", Command.ITEM, 0);
-    private Command settingsCommand = new Command("Settings", Command.ITEM, 1);
-
     public ListView(RSSReaderCanvas canvas) {
         super(canvas);
-        rSSVO = new RSSModel();
+
         staticWebCache = new StaticWebCache("rss", 1, 10, new DataTypeHandler() {
+
             public Object convertToUseForm(byte[] bytes) {
-                  try {
-                    rSSVO.getItems().removeAllElements();
-                    rSSVO.setXML(new String(bytes));
-                    return rSSVO;
+                try {
+                    rssModel.removeAllElements();
+                    rssModel.setXML(new String(bytes));
+
+                    return rssModel;
                 } catch (Exception e) {
                     Log.log("Error in parsing XML.");
                     return null;
@@ -56,7 +56,9 @@ public class ListView extends View {
             reload(false);
         } else if (command == settingsCommand) {
             String feedUrl = RMSUtils.readString("settings");
-            if ("".equals(feedUrl)) feedUrl = RSSReader.INITIAL_FEED_URL;
+            if ("".equals(feedUrl)) {
+                feedUrl = RSSReader.INITIAL_FEED_URL;
+            }
             canvas.getRssReader().getSettingsForm().setUrlValue(feedUrl);
             canvas.getRssReader().switchDisplayable(null, canvas.getRssReader().getSettingsForm());
         }
@@ -72,12 +74,13 @@ public class ListView extends View {
 
     /**
      * Renders the list of rss feed items
+     *
      * @param g
      */
     public void render(Graphics g) {
         try {
 
-            final int contentHeight = rSSVO.getItems().size() * ITEM_HEIGHT;
+            final int contentHeight = rssModel.size() * ITEM_HEIGHT;
 
             //limit the renderY not to keep the content on the screen
             if (contentHeight < canvas.getHeight()) {
@@ -93,7 +96,7 @@ public class ListView extends View {
                 return;
             }
 
-            if (rSSVO.getItems().isEmpty()) {
+            if (rssModel.size() == 0) {
                 //no items to display
                 g.drawString("No data", canvas.getWidth() / 2, canvas.getHeight() / 2, Graphics.BASELINE | Graphics.HCENTER);
                 return;
@@ -105,9 +108,9 @@ public class ListView extends View {
             int startIndex = -this.renderY / ITEM_HEIGHT;
             curY += startIndex * ITEM_HEIGHT;
 
-            final int len = rSSVO.getItems().size();
+            final int len = rssModel.size();
             for (int i = startIndex; i < len; i++) {
-                renderItem(g, curY, (RSSItem) rSSVO.getItems().elementAt(i), i == selectedIndex);
+                renderItem(g, curY, (RSSItem) rssModel.elementAt(i), i == selectedIndex);
                 curY += ITEM_HEIGHT;
 
                 //stop rendering below the screen
@@ -125,6 +128,7 @@ public class ListView extends View {
 
     /**
      * Renders one item at the specified y-position
+     *
      * @param g
      * @param curY
      * @param item
@@ -152,6 +156,7 @@ public class ListView extends View {
 
     /**
      * Renders loading status
+     *
      * @param g
      */
     private void renderLoading(Graphics g) {
@@ -172,8 +177,11 @@ public class ListView extends View {
         this.renderY = 0;
 
         String feedUrl = RMSUtils.readString("settings");
-        if ("".equals(feedUrl)) feedUrl = RSSReader.INITIAL_FEED_URL;
+        if ("".equals(feedUrl)) {
+            feedUrl = RSSReader.INITIAL_FEED_URL;
+        }
         staticWebCache.get(feedUrl, new DefaultGetResult() {
+
             public void run() {
                 notifyListChanged();
             }
@@ -183,8 +191,9 @@ public class ListView extends View {
     }
 
     /**
-     * Selects item at the specified x- and y-position (if any).
-     * If tapped makes the selection, otherwise just repaints the highlighted item.
+     * Selects item at the specified x- and y-position (if any). If tapped makes
+     * the selection, otherwise just repaints the highlighted item.
+     *
      * @param x
      * @param y
      * @param tapped
@@ -194,22 +203,14 @@ public class ListView extends View {
         final int absoluteY = -this.renderY + y;
         final int pointedIndex = absoluteY / ITEM_HEIGHT;
 
-        if (pointedIndex >= 0 && pointedIndex < rSSVO.getItems().size()) {
+        if (pointedIndex >= 0 && pointedIndex < rssModel.size()) {
             this.selectedIndex = pointedIndex;
             if (tapped) {
-                canvas.showDetails((RSSItem)rSSVO.getItems().elementAt(this.selectedIndex));
+                canvas.showDetails((RSSItem) rssModel.elementAt(this.selectedIndex));
             } else {
                 canvas.repaint();
             }
         }
-    }
-
-    public RSSModel getRssVO() {
-        return rSSVO;
-    }
-
-    public void setRssVO(RSSModel rssVO) {
-        this.rSSVO = rssVO;
     }
 
     public int getSelectedIndex() {
