@@ -99,19 +99,16 @@ public class HttpGetter implements Workable {
             try {
                 inputStream.close();
             } catch (Exception e) {
-                Log.logThrowable(e, "HttpGetter close error: " + url);
             }
             try {
                 if (bos != null) {
                     bos.close();
                 }
             } catch (Exception e) {
-                Log.logThrowable(e, "HttpGetter close error: " + url);
             }
             try {
                 httpConnection.close();
             } catch (Exception e) {
-                Log.logThrowable(e, "HttpGetter close error: " + url);
             }
             inputStream = null;
             bos = null;
@@ -122,6 +119,7 @@ public class HttpGetter implements Workable {
                     Thread.sleep(5000);
                 } catch (InterruptedException ex) {
                 }
+                
                 return this.work();
             }
         }

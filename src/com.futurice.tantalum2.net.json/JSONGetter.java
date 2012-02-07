@@ -23,6 +23,8 @@
 package com.futurice.tantalum2.net;
 
 import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.net.HttpGetter;
+import com.futurice.tantalum2.net.HttpGetter;
 
 /**
  *
