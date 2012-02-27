@@ -21,11 +21,16 @@ public class RSSTypeHandler implements DataTypeHandler {
 
     public Object convertToUseForm(byte[] bytes) {
         try {
-            RSSModel rssvo = new RSSModel(model);
-            rssvo.setXML(new String(bytes));
-            return rssvo;
+            RSSModel rssModel = new RSSModel(model);
+            if (bytes.length > 0) {
+                rssModel.setXML(new String(bytes));
+            }
+            
+            return rssModel;
+        } catch (NullPointerException e) {
+            Log.l.log("Null bytes when to RSSModel", "", e);
         } catch (Exception e) {
-            Log.log("Error converting bytes to RSSVO");
+            Log.l.log("Error converting bytes to RSSModel", "", e);
         }
         return null;
     }

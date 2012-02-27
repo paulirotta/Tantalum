@@ -1,7 +1,7 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.RMSUtils;
@@ -38,7 +38,7 @@ public final class ListView extends View {
 
                     return rssModel;
                 } catch (Exception e) {
-                    Log.log("Error in parsing XML.");
+                    Log.l.log("Error in parsing XML", rssModel.toString());
                     return null;
                 }
             }
@@ -122,7 +122,7 @@ public final class ListView extends View {
             renderScrollBar(g, contentHeight);
 
         } catch (Exception e) {
-            Log.logNonfatalThrowable(e, "Render error");
+            Log.l.log("Render error", rssModel.toString(), e);
         }
     }
 
@@ -180,14 +180,16 @@ public final class ListView extends View {
         if ("".equals(feedUrl)) {
             feedUrl = RSSReader.INITIAL_FEED_URL;
         }
+        if (!initialLoad) {
+            staticWebCache.remove(feedUrl);
+        }
         staticWebCache.get(feedUrl, new DefaultGetResult() {
 
             public void run() {
                 notifyListChanged();
+                canvas.repaint();
             }
         });
-
-        canvas.repaint();
     }
 
     /**

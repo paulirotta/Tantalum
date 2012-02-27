@@ -40,7 +40,7 @@ public class SettingsForm extends TextBox implements CommandListener {
         if (command == saveCommand) {
             RMSUtils.write("settings", getString());
             midlet.switchDisplayable(null, midlet.getList());
-            midlet.getList().reload(false);
+            midlet.getList().reload(true);
         } else if (command == backCommand) {
             midlet.switchDisplayable(null, midlet.getList());
         }

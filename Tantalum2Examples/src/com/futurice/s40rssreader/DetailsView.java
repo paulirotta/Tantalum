@@ -1,8 +1,8 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.rssreader.common.StringUtils;
-import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
 import java.util.Vector;
@@ -54,7 +54,7 @@ public class DetailsView extends View {
                 canvas.getRssReader().exitMIDlet();
             }
         } catch (ConnectionNotFoundException connectionNotFoundException) {
-            Log.logNonfatalThrowable(connectionNotFoundException, "Eror openin link: " + getCanvas().getDetailsView().getSelectedItem().getLink());
+            Log.l.log("Eror opening link", getCanvas().getDetailsView().getSelectedItem().getLink(), connectionNotFoundException);
             canvas.getRssReader().showError("Could not open link");
         }
     }
@@ -93,11 +93,12 @@ public class DetailsView extends View {
             } else if (!selectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
-                staticWebCache.get(selectedItem.getThumbnail(), new DefaultGetResult() {
+                final RSSItem item = selectedItem;
+                staticWebCache.get(item.getThumbnail(), new DefaultGetResult() {
                     public void run() {
-                        selectedItem.setThumbnailImage((Image)getResult());
+                        item.setThumbnailImage((Image)getResult());
+                        item.setLoadingImage(false); 
                         DetailsView.this.getCanvas().repaint();
-                        selectedItem.setLoadingImage(false); 
                     }
                 }); 
             }  

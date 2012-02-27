@@ -4,7 +4,6 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.Worker;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -46,7 +45,6 @@ public class RSSReader extends MIDlet  implements CommandListener {
      */
     private void initialize() {//GEN-END:|0-initialize|0|0-preInitialize
         // write pre-initialize user code here
-        Log.init(this);
         Worker.init(this, 2);
         INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
 //GEN-LINE:|0-initialize|1|0-postInitialize
@@ -61,7 +59,7 @@ public class RSSReader extends MIDlet  implements CommandListener {
     public void startMIDlet() {//GEN-END:|3-startMIDlet|0|3-preAction
         // write pre-action user code here
         switchDisplayable(null, getList());
-        getList().reload(true);
+        getList().reload(false);
 //GEN-LINE:|3-startMIDlet|1|3-postAction
         // write post-action user code here
     }//GEN-BEGIN:|3-startMIDlet|2|

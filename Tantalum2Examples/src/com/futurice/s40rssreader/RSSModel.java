@@ -1,5 +1,6 @@
 package com.futurice.s40rssreader;
 
+import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.XMLAttributes;
 import com.futurice.tantalum2.net.XMLModel;
@@ -9,6 +10,7 @@ import org.xml.sax.SAXException;
 
 /**
  * RSS Value Object for parsing RSS
+ *
  * @author ssaa
  */
 public class RSSModel extends XMLModel {
@@ -32,35 +34,49 @@ public class RSSModel extends XMLModel {
             chars = (String) charStack.lastElement();
             qName = (String) qnameStack.lastElement();
 
-            if (qName.equals("item")) {
-                items.addElement(currentItem);
-                RSSReaderCanvas.getInstance().getListView().notifyListChanged();
-            } else if (currentItem != null) {
-                if (qName.equals("title")) {
-                    currentItem.setTitle(chars);
-                } else if (qName.equals("description")) {
-                    currentItem.setDescription(chars);
-                } else if (qName.equals("link")) {
-                    currentItem.setLink(chars);
-                } else if (qName.equals("pubDate")) {
-                    currentItem.setPubDate(chars);
-                } else if (qName.equals("media:thumbnail")) {
-                    currentItem.setThumbnail(((XMLAttributes) attributeStack.lastElement()).getValue("url"));
+            if (currentItem != null) {
+                synchronized (currentItem) {
+                    if (qName.equals("title")) {
+                        currentItem.setTitle(chars);
+                    } else if (qName.equals("description")) {
+                        currentItem.setDescription(chars);
+                    } else if (qName.equals("link")) {
+                        currentItem.setLink(chars);
+                    } else if (qName.equals("pubDate")) {
+                        currentItem.setPubDate(chars);
+                    } else if (qName.equals("media:thumbnail")) {
+                        currentItem.setThumbnail(((XMLAttributes) attributeStack.lastElement()).getValue("url"));
+                    }
                 }
             }
         } catch (Exception e) {
-            Log.logThrowable(e, "RSS parsing error, qname=" + qName + " - chars=" + chars);
+            Log.l.log("RSS parsing error", "qname=" + qName + " - chars=" + chars, e);
         }
+    }
+
+    public void endElement(final String uri, final String localName, final String qName) throws SAXException {
+        if (currentItem != null && qName.equals("item")) {
+            final RSSItem item = currentItem;
+            Worker.queueEDT(new Runnable() {
+
+                public void run() {
+                    items.addElement(item);
+                    RSSReaderCanvas.getInstance().getListView().notifyListChanged();
+                }
+            });
+        }
+
+        super.endElement(uri, localName, qName);
     }
 
     public void removeAllElements() {
         items.removeAllElements();
     }
-    
+
     public int size() {
         return items.size();
     }
-    
+
     public RSSItem elementAt(int i) {
         return (RSSItem) items.elementAt(i);
     }

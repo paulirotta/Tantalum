@@ -1,6 +1,5 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.Worker;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -34,7 +33,6 @@ public class RSSReader extends MIDlet implements CommandListener {
      * It is called only once when the MIDlet is started. The method is called before the <code>startMIDlet</code> method.
      */
     private void initialize() {
-        Log.init(this);
         Worker.init(this, 2);
         INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
     }

@@ -4,8 +4,8 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.rms.DefaultGetResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
 import javax.microedition.lcdui.Form;
@@ -54,7 +54,7 @@ public class DetailsView extends Form implements CommandListener {
                 rssReader.exitMIDlet();
             }
         } catch (ConnectionNotFoundException connectionNotFoundException) {
-            Log.logNonfatalThrowable(connectionNotFoundException, "Error opening link: " + ListView.getInstance().getDetailsView().getSelectedItem().getLink());
+            Log.l.log("Error opening link" , ListView.getInstance().getDetailsView().getSelectedItem().getLink(), connectionNotFoundException);
             rssReader.showError("Could not open link");
         }
     }

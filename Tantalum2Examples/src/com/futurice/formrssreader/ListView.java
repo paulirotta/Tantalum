@@ -5,9 +5,9 @@
 package com.futurice.formrssreader;
 
 import com.futurice.tantalum2.rms.DefaultGetResult;
-import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.Worker;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.RMSUtils;
 import javax.microedition.lcdui.Command;
@@ -21,7 +21,7 @@ import javax.microedition.lcdui.ItemCommandListener;
 import javax.microedition.lcdui.StringItem;
 
 /**
- * 
+ *
  * @author vand
  */
 public class ListView extends Form implements CommandListener {
@@ -43,7 +43,7 @@ public class ListView extends Form implements CommandListener {
 
     public ListView(RSSReader rssReader, String title) {
         super(title);
-        
+
         ListView.instance = ListView.this;
         this.rssReader = rssReader;
         this.detailsView = new DetailsView(rssReader, title);
@@ -53,9 +53,10 @@ public class ListView extends Form implements CommandListener {
                 try {
                     rssModel.getItems().removeAllElements();
                     rssModel.setXML(new String(bytes));
+
                     return rssModel;
                 } catch (Exception e) {
-                    Log.log("Error in parsing XML.");
+                    Log.l.log("Error parsing XML", rssModel.toString());
                     return null;
                 }
             }
@@ -71,7 +72,7 @@ public class ListView extends Form implements CommandListener {
         if (command == exitCommand) {
             rssReader.exitMIDlet();
         } else if (command == reloadCommand) {
-            reload(false);
+            reload(true);
         } else if (command == settingsCommand) {
             String feedUrl = RMSUtils.readString("settings");
             if ("".equals(feedUrl)) {
@@ -82,8 +83,8 @@ public class ListView extends Form implements CommandListener {
         }
     }
 
-    public void reload(final boolean initialLoad) {
-        if (loading && !initialLoad) {
+    public void reload(final boolean forceLoad) {
+        if (loading && !forceLoad) {
             //already loading
             return;
         }
@@ -91,18 +92,26 @@ public class ListView extends Form implements CommandListener {
         loading = true;
         this.startIndex = 0;
         this.deleteAll();
+        paint();
         String feedUrl = RMSUtils.readString("settings");
         if ("".equals(feedUrl)) {
             feedUrl = RSSReader.INITIAL_FEED_URL;
         }
-        staticWebCache.get(feedUrl, new DefaultGetResult() {
+        if (forceLoad) {
+            staticWebCache.update(feedUrl, new DefaultGetResult() {
 
-            public void run() {
-                notifyListChanged();
-            }
-        });
+                public void run() {
+                    notifyListChanged();
+                }
+            });
+        } else {
+            staticWebCache.get(feedUrl, new DefaultGetResult() {
 
-        paint();
+                public void run() {
+                    notifyListChanged();
+                }
+            });            
+        }
     }
 
     public void showDetails(final RSSItem selectedItem) {
@@ -129,7 +138,6 @@ public class ListView extends Form implements CommandListener {
     }
 
     public void paint() {
-
         if (loading) {
             renderLoading();
             return;
@@ -154,35 +162,39 @@ public class ListView extends Form implements CommandListener {
 
         final int len = rssModel.getItems().size();
         for (int i = startIndex; i < len; i++) {
-            final RSSItem rSSItem = (RSSItem) rssModel.getItems().elementAt(i);
+            final RSSItem rssItem = (RSSItem) rssModel.getItems().elementAt(i);
 
             Worker.queueEDT(new Runnable() {
 
                 public void run() {
-                    final StringItem titleStringItem = new StringItem(null, rSSItem.getTruncatedTitle(), StringItem.PLAIN);
-                    titleStringItem.setFont(ListView.FONT_TITLE);
-                    titleStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
-                    final Command cmdShow = new Command("", Command.OK, 1);
-                    titleStringItem.setDefaultCommand(cmdShow);
-                    titleStringItem.setItemCommandListener(new ItemCommandListener() {
-
-                        public void commandAction(Command c, Item item) {
-                            showDetails(rSSItem);
-                        }
-                    });
-
-                    final StringItem dateStringItem = new StringItem(null, rSSItem.getPubDate(), StringItem.PLAIN);
-                    dateStringItem.setFont(ListView.FONT_DATE);
-                    dateStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
-                    final Image separatorImage = Image.createImage(getWidth(), 1);
-
-                    append(titleStringItem);
-                    append(dateStringItem);
-                    append(separatorImage);
+                    addItem(rssItem);
                 }
             });
         }
         startIndex = len;
+    }
+
+    public void addItem(final RSSItem rssItem) {
+        final StringItem titleStringItem = new StringItem(null, rssItem.getTruncatedTitle(), StringItem.PLAIN);
+        titleStringItem.setFont(ListView.FONT_TITLE);
+        titleStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
+        final Command cmdShow = new Command("", Command.OK, 1);
+        titleStringItem.setDefaultCommand(cmdShow);
+        titleStringItem.setItemCommandListener(new ItemCommandListener() {
+
+            public void commandAction(Command c, Item item) {
+                showDetails(rssItem);
+            }
+        });
+
+        final StringItem dateStringItem = new StringItem(null, rssItem.getPubDate(), StringItem.PLAIN);
+        dateStringItem.setFont(ListView.FONT_DATE);
+        dateStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
+        final Image separatorImage = Image.createImage(getWidth(), 1);
+
+        append(titleStringItem);
+        append(dateStringItem);
+        append(separatorImage);
     }
 
     public static ListView getInstance() {

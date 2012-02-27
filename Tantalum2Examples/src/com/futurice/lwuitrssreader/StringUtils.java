@@ -19,17 +19,18 @@ public class StringUtils {
      * @param maxWidth
      * @return String - truncated string with ellipsis added to end of the string
      */
-    public static String truncate(final String str, final Font font, final int maxWidth) {
-        if (font.stringWidth(str) <= maxWidth) {
+    public static String truncate(final String str, final Font font, int maxWidth) {
+        if (str.length() < 10 || font.stringWidth(str) <= maxWidth) {
             return str;
         }
 
+        maxWidth -= font.stringWidth(ELIPSIS);
         StringBuffer truncated = new StringBuffer(str);
-        while (font.stringWidth(truncated.toString()) > maxWidth) {
+        while (truncated.length() > 2 && font.stringWidth(truncated.toString()) > maxWidth) {
             truncated.deleteCharAt(truncated.length() - 1);
         }
-        truncated.delete(truncated.length() - ELIPSIS.length(), truncated.length() - 1);
         truncated.append(ELIPSIS);
+        
         return truncated.toString();
     }
 

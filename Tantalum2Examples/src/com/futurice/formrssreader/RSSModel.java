@@ -1,6 +1,5 @@
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.XMLAttributes;
 import com.futurice.tantalum2.net.XMLModel;
@@ -16,8 +15,8 @@ import org.xml.sax.SAXException;
  * @author ssaa
  */
 public final class RSSModel extends XMLModel {
+
     private final Vector items = new Vector();
-    private final ListNotifier listNotifier = new ListNotifier();
     private RSSItem currentItem;
 
     public synchronized void setXML(final String xml) throws ParserConfigurationException, SAXException, IOException {
@@ -34,6 +33,7 @@ public final class RSSModel extends XMLModel {
 
         if (qName.equals("item")) {
             currentItem = new RSSItem();
+            items.addElement(currentItem);
         }
     }
 
@@ -45,9 +45,7 @@ public final class RSSModel extends XMLModel {
             chars = (String) charStack.lastElement();
             qName = (String) qnameStack.lastElement();
 
-            if (qName.equals("item")) {
-                items.addElement(currentItem);
-            } else if (currentItem != null) {
+            if (currentItem != null) {
                 if (qName.equals("title")) {
                     currentItem.setTitle(chars);
                 } else if (qName.equals("description")) {
@@ -61,35 +59,11 @@ public final class RSSModel extends XMLModel {
                 }
             }
         } catch (Exception e) {
-            Log.logThrowable(e, "RSS parsing error, qname=" + qName + " - chars=" + chars);
-        }
-    }
-
-    public void endElement(final String uri, final String localName, final String qName) throws SAXException {
-        super.endElement(uri, localName, qName);
-        
-        if (qName.equals("item")) {
-            listNotifier.queue();
+            Log.l.log("RSS parsing error", "qname=" + qName + " - chars=" + chars, e);
         }
     }
 
     public Vector getItems() {
         return items;
-    }
-    
-    public final class ListNotifier implements Runnable {
-        public volatile boolean queued = false;
-        
-        void queue() {
-            if (!queued) {
-                queued = true;
-                Worker.queueEDT(this);
-            }
-        }
-        
-        public void run() {
-           queued = false;
-           ListView.getInstance().notifyListChanged();
-        }
     }
 }
