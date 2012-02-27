@@ -24,7 +24,6 @@ public class RMSStoreTest extends TestCase {
     public void test(int testNumber) throws Throwable {
         switch (testNumber) {
             case 0:
-                testListRecordStores();
                 break;
             case 1:
                 testStoreRecord();
@@ -47,17 +46,6 @@ public class RMSStoreTest extends TestCase {
             default:
                 break;
         }
-    }
-
-    /**
-     * Test of testListRecordStores method, of class RMSStore.
-     */
-    public void testListRecordStores() throws AssertionFailedException {
-        System.out.println("listRecordStores");
-        String[] expResult_1 = null;
-        String[] result_1 = RMSStore.listRecordStores();
-        assertEquals(expResult_1, result_1);
-        fail("The test case is a prototype.");
     }
 
     /**

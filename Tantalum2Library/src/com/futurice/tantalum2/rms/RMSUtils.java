@@ -36,19 +36,19 @@ public class RMSUtils {
             } catch (RecordStoreNotFoundException recordStoreNotFoundException) {
                 //ignore
             } catch (RecordStoreException recordStoreException) {
-                Log.logThrowable(recordStoreException, "RMS delete problem");
+                Log.l.log("RMS delete problem", recordStoreName, recordStoreException);
             }
             rs = RecordStore.openRecordStore(recordStoreName, true);
             rs.addRecord(data, 0, data.length);
         } catch (Exception recordStoreException) {
-            Log.logThrowable(recordStoreException, "RMS open problem");
+            Log.l.log("RMS open problem", recordStoreName, recordStoreException);
         } finally {
             try {
                 if (rs != null) {
                     rs.closeRecordStore();
                 }
             } catch (RecordStoreException recordStoreException) {
-                Log.logThrowable(recordStoreException, "RMS close problem");
+                Log.l.log("RMS close problem", recordStoreName, recordStoreException);
             }
         }
     }
@@ -82,7 +82,7 @@ public class RMSUtils {
                 data = rs.getRecord(re.nextRecordId());
             }
         } catch (Exception e) {
-            Log.logNonfatalThrowable(e, "RMS not found : " + recordStoreName);
+            Log.l.log("RMS not found", recordStoreName, e);
         } finally {
             if (re != null) {
                 re.destroy();
@@ -93,7 +93,7 @@ public class RMSUtils {
                     rs.closeRecordStore();
                 }
             } catch (RecordStoreException e) {
-                Log.logThrowable(e, "RMS close error : " + recordStoreName);
+                Log.l.log("RMS close error", recordStoreName, e);
             }
         }
 

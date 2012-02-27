@@ -37,9 +37,11 @@ public abstract class XMLModel extends DefaultHandler {
         final InputStream in = new ByteArrayInputStream(xml.getBytes());
 
         try {
+            Log.l.log("Start parse", "");
             SAXParserFactory.newInstance().newSAXParser().parse(in, this);
+            Log.l.log("End parse", "");
         } catch (Throwable t) {
-            Log.logThrowable(t, "parser error: " + xml);
+            Log.l.log("Parse error", xml, t);
         } finally {
             in.close();
         }

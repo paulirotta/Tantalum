@@ -96,7 +96,7 @@ public final class Worker implements Runnable {
                 workable = null;
             }
         } catch (Throwable t) {
-            Log.logThrowable(t, "Worker error");
+            Log.l.log("Worker error", "", t);
         }
     }
 }

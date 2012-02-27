@@ -1,8 +1,8 @@
 package com.futurice.tantalum2.rms;
 
-import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
+import com.futurice.tantalum2.log.Log;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -22,28 +22,11 @@ import javax.microedition.rms.RecordStoreFullException;
 final class RMSStore {
 
     /**
-     * Log tag
-     */
-    private static final String LOG_TAG = "RMSStore";
-    /**
      * RMS doesn't allow names longer than 32 characters
      */
     private static final int MAX_STORAGE_KEY_NAME_LENGTH = 32;
-    /**
-     * hashtable keeping all open stores
-     */
-    private Hashtable openStores;
-    /**
-     * synchronized handle
-     */
-    private Object mutex = new Object();
-
-    /**
-     * Constructor.
-     */
-    public RMSStore() {
-        this.openStores = new Hashtable();
-    }
+    private static final Hashtable openStores = new Hashtable();
+    private static final Object MUTEX = new Object();
 
     /**
      * Writes resource to the store.
@@ -83,7 +66,7 @@ final class RMSStore {
                 return store.getRecord(intId);
             }
         } catch (Exception e) {
-            //Log.log(LOG_TAG, "ERROR Cannot read record '" + name + "':'" + intId + "'", e);
+            Log.l.log("Cannot read record", name + "':'" + intId + "'", e);
         }
 
         return null;
@@ -97,7 +80,6 @@ final class RMSStore {
      * @throws IllegalArgumentException if name is null
      */
     public Vector getRecords(final String name) {
-
         if (name == null) {
             throw new IllegalArgumentException("name cannot be null");
         }
@@ -119,7 +101,7 @@ final class RMSStore {
                 return records;
             }
         } catch (Exception e) {
-            //Log.log(LOG_TAG, "ERROR Cannot read records for '" + name + "'", e);
+            Log.l.log("Cannot read records", name + "'", e);
         }
 
         return null;
@@ -133,7 +115,6 @@ final class RMSStore {
      * @throws IllegalArgumentException if name is null
      */
     public void deleteRecord(final String name, final int intId) {
-
         if (name == null) {
             throw new IllegalArgumentException("name cannot be null");
         }
@@ -144,9 +125,8 @@ final class RMSStore {
             if (store.getNumRecords() > 0) {
                 store.deleteRecord(intId);
             }
-
         } catch (Exception e) {
-            //Log.log(LOG_TAG, "ERROR Cannot delete record '" + name + "':'" + intId + "'", e);
+            Log.l.log("Cannot delete record", name + "':'" + intId + "'", e);
         }
     }
 
@@ -167,7 +147,6 @@ final class RMSStore {
      * @throws RecordStoreException if record could not be stored
      */
     private int writeRecord(final String name, final int intId, final byte[] record) throws RecordStoreException {
-
         String debug = "-";
         RecordStore store = null;
         int id = intId;
@@ -184,11 +163,10 @@ final class RMSStore {
                 // create new record
                 debug = "check size";
                 if (record.length > store.getSizeAvailable()) {
-                    //Log.log(LOG_TAG, "record store " + name + " almost full. availble space: "+ store.getSizeAvailable());
+                    Log.l.log("record store full",  name + ": availble space="+ store.getSizeAvailable());
                     throw new RecordStoreFullException("not enough available space for given record. store size: " + store.getSize()
                             + ", num records: " + store.getNumRecords() + ", record size: " + record.length);
                 }
-
                 debug = "add";
                 id = store.addRecord(record, 0, record.length);
             } else {
@@ -198,14 +176,14 @@ final class RMSStore {
             }
 
         } catch (RecordStoreFullException ex) {
-            //Log.log(LOG_TAG, "Record store full!", ex);
+            Log.l.log("RMS full", name, ex);
             deleteRecordStore(name);
             throw ex;
         } catch (InvalidRecordIDException ex) {
-            //Log.log(LOG_TAG, "Invalid id! " + id, ex);
+            Log.l.log("Invalid RMS id", name + ":" + id, ex);
             throw ex;
         } catch (Exception e) {
-            //Log.log(LOG_TAG, "ERROR Cannot write record to store '" + name + "' : " + debug, e);
+            Log.l.log("Cannot write record to store", name + " : " + debug, e);
             throw new RecordStoreException(e.getMessage());
         }
 
@@ -222,7 +200,6 @@ final class RMSStore {
      * characters
      */
     private RecordStore openRecordStore(final String name) throws RecordStoreException {
-
         String debug = "-";
 
         if (name == null) {
@@ -232,8 +209,7 @@ final class RMSStore {
             throw new IllegalArgumentException("name cannot be longer than 32 characters");
         }
 
-        synchronized (this.mutex) {
-
+        synchronized (MUTEX) {
             try {
                 debug = "openStores";
                 RecordStore store = (RecordStore) this.openStores.get(name);
@@ -248,9 +224,8 @@ final class RMSStore {
                 this.openStores.put(name, store);
 
                 return store;
-
             } catch (Throwable e) {
-                //Log.log(LOG_TAG, "ERROR Cannot open RecordStore '" + name + "' : "+ debug, e);
+                Log.l.log("Cannot open RecordStore",  name + "' : "+ debug, e);
                 throw new RecordStoreException(e.getMessage());
             }
         }
@@ -262,15 +237,18 @@ final class RMSStore {
      * @param store to be closed
      */
     private void closeRecordStore(final RecordStore store) {
+        String name = "(unknown)";
+
         try {
             if (store != null) {
-                synchronized (this.mutex) {
+                name = store.getName();
+                synchronized (MUTEX) {
                     this.openStores.remove(store.getName());
                 }
                 store.closeRecordStore();
             }
         } catch (Exception e) {
-            //Log.log(LOG_TAG, "ERROR Cannot close RecordStore", e);
+            Log.l.log("Cannot close RecordStore", name, e);
         }
     }
 
@@ -290,7 +268,6 @@ final class RMSStore {
      * @param name name of store to be deleted
      */
     public void deleteRecordStore(final String name) {
-
         try {
             if (name != null) {
                 try {
@@ -308,7 +285,7 @@ final class RMSStore {
                 }
             }
         } catch (Exception e) {
-            //Log.log(LOG_TAG, "ERROR Cannot delete record store '" + name + "'", e);
+            Log.l.log("Cannot delete record store", name + "'", e);
         }
     }
 
@@ -326,7 +303,7 @@ final class RMSStore {
      */
     public void shutdown() {
         closeAllRecordStores();
-        this.openStores = null;
+        this.openStores.clear();
     }
 
     /**
@@ -361,14 +338,14 @@ final class RMSStore {
 
                 return true;
             } catch (RecordStoreFullException ex) {
-                Log.log("RMSWriter exception while storing resource to store '" + name + "':" + intId + " " + ex);
+                Log.l.log("RMSWriter exception while storing resource to store", name + ":" + intId, ex);
                 if (null != listener) {
                     listener.notifyRecordStoreFull(name, ex);
 
                     //FIXME- we should still write the record after space is cleared
                 }
             } catch (Throwable e) {
-                Log.logThrowable(e, "RMSWriter exception while storing resource to store '" + name + "':" + intId);
+                Log.l.log("RMSWriter exception while storing resource to store", name + ":" + intId, e);
             }
 
             return false;

@@ -11,7 +11,7 @@ import javax.microedition.io.Connector;
  *  
  * @author mark voit
  */
-public final class UsbLogger extends DefaultLogger {
+public final class UsbLog extends Log {
 
     private CommConnection comm = null;
     private OutputStream os = null;
@@ -20,7 +20,7 @@ public final class UsbLogger extends DefaultLogger {
      * Constructor.
      * Initializes comm port.
      */
-    public UsbLogger() {
+    public UsbLog() {
         init();
     }
 

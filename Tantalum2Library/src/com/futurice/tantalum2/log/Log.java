@@ -4,50 +4,64 @@
  */
 package com.futurice.tantalum2.log;
 
-import javax.microedition.midlet.MIDlet;
-
 /**
- *
- * @author pahought
+ * Utility class for logging.
+ * 
+ * @author mark voit, paul houghton
  */
-public class Log {
+public class Log implements Logger {
+    public static final Logger l = new Log(); // Replace with UsbLog or other if needed
+    private static long startTime = System.currentTimeMillis();
 
-    private static long startTime;
-    private static MIDlet midlet;
-
-    public static void init(MIDlet midlet) {
-        startTime = System.currentTimeMillis();
-        Log.midlet = midlet;
-    }
-
-    private static String currentTime() {
-        final long t = System.currentTimeMillis() - startTime;
-
-        return "(" + Thread.currentThread().getName() + ") " + t / 1000 + "." + t % 1000 + " : ";
-    }
-
-    public static void log(String message) {
-        System.out.println(/*currentTime() + */message);
+    /**
+     * Logs given message.
+     * 
+     * @param tag name of the class logging this message
+     * @param message message to log
+     */
+    public void log(final String tag, final String message) {
+        printMessage(getMessage(tag, message));
     }
 
     /**
-     * The application will stop on first exception. To change this with the
-     * Netbeans preprocessor, set
-     *    Project Properties | Build | Compiling | Debug block level
-     * to some value greater than "debug". Or edit below.
-     *
-     * @param t
-     * @param message
+     * Logs given throwable and message.
+     * 
+     * @param tag name of the class logging this message
+     * @param message message to log
+     * @param th throwable to log
      */
-    public static void logThrowable(Throwable t, String message) {
-        System.out.println(currentTime() + "EXCEPTION: " + message + " - " + t);
-        t.printStackTrace();
-        //#debug
-        midlet.notifyDestroyed();
+    public void log(final String tag, final String message, final Throwable th) {
+        printMessage(getMessage(tag, message) + ", EXCEPTION: " + th);
+        if (th != null) {
+            th.printStackTrace();
+        }
     }
 
-    public static void logNonfatalThrowable(Throwable t, String message) {
-        System.out.println(currentTime() + "EXCEPTION: " + message + " - " + t);
-        t.printStackTrace();
+    /**
+     * Prints given string to system out.
+     * 
+     * @param string string to print
+     */
+    protected void printMessage(final String string) {
+        System.out.println(string);
+    }
+
+    /**
+     * Get formatted message string.
+     * 
+     * @return message string
+     */
+    private String getMessage(final String tag, final String message) {
+        return currentTime() + " (" + Thread.currentThread().getName() + "): " + tag + ": " + message;
+    }
+
+    /**
+     * Return current time and thread name as string.
+     * 
+     * @return current time as string
+     */
+    private String currentTime() {
+        final long t = System.currentTimeMillis() - startTime;
+        return (t / 1000) + "." + (t % 1000);
     }
 }

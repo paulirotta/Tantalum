@@ -5,7 +5,6 @@
 package com.futurice.tantalum2.rms;
 
 import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.rms.DataTypeHandler;
 import javax.microedition.lcdui.Image;
 
 /**
@@ -19,8 +18,9 @@ public class ImageTypeHandler implements DataTypeHandler {
         try {
             return Image.createImage(bytes,0,bytes.length);
         } catch (Exception e) {
-            Log.log("Error converting bytes to image");
+            Log.l.log("Error converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
         }
+        
         return DEFAULT_IMAGE;
     }
 

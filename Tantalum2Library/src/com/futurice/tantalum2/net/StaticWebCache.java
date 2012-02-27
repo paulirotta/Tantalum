@@ -4,8 +4,6 @@
  */
 package com.futurice.tantalum2.net;
 
-import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.rms.GetResult;
 import com.futurice.tantalum2.rms.DataTypeHandler;
@@ -41,34 +39,11 @@ public class StaticWebCache extends StaticCache {
      * @param cacheGetResult
      */
     public synchronized void get(final String url, final GetResult cacheGetResult) {
-
-        // RAM
-        if (containsKey(url)) {
-            Log.log("Hit in RAM");
-            int index = this.accessOrder.indexOf(url);
-            this.accessOrder.removeElementAt(index);
-            this.accessOrder.addElement(url);
-            cacheGetResult.setResult(this.cache.get(url));
-            if (cacheGetResult.getResult() != null) {
-                Worker.queueEDT(cacheGetResult);
-                return;
-            }
-        }
-
-        // RMS
-        final byte[] bytes = getFromRMS(url);
-        if (bytes != null) {
-            Log.log("Hit in RMS");
-            Worker.queue(new Workable() {
-
-                public boolean work() {
-                    Object converted = handler.convertToUseForm(bytes);
-                    cacheGetResult.setResult(converted);
-                    Worker.queueEDT(cacheGetResult);
-                    put(url, converted);
-                    return true;
-                }
-            });
+        final Object o = get(url);
+        
+        if (o != null) {
+            cacheGetResult.setResult(o);
+            Worker.queueEDT(cacheGetResult);
             return;
         }
 
@@ -83,7 +58,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param cacheGetResult
      */
-    public synchronized void update(final String url, final GetResult cacheGetResult) {
+    public void update(final String url, final GetResult cacheGetResult) {
         Worker.queue(new HttpGetter(url, RETRIES, cacheGetResult, handler, this));
     }
 

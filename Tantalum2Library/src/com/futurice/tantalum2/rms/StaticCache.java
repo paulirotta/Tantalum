@@ -1,21 +1,22 @@
 package com.futurice.tantalum2.rms;
 
 import com.futurice.tantalum2.WeakHashCache;
+import com.futurice.tantalum2.Workable;
+import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
 
-import java.util.Hashtable;
 import java.util.Vector;
 
 /**
  * A cache which returns Objects based on a String key asynchronously from RAM,
  * RMS, or network and synchronously from RAM and RMS.
- * 
+ *
  * Objects in RAM are kept with WeakReferences so they may be garbage collected.
- * 
+ *
  * Objects in RMS are managed in a "least recently accessed" form to make space.
- * 
+ *
  * Each StaticCache uses a single RMS and may be referred to by name.
- * 
+ *
  * You may provide alternative MODEs to change the default characteristics of a
  * given StaticCache.
  */
@@ -32,42 +33,40 @@ public class StaticCache {
     protected final int priority; // defines the size of reserved space for this cache
     protected final DataTypeHandler handler;
     protected int sizeAsBytes = 0;
-    protected Hashtable objectSizes = new Hashtable();
-
     private static long SESSION_ID;
 
     /**
      * Create a named cache
-     * 
+     *
      * Caches with higher priority are more likely to keep their data when space
      * is limited.
-     * 
+     *
      * @param name
      * @param priority, a positive integer
-     * @param handler 
+     * @param handler
      */
     public StaticCache(String name, int priority, DataTypeHandler handler) {
         this.name = name;
         this.priority = priority;
         this.handler = handler;
         SESSION_ID = System.currentTimeMillis();
-        
+
         sumOfPriorities += priority;
         caches.addElement(this);
     }
 
     /**
      * Synchronously put the hash object to the RAM cache.
-     * 
-     * If you also want the object stored in RMS, call
-     * storeToRMS()
-     * 
+     *
+     * If you also want the object stored in RMS, call storeToRMS()
+     *
      * @param key
-     * @param o 
+     * @param o
      */
     public void put(final String key, final Object o) {
         if (o == null) {
-            Log.logNonfatalThrowable(new NullPointerException(), "Null put for key " + key);
+            Log.l.log("Null object put for key", key);
+
             return;
         }
         remove(key);
@@ -77,23 +76,25 @@ public class StaticCache {
 
     /**
      * Synchronously return the hash object
-     * 
+     *
      * @param key
-     * @return 
+     * @return
      */
     public synchronized Object get(final String key) {
         if (containsKey(key)) {
-            Log.log("Hit in RAM");
-            int index = this.accessOrder.indexOf(key);
-            this.accessOrder.removeElementAt(index);
+            Log.l.log("StaticCache hit in RAM", key);
+            this.accessOrder.removeElement(key);
             this.accessOrder.addElement(key);
-            return cache.get(key);
+            final Object o = cache.get(key);
+            if (o != null) {
+                return o;
+            }
         }
 
         final byte[] bytes = getFromRMS(key);
         if (bytes != null) {
-            Log.log("Hit in RMS");
-            Object converted = handler.convertToUseForm(bytes);
+            Log.l.log("StaticCache hit in RMS", key);
+            final Object converted = handler.convertToUseForm(bytes);
             put(key, converted);
             return converted;
         }
@@ -102,11 +103,11 @@ public class StaticCache {
     }
 
     /**
-     * Removes items until there is space to store the needed item
-     * returns null if cannot make space
-     * 
+     * Removes items until there is space to store the needed item returns null
+     * if cannot make space
+     *
      * @param spaceNeeded
-     * @return 
+     * @return
      */
     public synchronized static boolean makeSpace(final int spaceNeeded) {
         if (spaceNeeded > TOTAL_SIZE_BYTES_MAX) {
@@ -128,19 +129,19 @@ public class StaticCache {
     }
 
     /**
-     * Removes an item from the StaticCache which most exceeds its reserved space
-     * according to available space and assigned priority number
-     * 
+     * Removes an item from the StaticCache which most exceeds its reserved
+     * space according to available space and assigned priority number
+     *
      */
     private synchronized static void removeMostUseless() {
         StaticCache mostExceedingCache = (StaticCache) caches.elementAt(0);
         double biggestRatio = (double) mostExceedingCache.sizeAsBytes / (double) mostExceedingCache.getSizeOfReservedSpace();
-        
+
         if (caches.size() > 1) {
             for (int i = 1; i < caches.size(); i++) {
                 final StaticCache candidate = (StaticCache) caches.elementAt(i);
                 final double candidateRatio = (double) candidate.sizeAsBytes / (double) candidate.getSizeOfReservedSpace();
-                
+
                 if (candidateRatio > biggestRatio) {
                     mostExceedingCache = candidate;
                     biggestRatio = candidateRatio;
@@ -160,38 +161,42 @@ public class StaticCache {
 
     /**
      * Store a value to nonvolatile memory
-     * 
+     *
      * @param key
-     * @param bytes 
+     * @param bytes
      */
-    public synchronized void storeToRMS(String key, byte[] bytes) {
-        final ByteArrayStorableResource res = new ByteArrayStorableResource(0, key, bytes);
-        final int recordLength = res.serialize().length;
-        
-        if (makeSpace(recordLength)) {
-            try {
-                RMSResourceDB.getInstance().storeResource(res, null);
-                Log.log("Stored: " + key);
-                this.objectSizes.put(key, new Integer(recordLength));
-                this.sizeAsBytes += recordLength;
-            } catch (Exception e) {
-                Log.log("Couldn't store object to RMS: " + key);
+    public synchronized void storeToRMS(final String key, final byte[] bytes) {
+        Worker.queue(new Workable() {
+
+            public boolean work() {
+                final ByteArrayStorableResource res = new ByteArrayStorableResource(0, key, bytes);
+                final int recordLength = res.serialize().length;
+
+                if (makeSpace(recordLength)) {
+                    try {
+                        RMSResourceDB.getInstance().storeResource(res, null);
+                        Log.l.log("Store to RMS", key);
+                        accessOrder.removeElement(key);
+                        accessOrder.addElement(key);
+                    } catch (Exception e) {
+                        Log.l.log("Couldn't store object to RMS", key, e);
+                    }
+                } else {
+                    Log.l.log("Couldn't store object to RMS (too big item?)", key);
+                }
+                Log.l.log("*** All caches size total", countTotalSizeAsBytes() + "/" + TOTAL_SIZE_BYTES_MAX + " Cache " + name + " size: " + sizeAsBytes + " Size of record stored: " + recordLength);
+
+                return false;
             }
-        } else {
-            Log.log("Couldn't store object to RMS (too big item?): " + key);
-        }
-        Log.log("*** All caches size total: " + countTotalSizeAsBytes() + "/" + TOTAL_SIZE_BYTES_MAX + " Cache " + this.name + " size: " + sizeAsBytes + " Size of record stored: " + recordLength);
+        });
     }
 
     private synchronized void removeFromRMS(String key) {
-        Object o = objectSizes.get(key);
-        if (o != null) {
+        try {
+            this.accessOrder.removeElement(key);
             RMSResourceDB.getInstance().deleteResource(RMSResourceType.BYTE_ARRAY, key);
-            int recordLength = ((Integer) o).intValue();
-            this.objectSizes.remove(key);
-            this.sizeAsBytes -= recordLength;
-        } else {
-            Log.log("Couldn't remove object from RMS: " + key);
+        } catch (Exception e) {
+            Log.l.log("Couldn't remove object from RMS", key, e);
         }
     }
 
@@ -200,7 +205,7 @@ public class StaticCache {
             this.accessOrder.removeElement(key);
             this.cache.remove(key);
             removeFromRMS(key);
-            Log.log("Removed (from RAM and RMS): " + key);
+            Log.l.log("Removed (from RAM and RMS)", key);
         }
     }
 
@@ -212,10 +217,10 @@ public class StaticCache {
             removeFromRMS(key);
         }
     }
-    
+
     /**
      * Remove all elements from this cache
-     * 
+     *
      */
     public synchronized void clear() {
         while (this.accessOrder.size() > 0) {
@@ -225,42 +230,42 @@ public class StaticCache {
 
     /**
      * Does this cache contain an object matching the key?
-     * 
+     *
      * @param key
-     * @return 
+     * @return
      */
     public synchronized boolean containsKey(final String key) {
-        if (key instanceof String) {
+        if (key != null) {
             return this.cache.containsKey(key);
         }
-        
+
         return false;
     }
 
     /**
      * The number of items in the cache
-     * 
-     * @return 
+     *
+     * @return
      */
     public synchronized int getSize() {
         return this.cache.size();
     }
 
     /**
-     * The relative priority used for allocating RMS space between multiple caches.
-     * Higher priority caches get more space.
-     * 
-     * @return 
+     * The relative priority used for allocating RMS space between multiple
+     * caches. Higher priority caches get more space.
+     *
+     * @return
      */
     public synchronized int getPriority() {
         return priority;
     }
 
     /**
-     * Provide the handler which this caches uses for converting between in-memory
-     * and binary formats
-     * 
-     * @return 
+     * Provide the handler which this caches uses for converting between
+     * in-memory and binary formats
+     *
+     * @return
      */
     public DataTypeHandler getHandler() {
         return handler;
@@ -268,8 +273,8 @@ public class StaticCache {
 
     /**
      * For debugging use
-     * 
-     * @return 
+     *
+     * @return
      */
     public synchronized String toString() {
         String str;

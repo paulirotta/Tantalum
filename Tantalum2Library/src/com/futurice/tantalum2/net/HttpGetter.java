@@ -4,9 +4,9 @@
  */
 package com.futurice.tantalum2.net;
 
-import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.rms.GetResult;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
@@ -45,8 +45,7 @@ public class HttpGetter implements Workable {
     }
 
     public boolean work() {
-        Log.log("Start HttpGetter " + url);
-        final byte[] readBuffer = new byte[8192];
+        Log.l.log("Start HttpGet", url);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         HttpConnection httpConnection = null;
         InputStream inputStream = null;
@@ -54,6 +53,8 @@ public class HttpGetter implements Workable {
         boolean success = false;
 
         try {
+            final byte[] readBuffer = new byte[8192];
+            
             httpConnection = (HttpConnection) Connector.open(url);
             httpConnection.setRequestMethod(HttpConnection.GET);
             inputStream = httpConnection.openInputStream();
@@ -73,28 +74,30 @@ public class HttpGetter implements Workable {
             }
 
             if (converted != null) {
-                getResult.setResult(converted);
-                Worker.queueEDT(getResult);
+                if (getResult != null) {
+                    getResult.setResult(converted);
+                    Worker.queueEDT(getResult);
+                }
                 if (cache != null) {
                     cache.put(url, converted);
                     cache.storeToRMS(url, bytes);
                 }
                 success = true;
-                Log.log("HttpGetter complete (" + bytes.length + ") bytes, " + url);
+                Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
             } else {
                 success = false;
             }
             bytes = null;
         } catch (IOException e) {
-            Log.logNonfatalThrowable(e, url + "(retries = " + retriesRemaining);
+            Log.l.log("Retries remaining", url + ", retries=" + retriesRemaining, e);
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
             } else {
-                Log.log("HttpGetter no more retries: " + url);
+                Log.l.log("HttpGetter no more retries", url);
             }
         } catch (Exception e) {
-            Log.logThrowable(e, "HttpGetter has a problem: " + url);
+            Log.l.log("HttpGetter has a problem", url, e);
         } finally {
             try {
                 inputStream.close();
@@ -119,9 +122,10 @@ public class HttpGetter implements Workable {
                     Thread.sleep(5000);
                 } catch (InterruptedException ex) {
                 }
-                
+
                 return this.work();
             }
+            Log.l.log("End HttpGet", url);
         }
 
         return success;

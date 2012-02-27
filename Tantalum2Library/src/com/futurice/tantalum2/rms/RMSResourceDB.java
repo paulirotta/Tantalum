@@ -13,6 +13,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import com.futurice.tantalum2.rms.RMSStore.RMSStoreCallbackListener;
+import javax.microedition.rms.RecordStore;
 
 /**
  * Data access layer to RMSStore.
@@ -24,8 +25,6 @@ import com.futurice.tantalum2.rms.RMSStore.RMSStoreCallbackListener;
  */
 public final class RMSResourceDB {
 
-    /** Log tag */
-    private static final String LOG_TAG = "RMSResourceDB";
     /** Prefix for record store name used for each index table */
     private static final String INDEX_TABLE_NAME_PREFIX = "RMSResourceDB.IndexTable.";
     /** Max allowed images per store */
@@ -223,15 +222,6 @@ public final class RMSResourceDB {
     }
 
     /**
-     * Returns array of all record store names.
-     * 
-     * @return all record store names
-     */
-    public static String[] listRecordStores() {
-        return RMSStore.listRecordStores();
-    }
-
-    /**
      * Deletes underlying record store of given type.
      * 
      * @param type type of resource
@@ -304,7 +294,7 @@ public final class RMSResourceDB {
             return (intId != null ? intId.intValue() : -1);
         }
         } catch (Exception e) {
-            Log.logNonfatalThrowable(e, "Can not getInternalId from RMS for \"" + id + "\"");
+            Log.l.log("Can not getInternalId from RMS", id + "", e);
         }
         return -1;
     }
@@ -387,10 +377,9 @@ public final class RMSResourceDB {
      * @return previously stored index tables
      */
     private Hashtable initIndexTablesFromRMS() {
-
-        Hashtable indexHash = new Hashtable();
-
-        String[] names = RMSResourceDB.listRecordStores();
+        final Hashtable indexHash = new Hashtable();
+        final String[] names = RecordStore.listRecordStores();
+        
         if (names != null) {
             for (int i = 0; i < names.length; i++) {
                 if (names[i].startsWith(INDEX_TABLE_NAME_PREFIX)) {
@@ -398,6 +387,7 @@ public final class RMSResourceDB {
                 }
             }
         }
+        
         return indexHash;
     }
 

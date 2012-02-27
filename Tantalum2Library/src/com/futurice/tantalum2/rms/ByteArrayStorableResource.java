@@ -1,7 +1,6 @@
 package com.futurice.tantalum2.rms;
 
 import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.rms.RMSResourceType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -98,7 +97,7 @@ public class ByteArrayStorableResource extends AbstractRMSResource {
                     ((InputStream) dataOut).close();
                 }
             } catch (IOException e) {
-                Log.logThrowable(e, "Can not deserialze byte array: " + id);
+                Log.l.log("Can not deserialze byte array", id, e);
             }
             try {
                 if (out != null) {
@@ -123,7 +122,7 @@ public class ByteArrayStorableResource extends AbstractRMSResource {
             byte[] bytes = out.toByteArray();
             return bytes;
         } catch (IOException e) {
-            Log.logThrowable(e, "Can not serialze byte array: " + id);
+            Log.l.log("Can not serialze byte array", id, e);
         } finally {
             try {
                 if (dataOut != null) {
