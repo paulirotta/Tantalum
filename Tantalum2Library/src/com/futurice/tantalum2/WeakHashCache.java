@@ -1,14 +1,34 @@
 /**
  * A weak reference cache for keeping images in a RAM hashtable with automatic
  * garbage collection as needed by the virtual machine.
- * 
+ *
  */
 package com.futurice.tantalum2;
 
+import com.futurice.tantalum2.log.Log;
 import java.lang.ref.WeakReference;
 import java.util.Hashtable;
 
 /**
+ * This is a hashtable which acts as a RAM cache.
+ *
+ * Objects in the hashtable are not held in memory, they may be garbage
+ * collected at any time, in which case the calling routine must do something
+ * else to recreate the value. You can freely put as many objects in this cache
+ * as you like, but do not store things of no interest as the objects will
+ * displace more useful data.
+ *
+ * If an object is garbage collected, it will not be removed from the hash cache
+ * automatically, so your app can count on this is a stable list of objects. You
+ * may choose to manually remove references which will no longer be of interest
+ * according to application logic.
+ *
+ * Since you do not have any control over which weak references are destroyed,
+ * your application should be prepared to re-create data stored in this cache
+ * without too much cost to user responsiveness.
+ *
+ * Placing a null object into the cache is the same as removing it- null values
+ * are not stored as useful.
  *
  * @author phou
  */
@@ -30,17 +50,35 @@ public final class WeakHashCache {
     }
 
     public void put(String key, Object value) {
+        if (key == null) {
+            Log.l.log("WeakHash put", "key is null");
+            return;
+        }
+        if (value == null) {
+            Log.l.log("WeakHash put", "value is null, key removed");
+            hash.remove(key);
+            return;
+        }
         hash.put(key, new WeakReference(value));
     }
 
     public void remove(String key) {
-        hash.remove(key);
+        if (key != null) {
+            hash.remove(key);
+        } else {
+            Log.l.log("WeakHashCache", "remove() with null key");
+        }
     }
-    
+
     public boolean containsKey(String key) {
-        return hash.containsKey(key);
+        if (key != null) {
+            return hash.containsKey(key);
+        } else {
+            Log.l.log("WeakHashCache", "containsKey() with null key");
+            return false;
+        }
     }
-    
+
     public int size() {
         return hash.size();
     }

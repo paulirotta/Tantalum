@@ -32,6 +32,15 @@ public class HttpGetter implements Workable {
     private final StaticCache cache;
     private int retriesRemaining;
 
+    /**
+     * Get the contents of a URL and return that asynchronously as a GetResult
+     * 
+     * @param url - where on the Internet to get the data
+     * @param retriesRemaining - how many time to attempt connection
+     * @param getResult - optional object notified on the EDT with the result
+     * @param handler - optional converter to change byte[] into a usable form
+     * @param cache - optional cache which will store the result
+     */
     public HttpGetter(String url, int retriesRemaining, GetResult getResult, DataTypeHandler handler, StaticCache cache) {
         this.url = url;
         this.retriesRemaining = retriesRemaining;

@@ -46,9 +46,15 @@ public class WeakHashCacheTest extends TestCase {
     public void testRemove() throws AssertionFailedException {
         System.out.println("remove");
         WeakHashCache instance = new WeakHashCache();
-        String key_1 = "";
-        instance.remove(key_1);
-        fail("The test case is a prototype.");
+        String key1 = "";
+        String key2 = "a";
+        instance.remove(null);
+        instance.remove(key1);
+        instance.put(key1, "fruit");
+        instance.put(key2, "cake");
+        instance.remove(key1);
+        instance.remove(key2);
+        assertEquals(instance.size(), 0);
     }
 
     /**
@@ -57,10 +63,22 @@ public class WeakHashCacheTest extends TestCase {
     public void testPut() throws AssertionFailedException {
         System.out.println("put");
         WeakHashCache instance = new WeakHashCache();
-        String key_1 = "";
-        Object value_1 = null;
-        instance.put(key_1, value_1);
-        fail("The test case is a prototype.");
+        String key1 = "";
+        String key2 = "a";
+        String expectedVal1 = "fruit";
+        instance.put(key1, expectedVal1);
+        instance.put(key2, "cake");
+        instance.put(null, "dog");
+        assertEquals(instance.size(), 2);
+        instance.put(key2, null);
+        assertEquals(instance.size(), 1);
+        for (int i = 0; i < 20000; i++) {
+            instance.put("keykeykey" + i, "valuevaluevalue" + i);
+        }
+        Object val1 = instance.get(key1);
+        if (val1 != null) {
+            assertEquals(val1, expectedVal1);
+        }
     }
 
     /**
@@ -69,11 +87,16 @@ public class WeakHashCacheTest extends TestCase {
     public void testGet() throws AssertionFailedException {
         System.out.println("get");
         WeakHashCache instance = new WeakHashCache();
-        String key_1 = "";
-        Object expResult_1 = null;
-        Object result_1 = instance.get(key_1);
-        assertEquals(expResult_1, result_1);
-        fail("The test case is a prototype.");
+        String key1 = "11";
+        String key2 = "22";
+        Object value1 = "chocolate";
+        Object value2 = "cake";
+        Object result_1 = instance.get(key1);
+        assertNull("get null", result_1);
+        instance.put(key1, value1);
+        instance.put(key2, value2);
+        assertEquals("get val 1", value1, instance.get(key1));
+        assertEquals("get val 2", value2, instance.get(key2));
     }
 
     /**
@@ -82,11 +105,15 @@ public class WeakHashCacheTest extends TestCase {
     public void testContainsKey() throws AssertionFailedException {
         System.out.println("containsKey");
         WeakHashCache instance = new WeakHashCache();
-        String key_1 = "";
-        boolean expResult_1 = false;
-        boolean result_1 = instance.containsKey(key_1);
-        assertEquals(expResult_1, result_1);
-        fail("The test case is a prototype.");
+        String key1 = "11";
+        String key2 = "22";
+        Object value1 = "chocolate";
+        Object value2 = "cake";
+        instance.put(key1, value1);
+        instance.put(key2, value2);
+        assertEquals(false, instance.containsKey("red"));
+        assertEquals(true, instance.containsKey(key1));
+        assertEquals(false, instance.containsKey(null));
     }
 
     /**
@@ -95,9 +122,10 @@ public class WeakHashCacheTest extends TestCase {
     public void testSize() throws AssertionFailedException {
         System.out.println("size");
         WeakHashCache instance = new WeakHashCache();
-        int expResult_1 = 0;
-        int result_1 = instance.size();
-        assertEquals(expResult_1, result_1);
-        fail("The test case is a prototype.");
+        final int length = 20000;
+        for (int i = 0; i < length; i++) {
+            instance.put("keykeykey" + i, "valuevaluevalue" + i);
+        }
+        assertEquals(length, instance.size());
     }
 }
