@@ -8,12 +8,15 @@ import javax.microedition.rms.RecordStoreNotFoundException;
 
 /**
  * RMS Utility methods
+ *
  * @author ssaa
  */
 public class RMSUtils {
 
     /**
-     * Writes a single string value to the record store. Deletes the previous value.
+     * Writes a single string value to the record store. Deletes the previous
+     * value.
+     *
      * @param recordStoreName
      * @param value
      */
@@ -23,6 +26,7 @@ public class RMSUtils {
 
     /**
      * Writes the byte array to the record store. Deletes the previous data.
+     *
      * @param recordStoreName
      * @param data
      */
@@ -55,21 +59,25 @@ public class RMSUtils {
 
     /**
      * Reads a single string value form the given recordstore.
+     *
      * @param recordStoreName
      * @return String
      */
     public static String readString(String recordStoreName) {
-        final byte[] data = readData(recordStoreName);
-        if (data == null) return "";
+        final byte[] data = readByteArray(recordStoreName);
+        if (data == null) {
+            return "";
+        }
         return new String(data);
     }
 
     /**
      * Reads the data from the given recordstore.
+     *
      * @param recordStoreName
      * @return byte[]
      */
-    public static byte[] readData(String recordStoreName) {
+    public static byte[] readByteArray(String recordStoreName) {
         RecordStore rs = null;
         RecordEnumeration re = null;
         byte[] data = null;

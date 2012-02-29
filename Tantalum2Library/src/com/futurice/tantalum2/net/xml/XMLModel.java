@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.futurice.tantalum2.net;
+package com.futurice.tantalum2.net.xml;
 
 import com.futurice.tantalum2.log.Log;
 import java.io.ByteArrayInputStream;

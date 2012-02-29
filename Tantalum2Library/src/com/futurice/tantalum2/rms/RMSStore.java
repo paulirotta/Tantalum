@@ -311,10 +311,10 @@ final class RMSStore {
      */
     private final class RMSWriter implements Workable {
 
-        private String name;
-        private int intId;
-        private byte[] record;
-        private RMSStoreCallbackListener listener;
+        private final String name;
+        private final int intId;
+        private final byte[] record;
+        private final RMSStoreCallbackListener listener;
 
         /**
          * @param name name of record store
@@ -337,13 +337,6 @@ final class RMSStore {
                 }
 
                 return true;
-            } catch (RecordStoreFullException ex) {
-                Log.l.log("RMSWriter exception while storing resource to store", name + ":" + intId, ex);
-                if (null != listener) {
-                    listener.notifyRecordStoreFull(name, ex);
-
-                    //FIXME- we should still write the record after space is cleared
-                }
             } catch (Throwable e) {
                 Log.l.log("RMSWriter exception while storing resource to store", name + ":" + intId, e);
             }
@@ -365,11 +358,5 @@ final class RMSStore {
          * @param intId internal id of stored record
          */
         public void notifyRMSWriteCompleted(int intId);
-
-        /**
-         * @param name name of the record store
-         * @param e the error
-         */
-        public void notifyRecordStoreFull(String name, Throwable e);
     }
 }

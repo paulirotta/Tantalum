@@ -1,4 +1,4 @@
-package com.futurice.tantalum2.net;
+package com.futurice.tantalum2.net.xml;
 
 import com.futurice.tantalum2.rms.ByteArrayStorableResource;
 import com.futurice.tantalum2.rms.RMSResourceType;

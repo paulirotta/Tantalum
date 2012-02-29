@@ -54,7 +54,7 @@ public class RMSUtilsTest extends TestCase {
         System.out.println("readData");
         String recordStoreName_1 = "";
         byte[] expResult_1 = null;
-        byte[] result_1 = RMSUtils.readData(recordStoreName_1);
+        byte[] result_1 = RMSUtils.readByteArray(recordStoreName_1);
         assertEquals(expResult_1, result_1);
         fail("The test case is a prototype.");
     }

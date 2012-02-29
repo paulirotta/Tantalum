@@ -66,7 +66,6 @@ public class StaticCache {
     public void put(final String key, final Object o) {
         if (o == null) {
             Log.l.log("Null object put for key", key);
-
             return;
         }
         remove(key);
@@ -80,7 +79,7 @@ public class StaticCache {
      * @param key
      * @return
      */
-    public synchronized Object get(final String key) {
+    protected synchronized Object get(final String key) {
         if (containsKey(key)) {
             Log.l.log("StaticCache hit in RAM", key);
             this.accessOrder.removeElement(key);
@@ -174,7 +173,7 @@ public class StaticCache {
 
                 if (makeSpace(recordLength)) {
                     try {
-                        RMSResourceDB.getInstance().storeResource(res, null);
+                        RMSResourceDB.getInstance().storeResource(res);
                         Log.l.log("Store to RMS", key);
                         accessOrder.removeElement(key);
                         accessOrder.addElement(key);

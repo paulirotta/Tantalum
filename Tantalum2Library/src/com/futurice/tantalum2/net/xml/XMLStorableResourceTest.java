@@ -5,7 +5,7 @@
  * Created on 07-Feb-2012, 16:27:38
  */
 
-package com.futurice.tantalum2.net;
+package com.futurice.tantalum2.net.xml;
 
 
 import jmunit.framework.cldc11.TestCase;

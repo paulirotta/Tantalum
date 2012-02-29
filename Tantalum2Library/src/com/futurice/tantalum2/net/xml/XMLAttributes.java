@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.futurice.tantalum2.net;
+package com.futurice.tantalum2.net.xml;
 
 import java.util.Hashtable;
 import org.xml.sax.Attributes;
@@ -16,20 +16,20 @@ import org.xml.sax.Attributes;
  * @author phou
  */
 public final class XMLAttributes {
-    private static final Hashtable NO_ATTRIBUTES = new Hashtable();
+    private static final Hashtable NO_ATTRIBUTES = new Hashtable(1);
 
     private final Hashtable attributes;
 
     public XMLAttributes(final Attributes a) {
         final int l = a.getLength();
 
-        if (l > 0) {
+        if (l == 0) {
+            attributes = NO_ATTRIBUTES;
+        } else {
             attributes = new Hashtable(l);
             for (int i = 0; i < l; i++) {
                 attributes.put(a.getQName(i), a.getValue(i));
             }
-        } else {
-            attributes = NO_ATTRIBUTES;
         }
     }
 
