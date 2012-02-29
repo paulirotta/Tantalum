@@ -7,8 +7,9 @@ import javax.microedition.io.CommConnection;
 import javax.microedition.io.Connector;
 
 /**
- * Logger class that can be used for debugging when phone is connected via USB cable.
- *  
+ * Logger class that can be used for debugging when phone is connected via USB
+ * cable.
+ *
  * @author mark voit
  */
 public final class UsbLog extends Log {
@@ -17,17 +18,9 @@ public final class UsbLog extends Log {
     private OutputStream os = null;
 
     /**
-     * Constructor.
-     * Initializes comm port.
+     * Constructor. Initializes comm port.
      */
     public UsbLog() {
-        init();
-    }
-
-    /**
-     * Initializes output stream for comm port.
-     */
-    private void init() {
         try {
             String ports = System.getProperty("microedition.commports");
 
@@ -44,7 +37,7 @@ public final class UsbLog extends Log {
 
     /**
      * Prints given string to comm port.
-     * 
+     *
      * @param string string to print
      */
     protected void printMessage(String string) {
@@ -61,19 +54,13 @@ public final class UsbLog extends Log {
      * Closes output stream.
      */
     public void shutdown() {
-
-        if (this.os != null) {
-            try {
-                this.os.close();
-            } catch (IOException ex) {
-            }
+        try {
+            this.os.close();
+        } catch (IOException ex) {
         }
-
-        if (this.comm != null) {
-            try {
-                this.comm.close();
-            } catch (IOException ex) {
-            }
+        try {
+            this.comm.close();
+        } catch (IOException ex) {
         }
     }
 }

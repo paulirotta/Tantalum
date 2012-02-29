@@ -19,7 +19,7 @@ public class Log implements Logger {
      * @param tag name of the class logging this message
      * @param message message to log
      */
-    public void log(final String tag, final String message) {
+    public final void log(final String tag, final String message) {
         printMessage(getMessage(tag, message));
     }
 
@@ -30,7 +30,7 @@ public class Log implements Logger {
      * @param message message to log
      * @param th throwable to log
      */
-    public void log(final String tag, final String message, final Throwable th) {
+    public final void log(final String tag, final String message, final Throwable th) {
         printMessage(getMessage(tag, message) + ", EXCEPTION: " + th);
         if (th != null) {
             th.printStackTrace();
