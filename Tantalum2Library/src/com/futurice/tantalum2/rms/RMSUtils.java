@@ -1,10 +1,7 @@
 package com.futurice.tantalum2.rms;
 
 import com.futurice.tantalum2.log.Log;
-import javax.microedition.rms.RecordEnumeration;
-import javax.microedition.rms.RecordStore;
-import javax.microedition.rms.RecordStoreException;
-import javax.microedition.rms.RecordStoreNotFoundException;
+import javax.microedition.rms.*;
 
 /**
  * RMS Utility methods
@@ -14,23 +11,12 @@ import javax.microedition.rms.RecordStoreNotFoundException;
 public class RMSUtils {
 
     /**
-     * Writes a single string value to the record store. Deletes the previous
-     * value.
-     *
-     * @param recordStoreName
-     * @param value
-     */
-    public static void write(final String recordStoreName, final String value) {
-        write(recordStoreName, value.getBytes());
-    }
-
-    /**
      * Writes the byte array to the record store. Deletes the previous data.
      *
      * @param recordStoreName
      * @param data
      */
-    public static void write(final String recordStoreName, final byte[] data) {
+    public static void write(final String recordStoreName, final byte[] data) throws RecordStoreFullException {
         RecordStore rs = null;
 
         try {
@@ -44,31 +30,19 @@ public class RMSUtils {
             }
             rs = RecordStore.openRecordStore(recordStoreName, true);
             rs.addRecord(data, 0, data.length);
-        } catch (Exception recordStoreException) {
-            Log.l.log("RMS open problem", recordStoreName, recordStoreException);
+        } catch (RecordStoreFullException e) {
+            Log.l.log("RMS write problem", recordStoreName, e);
+            throw e;
+        } catch (Exception e) {
+            Log.l.log("RMS write problem", recordStoreName, e);
         } finally {
             try {
                 if (rs != null) {
                     rs.closeRecordStore();
                 }
-            } catch (RecordStoreException recordStoreException) {
-                Log.l.log("RMS close problem", recordStoreName, recordStoreException);
+            } catch (Exception e) {
             }
         }
-    }
-
-    /**
-     * Reads a single string value form the given recordstore.
-     *
-     * @param recordStoreName
-     * @return String
-     */
-    public static String readString(String recordStoreName) {
-        final byte[] data = readByteArray(recordStoreName);
-        if (data == null) {
-            return "";
-        }
-        return new String(data);
     }
 
     /**

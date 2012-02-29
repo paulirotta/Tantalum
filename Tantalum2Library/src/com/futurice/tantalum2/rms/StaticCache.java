@@ -63,14 +63,13 @@ public class StaticCache {
      * @param key
      * @param o
      */
-    public void put(final String key, final Object o) {
-        if (o == null) {
-            Log.l.log("Null object put for key", key);
-            return;
-        }
+    private Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
+        final Object o = handler.convertToUseForm(bytes);
         remove(key);
         accessOrder.addElement(key);
         cache.put(key, o);
+        
+        return o;
     }
 
     /**
@@ -90,12 +89,11 @@ public class StaticCache {
             }
         }
 
-        final byte[] bytes = getFromRMS(key);
+        final byte[] bytes = (new RMSGetter(SESSION_ID, RMSResourceType.BYTE_ARRAY, key)).get();
         if (bytes != null) {
             Log.l.log("StaticCache hit in RMS", key);
-            final Object converted = handler.convertToUseForm(bytes);
-            put(key, converted);
-            return converted;
+
+            return convertAndPutToHeapCache(key, bytes);
         }
 
         return null;
@@ -154,10 +152,6 @@ public class StaticCache {
         return TOTAL_SIZE_BYTES_MAX * priority / sumOfPriorities;
     }
 
-    protected synchronized byte[] getFromRMS(String key) {
-        return (new RMSGetter(SESSION_ID, RMSResourceType.BYTE_ARRAY, key)).get();
-    }
-
     /**
      * Store a value to nonvolatile memory
      *
@@ -165,6 +159,11 @@ public class StaticCache {
      * @param bytes
      */
     public synchronized void storeToRMS(final String key, final byte[] bytes) {
+        if (bytes == null) {
+            Log.l.log("Null object put for key", key);
+            return;
+        }
+        convertAndPutToHeapCache(key, bytes);
         Worker.queue(new Workable() {
 
             public boolean work() {
@@ -190,30 +189,23 @@ public class StaticCache {
         });
     }
 
-    private synchronized void removeFromRMS(String key) {
+    public synchronized void remove(final String key) {
         try {
-            this.accessOrder.removeElement(key);
-            RMSResourceDB.getInstance().deleteResource(RMSResourceType.BYTE_ARRAY, key);
+            if (containsKey(key)) {
+                this.accessOrder.removeElement(key);
+                this.cache.remove(key);
+                this.accessOrder.removeElement(key);
+                RMSResourceDB.getInstance().deleteResource(RMSResourceType.BYTE_ARRAY, key);
+                Log.l.log("Removed (from RAM and RMS)", key);
+            }
         } catch (Exception e) {
-            Log.l.log("Couldn't remove object from RMS", key, e);
-        }
-    }
-
-    protected synchronized void remove(final String key) {
-        if (containsKey(key)) {
-            this.accessOrder.removeElement(key);
-            this.cache.remove(key);
-            removeFromRMS(key);
-            Log.l.log("Removed (from RAM and RMS)", key);
+            Log.l.log("Couldn't remove object from cache", key, e);
         }
     }
 
     private synchronized void removeOldest() {
         if (this.accessOrder.size() > 0) {
-            String key = (String) this.accessOrder.elementAt(0);
-            this.cache.remove(key);
-            this.accessOrder.removeElementAt(0);
-            removeFromRMS(key);
+            remove((String) this.accessOrder.elementAt(0));
         }
     }
 

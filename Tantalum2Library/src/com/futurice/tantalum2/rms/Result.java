@@ -8,7 +8,7 @@ package com.futurice.tantalum2.rms;
  * For asynchronous cache get. Non-blocking get results are returned in a runnable
  * object, often of the form:
  * 
- * staticWebCache.get("myurl", new GetResult() {
+ * staticWebCache.get("myurl", new Result() {
  *     public void run() {
  *         // do something on EDT with getResult() object
  *     }
@@ -20,7 +20,7 @@ package com.futurice.tantalum2.rms;
  * 
  * @author tsaa
  */
-public interface GetResult extends Runnable {
+public interface Result extends Runnable {
     public Object getResult();
     
     public void setResult(Object result);

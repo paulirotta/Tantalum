@@ -6,8 +6,8 @@
  */
 package com.futurice.tantalum2;
 
-import com.futurice.tantalum2.rms.DefaultGetResult;
-import com.futurice.tantalum2.rms.GetResult;
+import com.futurice.tantalum2.rms.DefaultResult;
+import com.futurice.tantalum2.rms.Result;
 import javax.microedition.midlet.MIDlet;
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
@@ -116,7 +116,7 @@ public class WorkerTest extends TestCase {
     public void testQueueEDT() throws AssertionFailedException {
         System.out.println("queueEDT");
         final Object mutex = new Object();
-        DefaultGetResult dgr = new DefaultGetResult() {            
+        DefaultResult dgr = new DefaultResult() {            
 
             public void run() {
                 setResult("done");

@@ -7,7 +7,7 @@ package com.futurice.tantalum2.net;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.rms.GetResult;
+import com.futurice.tantalum2.rms.Result;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
 import java.io.ByteArrayOutputStream;
@@ -27,25 +27,23 @@ import javax.microedition.io.HttpConnection;
 public class HttpGetter implements Workable {
 
     private final String url;
-    private final GetResult getResult;
-    private final DataTypeHandler handler;
+    private final Result getResult;
     private final StaticCache cache;
     private int retriesRemaining;
 
     /**
-     * Get the contents of a URL and return that asynchronously as a GetResult
-     * 
+     * Get the contents of a URL and return that asynchronously as a Result
+     *
      * @param url - where on the Internet to get the data
      * @param retriesRemaining - how many time to attempt connection
      * @param getResult - optional object notified on the EDT with the result
      * @param handler - optional converter to change byte[] into a usable form
      * @param cache - optional cache which will store the result
      */
-    public HttpGetter(String url, int retriesRemaining, GetResult getResult, DataTypeHandler handler, StaticCache cache) {
+    public HttpGetter(String url, int retriesRemaining, Result getResult, StaticCache cache) {
         this.url = url;
         this.retriesRemaining = retriesRemaining;
         this.getResult = getResult;
-        this.handler = handler;
         this.cache = cache;
     }
 
@@ -63,7 +61,7 @@ public class HttpGetter implements Workable {
 
         try {
             final byte[] readBuffer = new byte[8192];
-            
+
             httpConnection = (HttpConnection) Connector.open(url);
             httpConnection.setRequestMethod(HttpConnection.GET);
             inputStream = httpConnection.openInputStream();
@@ -72,30 +70,18 @@ public class HttpGetter implements Workable {
             while ((bytesRead = inputStream.read(readBuffer)) != -1) {
                 bos.write(readBuffer, 0, bytesRead);
             }
-            final Object converted;
             byte[] bytes = bos.toByteArray();
             bos.close();
             bos = null;
-            if (handler != null) {
-                converted = handler.convertToUseForm(bytes);
-            } else {
-                converted = bytes;
+            if (getResult != null) {
+                getResult.setResult(bytes);
+                Worker.queueEDT(getResult);
             }
-
-            if (converted != null) {
-                if (getResult != null) {
-                    getResult.setResult(converted);
-                    Worker.queueEDT(getResult);
-                }
-                if (cache != null) {
-                    cache.put(url, converted);
-                    cache.storeToRMS(url, bytes);
-                }
-                success = true;
-                Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
-            } else {
-                success = false;
+            if (cache != null) {
+                cache.storeToRMS(url, bytes);
             }
+            success = true;
+            Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
             bytes = null;
         } catch (IOException e) {
             Log.l.log("Retries remaining", url + ", retries=" + retriesRemaining, e);
