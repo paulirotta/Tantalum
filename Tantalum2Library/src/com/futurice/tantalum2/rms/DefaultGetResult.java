@@ -13,7 +13,7 @@ import com.futurice.tantalum2.rms.GetResult;
  */
 public class DefaultGetResult implements GetResult {
     
-    private Object result;
+    private volatile Object result;
 
     /**
      * Nothing is done on the EDT by the default implementation. You may want

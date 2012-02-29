@@ -4,10 +4,10 @@
  *
  * Created on 07-Feb-2012, 16:22:57
  */
-
 package com.futurice.tantalum2;
 
-
+import com.futurice.tantalum2.rms.DefaultGetResult;
+import com.futurice.tantalum2.rms.GetResult;
 import javax.microedition.midlet.MIDlet;
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
@@ -16,13 +16,14 @@ import jmunit.framework.cldc11.TestCase;
  * @author phou
  */
 public class WorkerTest extends TestCase {
-    
+
     public WorkerTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(5,"WorkerTest");
-    }            
+        super(4, "WorkerTest");
+    }
 
     public void test(int testNumber) throws Throwable {
+        Worker.init(this, 2);
         switch (testNumber) {
             case 0:
                 testRun();
@@ -36,22 +37,47 @@ public class WorkerTest extends TestCase {
             case 3:
                 testQueueEDT();
                 break;
-            case 4:
-                testInit();
-                break;
             default:
                 break;
         }
     }
 
+    private interface WorkableResult extends Workable {
+        Object getResult();
+    }
+    
     /**
      * Test of testRun method, of class Worker.
      */
     public void testRun() throws AssertionFailedException {
         System.out.println("run");
-        Worker instance = null;
-        instance.run();
-        fail("The test case is a prototype.");
+        final Object mutex = new Object();
+        WorkableResult wr = new WorkableResult() {
+            private Object o;
+            
+            public boolean work() {
+                synchronized (mutex) {
+                    o = "yes";
+                    mutex.notifyAll();
+                }
+                
+                return false;
+            }
+
+            public Object getResult() {
+                return o;
+            }
+        };
+        
+        Worker.queue(wr);
+        synchronized (mutex) {
+            try {
+                mutex.wait(1000);
+            } catch (InterruptedException ex) {
+            }
+        }
+        
+        assertEquals("yes", (String) wr.getResult());
     }
 
     /**
@@ -59,9 +85,19 @@ public class WorkerTest extends TestCase {
      */
     public void testQueue() throws AssertionFailedException {
         System.out.println("queue");
-        Workable workable_1 = null;
-        Worker.queue(workable_1);
-        fail("The test case is a prototype.");
+        Worker.queue(null);
+        Worker.queue(new Workable() {
+
+            public boolean work() {
+                return false;
+            }            
+        });
+        Worker.queue(new Workable() {
+
+            public boolean work() {
+                return true;
+            }            
+        });
     }
 
     /**
@@ -69,10 +105,9 @@ public class WorkerTest extends TestCase {
      */
     public void testGetMIDlet() throws AssertionFailedException {
         System.out.println("getMIDlet");
-        MIDlet expResult_1 = null;
+        MIDlet expResult_1 = this;
         MIDlet result_1 = Worker.getMIDlet();
         assertEquals(expResult_1, result_1);
-        fail("The test case is a prototype.");
     }
 
     /**
@@ -80,19 +115,24 @@ public class WorkerTest extends TestCase {
      */
     public void testQueueEDT() throws AssertionFailedException {
         System.out.println("queueEDT");
-        Object runnable_1 = null;
-        Worker.queueEDT(runnable_1);
-        fail("The test case is a prototype.");
-    }
+        final Object mutex = new Object();
+        DefaultGetResult dgr = new DefaultGetResult() {            
 
-    /**
-     * Test of testInit method, of class Worker.
-     */
-    public void testInit() throws AssertionFailedException {
-        System.out.println("init");
-        MIDlet midlet_1 = null;
-        int numberOfWorkers_1 = 0;
-        Worker.init(midlet_1, numberOfWorkers_1);
-        fail("The test case is a prototype.");
+            public void run() {
+                setResult("done");
+                synchronized(mutex) {
+                    mutex.notifyAll();
+                }
+            }
+        };
+        
+        Worker.queueEDT(dgr);        
+        try {
+            synchronized(mutex) {
+                mutex.wait(1000);
+            }
+        } catch (Exception e) {
+        }
+        assertEquals("done", (String) dgr.getResult());
     }
 }

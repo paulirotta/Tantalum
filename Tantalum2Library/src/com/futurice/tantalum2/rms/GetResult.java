@@ -16,6 +16,8 @@ package com.futurice.tantalum2.rms;
  * The run() method will be automatically completed on the EDT thread after
  * changes in supporting methods in the Tantalum library.
  * 
+ * Be sure to use volatile or synchronized() to stay thread safe
+ * 
  * @author tsaa
  */
 public interface GetResult extends Runnable {
