@@ -2,7 +2,7 @@ package com.futurice.s40rssreader;
 
 import com.futurice.rssreader.common.StringUtils;
 import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.rms.DefaultGetResult;
+import com.futurice.tantalum2.rms.DefaultResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
 import java.util.Vector;
@@ -94,7 +94,7 @@ public class DetailsView extends View {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
                 final RSSItem item = selectedItem;
-                staticWebCache.get(item.getThumbnail(), new DefaultGetResult() {
+                staticWebCache.get(item.getThumbnail(), new DefaultResult() {
                     public void run() {
                         item.setThumbnailImage((Image)getResult());
                         item.setLoadingImage(false); 

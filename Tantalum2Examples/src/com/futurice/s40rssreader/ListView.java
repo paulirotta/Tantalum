@@ -1,7 +1,7 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.rms.DefaultGetResult;
+import com.futurice.tantalum2.rms.DefaultResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.RMSUtils;
@@ -55,9 +55,12 @@ public final class ListView extends View {
         } else if (command == reloadCommand) {
             reload(false);
         } else if (command == settingsCommand) {
-            String feedUrl = RMSUtils.readString("settings");
-            if ("".equals(feedUrl)) {
-                feedUrl = RSSReader.INITIAL_FEED_URL;
+            String feedUrl = RSSReader.INITIAL_FEED_URL;
+
+            try {
+                feedUrl = RMSUtils.readByteArray("settings").toString();
+            } catch (Exception e) {
+                Log.l.log("Can not read settings", "", e);
             }
             canvas.getRssReader().getSettingsForm().setUrlValue(feedUrl);
             canvas.getRssReader().switchDisplayable(null, canvas.getRssReader().getSettingsForm());
@@ -167,7 +170,6 @@ public final class ListView extends View {
      * Reloads the feed
      */
     public void reload(final boolean initialLoad) {
-
         if (loading && !initialLoad) {
             //already loading
             return;
@@ -176,14 +178,17 @@ public final class ListView extends View {
         loading = true;
         this.renderY = 0;
 
-        String feedUrl = RMSUtils.readString("settings");
-        if ("".equals(feedUrl)) {
-            feedUrl = RSSReader.INITIAL_FEED_URL;
+        String feedUrl = RSSReader.INITIAL_FEED_URL;
+
+        try {
+            feedUrl = RMSUtils.readByteArray("settings").toString();
+        } catch (Exception e) {
+            Log.l.log("Can not read settings", "", e);
         }
         if (!initialLoad) {
             staticWebCache.remove(feedUrl);
         }
-        staticWebCache.get(feedUrl, new DefaultGetResult() {
+        staticWebCache.get(feedUrl, new DefaultResult() {
 
             public void run() {
                 notifyListChanged();

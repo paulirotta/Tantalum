@@ -4,7 +4,7 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.rms.DefaultGetResult;
+import com.futurice.tantalum2.rms.DefaultResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
@@ -74,9 +74,12 @@ public class ListView extends Form implements CommandListener {
         } else if (command == reloadCommand) {
             reload(true);
         } else if (command == settingsCommand) {
-            String feedUrl = RMSUtils.readString("settings");
-            if ("".equals(feedUrl)) {
-                feedUrl = RSSReader.INITIAL_FEED_URL;
+            String feedUrl = RSSReader.INITIAL_FEED_URL;
+
+            try {
+                feedUrl = RMSUtils.readByteArray("settings").toString();
+            } catch (Exception e) {
+                Log.l.log("Can not read settings", "", e);
             }
             rssReader.getSettingsForm().setUrlValue(feedUrl);
             rssReader.switchDisplayable(null, rssReader.getSettingsForm());
@@ -93,24 +96,30 @@ public class ListView extends Form implements CommandListener {
         this.startIndex = 0;
         this.deleteAll();
         paint();
-        String feedUrl = RMSUtils.readString("settings");
+        String feedUrl = RSSReader.INITIAL_FEED_URL;
+
+        try {
+            feedUrl = RMSUtils.readByteArray("settings").toString();
+        } catch (Exception e) {
+            Log.l.log("Can not read settings", "", e);
+        }
         if ("".equals(feedUrl)) {
             feedUrl = RSSReader.INITIAL_FEED_URL;
         }
         if (forceLoad) {
-            staticWebCache.update(feedUrl, new DefaultGetResult() {
+            staticWebCache.update(feedUrl, new DefaultResult() {
 
                 public void run() {
                     notifyListChanged();
                 }
             });
         } else {
-            staticWebCache.get(feedUrl, new DefaultGetResult() {
+            staticWebCache.get(feedUrl, new DefaultResult() {
 
                 public void run() {
                     notifyListChanged();
                 }
-            });            
+            });
         }
     }
 

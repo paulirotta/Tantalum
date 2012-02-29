@@ -2,8 +2,8 @@ package com.futurice.s40rssreader;
 
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.net.XMLAttributes;
-import com.futurice.tantalum2.net.XMLModel;
+import com.futurice.tantalum2.net.xml.XMLAttributes;
+import com.futurice.tantalum2.net.xml.XMLModel;
 import java.util.Vector;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;

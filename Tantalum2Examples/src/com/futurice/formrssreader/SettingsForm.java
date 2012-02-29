@@ -1,11 +1,13 @@
 package com.futurice.formrssreader;
 
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.rms.RMSUtils;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.TextField;
+import javax.microedition.rms.RecordStoreFullException;
 
 /**
  * Simple settings form for setting the RSS Feed URL
@@ -38,7 +40,11 @@ public class SettingsForm extends TextBox implements CommandListener {
     public void commandAction(Command command, Displayable displayable) {
         
         if (command == saveCommand) {
-            RMSUtils.write("settings", getString());
+            try {
+                RMSUtils.write("settings", getString().getBytes());
+            } catch (RecordStoreFullException ex) {
+                Log.l.log("Can not write settings", "", ex);
+            }
             midlet.switchDisplayable(null, midlet.getList());
             midlet.getList().reload(true);
         } else if (command == backCommand) {
