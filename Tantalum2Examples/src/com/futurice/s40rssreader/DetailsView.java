@@ -88,9 +88,10 @@ public class DetailsView extends View {
 
         final String url = selectedItem.getThumbnail();
         if (url != null) {
-            if (imageCache.synchronousGet(url) != null) {
-                g.drawImage(selectedItem.getThumbnailImage(), canvas.getWidth() / 2, curY, Graphics.TOP | Graphics.HCENTER);
-                curY += selectedItem.getThumbnailImage().getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
+            final Image image = (Image) imageCache.synchronousGet(url);
+            if (image != null) {
+                g.drawImage(image, canvas.getWidth() / 2, curY, Graphics.TOP | Graphics.HCENTER);
+                curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
             } else if (!selectedItem.isLoadingImage()) {
                 // Not already loading image, so request it
                 final RSSItem item = selectedItem;
@@ -101,7 +102,6 @@ public class DetailsView extends View {
                         super.run();
 
                         item.setLoadingImage(false);
-                        item.setThumbnailImage((Image) getResult());
                         DetailsView.this.getCanvas().repaint();
                     }
                 });
