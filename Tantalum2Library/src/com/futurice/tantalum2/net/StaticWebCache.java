@@ -5,7 +5,7 @@
 package com.futurice.tantalum2.net;
 
 import com.futurice.tantalum2.Worker;
-import com.futurice.tantalum2.rms.Result;
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
 import java.util.Hashtable;
@@ -31,19 +31,19 @@ public class StaticWebCache extends StaticCache {
      * Retrieve the object from 1. RAM if available 2. RMS if available 3. WEB
      *
      * @param url
-     * @param getResult
+     * @param result
      */
-    public synchronized void get(final String url, final Result getResult) {
+    public synchronized void get(final String url, final Result result) {
         final Object o = get(url);
         
         if (o != null) {
-            getResult.setResult(o);
-            Worker.queueEDT(getResult);
+            result.setResult(o);
+            Worker.queueEDT(result);
             return;
         }
 
         // NET
-        update(url, getResult);
+        update(url, result);
     }
 
     /**
@@ -51,10 +51,10 @@ public class StaticWebCache extends StaticCache {
      * version arrives.
      *
      * @param url
-     * @param cacheGetResult
+     * @param result
      */
-    public void update(final String url, final Result cacheGetResult) {
-        Worker.queue(new HttpGetter(url, RETRIES, cacheGetResult, this));
+    public void update(final String url, final Result result) {
+        Worker.queue(new HttpGetter(url, RETRIES, result, this));
     }
 
     /**

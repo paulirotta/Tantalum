@@ -7,7 +7,7 @@ package com.futurice.tantalum2.net;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.rms.Result;
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
 import java.io.ByteArrayOutputStream;
@@ -27,7 +27,7 @@ import javax.microedition.io.HttpConnection;
 public class HttpGetter implements Workable {
 
     private final String url;
-    private final Result getResult;
+    private final Result result;
     private final StaticCache cache;
     private int retriesRemaining;
 
@@ -36,14 +36,14 @@ public class HttpGetter implements Workable {
      *
      * @param url - where on the Internet to get the data
      * @param retriesRemaining - how many time to attempt connection
-     * @param getResult - optional object notified on the EDT with the result
+     * @param result - optional object notified on the EDT with the result
      * @param handler - optional converter to change byte[] into a usable form
      * @param cache - optional cache which will store the result
      */
-    public HttpGetter(String url, int retriesRemaining, Result getResult, StaticCache cache) {
+    public HttpGetter(String url, int retriesRemaining, Result result, StaticCache cache) {
         this.url = url;
         this.retriesRemaining = retriesRemaining;
-        this.getResult = getResult;
+        this.result = result;
         this.cache = cache;
     }
 
@@ -73,9 +73,9 @@ public class HttpGetter implements Workable {
             byte[] bytes = bos.toByteArray();
             bos.close();
             bos = null;
-            if (getResult != null) {
-                getResult.setResult(bytes);
-                Worker.queueEDT(getResult);
+            if (result != null) {
+                result.setResult(bytes);
+                Worker.queueEDT(result);
             }
             if (cache != null) {
                 cache.storeToRMS(url, bytes);

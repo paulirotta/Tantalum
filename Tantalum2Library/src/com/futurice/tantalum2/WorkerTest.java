@@ -6,8 +6,6 @@
  */
 package com.futurice.tantalum2;
 
-import com.futurice.tantalum2.rms.DefaultResult;
-import com.futurice.tantalum2.rms.Result;
 import javax.microedition.midlet.MIDlet;
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
