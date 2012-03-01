@@ -9,7 +9,7 @@ import javax.microedition.rms.*;
  * @author ssaa
  */
 public class RMSUtils {
-
+    private static final byte[] EMPTY_ARRAY = new byte[0];
     /**
      * Writes the byte array to the record store. Deletes the previous data.
      *

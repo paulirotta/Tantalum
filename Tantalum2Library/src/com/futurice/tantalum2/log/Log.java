@@ -9,8 +9,8 @@ package com.futurice.tantalum2.log;
  * 
  * @author mark voit, paul houghton
  */
-public class Log implements Logger {
-    public static final Logger l = new Log(); // Replace with UsbLog or other if needed
+public class Log {
+    public static final Log l = new Log(); // Replace with UsbLog to debug by console from your PC
     private static long startTime = System.currentTimeMillis();
 
     /**

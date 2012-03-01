@@ -1,6 +1,6 @@
 package com.futurice.tantalum2.rms;
 
-import com.futurice.tantalum2.WeakHashCache;
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
@@ -58,7 +58,7 @@ public class StaticCache {
     /**
      * Synchronously put the hash object to the RAM cache.
      *
-     * If you also want the object stored in RMS, call storeToRMS()
+     * If you also want the object stored in RMS, call put()
      *
      * @param key
      * @param o
@@ -68,7 +68,7 @@ public class StaticCache {
         remove(key);
         accessOrder.addElement(key);
         cache.put(key, o);
-        
+
         return o;
     }
 
@@ -78,25 +78,60 @@ public class StaticCache {
      * @param key
      * @return
      */
-    protected synchronized Object get(final String key) {
+    public synchronized Object synchronousGet(final String key) {
+        Object o = null;
+
         if (containsKey(key)) {
             Log.l.log("StaticCache hit in RAM", key);
             this.accessOrder.removeElement(key);
             this.accessOrder.addElement(key);
-            final Object o = cache.get(key);
+            o = cache.get(key);
             if (o != null) {
                 return o;
             }
         }
 
-        final byte[] bytes = (new RMSGetter(SESSION_ID, RMSResourceType.BYTE_ARRAY, key)).get();
-        if (bytes != null) {
-            Log.l.log("StaticCache hit in RMS", key);
+        return o;
+    }
 
-            return convertAndPutToHeapCache(key, bytes);
+    public synchronized Object synchronousGetIncludingRMS(final String key) {
+        Object o = synchronousGet(key);
+
+        if (o == null) {
+            final byte[] bytes = (new RMSGetter(SESSION_ID, RMSResourceType.BYTE_ARRAY, key)).get();
+            if (bytes != null) {
+                Log.l.log("StaticCache hit in RMS", key);
+
+                return convertAndPutToHeapCache(key, bytes);
+            }
         }
 
-        return null;
+        return o;
+    }
+
+    public void get(final String key, final Result result) {
+        final Object ho = synchronousGet(key);
+        if (ho != null) {
+            result.setResult(ho, true);
+            Worker.queueEDT(result);
+            return;
+        }
+        
+        Worker.queue(new Workable() {
+
+            public boolean work() {
+                final Object o = synchronousGetIncludingRMS(key);
+
+                if (o != null) {
+                    result.setResult(o, true);
+                    Worker.queueEDT(result);
+                } else {
+                    result.noResult();
+                }
+
+                return false;
+            }
+        });
     }
 
     /**
@@ -153,17 +188,20 @@ public class StaticCache {
     }
 
     /**
-     * Store a value to nonvolatile memory
+     * Store a value to heap and flash memory
      *
      * @param key
      * @param bytes
+     * @return the byte[] converted to use form by the cache's Handler
      */
-    public synchronized void storeToRMS(final String key, final byte[] bytes) {
-        if (bytes == null) {
-            Log.l.log("Null object put for key", key);
-            return;
+    public synchronized Object put(final String key, final byte[] bytes) {
+        if (key == null) {
+            throw new IllegalArgumentException("Null key put to cache");
         }
-        convertAndPutToHeapCache(key, bytes);
+        if (bytes == null) {
+            throw new IllegalArgumentException("Null bytes put to cache");
+        }
+        final Object o = convertAndPutToHeapCache(key, bytes);
         Worker.queue(new Workable() {
 
             public boolean work() {
@@ -187,6 +225,8 @@ public class StaticCache {
                 return false;
             }
         });
+
+        return o;
     }
 
     public synchronized void remove(final String key) {
@@ -244,7 +284,7 @@ public class StaticCache {
 
     /**
      * The relative priority used for allocating RMS space between multiple
-     * caches. Higher priority caches get more space.
+     * caches. Higher priority caches synchronousGet more space.
      *
      * @return
      */

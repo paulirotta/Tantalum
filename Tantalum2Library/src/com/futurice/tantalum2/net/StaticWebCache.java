@@ -4,6 +4,7 @@
  */
 package com.futurice.tantalum2.net;
 
+import com.futurice.tantalum2.DefaultResult;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.rms.DataTypeHandler;
@@ -18,13 +19,10 @@ import java.util.Hashtable;
 public class StaticWebCache extends StaticCache {
 
     private static final int RETRIES = 3;
-    private final int timeOutInMins;
     private final Hashtable timestamps = new Hashtable();
 
-    public StaticWebCache(final String name, final int priority, final int timeOutInMins, final DataTypeHandler handler) {
+    public StaticWebCache(final String name, final int priority, final DataTypeHandler handler) {
         super(name, priority, handler);
-
-        this.timeOutInMins = timeOutInMins;
     }
 
     /**
@@ -33,17 +31,32 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public synchronized void get(final String url, final Result result) {
-        final Object o = get(url);
-        
-        if (o != null) {
-            result.setResult(o);
-            Worker.queueEDT(result);
-            return;
-        }
+    public void get(final String url, final Result result) {
+        super.get(url, result.prepend(new DefaultResult() {
 
-        // NET
-        update(url, result);
+            public void noResult() {
+                super.noResult();
+
+                update(url, result);
+            }
+        }));
+//        Worker.queue(new Workable() {
+//
+//            public boolean work() {
+//                final Object o = StaticWebCache.super.synchronousGet(url);
+//
+//                if (o != null) {
+//                    result.setResult(o, true);
+//                    return true;
+//                }
+//
+//                // NET
+//                update(url, result);
+//
+//                return false;
+//            }
+//            
+//        });
     }
 
     /**
@@ -54,7 +67,15 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     public void update(final String url, final Result result) {
-        Worker.queue(new HttpGetter(url, RETRIES, result, this));
+        Worker.queue(new HttpGetter(url, RETRIES, result.prepend(new DefaultResult() {
+
+            public void setResult(Object o, final boolean queueToEDTnow) {
+                // Convert the result to use form immediately
+                o = put(url, (byte[]) o);
+
+                super.setResult(o, queueToEDTnow);
+            }
+        })));
     }
 
     /**
@@ -80,11 +101,11 @@ public class StaticWebCache extends StaticCache {
     }
 
     public synchronized String toString() {
-        String str;
-        str = "StaticWebCache " + name + " --- priority: " + priority + " size: " + getSize() + " size (bytes): " + sizeAsBytes + " space: " + this.getSizeOfReservedSpace() + "timeOutInMins: " + timeOutInMins + "\n";
+        String str = "StaticWebCache " + name + " --- priority: " + priority + " size: " + getSize() + " size (bytes): " + sizeAsBytes + " space: " + this.getSizeOfReservedSpace() + "\n";
         for (int i = 0; i < accessOrder.size(); i++) {
             str += accessOrder.elementAt(i) + "\n";
         }
+
         return str;
     }
 }

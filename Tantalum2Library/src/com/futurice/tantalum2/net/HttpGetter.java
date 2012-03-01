@@ -28,23 +28,19 @@ public class HttpGetter implements Workable {
 
     private final String url;
     private final Result result;
-    private final StaticCache cache;
     private int retriesRemaining;
 
     /**
      * Get the contents of a URL and return that asynchronously as a Result
      *
-     * @param url - where on the Internet to get the data
+     * @param url - where on the Internet to synchronousGet the data
      * @param retriesRemaining - how many time to attempt connection
      * @param result - optional object notified on the EDT with the result
-     * @param handler - optional converter to change byte[] into a usable form
-     * @param cache - optional cache which will store the result
      */
-    public HttpGetter(String url, int retriesRemaining, Result result, StaticCache cache) {
+    public HttpGetter(final String url, final int retriesRemaining, final Result result) {
         this.url = url;
         this.retriesRemaining = retriesRemaining;
         this.result = result;
-        this.cache = cache;
     }
 
     public String getUrl() {
@@ -52,7 +48,7 @@ public class HttpGetter implements Workable {
     }
 
     public boolean work() {
-        Log.l.log("Start HttpGet", url);
+        Log.l.log("HttpGetter start", url);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         HttpConnection httpConnection = null;
         InputStream inputStream = null;
@@ -73,16 +69,14 @@ public class HttpGetter implements Workable {
             byte[] bytes = bos.toByteArray();
             bos.close();
             bos = null;
-            if (result != null) {
-                result.setResult(bytes);
-                Worker.queueEDT(result);
+            if (bytes != null) {
+                result.setResult(bytes, true);
+                success = true;
+                Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
+                bytes = null;
+            } else {
+                Log.l.log("HttpGetter null response", url);
             }
-            if (cache != null) {
-                cache.storeToRMS(url, bytes);
-            }
-            success = true;
-            Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
-            bytes = null;
         } catch (IOException e) {
             Log.l.log("Retries remaining", url + ", retries=" + retriesRemaining, e);
             if (retriesRemaining > 0) {

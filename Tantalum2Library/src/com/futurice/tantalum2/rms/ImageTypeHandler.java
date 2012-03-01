@@ -11,9 +11,9 @@ import javax.microedition.lcdui.Image;
  *
  * @author tsaa
  */
-public class ImageTypeHandler implements DataTypeHandler {
+public final class ImageTypeHandler implements DataTypeHandler {
 
-    public static final Image DEFAULT_IMAGE = Image.createImage(1, 1);
+//    public static final Image DEFAULT_IMAGE = Image.createImage(1, 1);
 
     public Object convertToUseForm(final byte[] bytes) {
         try {
@@ -22,6 +22,6 @@ public class ImageTypeHandler implements DataTypeHandler {
             Log.l.log("Error converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
         }
 
-        return DEFAULT_IMAGE;
+        return null;
     }
 }

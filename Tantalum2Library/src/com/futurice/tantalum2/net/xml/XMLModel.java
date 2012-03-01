@@ -33,15 +33,15 @@ public abstract class XMLModel extends DefaultHandler {
     public XMLModel() {
     }
 
-    public synchronized void setXML(final String xml) throws ParserConfigurationException, SAXException, IOException {
-        final InputStream in = new ByteArrayInputStream(xml.getBytes());
+    public synchronized void setXML(final byte[] xml) throws ParserConfigurationException, SAXException, IOException {
+        final InputStream in = new ByteArrayInputStream(xml);
 
         try {
             Log.l.log("Start parse", "");
             SAXParserFactory.newInstance().newSAXParser().parse(in, this);
             Log.l.log("End parse", "");
         } catch (Throwable t) {
-            Log.l.log("Parse error", xml, t);
+            Log.l.log("Parse error", "", t);
         } finally {
             in.close();
         }

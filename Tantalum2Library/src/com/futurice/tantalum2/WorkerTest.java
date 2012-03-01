@@ -117,7 +117,9 @@ public class WorkerTest extends TestCase {
         DefaultResult dgr = new DefaultResult() {            
 
             public void run() {
-                setResult("done");
+                super.run();
+                
+                setResult("done", true);
                 synchronized(mutex) {
                     mutex.notifyAll();
                 }

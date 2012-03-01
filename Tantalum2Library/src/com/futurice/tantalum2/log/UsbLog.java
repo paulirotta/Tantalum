@@ -44,7 +44,7 @@ public final class UsbLog extends Log {
         if (string != null && this.os != null) {
             try {
                 this.os.write(string.getBytes());
-                this.os.write("\n".getBytes());
+                this.os.write('\n');
             } catch (IOException ex) {
             }
         }
@@ -52,6 +52,9 @@ public final class UsbLog extends Log {
 
     /**
      * Closes output stream.
+     * 
+     * Call this in MIDlet.destroyApp() if you are using USB logging, otherwise
+     * you may not release the serial port for your next debug session.
      */
     public void shutdown() {
         try {

@@ -3,7 +3,7 @@
  * garbage collection as needed by the virtual machine.
  *
  */
-package com.futurice.tantalum2;
+package com.futurice.tantalum2.rms;
 
 import com.futurice.tantalum2.log.Log;
 import java.lang.ref.WeakReference;
