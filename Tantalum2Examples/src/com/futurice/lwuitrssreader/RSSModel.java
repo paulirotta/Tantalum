@@ -21,7 +21,7 @@ public class RSSModel extends XMLModel {
         this.listModel = listModel;
     }
 
-    public synchronized void setXML(final String xml)  throws ParserConfigurationException, SAXException, IOException {
+    public synchronized void setXML(final byte[] xml)  throws ParserConfigurationException, SAXException, IOException {
         super.setXML(xml);
         
         listModel.repaint();

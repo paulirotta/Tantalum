@@ -19,7 +19,7 @@ public final class RSSModel extends XMLModel {
     private final Vector items = new Vector();
     private RSSItem currentItem;
 
-    public synchronized void setXML(final String xml) throws ParserConfigurationException, SAXException, IOException {
+    public synchronized void setXML(final byte[] xml) throws ParserConfigurationException, SAXException, IOException {
         super.setXML(xml);
 
         final ListView listView = ListView.getInstance();

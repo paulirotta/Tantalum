@@ -22,19 +22,19 @@ public final class ListView extends View {
     private final Command reloadCommand = new Command("Reload", Command.ITEM, 0);
     private final Command settingsCommand = new Command("Settings", Command.ITEM, 1);
     private final RSSModel rssModel = new RSSModel();
-    private final StaticWebCache staticWebCache;
-    private boolean loading = true;
+    private final StaticWebCache feedCache;
+    private boolean loading = false;
     private int selectedIndex = -1;
 
     public ListView(RSSReaderCanvas canvas) {
         super(canvas);
 
-        staticWebCache = new StaticWebCache("rss", 1, 10, new DataTypeHandler() {
+        feedCache = new StaticWebCache("rss", 1, new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
                 try {
                     rssModel.removeAllElements();
-                    rssModel.setXML(new String(bytes));
+                    rssModel.setXML(bytes);
 
                     return rssModel;
                 } catch (Exception e) {
@@ -58,7 +58,11 @@ public final class ListView extends View {
             String feedUrl = RSSReader.INITIAL_FEED_URL;
 
             try {
-                feedUrl = RMSUtils.readByteArray("settings").toString();
+                final byte[] bytes = RMSUtils.readByteArray("settings");
+
+                if (bytes != null) {
+                    feedUrl = bytes.toString();
+                }
             } catch (Exception e) {
                 Log.l.log("Can not read settings", "", e);
             }
@@ -181,20 +185,32 @@ public final class ListView extends View {
         String feedUrl = RSSReader.INITIAL_FEED_URL;
 
         try {
-            feedUrl = RMSUtils.readByteArray("settings").toString();
+            final byte[] bytes = RMSUtils.readByteArray("settings");
+            if (bytes != null) {
+                feedUrl = bytes.toString();
+            }
         } catch (Exception e) {
             Log.l.log("Can not read settings", "", e);
         }
-        if (!initialLoad) {
-            staticWebCache.remove(feedUrl);
-        }
-        staticWebCache.get(feedUrl, new DefaultResult() {
+        if (initialLoad) {
+            feedCache.get(feedUrl, new DefaultResult() {
 
-            public void run() {
-                notifyListChanged();
-                canvas.repaint();
-            }
-        });
+                public void run() {
+                    super.run();
+
+                    notifyListChanged();
+                }
+            });
+        } else {
+            feedCache.update(feedUrl, new DefaultResult() {
+
+                public void run() {
+                    super.run();
+
+                    notifyListChanged();
+                }
+            });
+        }
     }
 
     /**

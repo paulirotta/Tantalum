@@ -31,12 +31,12 @@ public class DetailsForm extends Form implements ActionListener {
     private Vector linkLabels;
     private RSSReader midlet;
     private RSSItem current;
-    private StaticWebCache cache;
+    private final StaticWebCache imageCache;
 
     public DetailsForm(String title, RSSReader midlet) {
         super(title);
         this.midlet = midlet;
-        this.cache = new StaticWebCache("imgs", 1, 1, new ImageTypeHandler());
+        this.imageCache = new StaticWebCache("imgs", 2, new ImageTypeHandler());
         setScrollableY(true);
         pubDateLabel = new Label("");
 
@@ -84,9 +84,11 @@ public class DetailsForm extends Form implements ActionListener {
         addLabels(descriptionLabels);
         addComponent(imgLabel);
 
-        cache.get(item.getImgSrc(), new DefaultResult() {
+        imageCache.get(item.getImgSrc(), new DefaultResult() {
             public void run() {
-                item.setImg(Image.createImage((javax.microedition.lcdui.Image) getResult()));
+                super.run();
+                
+                item.setImg((Image) getResult());
                 midlet.getDetailsForm().repaintImg();
             }
         });

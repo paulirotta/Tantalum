@@ -26,14 +26,14 @@ public class DetailsView extends Form implements CommandListener {
 
     private RSSReader rssReader;
     private RSSItem selectedItem;
-    private StaticWebCache staticWebCache;
+    private StaticWebCache imageCache;
     private Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private Command backCommand = new Command("Back", Command.BACK, 0);
 
     public DetailsView(RSSReader rssReader, String title) {
         super(title);
         this.rssReader = rssReader;
-        this.staticWebCache = new StaticWebCache("images", 1, 10, new ImageTypeHandler());
+        this.imageCache = new StaticWebCache("images", 2, new ImageTypeHandler());
         this.addCommand(openLinkCommand);
         this.addCommand(backCommand);
         this.setCommandListener(this);
@@ -92,8 +92,10 @@ public class DetailsView extends Form implements CommandListener {
             } else if (!selectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
-                staticWebCache.get(selectedItem.getThumbnail(), new DefaultResult() {
+                imageCache.get(selectedItem.getThumbnail(), new DefaultResult() {
                     public void run() {
+                        super.run();
+                        
                         selectedItem.setThumbnailImage((Image)getResult());
                         DetailsView.this.paintImage();
                         selectedItem.setLoadingImage(false); 

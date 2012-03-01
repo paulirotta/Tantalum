@@ -29,7 +29,7 @@ public class ListView extends Form implements CommandListener {
     private static ListView instance;
     private final RSSReader rssReader;
     private final DetailsView detailsView;
-    private StaticWebCache staticWebCache;
+    private StaticWebCache feedCache;
     private final RSSModel rssModel = new RSSModel();
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
@@ -47,12 +47,12 @@ public class ListView extends Form implements CommandListener {
         ListView.instance = ListView.this;
         this.rssReader = rssReader;
         this.detailsView = new DetailsView(rssReader, title);
-        this.staticWebCache = new StaticWebCache("rss", 1, 10, new DataTypeHandler() {
+        this.feedCache = new StaticWebCache("rss", 1, new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
                 try {
                     rssModel.getItems().removeAllElements();
-                    rssModel.setXML(new String(bytes));
+                    rssModel.setXML(bytes);
 
                     return rssModel;
                 } catch (Exception e) {
@@ -86,6 +86,11 @@ public class ListView extends Form implements CommandListener {
         }
     }
 
+    /**
+     * For thread safety this is only called from the EDT
+     *
+     * @param forceLoad
+     */
     public void reload(final boolean forceLoad) {
         if (loading && !forceLoad) {
             //already loading
@@ -99,25 +104,48 @@ public class ListView extends Form implements CommandListener {
         String feedUrl = RSSReader.INITIAL_FEED_URL;
 
         try {
-            feedUrl = RMSUtils.readByteArray("settings").toString();
+            final byte[] bytes = RMSUtils.readByteArray("settings");
+            
+            if (bytes != null) {
+                feedUrl = bytes.toString();
+            }
         } catch (Exception e) {
             Log.l.log("Can not read settings", "", e);
         }
         if ("".equals(feedUrl)) {
             feedUrl = RSSReader.INITIAL_FEED_URL;
         }
+
         if (forceLoad) {
-            staticWebCache.update(feedUrl, new DefaultResult() {
+            feedCache.update(feedUrl, new DefaultResult() {
 
                 public void run() {
+                    super.run();
+
+                    loading = false;
                     notifyListChanged();
                 }
             });
         } else {
-            staticWebCache.get(feedUrl, new DefaultResult() {
+            feedCache.get(feedUrl, new DefaultResult() {
+
+                private boolean noresult = false;
+
+                public void noResult() {
+                    super.noResult();
+
+                    noresult = true;
+                }
 
                 public void run() {
-                    notifyListChanged();
+                    super.run();
+
+                    loading = false;
+                    if (noresult) {
+                        reload(true);
+                    } else {
+                        notifyListChanged();
+                    }
                 }
             });
         }
@@ -146,7 +174,10 @@ public class ListView extends Form implements CommandListener {
         append(loadingStringItem);
     }
 
-    public void paint() {
+    /**
+     * Update the display
+     */
+    private void paint() {
         if (loading) {
             renderLoading();
             return;

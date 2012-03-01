@@ -1,6 +1,8 @@
 package com.futurice.lwuitrssreader;
 
 import com.futurice.tantalum2.DefaultResult;
+import com.futurice.tantalum2.Result;
+import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Command;
@@ -25,7 +27,7 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
     private final ListModel listModel;
     private RSSReader midlet;
     private boolean isReloading = false;
-    private StaticWebCache cache;
+    private StaticWebCache feedCache;
 
     public ListForm(String title, RSSReader midlet) {
         super(title);
@@ -33,7 +35,7 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
         listModel = new ListModel(this);
         list = new List(listModel);
         list.addActionListener(this);
-        cache = new StaticWebCache("feeds", 1, 1, new RSSTypeHandler(listModel));
+        feedCache = new StaticWebCache("feeds", 1, new RSSTypeHandler(listModel));
 
         addComponent(list);
         addCommand(settingsCommand);
@@ -69,7 +71,7 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
         }
     }
 
-    public void reload(boolean fromNet) {
+    public void reload(final boolean fromNet) {
         if (!isReloading) {
             isReloading = true;
 
@@ -78,20 +80,25 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
                 list.getModel().removeItem(i);
             }
 
+            final Result result = new DefaultResult() {
+
+                public void noResult() {
+                    super.noResult();
+                    
+                    Worker.queueEDT(this);
+                }
+                
+                public void run() {
+                    super.run();
+
+                    isReloading = false;
+                }
+            };
+
             if (fromNet) {
-                cache.update(midlet.getUrl(), new DefaultResult() {
-
-                    public void run() {
-                        isReloading = false;
-                    }
-                });
+                feedCache.update(midlet.getUrl(), result);
             } else {
-                cache.get(midlet.getUrl(), new DefaultResult() {
-
-                    public void run() {
-                        isReloading = false;
-                    }
-                });
+                feedCache.get(midlet.getUrl(), result);
             }
         }
     }

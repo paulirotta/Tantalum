@@ -13,7 +13,7 @@ import com.futurice.tantalum2.rms.DataTypeHandler;
  */
 public class RSSTypeHandler implements DataTypeHandler {
 
-    ListModel model;
+    final ListModel model;
 
     public RSSTypeHandler(ListModel model) {
         this.model = model;
@@ -21,9 +21,9 @@ public class RSSTypeHandler implements DataTypeHandler {
 
     public Object convertToUseForm(byte[] bytes) {
         try {
-            RSSModel rssModel = new RSSModel(model);
+            final RSSModel rssModel = new RSSModel(model);
             if (bytes.length > 0) {
-                rssModel.setXML(new String(bytes));
+                rssModel.setXML(bytes);
             }
             
             return rssModel;

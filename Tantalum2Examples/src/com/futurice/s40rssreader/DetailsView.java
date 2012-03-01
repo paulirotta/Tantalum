@@ -15,21 +15,21 @@ import javax.microedition.lcdui.Image;
 
 /**
  * View for rendering details of an RSS item
+ *
  * @author ssaa
  */
 public class DetailsView extends View {
 
     private RSSItem selectedItem;
-    private StaticWebCache staticWebCache;
-
+    private final StaticWebCache imageCache;
     private int contentHeight;
-
     private Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
-    private Command backCommand = new Command("Back", Command.BACK, 0);    
+    private Command backCommand = new Command("Back", Command.BACK, 0);
 
     public DetailsView(RSSReaderCanvas canvas) {
         super(canvas);
-        this.staticWebCache = new StaticWebCache("images", 1, 10, new ImageTypeHandler());
+
+        this.imageCache = new StaticWebCache("images", 2, new ImageTypeHandler());
     }
 
     public Command[] getCommands() {
@@ -74,7 +74,7 @@ public class DetailsView extends View {
         int curY = renderY;
 
         g.setFont(RSSReaderCanvas.FONT_TITLE);
-        curY = renderLines(g, curY, RSSReaderCanvas.FONT_TITLE, StringUtils.splitToLines(selectedItem.getTitle(), RSSReaderCanvas.FONT_TITLE, canvas.getWidth() - 2*RSSReaderCanvas.MARGIN));
+        curY = renderLines(g, curY, RSSReaderCanvas.FONT_TITLE, StringUtils.splitToLines(selectedItem.getTitle(), RSSReaderCanvas.FONT_TITLE, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
 
         g.setFont(RSSReaderCanvas.FONT_DATE);
         g.drawString(selectedItem.getPubDate(), 10, curY, Graphics.LEFT | Graphics.TOP);
@@ -82,26 +82,30 @@ public class DetailsView extends View {
         curY += RSSReaderCanvas.FONT_DATE.getHeight() * 2;
 
         g.setFont(RSSReaderCanvas.FONT_DESCRIPTION);
-        curY = renderLines(g, curY, RSSReaderCanvas.FONT_DESCRIPTION, StringUtils.splitToLines(selectedItem.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, canvas.getWidth() - 2*RSSReaderCanvas.MARGIN));
+        curY = renderLines(g, curY, RSSReaderCanvas.FONT_DESCRIPTION, StringUtils.splitToLines(selectedItem.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
 
         curY += RSSReaderCanvas.FONT_DESCRIPTION.getHeight();
 
-        if (selectedItem.getThumbnail() != null) {
-            if (selectedItem.getThumbnailImage() != null) {
+        final String url = selectedItem.getThumbnail();
+        if (url != null) {
+            if (imageCache.synchronousGet(url) != null) {
                 g.drawImage(selectedItem.getThumbnailImage(), canvas.getWidth() / 2, curY, Graphics.TOP | Graphics.HCENTER);
                 curY += selectedItem.getThumbnailImage().getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
             } else if (!selectedItem.isLoadingImage()) {
-                //request the thumbnail image, if not already loading
-                selectedItem.setLoadingImage(true);
+                // Not already loading image, so request it
                 final RSSItem item = selectedItem;
-                staticWebCache.get(item.getThumbnail(), new DefaultResult() {
+                item.setLoadingImage(true);
+                imageCache.get(item.getThumbnail(), new DefaultResult() {
+
                     public void run() {
-                        item.setThumbnailImage((Image)getResult());
-                        item.setLoadingImage(false); 
+                        super.run();
+
+                        item.setLoadingImage(false);
+                        item.setThumbnailImage((Image) getResult());
                         DetailsView.this.getCanvas().repaint();
                     }
-                }); 
-            }  
+                });
+            }
         }
 
         contentHeight = curY - renderY;
@@ -113,7 +117,7 @@ public class DetailsView extends View {
         int curY = startY;
         final int len = lines.size();
         for (int i = 0; i < len; i++) {
-            g.drawString((String)lines.elementAt(i), RSSReaderCanvas.MARGIN, curY, Graphics.LEFT | Graphics.TOP);
+            g.drawString((String) lines.elementAt(i), RSSReaderCanvas.MARGIN, curY, Graphics.LEFT | Graphics.TOP);
             curY += font.getHeight();
         }
         return curY;
