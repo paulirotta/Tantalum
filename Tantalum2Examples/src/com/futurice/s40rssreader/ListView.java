@@ -1,7 +1,7 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.rms.DefaultResult;
+import com.futurice.tantalum2.DefaultResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.RMSUtils;
