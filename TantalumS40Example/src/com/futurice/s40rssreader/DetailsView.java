@@ -5,6 +5,7 @@ import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.DefaultResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
+import com.nokia.mid.ui.DirectGraphics;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Command;
@@ -62,7 +63,7 @@ public class DetailsView extends View {
     /*
      * Renders the details of the selected item
      */
-    public void render(Graphics g) {
+    public void render(final Graphics g, final DirectGraphics dg, final int width) {
         if (contentHeight < canvas.getHeight()) {
             this.renderY = 0;
         } else if (this.renderY < -contentHeight + canvas.getHeight()) {
@@ -110,7 +111,7 @@ public class DetailsView extends View {
 
         contentHeight = curY - renderY;
 
-        renderScrollBar(g, contentHeight);
+        renderScrollBar(g, dg, contentHeight);
     }
 
     private int renderLines(Graphics g, int startY, Font font, Vector lines) {

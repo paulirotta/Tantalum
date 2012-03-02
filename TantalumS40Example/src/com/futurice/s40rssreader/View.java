@@ -11,7 +11,8 @@ import javax.microedition.lcdui.Graphics;
  * @author ssaa
  */
 public abstract class View implements CommandListener {
-
+    public static final int SCROLL_BAR_WIDTH = 4;
+    public static final int SCROLL_BAR_ARGB = 0x44000000;
     protected int renderY;
     protected final RSSReaderCanvas canvas;
 
@@ -23,7 +24,7 @@ public abstract class View implements CommandListener {
      * Renderds the view using the Graphics object
      * @param g
      */
-    public abstract void render(final Graphics g);
+    public abstract void render(Graphics g, DirectGraphics dg, int width);
 
     /**
      * Returns array of Commands related to this view
@@ -43,7 +44,7 @@ public abstract class View implements CommandListener {
         return canvas;
     }
 
-    public void renderScrollBar(final Graphics g, final int contentHeight) {
+    public void renderScrollBar(final Graphics g, final DirectGraphics dg, final int contentHeight) {
         final int visibleAreaHeight = canvas.getHeight();
 
         if (contentHeight < visibleAreaHeight) {
@@ -52,9 +53,8 @@ public abstract class View implements CommandListener {
         }
 
         //fill background with transparent color
-        final DirectGraphics dg = DirectUtils.getDirectGraphics(g);
-        dg.setARGBColor(0x44000000);
-        g.fillRect(canvas.getWidth() - 4, 0, 4, canvas.getHeight());
+        dg.setARGBColor(SCROLL_BAR_ARGB);
+        g.fillRect(canvas.getWidth() - SCROLL_BAR_WIDTH, 0, SCROLL_BAR_WIDTH, canvas.getHeight());
 
         int barY = -renderY * canvas.getHeight() / contentHeight;
         int barHeight = canvas.getHeight() * canvas.getHeight() / contentHeight;

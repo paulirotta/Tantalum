@@ -1,6 +1,5 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.formrssreader.ListView;
 import com.futurice.tantalum2.net.xml.XMLAttributes;
 import com.futurice.tantalum2.net.xml.XMLModel;
 import java.io.IOException;
@@ -21,13 +20,11 @@ public class RSSModel extends XMLModel {
         this.listModel = listModel;
     }
 
-    public synchronized void setXML(final byte[] xml)  throws ParserConfigurationException, SAXException, IOException {
+    public synchronized void setXML(final byte[] xml) throws ParserConfigurationException, SAXException, IOException {
         super.setXML(xml);
-        
+
         listModel.repaint();
-        ListView.getInstance().notifyListChanged();
     }
-    
 
     protected void element(Vector charStack, Vector qnameStack, Vector attributeStack) {
         try {
@@ -53,17 +50,17 @@ public class RSSModel extends XMLModel {
                         if (lastChar != null) {
                             current.setLink(lastChar);
                         }
-                    }   
+                    }
                     if (lastQname.equals("pubDate")) {
                         if (lastChar != null) {
                             current.setPubDate(lastChar);
                         }
-                    }                      
+                    }
                     if (lastQname.equals("media:thumbnail")) {
                         if (lastChar != null) {
                             current.setImgSrc(((XMLAttributes) attributeStack.lastElement()).getValue("url"));
                         }
-                    }                       
+                    }
                 }
             }
         } catch (Exception e) {

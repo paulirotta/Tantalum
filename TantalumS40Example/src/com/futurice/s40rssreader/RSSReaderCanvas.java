@@ -1,5 +1,7 @@
 package com.futurice.s40rssreader;
 
+import com.nokia.mid.ui.DirectGraphics;
+import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.frameanimator.FrameAnimator;
 import com.nokia.mid.ui.frameanimator.FrameAnimatorListener;
 import com.nokia.mid.ui.gestures.GestureEvent;
@@ -98,9 +100,9 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
      * Paints the content of the current view
      * @param g
      */
-    public void paint(Graphics g) {
-        g.setColor(COLOR_FONT);
-        currentView.render(g);
+    public void paint(final Graphics g) {
+        final DirectGraphics dg = DirectUtils.getDirectGraphics(g);
+        currentView.render(g, dg, getWidth() - View.SCROLL_BAR_WIDTH);
     }
 
     /**
@@ -161,6 +163,10 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
         listView.selectItem(x, y, false);
     }
 
+    public void sizeChanged(final int widht, final int height) {
+        listView.canvasSizeChanged();
+    }
+    
     /*
      * @see FrameAnimatorListener.animate(FrameAnimator fa, int x, int y, short delta, short deltaX, short deltaY, boolean lastFrame)
      */
