@@ -34,10 +34,12 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
 
-    public static int COLOR_FONT;
+    public static int COLOR_BACKGROUND;
+    public static int COLOR_HIGHLIGHTED_BACKGROUND;
+    public static int COLOR_FOREGROUND;
+    public static int COLOR_HIGHLIGHTED_FOREGROUND;
     public static int COLOR_BORDER;
-    public static int COLOR_HIGHLIGHT;
-    public static int COLOR_HIGHLIGHT_FONT;
+    public static int COLOR_HIGHLIGHTED_BORDER;
 
     public static final int MARGIN = FONT_TITLE.getHeight() / 2;
 
@@ -70,10 +72,12 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
     }
 
     private void initColors() {
-        COLOR_FONT = rssReader.getDisplay().getColor(Display.COLOR_FOREGROUND);
+        COLOR_BACKGROUND = rssReader.getDisplay().getColor(Display.COLOR_BACKGROUND);
+        COLOR_HIGHLIGHTED_BACKGROUND = rssReader.getDisplay().getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
+        COLOR_FOREGROUND = rssReader.getDisplay().getColor(Display.COLOR_FOREGROUND);
+        COLOR_HIGHLIGHTED_FOREGROUND = rssReader.getDisplay().getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
         COLOR_BORDER = rssReader.getDisplay().getColor(Display.COLOR_BORDER);
-        COLOR_HIGHLIGHT = rssReader.getDisplay().getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
-        COLOR_HIGHLIGHT_FONT = rssReader.getDisplay().getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
+        COLOR_HIGHLIGHTED_BORDER = rssReader.getDisplay().getColor(Display.COLOR_HIGHLIGHTED_BORDER);
     }
 
     /**
@@ -101,8 +105,7 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
      * @param g
      */
     public void paint(final Graphics g) {
-        final DirectGraphics dg = DirectUtils.getDirectGraphics(g);
-        currentView.render(g, dg, getWidth() - View.SCROLL_BAR_WIDTH);
+        currentView.render(g, DirectUtils.getDirectGraphics(g), getWidth() - View.SCROLL_BAR_WIDTH, getHeight());
     }
 
     /**

@@ -63,7 +63,7 @@ public class DetailsView extends View {
     /*
      * Renders the details of the selected item
      */
-    public void render(final Graphics g, final DirectGraphics dg, final int width) {
+    public void render(final Graphics g, final DirectGraphics dg, final int width, final int height) {
         if (contentHeight < canvas.getHeight()) {
             this.renderY = 0;
         } else if (this.renderY < -contentHeight + canvas.getHeight()) {
@@ -73,8 +73,12 @@ public class DetailsView extends View {
         }
 
         int curY = renderY;
+        
+        g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND);
+        g.fillRect(0, 0, width, height);
 
         g.setFont(RSSReaderCanvas.FONT_TITLE);
+        g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_FOREGROUND);
         curY = renderLines(g, curY, RSSReaderCanvas.FONT_TITLE, StringUtils.splitToLines(selectedItem.getTitle(), RSSReaderCanvas.FONT_TITLE, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
 
         g.setFont(RSSReaderCanvas.FONT_DATE);

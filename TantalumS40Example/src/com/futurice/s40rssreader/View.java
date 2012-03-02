@@ -24,7 +24,7 @@ public abstract class View implements CommandListener {
      * Renderds the view using the Graphics object
      * @param g
      */
-    public abstract void render(Graphics g, DirectGraphics dg, int width);
+    public abstract void render(Graphics g, DirectGraphics dg, int width, int height);
 
     /**
      * Returns array of Commands related to this view
@@ -62,7 +62,7 @@ public abstract class View implements CommandListener {
         if (barHeight < 2) barHeight = 2;
 
         //fill bar
-        g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHT);
+        g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND);
         g.fillRect(canvas.getWidth() - 4, barY, 4, barHeight);
     }
 }

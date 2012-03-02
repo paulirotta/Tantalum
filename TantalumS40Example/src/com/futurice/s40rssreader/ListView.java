@@ -93,7 +93,7 @@ public final class ListView extends View {
      *
      * @param g
      */
-    public void render(final Graphics g, final DirectGraphics dg, final int width) {
+    public void render(final Graphics g, final DirectGraphics dg, final int width, final int height) {
         try {
             final int contentHeight = rssModel.size() * ITEM_HEIGHT;
 
@@ -139,7 +139,7 @@ public final class ListView extends View {
                 curY += ITEM_HEIGHT;
 
                 //stop rendering below the screen
-                if (curY > canvas.getHeight()) {
+                if (curY > height) {
                     break;
                 }
             }
@@ -160,11 +160,11 @@ public final class ListView extends View {
      */
 //    private void renderItem(Graphics g, final int curY, final RSSItem item, final boolean selected) {
 //        if (selected) {
-//            g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHT);
+//            g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND);
 //            g.fillRect(0, curY, canvas.getWidth(), ITEM_HEIGHT);
-//            g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHT_FONT);
+//            g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_FOREGROUND);
 //        } else {
-//            g.setColor(RSSReaderCanvas.COLOR_FONT);
+//            g.setColor(RSSReaderCanvas.COLOR_FOREGROUND);
 //        }
 //
 //        g.setFont(RSSReaderCanvas.FONT_TITLE);
@@ -177,22 +177,16 @@ public final class ListView extends View {
 //        g.drawLine(0, curY + ITEM_HEIGHT, canvas.getWidth(), curY + ITEM_HEIGHT);
 //    }
     private Image createItemImage(final RSSItem item, final int width, final boolean selected) {
-        final Image image = DirectUtils.createImage(width, ITEM_HEIGHT, selected ? RSSReaderCanvas.COLOR_HIGHLIGHT : 0x00000000);
+        final Image image = DirectUtils.createImage(width, ITEM_HEIGHT, selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND : RSSReaderCanvas.COLOR_BACKGROUND);
         final Graphics g = image.getGraphics();
 
-        if (selected) {
-            g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHT_FONT);
-        } else {
-            g.setColor(RSSReaderCanvas.COLOR_FONT);
-        }
-
+        g.setColor(selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_FOREGROUND : RSSReaderCanvas.COLOR_FOREGROUND);
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.drawString(item.getTruncatedTitle(), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN, Graphics.LEFT | Graphics.TOP);
-
         g.setFont(RSSReaderCanvas.FONT_DATE);
         g.drawString(item.getPubDate(), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN + RSSReaderCanvas.FONT_TITLE.getHeight(), Graphics.LEFT | Graphics.TOP);
 
-        g.setColor(RSSReaderCanvas.COLOR_BORDER);
+        g.setColor(selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_BORDER : RSSReaderCanvas.COLOR_BORDER);
         g.drawLine(0, ITEM_HEIGHT, canvas.getWidth(), ITEM_HEIGHT);
 
         return image;
