@@ -36,7 +36,7 @@ public final class WeakHashCache {
 
     private final Hashtable hash = new Hashtable();
 
-    public Object get(String key) {
+    public Object get(final Object key) {
         synchronized (hash) {
             Object o = null;
             final WeakReference reference = (WeakReference) hash.get(key);
@@ -49,7 +49,7 @@ public final class WeakHashCache {
         }
     }
 
-    public void put(String key, Object value) {
+    public void put(final Object key, final Object value) {
         if (key == null) {
             Log.l.log("WeakHash put", "key is null");
             return;
@@ -62,7 +62,7 @@ public final class WeakHashCache {
         hash.put(key, new WeakReference(value));
     }
 
-    public void remove(String key) {
+    public void remove(final Object key) {
         if (key != null) {
             hash.remove(key);
         } else {
@@ -70,7 +70,7 @@ public final class WeakHashCache {
         }
     }
 
-    public boolean containsKey(String key) {
+    public boolean containsKey(final Object key) {
         if (key != null) {
             return hash.containsKey(key);
         } else {
@@ -81,5 +81,9 @@ public final class WeakHashCache {
 
     public int size() {
         return hash.size();
+    }
+
+    public void clear() {
+        hash.clear();
     }
 }

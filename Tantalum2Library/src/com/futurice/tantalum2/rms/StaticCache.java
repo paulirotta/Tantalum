@@ -82,7 +82,7 @@ public class StaticCache {
         Object o = null;
 
         if (containsKey(key)) {
-            Log.l.log("StaticCache hit in RAM", key);
+//            Log.l.log("StaticCache hit in RAM", key);
             this.accessOrder.removeElement(key);
             this.accessOrder.addElement(key);
             o = cache.get(key);
