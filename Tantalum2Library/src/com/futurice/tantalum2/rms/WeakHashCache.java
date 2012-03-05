@@ -32,9 +32,9 @@ import java.util.Hashtable;
  *
  * @author phou
  */
-public final class WeakHashCache {
+public class WeakHashCache {
 
-    private final Hashtable hash = new Hashtable();
+    protected final Hashtable hash = new Hashtable();
 
     public Object get(final Object key) {
         synchronized (hash) {

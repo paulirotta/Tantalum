@@ -6,7 +6,9 @@
  */
 package com.futurice.tantalum2.log;
 
-import jmunit.framework.cldc10.*;
+import jmunit.framework.cldc11.AssertionFailedException;
+import jmunit.framework.cldc11.TestCase;
+
 
 /**
  * @author phou
