@@ -12,7 +12,7 @@ import javax.microedition.lcdui.Graphics;
  */
 public abstract class View implements CommandListener {
     public static final int SCROLL_BAR_WIDTH = 4;
-    public static final int SCROLL_BAR_ARGB = 0x44000000;
+    public static final int SCROLL_BAR_COLOR = 0x44000000;
     protected int renderY;
     protected final RSSReaderCanvas canvas;
 
@@ -24,7 +24,7 @@ public abstract class View implements CommandListener {
      * Renderds the view using the Graphics object
      * @param g
      */
-    public abstract void render(Graphics g, DirectGraphics dg, int width, int height);
+    public abstract void render(Graphics g, int width, int height);
 
     /**
      * Returns array of Commands related to this view
@@ -44,7 +44,7 @@ public abstract class View implements CommandListener {
         return canvas;
     }
 
-    public void renderScrollBar(final Graphics g, final DirectGraphics dg, final int contentHeight) {
+    public void renderScrollBar(final Graphics g, final int contentHeight) {
         final int visibleAreaHeight = canvas.getHeight();
 
         if (contentHeight < visibleAreaHeight) {
@@ -53,16 +53,14 @@ public abstract class View implements CommandListener {
         }
 
         //fill background with transparent color
-        dg.setARGBColor(SCROLL_BAR_ARGB);
+        g.setColor(SCROLL_BAR_COLOR);
         g.fillRect(canvas.getWidth() - SCROLL_BAR_WIDTH, 0, SCROLL_BAR_WIDTH, canvas.getHeight());
 
-        int barY = -renderY * canvas.getHeight() / contentHeight;
-        int barHeight = canvas.getHeight() * canvas.getHeight() / contentHeight;
-
-        if (barHeight < 2) barHeight = 2;
+        final int barY = -renderY * canvas.getHeight() / contentHeight;
+        final int barHeight = Math.max(2, canvas.getHeight() * canvas.getHeight() / contentHeight);
 
         //fill bar
         g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND);
-        g.fillRect(canvas.getWidth() - 4, barY, 4, barHeight);
+        g.fillRect(canvas.getWidth() - SCROLL_BAR_WIDTH, barY, SCROLL_BAR_WIDTH, barHeight);
     }
 }

@@ -105,7 +105,7 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
      * @param g
      */
     public void paint(final Graphics g) {
-        currentView.render(g, DirectUtils.getDirectGraphics(g), getWidth() - View.SCROLL_BAR_WIDTH, getHeight());
+        currentView.render(g, getWidth() - View.SCROLL_BAR_WIDTH, getHeight());
     }
 
     /**
@@ -113,7 +113,7 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
      */
     public void showList() {
         animator.stop();
-        listView.setSelectedIndex(-1);
+//        listView.setSelectedIndex(-1);
         detailsView.getSelectedItem().setThumbnailImage(null);
         detailsView.setSelectedItem(null);
         setCurrentView(listView);
@@ -136,7 +136,7 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
 
         switch (ge.getType()) {
             case GestureInteractiveZone.GESTURE_DRAG:
-                listView.setSelectedIndex(-1);
+//                listView.setSelectedIndex(-1);
                 animator.drag(0, currentView.getRenderY() + ge.getDragDistanceY());
                 break;
             case GestureInteractiveZone.GESTURE_DROP:

@@ -4,9 +4,8 @@ import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.DefaultResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.DataTypeHandler;
+import com.futurice.tantalum2.rms.PoolingWeakHashCache;
 import com.futurice.tantalum2.rms.RMSUtils;
-import com.futurice.tantalum2.rms.WeakHashCache;
-import com.nokia.mid.ui.DirectGraphics;
 import com.nokia.mid.ui.DirectUtils;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
@@ -29,9 +28,9 @@ public final class ListView extends View {
     private final StaticWebCache feedCache;
     private boolean loading = false;
     private int selectedIndex = -1;
-    private final WeakHashCache renderCache = new WeakHashCache();
+    private final PoolingWeakHashCache renderCache = new PoolingWeakHashCache();
 
-    public ListView(RSSReaderCanvas canvas) {
+    public ListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
         feedCache = new StaticWebCache("rss", 1, new DataTypeHandler() {
@@ -54,7 +53,7 @@ public final class ListView extends View {
         return new Command[]{reloadCommand, settingsCommand, exitCommand};
     }
 
-    public void commandAction(Command command, Displayable d) {
+    public void commandAction(final Command command, final Displayable d) {
         if (command == exitCommand) {
             canvas.getRssReader().exitMIDlet();
         } else if (command == reloadCommand) {
@@ -93,7 +92,7 @@ public final class ListView extends View {
      *
      * @param g
      */
-    public void render(final Graphics g, final DirectGraphics dg, final int width, final int height) {
+    public void render(final Graphics g, final int width, final int height) {
         try {
             final int contentHeight = rssModel.size() * ITEM_HEIGHT;
 
@@ -107,7 +106,8 @@ public final class ListView extends View {
             }
 
             if (loading) {
-                renderLoading(g);
+                g.setColor(RSSReaderCanvas.COLOR_FOREGROUND);
+                g.drawString("Loading...", canvas.getWidth() >> 1, canvas.getHeight() >> 1, Graphics.BASELINE | Graphics.HCENTER);
                 return;
             }
 
@@ -123,28 +123,30 @@ public final class ListView extends View {
             int startIndex = -this.renderY / ITEM_HEIGHT;
             curY += startIndex * ITEM_HEIGHT;
 
-            final int len = rssModel.size();
-            for (int i = startIndex; i < len; i++) {
+            for (int i = startIndex; i < rssModel.size(); i++) {
                 if (curY > -ITEM_HEIGHT) {
 //                    renderItem(g, curY, (RSSItem) rssModel.elementAt(i), i == selectedIndex);
                     final RSSItem item = rssModel.elementAt(i);
                     Image itemImage = (Image) this.renderCache.get(item);
 
                     if (itemImage == null) {
-                        itemImage = createItemImage(item, width, i == selectedIndex);
-                        this.renderCache.put(item, itemImage);
+                        itemImage = getItemImage(item, width, i == selectedIndex);
                     }
                     g.drawImage(itemImage, 0, curY, Graphics.TOP | Graphics.LEFT);
+                } else {
+                    // Reduce load on the garbage collector when scrolling
+                    renderCache.remove(rssModel.elementAt(i));
                 }
                 curY += ITEM_HEIGHT;
 
                 //stop rendering below the screen
                 if (curY > height) {
+                    renderCache.remove(rssModel.elementAt(i));
                     break;
                 }
             }
 
-            renderScrollBar(g, dg, contentHeight);
+            renderScrollBar(g, contentHeight);
         } catch (Exception e) {
             Log.l.log("Render error", rssModel.toString(), e);
         }
@@ -176,9 +178,19 @@ public final class ListView extends View {
 //        g.setColor(RSSReaderCanvas.COLOR_BORDER);
 //        g.drawLine(0, curY + ITEM_HEIGHT, canvas.getWidth(), curY + ITEM_HEIGHT);
 //    }
-    private Image createItemImage(final RSSItem item, final int width, final boolean selected) {
-        final Image image = DirectUtils.createImage(width, ITEM_HEIGHT, selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND : RSSReaderCanvas.COLOR_BACKGROUND);
-        final Graphics g = image.getGraphics();
+    private Image getItemImage(final RSSItem item, final int width, final boolean selected) {
+        Image image = (Image) this.renderCache.getFromPool();
+        final Graphics g;
+
+        if (image != null) {
+            g = image.getGraphics();
+            g.setColor(selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND : RSSReaderCanvas.COLOR_BACKGROUND);
+            g.fillRect(0, 0, width, ITEM_HEIGHT);
+        } else {
+            image = DirectUtils.createImage(width, ITEM_HEIGHT, selected ? 0xFF000000 | RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND : 0xFF000000 | RSSReaderCanvas.COLOR_BACKGROUND);
+            g = image.getGraphics();
+            this.renderCache.put(item, image);
+        }
 
         g.setColor(selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_FOREGROUND : RSSReaderCanvas.COLOR_FOREGROUND);
         g.setFont(RSSReaderCanvas.FONT_TITLE);
@@ -190,15 +202,6 @@ public final class ListView extends View {
         g.drawLine(0, ITEM_HEIGHT, canvas.getWidth(), ITEM_HEIGHT);
 
         return image;
-    }
-
-    /**
-     * Renders loading status
-     *
-     * @param g
-     */
-    private void renderLoading(Graphics g) {
-        g.drawString("Loading...", canvas.getWidth() / 2, canvas.getHeight() / 2, Graphics.BASELINE | Graphics.HCENTER);
     }
 
     /**
@@ -253,10 +256,9 @@ public final class ListView extends View {
      * @param y
      * @param tapped
      */
-    public void selectItem(final int x, final int y, boolean tapped) {
-
-        final int absoluteY = -this.renderY + y;
-        final int pointedIndex = absoluteY / ITEM_HEIGHT;
+    public void selectItem(final int x, int y, boolean tapped) {
+        y -= this.renderY;
+        final int pointedIndex = y / ITEM_HEIGHT;
 
         if (pointedIndex >= 0 && pointedIndex < rssModel.size()) {
             setSelectedIndex(pointedIndex);
@@ -268,11 +270,10 @@ public final class ListView extends View {
         }
     }
 
-    public int getSelectedIndex() {
-        return selectedIndex;
-    }
-
     public void setSelectedIndex(final int newIndex) {
+        if (selectedIndex == newIndex) {
+            return;
+        }
         if (selectedIndex >= 0) {
             renderCache.remove(rssModel.elementAt(selectedIndex));
         }

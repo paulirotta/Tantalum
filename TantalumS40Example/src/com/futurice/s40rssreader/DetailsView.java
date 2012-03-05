@@ -63,7 +63,7 @@ public class DetailsView extends View {
     /*
      * Renders the details of the selected item
      */
-    public void render(final Graphics g, final DirectGraphics dg, final int width, final int height) {
+    public void render(final Graphics g, final int width, final int height) {
         if (contentHeight < canvas.getHeight()) {
             this.renderY = 0;
         } else if (this.renderY < -contentHeight + canvas.getHeight()) {
@@ -79,7 +79,7 @@ public class DetailsView extends View {
 
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_FOREGROUND);
-        curY = renderLines(g, curY, RSSReaderCanvas.FONT_TITLE, StringUtils.splitToLines(selectedItem.getTitle(), RSSReaderCanvas.FONT_TITLE, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
+        curY = renderLines(g, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), StringUtils.splitToLines(selectedItem.getTitle(), RSSReaderCanvas.FONT_TITLE, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
 
         g.setFont(RSSReaderCanvas.FONT_DATE);
         g.drawString(selectedItem.getPubDate(), 10, curY, Graphics.LEFT | Graphics.TOP);
@@ -87,7 +87,7 @@ public class DetailsView extends View {
         curY += RSSReaderCanvas.FONT_DATE.getHeight() * 2;
 
         g.setFont(RSSReaderCanvas.FONT_DESCRIPTION);
-        curY = renderLines(g, curY, RSSReaderCanvas.FONT_DESCRIPTION, StringUtils.splitToLines(selectedItem.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
+        curY = renderLines(g, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), StringUtils.splitToLines(selectedItem.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
 
         curY += RSSReaderCanvas.FONT_DESCRIPTION.getHeight();
 
@@ -95,7 +95,7 @@ public class DetailsView extends View {
         if (url != null) {
             final Image image = (Image) imageCache.synchronousGet(url);
             if (image != null) {
-                g.drawImage(image, canvas.getWidth() / 2, curY, Graphics.TOP | Graphics.HCENTER);
+                g.drawImage(image, canvas.getWidth() >> 1, curY, Graphics.TOP | Graphics.HCENTER);
                 curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
             } else if (!selectedItem.isLoadingImage()) {
                 // Not already loading image, so request it
@@ -115,16 +115,17 @@ public class DetailsView extends View {
 
         contentHeight = curY - renderY;
 
-        renderScrollBar(g, dg, contentHeight);
+        renderScrollBar(g, contentHeight);
     }
 
-    private int renderLines(Graphics g, int startY, Font font, Vector lines) {
-        int curY = startY;
+    private int renderLines(final Graphics g, int curY, final int lineHeight, final Vector lines) {
         final int len = lines.size();
+        
         for (int i = 0; i < len; i++) {
             g.drawString((String) lines.elementAt(i), RSSReaderCanvas.MARGIN, curY, Graphics.LEFT | Graphics.TOP);
-            curY += font.getHeight();
+            curY += lineHeight;
         }
+        
         return curY;
     }
 
