@@ -12,35 +12,56 @@ import javax.microedition.midlet.MIDlet;
 /**
  * A worker thread. Long-running and background tasks are queued and executed
  * here to keep the user interface thread free to be responsive.
- * 
+ *
  * @author pahought
  */
 public final class Worker implements Runnable {
+
     private static final Vector q = new Vector();
+    private static final Vector shutdownQueue = new Vector();
     private static MIDlet midlet;
     private static Display display;
+    private static volatile int workerCount = 0;
+    private static int currentlyIdleCount = 0;
+    private static boolean shuttingDown = false;
+    private static Runnable shutdownCompleteRunnable = null;
 
     /**
      * Initialize the Worker class at the start of your MIDlet.
-     * 
-     * Generally numberOfWorkers=2 is suggested, but you can increase this
-     * later when tuning your application's performance.
-     * 
+     *
+     * Generally numberOfWorkers=2 is suggested, but you can increase this later
+     * when tuning your application's performance.
+     *
      * @param midlet
-     * @param numberOfWorkers 
+     * @param numberOfWorkers
      */
-    public static void init(MIDlet midlet, int numberOfWorkers) {
+    public static void init(final MIDlet midlet, final int numberOfWorkers) {
         Worker.midlet = midlet;
         Worker.display = Display.getDisplay(midlet);
-        for (int i = 0; i < numberOfWorkers; i++) {
-            new Thread(new Worker(), "Worker" + i).start();
-        }
+        createWorker(); // First worker
+        Worker.queue(new Workable() {
+
+            /**
+             * The first worker creates the others in the background
+             */
+            public boolean work() {
+                for (int i = 1; i < numberOfWorkers; i++) {
+                    createWorker();
+                }
+
+                return false;
+            }
+        });
+    }
+
+    private static void createWorker() {
+        new Thread(new Worker(), "Worker" + ++workerCount).start();
     }
 
     /**
      * Access the MIDlet associated with this application
-     * 
-     * @return 
+     *
+     * @return
      */
     public static MIDlet getMIDlet() {
         return midlet;
@@ -51,8 +72,8 @@ public final class Worker implements Runnable {
 
     /**
      * Add an object to be executed in the background on the worker thread
-     * 
-     * @param workable 
+     *
+     * @param workable
      */
     public static void queue(final Workable workable) {
         synchronized (q) {
@@ -63,17 +84,25 @@ public final class Worker implements Runnable {
 
     /**
      * Add an object to be executed in the foreground on the event dispatch
-     * thread. All popular JavaME applications require UI and input events to
-     * be called serially only from this one thread.
-     * 
+     * thread. All popular JavaME applications require UI and input events to be
+     * called serially only from this one thread.
+     *
      * Note that if you queue too many object on the EDT you risk out of memory
      * and (more commonly) a temporarily unresponsive user interface.
-     * 
-     * @param runnable 
+     *
+     * @param runnable
      */
     public static void queueEDT(final Object runnable) {
         if (runnable instanceof Runnable) {
             Worker.display.callSerially((Runnable) runnable);
+        }
+    }
+
+    public static void shutdown(final Runnable shutdownCompleteRunnable) {
+        synchronized (q) {
+            shuttingDown = true;
+            Worker.shutdownCompleteRunnable = shutdownCompleteRunnable;
+            q.notifyAll();
         }
     }
 
@@ -87,7 +116,24 @@ public final class Worker implements Runnable {
                         workable = (Workable) q.elementAt(0);
                         q.removeElementAt(0);
                     } else {
-                        q.wait();
+                        ++currentlyIdleCount;
+                        if (!shuttingDown || currentlyIdleCount < workerCount) {
+                            // Empty queue, or waiting for other Worker tasks to complete before shutdown tasks start
+                            q.wait();
+                        } else {
+                            while (!shutdownQueue.isEmpty()) {
+                                // Start shutdown actions
+                                queue((Workable) shutdownQueue.elementAt(0));
+                                shutdownQueue.removeElementAt(0);
+                            }
+                            if (q.isEmpty() && currentlyIdleCount == workerCount) {
+                                // Shutdown actions all complete
+                                --currentlyIdleCount;
+                                Worker.queueEDT(shutdownCompleteRunnable);
+                                break;
+                            }
+                        }
+                        --currentlyIdleCount;
                     }
                 }
                 if (workable != null && workable.work() && workable instanceof Runnable) {
@@ -97,6 +143,9 @@ public final class Worker implements Runnable {
             }
         } catch (Throwable t) {
             Log.l.log("Worker error", "", t);
+        } finally {
+            --workerCount;
+            Log.l.log("Worker stop", "workerCount=" + workerCount);
         }
     }
 }
