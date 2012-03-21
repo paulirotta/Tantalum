@@ -1,4 +1,4 @@
-package com.futurice.tantalum2.rms;
+package com.futurice.rmsdeprecated;
 
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;

@@ -5,8 +5,8 @@
 package com.futurice.tantalum2.net;
 
 import com.futurice.tantalum2.DefaultResult;
-import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.Result;
+import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
 import java.util.Hashtable;
@@ -21,7 +21,7 @@ public class StaticWebCache extends StaticCache {
     private static final int RETRIES = 3;
     private final Hashtable timestamps = new Hashtable();
 
-    public StaticWebCache(final String name, final int priority, final DataTypeHandler handler) {
+    public StaticWebCache(final String name, final char priority, final DataTypeHandler handler) {
         super(name, priority, handler);
     }
 
@@ -43,7 +43,7 @@ public class StaticWebCache extends StaticCache {
 //        Worker.queue(new Workable() {
 //
 //            public boolean work() {
-//                final Object o = StaticWebCache.super.synchronousGet(url);
+//                final Object o = StaticWebCache.super.synchronousRAMCacheGet(url);
 //
 //                if (o != null) {
 //                    result.setResult(o, true);

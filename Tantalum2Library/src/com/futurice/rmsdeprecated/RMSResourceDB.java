@@ -1,4 +1,4 @@
-package com.futurice.tantalum2.rms;
+package com.futurice.rmsdeprecated;
 
 import com.futurice.tantalum2.log.Log;
 import java.io.ByteArrayInputStream;
@@ -12,7 +12,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import com.futurice.tantalum2.rms.RMSStore.RMSStoreCallbackListener;
+import com.futurice.rmsdeprecated.RMSStore.RMSStoreCallbackListener;
 import javax.microedition.rms.RecordStore;
 
 /**

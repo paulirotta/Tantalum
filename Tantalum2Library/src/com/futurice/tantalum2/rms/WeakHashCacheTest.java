@@ -72,7 +72,7 @@ public class WeakHashCacheTest extends TestCase {
         assertEquals(instance.size(), 2);
         instance.put(key2, null);
         assertEquals(instance.size(), 1);
-        for (int i = 0; i < 20000; i++) {
+        for (int i = 0; i < 10000; i++) {
             instance.put("keykeykey" + i, "valuevaluevalue" + i);
         }
         Object val1 = instance.get(key1);
@@ -122,7 +122,7 @@ public class WeakHashCacheTest extends TestCase {
     public void testSize() throws AssertionFailedException {
         System.out.println("size");
         WeakHashCache instance = new WeakHashCache();
-        final int length = 20000;
+        final int length = 10000;
         for (int i = 0; i < length; i++) {
             instance.put("keykeykey" + i, "valuevaluevalue" + i);
         }

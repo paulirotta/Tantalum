@@ -1,7 +1,10 @@
 package com.futurice.tantalum2.rms;
 
 import com.futurice.tantalum2.log.Log;
-import javax.microedition.rms.*;
+import javax.microedition.rms.RecordStore;
+import javax.microedition.rms.RecordStoreException;
+import javax.microedition.rms.RecordStoreFullException;
+import javax.microedition.rms.RecordStoreNotFoundException;
 
 /**
  * RMS Utility methods
@@ -9,17 +12,22 @@ import javax.microedition.rms.*;
  * @author ssaa
  */
 public class RMSUtils {
-    private static final byte[] EMPTY_ARRAY = new byte[0];
+
+    private static final int MAX_RECORD_NAME_LENGTH = 32;
+
     /**
      * Writes the byte array to the record store. Deletes the previous data.
      *
      * @param recordStoreName
      * @param data
      */
-    public static void write(final String recordStoreName, final byte[] data) throws RecordStoreFullException {
+    public static void write(String recordStoreName, final byte[] data) throws RecordStoreFullException {
         RecordStore rs = null;
 
         try {
+            if (recordStoreName.length() > MAX_RECORD_NAME_LENGTH) {
+                recordStoreName = recordStoreName.substring(0, MAX_RECORD_NAME_LENGTH);
+            }
             //delete old value
             try {
                 RecordStore.deleteRecordStore(recordStoreName);
@@ -51,25 +59,21 @@ public class RMSUtils {
      * @param recordStoreName
      * @return byte[]
      */
-    public static byte[] readByteArray(String recordStoreName) {
+    public static byte[] read(String recordStoreName) {
         RecordStore rs = null;
-        RecordEnumeration re = null;
         byte[] data = null;
 
         try {
-            rs = RecordStore.openRecordStore(recordStoreName, true);
-            re = rs.enumerateRecords(null, null, false);
-
-            if (re.hasNextElement()) {
-                data = rs.getRecord(re.nextRecordId());
+            if (recordStoreName.length() > MAX_RECORD_NAME_LENGTH) {
+                recordStoreName = recordStoreName.substring(0, MAX_RECORD_NAME_LENGTH);
+            }
+            rs = RecordStore.openRecordStore(recordStoreName, false);
+            if (rs.getNumRecords() > 0) {
+                data = rs.getRecord(0);
             }
         } catch (Exception e) {
-            Log.l.log("RMS not found", recordStoreName, e);
+            Log.l.log("Can not read RMS", recordStoreName, e);
         } finally {
-            if (re != null) {
-                re.destroy();
-            }
-
             try {
                 if (rs != null) {
                     rs.closeRecordStore();

@@ -1,7 +1,4 @@
-package com.futurice.tantalum2.rms;
-
-import com.futurice.tantalum2.rms.RMSResourceType;
-import com.futurice.tantalum2.rms.RMSRecord;
+package com.futurice.rmsdeprecated;
 
 /**
  * Abstract base class for RMS resources.

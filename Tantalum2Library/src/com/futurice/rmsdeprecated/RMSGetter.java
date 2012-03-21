@@ -1,7 +1,9 @@
 /**
  *
  */
-package com.futurice.tantalum2.rms;
+package com.futurice.rmsdeprecated;
+
+import com.futurice.rmsdeprecated.ByteArrayStorableResource;
 
 /**
  * Class responsible for handling requests to RMSRersourceDB.

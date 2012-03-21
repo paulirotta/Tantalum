@@ -1,5 +1,6 @@
-package com.futurice.tantalum2.rms;
+package com.futurice.rmsdeprecated;
 
+import com.futurice.rmsdeprecated.ByteArrayStorableResource;
 import com.futurice.tantalum2.net.xml.XMLStorableResource;
 
 /**

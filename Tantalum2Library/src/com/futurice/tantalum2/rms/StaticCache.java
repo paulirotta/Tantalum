@@ -1,10 +1,11 @@
 package com.futurice.tantalum2.rms;
 
+import com.futurice.rmsdeprecated.RMSResourceDB;
+import com.futurice.rmsdeprecated.RMSResourceType;
 import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
-
 import java.util.Vector;
 
 /**
@@ -30,10 +31,9 @@ public class StaticCache {
     protected final WeakHashCache cache = new WeakHashCache();
     protected final Vector accessOrder = new Vector();
     protected final String name;
-    protected final int priority; // defines the size of reserved space for this cache
+    protected final char priority; // Must be unique, '0'-'9', larger numbers get more space when space is limited
     protected final DataTypeHandler handler;
     protected int sizeAsBytes = 0;
-    private static long SESSION_ID;
 
     /**
      * Create a named cache
@@ -42,17 +42,26 @@ public class StaticCache {
      * is limited.
      *
      * @param name
-     * @param priority, a positive integer
+     * @param priority, a character from '0' to '9', higher numbers get a preference for space
      * @param handler
      */
-    public StaticCache(String name, int priority, DataTypeHandler handler) {
+    public StaticCache(final String name, final char priority, final DataTypeHandler handler) {
         this.name = name;
         this.priority = priority;
         this.handler = handler;
-        SESSION_ID = System.currentTimeMillis();
 
-        sumOfPriorities += priority;
-        caches.addElement(this);
+        if (priority < '0' || priority > '9') {
+            throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0'-'9'");
+        }
+        synchronized (caches) {
+            for (int i = 0; i < caches.size(); i++) {
+                if (((StaticCache) caches.elementAt(i)).priority == priority) {
+                    throw new IllegalArgumentException("A StaticCache with priority=" + priority + " already exists");
+                }
+            }
+            caches.addElement(this);
+            sumOfPriorities += Integer.parseInt("" + priority);
+        }
     }
 
     /**
@@ -78,7 +87,7 @@ public class StaticCache {
      * @param key
      * @return
      */
-    public synchronized Object synchronousGet(final String key) {
+    public synchronized Object synchronousRAMCacheGet(final String key) {
         Object o = null;
 
         if (containsKey(key)) {
@@ -94,11 +103,12 @@ public class StaticCache {
         return o;
     }
 
-    public synchronized Object synchronousGetIncludingRMS(final String key) {
-        Object o = synchronousGet(key);
+    public synchronized Object synchronousRAMCacheAndRMSGet(final String key) {
+        Object o = synchronousRAMCacheGet(key);
 
         if (o == null) {
-            final byte[] bytes = (new RMSGetter(SESSION_ID, RMSResourceType.BYTE_ARRAY, key)).get();
+//            final byte[] bytes = (new RMSGetter(SESSION_ID, RMSResourceType.BYTE_ARRAY, key)).get();
+            final byte[] bytes = RMSUtils.read(key);
             if (bytes != null) {
                 Log.l.log("StaticCache hit in RMS", key);
 
@@ -110,21 +120,22 @@ public class StaticCache {
     }
 
     public void get(final String key, final Result result) {
-        final Object ho = synchronousGet(key);
+        final Object ho = synchronousRAMCacheGet(key);
+
         if (ho != null) {
             result.setResult(ho, true);
             Worker.queueEDT(result);
             return;
         }
-        
+
         Worker.queue(new Workable() {
 
             public boolean work() {
-                final Object o = synchronousGetIncludingRMS(key);
+                final Object o = synchronousRAMCacheAndRMSGet(key);
 
                 if (o != null) {
                     result.setResult(o, true);
-                    Worker.queueEDT(result);
+//                    Worker.queueEDT(result);
                 } else {
                     result.noResult();
                 }
@@ -205,22 +216,23 @@ public class StaticCache {
         Worker.queue(new Workable() {
 
             public boolean work() {
-                final ByteArrayStorableResource res = new ByteArrayStorableResource(0, key, bytes);
-                final int recordLength = res.serialize().length;
+//                final ByteArrayStorableResource res = new ByteArrayStorableResource(0, key, bytes);
+//                final int recordLength = res.serialize().length;
 
-                if (makeSpace(recordLength)) {
+                if (makeSpace(bytes.length)) {
                     try {
-                        RMSResourceDB.getInstance().storeResource(res);
                         Log.l.log("Store to RMS", key);
                         accessOrder.removeElement(key);
                         accessOrder.addElement(key);
+                        RMSUtils.write(key, bytes);
+//                        RMSResourceDB.getInstance().storeResource(res);
                     } catch (Exception e) {
                         Log.l.log("Couldn't store object to RMS", key, e);
                     }
                 } else {
                     Log.l.log("Couldn't store object to RMS (too big item?)", key);
                 }
-                Log.l.log("*** All caches size total", countTotalSizeAsBytes() + "/" + TOTAL_SIZE_BYTES_MAX + " Cache " + name + " size: " + sizeAsBytes + " Size of record stored: " + recordLength);
+                Log.l.log("*** All caches size total", countTotalSizeAsBytes() + "/" + TOTAL_SIZE_BYTES_MAX + " Cache " + name + " size: " + sizeAsBytes + " Size of record stored: " + bytes.length);
 
                 return false;
             }
@@ -234,7 +246,6 @@ public class StaticCache {
             if (containsKey(key)) {
                 this.accessOrder.removeElement(key);
                 this.cache.remove(key);
-                this.accessOrder.removeElement(key);
                 RMSResourceDB.getInstance().deleteResource(RMSResourceType.BYTE_ARRAY, key);
                 Log.l.log("Removed (from RAM and RMS)", key);
             }
@@ -284,7 +295,7 @@ public class StaticCache {
 
     /**
      * The relative priority used for allocating RMS space between multiple
-     * caches. Higher priority caches synchronousGet more space.
+     * caches. Higher priority caches synchronousRAMCacheGet more space.
      *
      * @return
      */
@@ -308,11 +319,12 @@ public class StaticCache {
      * @return
      */
     public synchronized String toString() {
-        String str;
-        str = "StaticCache " + name + " --- priority: " + priority + " size: " + getSize() + " size (bytes): " + sizeAsBytes + " space: " + this.getSizeOfReservedSpace() + "\n";
+        String str = "StaticCache " + name + " --- priority: " + priority + " size: " + getSize() + " size (bytes): " + sizeAsBytes + " space: " + this.getSizeOfReservedSpace() + "\n";
+
         for (int i = 0; i < accessOrder.size(); i++) {
             str += accessOrder.elementAt(i) + "\n";
         }
+
         return str;
     }
 }
