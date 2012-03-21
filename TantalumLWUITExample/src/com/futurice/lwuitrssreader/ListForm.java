@@ -4,12 +4,7 @@ import com.futurice.tantalum2.DefaultResult;
 import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.net.StaticWebCache;
-import com.sun.lwuit.Form;
-import com.sun.lwuit.Command;
-import com.sun.lwuit.List;
-import com.sun.lwuit.Component;
-import com.sun.lwuit.Container;
-import com.sun.lwuit.Label;
+import com.sun.lwuit.*;
 import com.sun.lwuit.animations.CommonTransitions;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
@@ -35,7 +30,7 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
         listModel = new ListModel(this);
         list = new List(listModel);
         list.addActionListener(this);
-        feedCache = new StaticWebCache("feeds", 1, new RSSTypeHandler(listModel));
+        feedCache = new StaticWebCache("feeds", '5', new RSSTypeHandler(listModel));
 
         addComponent(list);
         addCommand(settingsCommand);

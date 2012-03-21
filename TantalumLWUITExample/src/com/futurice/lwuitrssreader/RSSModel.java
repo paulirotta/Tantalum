@@ -26,10 +26,10 @@ public class RSSModel extends XMLModel {
         listModel.repaint();
     }
 
-    protected void element(Vector charStack, Vector qnameStack, Vector attributeStack) {
+    protected void element(final Vector charStack, final Vector qnameStack, final Vector attributeStack) {
         try {
-            String lastChar = (String) charStack.lastElement();
-            String lastQname = (String) qnameStack.lastElement();
+            final String lastChar = (String) charStack.lastElement();
+            final String lastQname = (String) qnameStack.lastElement();
 
             if (lastQname.equals("item")) {
                 current = new RSSItem();

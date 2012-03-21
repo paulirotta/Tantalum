@@ -8,12 +8,12 @@ import com.futurice.tantalum2.DefaultResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
 import com.sun.lwuit.Command;
-import com.sun.lwuit.Label;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Image;
+import com.sun.lwuit.Label;
 import com.sun.lwuit.animations.CommonTransitions;
-import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.events.ActionEvent;
+import com.sun.lwuit.events.ActionListener;
 import java.util.Vector;
 
 /**
@@ -36,7 +36,7 @@ public class DetailsForm extends Form implements ActionListener {
     public DetailsForm(String title, RSSReader midlet) {
         super(title);
         this.midlet = midlet;
-        this.imageCache = new StaticWebCache("imgs", 2, new ImageTypeHandler());
+        this.imageCache = new StaticWebCache("imgs", '1', new ImageTypeHandler());
         setScrollableY(true);
         pubDateLabel = new Label("");
 
