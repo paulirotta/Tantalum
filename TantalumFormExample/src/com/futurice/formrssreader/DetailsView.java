@@ -19,14 +19,13 @@ public class DetailsView extends Form implements CommandListener {
 
     private RSSReader rssReader;
     private RSSItem selectedItem;
-    private StaticWebCache imageCache;
+    private static StaticWebCache imageCache = new StaticWebCache("images", '1', new ImageTypeHandler());
     private Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private Command backCommand = new Command("Back", Command.BACK, 0);
 
     public DetailsView(RSSReader rssReader, String title) {
         super(title);
         this.rssReader = rssReader;
-        this.imageCache = new StaticWebCache("images", '1', new ImageTypeHandler());
         this.addCommand(openLinkCommand);
         this.addCommand(backCommand);
         this.setCommandListener(this);
