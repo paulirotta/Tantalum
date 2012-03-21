@@ -1,8 +1,7 @@
 package com.futurice.lwuitrssreader;
 
 import com.futurice.tantalum2.DefaultResult;
-import com.futurice.tantalum2.Result;
-import com.futurice.tantalum2.Worker;
+import com.futurice.tantalum2.DefaultRunnableResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.sun.lwuit.*;
 import com.sun.lwuit.animations.CommonTransitions;
@@ -13,7 +12,7 @@ import com.sun.lwuit.list.ListCellRenderer;
 /**
  * @author tsaa
  */
-public class ListForm extends Form implements ActionListener, ListCellRenderer {
+public final class ListForm extends Form implements ActionListener, ListCellRenderer {
 
     static Command settingsCommand = new Command("Settings");
     static Command reloadCommand = new Command("Reload");
@@ -75,17 +74,15 @@ public class ListForm extends Form implements ActionListener, ListCellRenderer {
                 list.getModel().removeItem(i);
             }
 
-            final Result result = new DefaultResult() {
+            final DefaultResult result = new DefaultResult() {
 
                 public void noResult() {
-                    super.noResult();
-                    
-                    Worker.queueEDT(this);
+                    isReloading = false;
                 }
-                
-                public void run() {
-                    super.run();
 
+                public void setResult(Object o) {
+                    super.setResult(o);
+                    
                     isReloading = false;
                 }
             };
