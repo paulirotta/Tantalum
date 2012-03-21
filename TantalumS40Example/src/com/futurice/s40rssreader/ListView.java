@@ -1,7 +1,7 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.DefaultResult;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.PoolingWeakHashCache;
@@ -33,7 +33,7 @@ public final class ListView extends View {
     public ListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        feedCache = new StaticWebCache("rss", 1, new DataTypeHandler() {
+        feedCache = new StaticWebCache("rss", '5', new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
                 try {
@@ -62,7 +62,7 @@ public final class ListView extends View {
             String feedUrl = RSSReader.INITIAL_FEED_URL;
 
             try {
-                final byte[] bytes = RMSUtils.readByteArray("settings");
+                final byte[] bytes = RMSUtils.read("settings");
 
                 if (bytes != null) {
                     feedUrl = bytes.toString();
@@ -220,7 +220,7 @@ public final class ListView extends View {
         String feedUrl = RSSReader.INITIAL_FEED_URL;
 
         try {
-            final byte[] bytes = RMSUtils.readByteArray("settings");
+            final byte[] bytes = RMSUtils.read("settings");
             if (bytes != null) {
                 feedUrl = bytes.toString();
             }

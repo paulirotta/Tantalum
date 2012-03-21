@@ -1,16 +1,14 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.rssreader.common.StringUtils;
-import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.DefaultResult;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
-import com.nokia.mid.ui.DirectGraphics;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
@@ -30,7 +28,7 @@ public class DetailsView extends View {
     public DetailsView(RSSReaderCanvas canvas) {
         super(canvas);
 
-        this.imageCache = new StaticWebCache("images", 2, new ImageTypeHandler());
+        this.imageCache = new StaticWebCache("images", '1', new ImageTypeHandler());
     }
 
     public Command[] getCommands() {
@@ -93,7 +91,7 @@ public class DetailsView extends View {
 
         final String url = selectedItem.getThumbnail();
         if (url != null) {
-            final Image image = (Image) imageCache.synchronousGet(url);
+            final Image image = (Image) imageCache.synchronousRAMCacheGet(url);
             if (image != null) {
                 g.drawImage(image, canvas.getWidth() >> 1, curY, Graphics.TOP | Graphics.HCENTER);
                 curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
