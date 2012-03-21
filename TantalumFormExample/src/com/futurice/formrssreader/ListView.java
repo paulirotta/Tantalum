@@ -47,7 +47,7 @@ public class ListView extends Form implements CommandListener {
         ListView.instance = ListView.this;
         this.rssReader = rssReader;
         this.detailsView = new DetailsView(rssReader, title);
-        this.feedCache = new StaticWebCache("rss", 1, new DataTypeHandler() {
+        this.feedCache = new StaticWebCache("rss", '5', new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
                 try {
@@ -77,7 +77,7 @@ public class ListView extends Form implements CommandListener {
             String feedUrl = RSSReader.INITIAL_FEED_URL;
 
             try {
-                feedUrl = RMSUtils.readByteArray("settings").toString();
+                feedUrl = RMSUtils.read("settings").toString();
             } catch (Exception e) {
                 Log.l.log("Can not read settings", "", e);
             }
@@ -104,7 +104,7 @@ public class ListView extends Form implements CommandListener {
         String feedUrl = RSSReader.INITIAL_FEED_URL;
 
         try {
-            final byte[] bytes = RMSUtils.readByteArray("settings");
+            final byte[] bytes = RMSUtils.read("settings");
             
             if (bytes != null) {
                 feedUrl = bytes.toString();

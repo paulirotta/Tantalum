@@ -4,19 +4,12 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.DefaultResult;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
-import javax.microedition.lcdui.Form;
 import javax.microedition.io.ConnectionNotFoundException;
-import javax.microedition.lcdui.Command;
-import javax.microedition.lcdui.CommandListener;
-import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Image;
-import javax.microedition.lcdui.ImageItem;
-import javax.microedition.lcdui.Item;
-import javax.microedition.lcdui.StringItem;
+import javax.microedition.lcdui.*;
 
 /**
  *
@@ -33,7 +26,7 @@ public class DetailsView extends Form implements CommandListener {
     public DetailsView(RSSReader rssReader, String title) {
         super(title);
         this.rssReader = rssReader;
-        this.imageCache = new StaticWebCache("images", 2, new ImageTypeHandler());
+        this.imageCache = new StaticWebCache("images", '1', new ImageTypeHandler());
         this.addCommand(openLinkCommand);
         this.addCommand(backCommand);
         this.setCommandListener(this);
