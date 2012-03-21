@@ -25,10 +25,9 @@ public class RMSUtils {
         RecordStore rs = null;
 
         try {
-            if (recordStoreName.length() > MAX_RECORD_NAME_LENGTH) {
-                recordStoreName = recordStoreName.substring(0, MAX_RECORD_NAME_LENGTH);
-            }
             //delete old value
+            Log.l.log("Add to RMS", recordStoreName + " (" + data.length + " bytes)");
+            recordStoreName = truncateRecordStoreName(recordStoreName);
             try {
                 RecordStore.deleteRecordStore(recordStoreName);
             } catch (RecordStoreNotFoundException recordStoreNotFoundException) {
@@ -53,6 +52,24 @@ public class RMSUtils {
         }
     }
 
+    public static void delete(String recordStoreName) {
+        try {
+            recordStoreName = truncateRecordStoreName(recordStoreName);
+            RecordStore.deleteRecordStore(recordStoreName);
+        } catch (RecordStoreNotFoundException ex) {
+        } catch (RecordStoreException ex) {
+            Log.l.log("RMS delete problem", recordStoreName, ex);
+        }
+    }
+
+    private static String truncateRecordStoreName(String recordStoreName) {
+        if (recordStoreName.length() > MAX_RECORD_NAME_LENGTH) {
+            recordStoreName = recordStoreName.substring(0, MAX_RECORD_NAME_LENGTH);
+        }
+        
+        return recordStoreName;
+    }
+
     /**
      * Reads the data from the given recordstore.
      *
@@ -64,12 +81,10 @@ public class RMSUtils {
         byte[] data = null;
 
         try {
-            if (recordStoreName.length() > MAX_RECORD_NAME_LENGTH) {
-                recordStoreName = recordStoreName.substring(0, MAX_RECORD_NAME_LENGTH);
-            }
+            recordStoreName = truncateRecordStoreName(recordStoreName);
             rs = RecordStore.openRecordStore(recordStoreName, false);
             if (rs.getNumRecords() > 0) {
-                data = rs.getRecord(0);
+                data = rs.getRecord(1);
             }
         } catch (Exception e) {
             Log.l.log("Can not read RMS", recordStoreName, e);

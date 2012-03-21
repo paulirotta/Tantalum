@@ -1,7 +1,5 @@
 package com.futurice.tantalum2.rms;
 
-import com.futurice.rmsdeprecated.RMSResourceDB;
-import com.futurice.rmsdeprecated.RMSResourceType;
 import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
@@ -42,7 +40,8 @@ public class StaticCache {
      * is limited.
      *
      * @param name
-     * @param priority, a character from '0' to '9', higher numbers get a preference for space
+     * @param priority, a character from '0' to '9', higher numbers get a
+     * preference for space
      * @param handler
      */
     public StaticCache(final String name, final char priority, final DataTypeHandler handler) {
@@ -75,6 +74,7 @@ public class StaticCache {
     private Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         final Object o = handler.convertToUseForm(bytes);
         remove(key);
+        this.accessOrder.removeElement(key);
         accessOrder.addElement(key);
         cache.put(key, o);
 
@@ -124,25 +124,24 @@ public class StaticCache {
 
         if (ho != null) {
             result.setResult(ho, true);
-            Worker.queueEDT(result);
-            return;
-        }
+//            Worker.queueEDT(result);
+        } else {
+            Worker.queue(new Workable() {
 
-        Worker.queue(new Workable() {
+                public boolean work() {
+                    final Object o = synchronousRAMCacheAndRMSGet(key);
 
-            public boolean work() {
-                final Object o = synchronousRAMCacheAndRMSGet(key);
-
-                if (o != null) {
-                    result.setResult(o, true);
+                    if (o != null) {
+                        result.setResult(o, true);
 //                    Worker.queueEDT(result);
-                } else {
-                    result.noResult();
-                }
+                    } else {
+                        result.noResult();
+                    }
 
-                return false;
-            }
-        });
+                    return false;
+                }
+            });
+        }
     }
 
     /**
@@ -152,47 +151,47 @@ public class StaticCache {
      * @param spaceNeeded
      * @return
      */
-    public synchronized static boolean makeSpace(final int spaceNeeded) {
-        if (spaceNeeded > TOTAL_SIZE_BYTES_MAX) {
-            return false;
-        }
-        while (countTotalSizeAsBytes() + spaceNeeded > TOTAL_SIZE_BYTES_MAX) {
-            removeMostUseless();
-        }
-        return true;
-    }
+//    public synchronized static boolean makeSpace(final int spaceNeeded) {
+//        if (spaceNeeded > TOTAL_SIZE_BYTES_MAX) {
+//            return false;
+//        }
+//        while (countTotalSizeAsBytes() + spaceNeeded > TOTAL_SIZE_BYTES_MAX) {
+//            removeMostUseless();
+//        }
+//        return true;
+//    }
 
-    private synchronized static int countTotalSizeAsBytes() {
-        int total = 0;
-        for (int i = 0; i < caches.size(); i++) {
-            total += ((StaticCache) caches.elementAt(i)).sizeAsBytes;
-        }
-
-        return total;
-    }
+//    private synchronized static int countTotalSizeAsBytes() {
+//        int total = 0;
+//        for (int i = 0; i < caches.size(); i++) {
+//            total += ((StaticCache) caches.elementAt(i)).sizeAsBytes;
+//        }
+//
+//        return total;
+//    }
 
     /**
      * Removes an item from the StaticCache which most exceeds its reserved
      * space according to available space and assigned priority number
      *
      */
-    private synchronized static void removeMostUseless() {
-        StaticCache mostExceedingCache = (StaticCache) caches.elementAt(0);
-        double biggestRatio = (double) mostExceedingCache.sizeAsBytes / (double) mostExceedingCache.getSizeOfReservedSpace();
-
-        if (caches.size() > 1) {
-            for (int i = 1; i < caches.size(); i++) {
-                final StaticCache candidate = (StaticCache) caches.elementAt(i);
-                final double candidateRatio = (double) candidate.sizeAsBytes / (double) candidate.getSizeOfReservedSpace();
-
-                if (candidateRatio > biggestRatio) {
-                    mostExceedingCache = candidate;
-                    biggestRatio = candidateRatio;
-                }
-            }
-        }
-        mostExceedingCache.removeOldest();
-    }
+//    private synchronized static void removeMostUseless() {
+//        StaticCache mostExceedingCache = (StaticCache) caches.elementAt(0);
+//        double biggestRatio = (double) mostExceedingCache.sizeAsBytes / (double) mostExceedingCache.getSizeOfReservedSpace();
+//
+//        if (caches.size() > 1) {
+//            for (int i = 1; i < caches.size(); i++) {
+//                final StaticCache candidate = (StaticCache) caches.elementAt(i);
+//                final double candidateRatio = (double) candidate.sizeAsBytes / (double) candidate.getSizeOfReservedSpace();
+//
+//                if (candidateRatio > biggestRatio) {
+//                    mostExceedingCache = candidate;
+//                    biggestRatio = candidateRatio;
+//                }
+//            }
+//        }
+//        mostExceedingCache.removeOldest();
+//    }
 
     protected synchronized int getSizeOfReservedSpace() {
         return TOTAL_SIZE_BYTES_MAX * priority / sumOfPriorities;
@@ -219,7 +218,7 @@ public class StaticCache {
 //                final ByteArrayStorableResource res = new ByteArrayStorableResource(0, key, bytes);
 //                final int recordLength = res.serialize().length;
 
-                if (makeSpace(bytes.length)) {
+//                if (makeSpace(bytes.length)) {
                     try {
                         Log.l.log("Store to RMS", key);
                         accessOrder.removeElement(key);
@@ -229,10 +228,10 @@ public class StaticCache {
                     } catch (Exception e) {
                         Log.l.log("Couldn't store object to RMS", key, e);
                     }
-                } else {
-                    Log.l.log("Couldn't store object to RMS (too big item?)", key);
-                }
-                Log.l.log("*** All caches size total", countTotalSizeAsBytes() + "/" + TOTAL_SIZE_BYTES_MAX + " Cache " + name + " size: " + sizeAsBytes + " Size of record stored: " + bytes.length);
+//                } else {
+//                    Log.l.log("Couldn't store object to RMS (too big item?)", key);
+//                }
+//                Log.l.log("*** All caches size total", countTotalSizeAsBytes() + "/" + TOTAL_SIZE_BYTES_MAX + " Cache " + name + " size: " + sizeAsBytes + " Size of record stored: " + bytes.length);
 
                 return false;
             }
@@ -246,7 +245,8 @@ public class StaticCache {
             if (containsKey(key)) {
                 this.accessOrder.removeElement(key);
                 this.cache.remove(key);
-                RMSResourceDB.getInstance().deleteResource(RMSResourceType.BYTE_ARRAY, key);
+                RMSUtils.delete(key);
+//(                RMSResourceDB.getInstance().deleteResource(RMSResourceType.BYTE_ARRAY, key);
                 Log.l.log("Removed (from RAM and RMS)", key);
             }
         } catch (Exception e) {
