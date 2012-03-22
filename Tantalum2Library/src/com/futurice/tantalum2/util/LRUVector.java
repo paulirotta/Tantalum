@@ -32,6 +32,10 @@ public class LRUVector extends Vector {
         throw new IllegalArgumentException("setElementAt() not allowed on LRUVector");
     }
     
+    public void insertElementAt(Object o, int index) {
+        throw new IllegalArgumentException("insertElementAt() not allowed on LRUVector");
+    }
+    
     public synchronized Object removeLeastRecentlyUsed() {
         Object o = null;
         

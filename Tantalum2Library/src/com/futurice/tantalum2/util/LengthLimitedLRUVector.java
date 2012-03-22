@@ -17,6 +17,9 @@ public abstract class LengthLimitedLRUVector extends LRUVector {
         this.maxLength = maxLength;
     }
     
+    /**
+     * You _must_ remove the removeLeastRecentlyUsed() object when length is exceeded
+     */
     protected abstract void lengthExceeded();
 
     public synchronized void addElement(Object o) {
