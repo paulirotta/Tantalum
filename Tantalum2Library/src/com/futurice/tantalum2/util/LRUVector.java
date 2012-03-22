@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.futurice.tantalum2.rms;
+package com.futurice.tantalum2.util;
 
 import java.util.Vector;
 
@@ -15,6 +15,14 @@ import java.util.Vector;
  * @author phou
  */
 public class LRUVector extends Vector {
+    public LRUVector() {
+        super();
+    }
+    
+    public LRUVector(final int length) {
+        super(length);
+    }
+    
     public synchronized void addElement(Object o) {
         removeElement(o);
         super.addElement(o);

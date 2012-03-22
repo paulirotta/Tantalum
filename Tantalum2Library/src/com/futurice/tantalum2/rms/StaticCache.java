@@ -1,10 +1,16 @@
 package com.futurice.tantalum2.rms;
 
+import com.futurice.tantalum2.util.LRUVector;
+import com.futurice.tantalum2.util.WeakHashCache;
 import com.futurice.tantalum2.DefaultResult;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.util.SortedVector;
 import java.util.Vector;
+import javax.microedition.rms.RecordStore;
+import javax.microedition.rms.RecordStoreException;
+import javax.microedition.rms.RecordStoreFullException;
 
 /**
  * A cache which returns Objects based on a String key asynchronously from RAM,
@@ -23,7 +29,12 @@ public class StaticCache {
 
     protected static final int DATA_TYPE_IMAGE = 1;
     protected static final int DATA_TYPE_XML = 2;
-    private static final Vector caches = new Vector();
+    private static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
+
+        public boolean before(final Object o1, final Object o2) {
+            return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
+        }
+    });
     protected final WeakHashCache cache = new WeakHashCache();
     protected final LRUVector accessOrder = new LRUVector();
     protected final String name;
@@ -102,8 +113,8 @@ public class StaticCache {
         Object o = synchronousRAMCacheGet(key);
 
         if (o == null) {
-            final byte[] bytes = RMSUtils.read(key);
-            
+            final byte[] bytes = RMSUtils.read(key.hashCode());
+
             if (bytes != null) {
                 Log.l.log("StaticCache hit in RMS", key);
 
@@ -155,8 +166,8 @@ public class StaticCache {
 
             public boolean work() {
                 try {
-                    Log.l.log("Store to RMS", key);
-                    RMSUtils.write(key, bytes);
+                    Log.l.log("Cache to RMS", key);
+                    RMSUtils.write(key.hashCode(), bytes);
                 } catch (Exception e) {
                     Log.l.log("Couldn't store object to RMS", key, e);
                 }
@@ -166,6 +177,85 @@ public class StaticCache {
         });
 
         return convertAndPutToHeapCache(key, bytes);
+    }
+
+    public static void write(final String key, final byte[] data) {
+        do {
+            try {
+                RMSUtils.write(key.hashCode(), data);
+                return;
+            } catch (RecordStoreFullException ex) {
+                Log.l.log("Clearning space for data, ABORTING", key + " (" + data.length + " bytes)");
+                if (!clearSpace(data.length)) {
+                    Log.l.log("Can not clear enough space for data, ABORTING", key);
+                }
+            }
+        } while (true);
+    }
+
+    /**
+     * Remove unused and then currently used items from the RMS cache to make
+     * room for new items.
+     * 
+     * @param minSpaceToClear - in bytes
+     * @return true if the requested amount of space has been cleared
+     */
+    private static boolean clearSpace(final int minSpaceToClear) {
+        int spaceCleared = 0;
+        final Vector rsv = RMSUtils.getCachedRecordStoreNames();
+
+        // First: clear cached objects not currently appearing in any open cache
+        for (int i = rsv.size() - 1; i >= 0; i--) {
+            final String key = (String) rsv.elementAt(i);
+            final StaticCache cache = getCacheContainingKey(key);
+
+            if (cache != null) {
+                cache.remove(key);
+                spaceCleared += getByteSizeByKey(key);
+            }
+        }
+
+        // Second: remove currently cached items, first from low priority caches
+        while (spaceCleared < minSpaceToClear && rsv.size() > 0) {
+            for (int i = 0; i < caches.size(); i++) {
+                final StaticCache cache = (StaticCache) caches.elementAt(i);
+
+                while (cache.accessOrder.size() > 0 && spaceCleared < minSpaceToClear) {
+                    final String key = (String) cache.accessOrder.removeLeastRecentlyUsed();
+                    cache.remove(key);
+                    spaceCleared += getByteSizeByKey(key);
+                }
+            }
+        }
+
+        return spaceCleared >= minSpaceToClear;
+    }
+
+    private static int getByteSizeByKey(final String key) {
+        int size = 0;
+
+        try {
+            final RecordStore rs = RMSUtils.getRecordStore(key, false);
+            size = rs.getSize();
+        } catch (RecordStoreException ex) {
+            Log.l.log("Can not check size of record store to clear space", key, ex);
+        }
+
+        return size;
+    }
+
+    private static StaticCache getCacheContainingKey(String key) {
+        StaticCache cache = null;
+
+        for (int i = 0; i < caches.size(); i++) {
+            final StaticCache currentCache = (StaticCache) caches.elementAt(i);
+            if (currentCache.containsKey(key)) {
+                cache = currentCache;
+                break;
+            }
+        }
+
+        return cache;
     }
 
     public synchronized void remove(final String key) {

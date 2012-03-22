@@ -4,7 +4,7 @@
  *
  * Created on 07-Feb-2012, 16:02:23
  */
-package com.futurice.tantalum2.rms;
+package com.futurice.tantalum2.util;
 
 import jmunit.framework.cldc11.*;
 

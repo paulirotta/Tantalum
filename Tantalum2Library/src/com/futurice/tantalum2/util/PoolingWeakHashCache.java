@@ -2,8 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.futurice.tantalum2.rms;
+package com.futurice.tantalum2.util;
 
+import com.futurice.tantalum2.util.WeakHashCache;
 import com.futurice.tantalum2.log.Log;
 import java.lang.ref.WeakReference;
 import java.util.Vector;

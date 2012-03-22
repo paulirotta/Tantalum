@@ -41,7 +41,6 @@ public class DefaultResult {
      */
     public synchronized void setResult(final Object o) {
         this.o = o;
-        Worker.queueEDT(this);
     }
 
     /**

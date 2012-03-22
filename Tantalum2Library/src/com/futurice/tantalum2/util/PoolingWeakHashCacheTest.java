@@ -4,7 +4,7 @@
  *
  * Created on 05-Mar-2012, 11:13:28
  */
-package com.futurice.tantalum2.rms;
+package com.futurice.tantalum2.util;
 
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;

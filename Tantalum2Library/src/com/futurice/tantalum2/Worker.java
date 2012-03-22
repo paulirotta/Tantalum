@@ -83,6 +83,18 @@ public final class Worker implements Runnable {
     }
 
     /**
+     * Add an object to be executed in the background on the worker thread
+     *
+     * @param workable
+     */
+    public static void queueShutdownTask(final Workable workable) {
+        synchronized (q) {
+            shutdownQueue.addElement(workable);
+            q.notifyAll();
+        }
+    }
+
+    /**
      * Add an object to be executed in the foreground on the event dispatch
      * thread. All popular JavaME applications require UI and input events to be
      * called serially only from this one thread.
