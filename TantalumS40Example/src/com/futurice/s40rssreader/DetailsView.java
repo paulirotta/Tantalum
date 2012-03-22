@@ -20,15 +20,13 @@ import javax.microedition.lcdui.Image;
 public class DetailsView extends View {
 
     private RSSItem selectedItem;
-    private final StaticWebCache imageCache;
+    private final StaticWebCache imageCache = new StaticWebCache("images", '1', new ImageTypeHandler());
     private int contentHeight;
     private Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private Command backCommand = new Command("Back", Command.BACK, 0);
 
     public DetailsView(RSSReaderCanvas canvas) {
         super(canvas);
-
-        this.imageCache = new StaticWebCache("images", '1', new ImageTypeHandler());
     }
 
     public Command[] getCommands() {
@@ -71,7 +69,7 @@ public class DetailsView extends View {
         }
 
         int curY = renderY;
-        
+
         g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND);
         g.fillRect(0, 0, width, height);
 
@@ -101,9 +99,8 @@ public class DetailsView extends View {
                 item.setLoadingImage(true);
                 imageCache.get(item.getThumbnail(), new DefaultResult() {
 
-                    public void run() {
-                        super.run();
-
+                    public void setResult(Object o) {
+                        super.setResult(o);
                         item.setLoadingImage(false);
                         DetailsView.this.getCanvas().repaint();
                     }
@@ -118,12 +115,12 @@ public class DetailsView extends View {
 
     private int renderLines(final Graphics g, int curY, final int lineHeight, final Vector lines) {
         final int len = lines.size();
-        
+
         for (int i = 0; i < len; i++) {
             g.drawString((String) lines.elementAt(i), RSSReaderCanvas.MARGIN, curY, Graphics.LEFT | Graphics.TOP);
             curY += lineHeight;
         }
-        
+
         return curY;
     }
 

@@ -24,9 +24,9 @@
                 <script>${project.Tantalum2Library}/build.xml</script>
                 <target>jar</target>
                 <clean-target>clean</clean-target>
-                <id>jar.Release</id>
+                <id>jar</id>
                 <properties>
-                    <property name="config.active">Release</property>
+                    <property name="config.active"/>
                 </properties>
             </reference>
         </references>

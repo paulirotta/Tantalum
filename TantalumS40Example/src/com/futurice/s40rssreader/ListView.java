@@ -4,7 +4,7 @@ import com.futurice.tantalum2.DefaultResult;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.rms.DataTypeHandler;
-import com.futurice.tantalum2.rms.PoolingWeakHashCache;
+import com.futurice.tantalum2.util.PoolingWeakHashCache;
 import com.futurice.tantalum2.rms.RMSUtils;
 import com.nokia.mid.ui.DirectUtils;
 import javax.microedition.lcdui.Command;
@@ -230,18 +230,16 @@ public final class ListView extends View {
         if (initialLoad) {
             feedCache.get(feedUrl, new DefaultResult() {
 
-                public void run() {
-                    super.run();
-
+                public void setResult(Object o) {
+                    super.setResult(o);
                     notifyListChanged();
                 }
             });
         } else {
             feedCache.update(feedUrl, new DefaultResult() {
 
-                public void run() {
-                    super.run();
-
+                public void setResult(Object o) {
+                    super.setResult(o);
                     notifyListChanged();
                 }
             });
