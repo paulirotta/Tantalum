@@ -1,7 +1,6 @@
 package com.futurice.s40rssreader;
 
-import com.nokia.mid.ui.DirectGraphics;
-import com.nokia.mid.ui.DirectUtils;
+import com.futurice.tantalum2.net.xml.RSSItem;
 import com.nokia.mid.ui.frameanimator.FrameAnimator;
 import com.nokia.mid.ui.frameanimator.FrameAnimatorListener;
 import com.nokia.mid.ui.gestures.GestureEvent;
@@ -113,7 +112,6 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
      */
     public void showList() {
         animator.stop();
-//        listView.setSelectedIndex(-1);
         detailsView.getSelectedItem().setThumbnailImage(null);
         detailsView.setSelectedItem(null);
         setCurrentView(listView);
@@ -133,10 +131,8 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
      * @see GestureListener.gestureAction(Object o, GestureInteractiveZone giz, GestureEvent ge)
      */
     public void gestureAction(Object o, GestureInteractiveZone giz, GestureEvent ge) {
-
         switch (ge.getType()) {
             case GestureInteractiveZone.GESTURE_DRAG:
-//                listView.setSelectedIndex(-1);
                 animator.drag(0, currentView.getRenderY() + ge.getDragDistanceY());
                 break;
             case GestureInteractiveZone.GESTURE_DROP:

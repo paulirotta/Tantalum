@@ -1,11 +1,12 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum2.DefaultResult;
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
+import com.futurice.tantalum2.net.xml.RSSItem;
 import com.futurice.tantalum2.rms.DataTypeHandler;
-import com.futurice.tantalum2.util.PoolingWeakHashCache;
 import com.futurice.tantalum2.rms.RMSUtils;
+import com.futurice.tantalum2.util.PoolingWeakHashCache;
 import com.nokia.mid.ui.DirectUtils;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
@@ -24,7 +25,7 @@ public final class ListView extends View {
     private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
     private final Command reloadCommand = new Command("Reload", Command.ITEM, 0);
     private final Command settingsCommand = new Command("Settings", Command.ITEM, 1);
-    private final RSSModel rssModel = new RSSModel();
+    private final LiveUpdateRSSModel rssModel = new LiveUpdateRSSModel();
     private final StaticWebCache feedCache;
     private boolean loading = false;
     private int selectedIndex = -1;
@@ -125,7 +126,7 @@ public final class ListView extends View {
 
             for (int i = startIndex; i < rssModel.size(); i++) {
                 if (curY > -ITEM_HEIGHT) {
-//                    renderItem(g, curY, (RSSItem) rssModel.elementAt(i), i == selectedIndex);
+//                    renderItem(g, curY, (DeprecatedRSSItem) rssModel.elementAt(i), i == selectedIndex);
                     final RSSItem item = rssModel.elementAt(i);
                     Image itemImage = (Image) this.renderCache.get(item);
 
@@ -160,7 +161,7 @@ public final class ListView extends View {
      * @param item
      * @param selected
      */
-//    private void renderItem(Graphics g, final int curY, final RSSItem item, final boolean selected) {
+//    private void renderItem(Graphics g, final int curY, final DeprecatedRSSItem item, final boolean selected) {
 //        if (selected) {
 //            g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND);
 //            g.fillRect(0, curY, canvas.getWidth(), ITEM_HEIGHT);
@@ -194,7 +195,8 @@ public final class ListView extends View {
 
         g.setColor(selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_FOREGROUND : RSSReaderCanvas.COLOR_FOREGROUND);
         g.setFont(RSSReaderCanvas.FONT_TITLE);
-        g.drawString(item.getTruncatedTitle(), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN, Graphics.LEFT | Graphics.TOP);
+        final int w = width - 2 * RSSReaderCanvas.MARGIN;
+        g.drawString(item.getTruncatedTitle(RSSReaderCanvas.FONT_TITLE, w), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN, Graphics.LEFT | Graphics.TOP);
         g.setFont(RSSReaderCanvas.FONT_DATE);
         g.drawString(item.getPubDate(), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN + RSSReaderCanvas.FONT_TITLE.getHeight(), Graphics.LEFT | Graphics.TOP);
 
@@ -228,7 +230,7 @@ public final class ListView extends View {
             Log.l.log("Can not read settings", "", e);
         }
         if (initialLoad) {
-            feedCache.get(feedUrl, new DefaultResult() {
+            feedCache.get(feedUrl, new Result() {
 
                 public void setResult(Object o) {
                     super.setResult(o);
@@ -236,7 +238,7 @@ public final class ListView extends View {
                 }
             });
         } else {
-            feedCache.update(feedUrl, new DefaultResult() {
+            feedCache.update(feedUrl, new Result() {
 
                 public void setResult(Object o) {
                     super.setResult(o);

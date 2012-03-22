@@ -1,10 +1,11 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.rssreader.common.StringUtils;
-import com.futurice.tantalum2.DefaultResult;
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
+import com.futurice.tantalum2.net.xml.RSSItem;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
+import com.futurice.tantalum2.util.StringUtils;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Command;
@@ -45,14 +46,16 @@ public class DetailsView extends View {
      * Opens a link in the browser for the selected RSS item
      */
     private void openLink() {
+        boolean needsToClose;
+        final String url = getCanvas().getDetailsView().getSelectedItem().getLink();
+        
         try {
-            boolean needsToClose = canvas.getRssReader().platformRequest(getCanvas().getDetailsView().getSelectedItem().getLink());
+            needsToClose = canvas.getRssReader().platformRequest(url);
             if (needsToClose) {
                 canvas.getRssReader().exitMIDlet();
             }
-        } catch (ConnectionNotFoundException connectionNotFoundException) {
-            Log.l.log("Eror opening link", getCanvas().getDetailsView().getSelectedItem().getLink(), connectionNotFoundException);
-            canvas.getRssReader().showError("Could not open link");
+        } catch (ConnectionNotFoundException ex) {
+            Log.l.log("Can not open browser to URL", url, ex);
         }
     }
 
@@ -97,7 +100,7 @@ public class DetailsView extends View {
                 // Not already loading image, so request it
                 final RSSItem item = selectedItem;
                 item.setLoadingImage(true);
-                imageCache.get(item.getThumbnail(), new DefaultResult() {
+                imageCache.get(item.getThumbnail(), new Result() {
 
                     public void setResult(Object o) {
                         super.setResult(o);
