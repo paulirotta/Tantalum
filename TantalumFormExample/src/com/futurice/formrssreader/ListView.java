@@ -4,22 +4,15 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.DefaultResult;
-import com.futurice.tantalum2.DefaultRunnableResult;
-import com.futurice.tantalum2.net.StaticWebCache;
+import com.futurice.tantalum2.RunnableResult;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.net.StaticWebCache;
+import com.futurice.tantalum2.net.xml.RSSItem;
+import com.futurice.tantalum2.net.xml.RSSModel;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.RMSUtils;
-import javax.microedition.lcdui.Command;
-import javax.microedition.lcdui.CommandListener;
-import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Font;
-import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.Image;
-import javax.microedition.lcdui.Item;
-import javax.microedition.lcdui.ItemCommandListener;
-import javax.microedition.lcdui.StringItem;
+import javax.microedition.lcdui.*;
 
 /**
  *
@@ -52,9 +45,10 @@ public class ListView extends Form implements CommandListener {
 
             public Object convertToUseForm(byte[] bytes) {
                 try {
-                    rssModel.getItems().removeAllElements();
+                    rssModel.removeAllElements();
                     rssModel.setXML(bytes);
-
+                    notifyListChanged();
+                    
                     return rssModel;
                 } catch (Exception e) {
                     Log.l.log("Error parsing XML", rssModel.toString());
@@ -118,7 +112,7 @@ public class ListView extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            feedCache.update(feedUrl, new DefaultRunnableResult() {
+            feedCache.update(feedUrl, new RunnableResult() {
 
                 public void run() {
                     loading = false;
@@ -130,7 +124,7 @@ public class ListView extends Form implements CommandListener {
                 }
             });
         } else {
-            feedCache.get(feedUrl, new DefaultRunnableResult() {
+            feedCache.get(feedUrl, new RunnableResult() {
 
                 public void noResult() {
                     loading = false;
@@ -177,7 +171,7 @@ public class ListView extends Form implements CommandListener {
             return;
         }
 
-        if (rssModel.getItems().isEmpty()) {
+        if (rssModel.size() == 0) {
             if (startIndex == 0) {
                 deleteAll();
             }
@@ -194,9 +188,9 @@ public class ListView extends Form implements CommandListener {
             deleteAll();
         }
 
-        final int len = rssModel.getItems().size();
+        final int len = rssModel.size();
         for (int i = startIndex; i < len; i++) {
-            final RSSItem rssItem = (RSSItem) rssModel.getItems().elementAt(i);
+            final RSSItem rssItem = (RSSItem) rssModel.elementAt(i);
 
             Worker.queueEDT(new Runnable() {
 
@@ -209,7 +203,7 @@ public class ListView extends Form implements CommandListener {
     }
 
     public void addItem(final RSSItem rssItem) {
-        final StringItem titleStringItem = new StringItem(null, rssItem.getTruncatedTitle(), StringItem.PLAIN);
+        final StringItem titleStringItem = new StringItem(null, rssItem.getTitle(), StringItem.PLAIN);
         titleStringItem.setFont(ListView.FONT_TITLE);
         titleStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
         final Command cmdShow = new Command("", Command.OK, 1);
