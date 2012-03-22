@@ -8,8 +8,8 @@ import com.futurice.tantalum2.log.Log;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Vector;
-import javax.xml.parsers.*;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -19,13 +19,15 @@ import org.xml.sax.helpers.DefaultHandler;
  * parsing and integration to utility methods allows these to work online and
  * offline (using RMS) transparent to the application developer using the
  * caching classes.
- * 
+ *
  * @author pahought
  */
 public abstract class XMLModel extends DefaultHandler {
-    final private Vector qnameStack = new Vector();
-    final private Vector charStack = new Vector();
-    final private Vector attributeStack = new Vector();
+
+    protected String[] qnameStack = new String[100];
+    protected String[] charStack = new String[100];
+    protected XMLAttributes[] attributeStack = new XMLAttributes[100];
+    protected int currentDepth;
 
     /**
      * Null constructor is an empty placeholder
@@ -36,6 +38,11 @@ public abstract class XMLModel extends DefaultHandler {
     public synchronized void setXML(final byte[] xml) throws ParserConfigurationException, SAXException, IOException {
         final InputStream in = new ByteArrayInputStream(xml);
 
+        qnameStack = new String[100];
+        charStack = new String[100];
+        attributeStack = new XMLAttributes[100];
+        currentDepth = 0;
+
         try {
             Log.l.log("Start parse", "");
             SAXParserFactory.newInstance().newSAXParser().parse(in, this);
@@ -44,33 +51,32 @@ public abstract class XMLModel extends DefaultHandler {
             Log.l.log("Parse error", "", t);
         } finally {
             in.close();
+            qnameStack = null;
+            charStack = null;
+            attributeStack = null;
         }
     }
 
     /**
      * Implement this method to store fields of interest in your value object
+     * from the qnameStack, charStack, and 
      *
-     * @param chars
-     * @param qnameStack
-     * @param attributeStack
      */
-    abstract protected void element(Vector charStack, Vector qnameStack, Vector attributeStack);
+    abstract protected void parseElement(String qname, String chars, XMLAttributes attributes);
 
     public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
-        qnameStack.addElement(qName);
-        attributeStack.addElement(new XMLAttributes(attributes));
-        charStack.addElement("");
+        qnameStack[currentDepth] = qName;
+        attributeStack[currentDepth] = new XMLAttributes(attributes);
+        charStack[currentDepth] = "";
+        currentDepth++;
     }
 
     public void characters(final char[] ch, final int start, final int length) throws SAXException {
-        final String chars = new String(ch, start, length);
-        charStack.setElementAt(chars, charStack.size() - 1);
+        charStack[currentDepth - 1] = new String(ch, start, length);
     }
 
     public void endElement(final String uri, final String localName, final String qName) throws SAXException {
-        element(charStack, qnameStack, attributeStack); 
-        qnameStack.removeElementAt(qnameStack.size() - 1);
-        attributeStack.removeElementAt(attributeStack.size() - 1);
-        charStack.removeElementAt(charStack.size() - 1);
+        currentDepth--;
+        parseElement(qnameStack[currentDepth], charStack[currentDepth], attributeStack[currentDepth]);
     }
 }
