@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum2.net;
 
-import com.futurice.tantalum2.DefaultResult;
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.log.Log;
 import java.io.ByteArrayOutputStream;
@@ -24,7 +24,7 @@ import javax.microedition.io.HttpConnection;
 public class HttpGetter implements Workable {
 
     private final String url;
-    private final DefaultResult result;
+    private final Result result;
     private int retriesRemaining;
 
     /**
@@ -34,7 +34,7 @@ public class HttpGetter implements Workable {
      * @param retriesRemaining - how many time to attempt connection
      * @param result - optional object notified on the EDT with the result
      */
-    public HttpGetter(final String url, final int retriesRemaining, final DefaultResult result) {
+    public HttpGetter(final String url, final int retriesRemaining, final Result result) {
         this.url = url;
         this.retriesRemaining = retriesRemaining;
         this.result = result;

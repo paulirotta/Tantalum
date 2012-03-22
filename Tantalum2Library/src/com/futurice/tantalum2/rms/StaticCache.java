@@ -2,7 +2,7 @@ package com.futurice.tantalum2.rms;
 
 import com.futurice.tantalum2.util.LRUVector;
 import com.futurice.tantalum2.util.WeakHashCache;
-import com.futurice.tantalum2.DefaultResult;
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
@@ -125,7 +125,7 @@ public class StaticCache {
         return o;
     }
 
-    public void get(final String key, final DefaultResult result) {
+    public void get(final String key, final Result result) {
         final Object ho = synchronousRAMCacheGet(key);
 
         if (ho != null) {

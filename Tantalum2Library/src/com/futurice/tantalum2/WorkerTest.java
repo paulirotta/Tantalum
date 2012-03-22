@@ -114,7 +114,7 @@ public class WorkerTest extends TestCase {
     public void testQueueEDT() throws AssertionFailedException {
         System.out.println("queueEDT");
         final Object mutex = new Object();
-        DefaultResult dgr = new DefaultRunnableResult() {            
+        Result dgr = new RunnableResult() {            
 
             public void run() {
                 setResult("done");

@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum2.net;
 
-import com.futurice.tantalum2.DefaultResult;
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
@@ -30,8 +30,8 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public void get(final String url, final DefaultResult result) {
-        super.get(url, new DefaultResult() {
+    public void get(final String url, final Result result) {
+        super.get(url, new Result() {
             public void setResult(Object o) {
                 result.setResult(o);
             }
@@ -40,7 +40,7 @@ public class StaticWebCache extends StaticCache {
                 update(url, result);
             }
         });
-//        super.get(url, result.prepend(new DefaultResult() {
+//        super.get(url, result.prepend(new Result() {
 //
 //            public void noResult() {
 //                super.noResult();
@@ -57,8 +57,8 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public void update(final String url, final DefaultResult result) {
-        Worker.queue(new HttpGetter(url, RETRIES, new DefaultResult() {
+    public void update(final String url, final Result result) {
+        Worker.queue(new HttpGetter(url, RETRIES, new Result() {
 
             public void setResult(Object o) {
                 super.setResult(o);
@@ -71,7 +71,7 @@ public class StaticWebCache extends StaticCache {
                 result.noResult();
             }
         }));
-//        Worker.queue(new HttpGetter(url, RETRIES, result.prepend(new DefaultResult() {
+//        Worker.queue(new HttpGetter(url, RETRIES, result.prepend(new Result() {
 //
 //            public void setResult(Object o) {
 //                // Convert the result to use form immediately

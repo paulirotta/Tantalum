@@ -25,7 +25,7 @@ package com.futurice.tantalum2;
  * Be sure to use volatile or synchronized() to stay thread safe
  * @author tsaa, paul houghton
  */
-public class DefaultResult {
+public class Result {
 
     private Object o; // volatile is important, this result may be accessed by multiple threads
 
