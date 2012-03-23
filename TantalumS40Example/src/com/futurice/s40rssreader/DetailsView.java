@@ -21,7 +21,7 @@ import javax.microedition.lcdui.Image;
 public class DetailsView extends View {
 
     private RSSItem selectedItem;
-    private final StaticWebCache imageCache = new StaticWebCache("images", '1', new ImageTypeHandler());
+    private final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
     private int contentHeight;
     private Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private Command backCommand = new Command("Back", Command.BACK, 0);

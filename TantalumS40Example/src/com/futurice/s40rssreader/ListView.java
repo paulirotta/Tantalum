@@ -34,7 +34,7 @@ public final class ListView extends View {
     public ListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        feedCache = new StaticWebCache("rss", '5', new DataTypeHandler() {
+        feedCache = new StaticWebCache('5', new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
                 try {
@@ -136,13 +136,15 @@ public final class ListView extends View {
                     g.drawImage(itemImage, 0, curY, Graphics.TOP | Graphics.LEFT);
                 } else {
                     // Reduce load on the garbage collector when scrolling
+                    Log.l.log("1", "");
                     renderCache.remove(rssModel.elementAt(i));
                 }
                 curY += ITEM_HEIGHT;
 
                 //stop rendering below the screen
                 if (curY > height) {
-                    renderCache.remove(rssModel.elementAt(i));
+//                    Log.l.log("2", "");
+//                    renderCache.remove(rssModel.elementAt(i));
                     break;
                 }
             }
