@@ -16,7 +16,7 @@ import javax.microedition.lcdui.*;
  *
  * @author vand
  */
-public class DetailsView extends Form implements CommandListener {
+public class DetailsForm extends Form implements CommandListener {
 
     private RSSReader rssReader;
     private RSSItem selectedItem;
@@ -24,7 +24,7 @@ public class DetailsView extends Form implements CommandListener {
     private Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private Command backCommand = new Command("Back", Command.BACK, 0);
 
-    public DetailsView(RSSReader rssReader, String title) {
+    public DetailsForm(RSSReader rssReader, String title) {
         super(title);
         this.rssReader = rssReader;
         this.addCommand(openLinkCommand);
@@ -36,18 +36,18 @@ public class DetailsView extends Form implements CommandListener {
         if (command == openLinkCommand) {
             openLink();
         } else if (command == backCommand) {
-            ListView.getInstance().showList();
+            ListForm.getInstance().showList();
         }
     }
 
     private void openLink() {
         try {
-            boolean needsToClose = rssReader.platformRequest(ListView.getInstance().getDetailsView().getSelectedItem().getLink());
+            boolean needsToClose = rssReader.platformRequest(ListForm.getInstance().getDetailsView().getSelectedItem().getLink());
             if (needsToClose) {
                 rssReader.exitMIDlet();
             }
         } catch (ConnectionNotFoundException connectionNotFoundException) {
-            Log.l.log("Error opening link" , ListView.getInstance().getDetailsView().getSelectedItem().getLink(), connectionNotFoundException);
+            Log.l.log("Error opening link" , ListForm.getInstance().getDetailsView().getSelectedItem().getLink(), connectionNotFoundException);
             rssReader.showError("Could not open link");
         }
     }
@@ -64,15 +64,15 @@ public class DetailsView extends Form implements CommandListener {
         this.deleteAll();
 
         StringItem titleStringItem = new StringItem(null, selectedItem.getTitle(), StringItem.PLAIN);
-        titleStringItem.setFont(ListView.FONT_TITLE);
+        titleStringItem.setFont(ListForm.FONT_TITLE);
         titleStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
 
         StringItem dateStringItem = new StringItem(null, selectedItem.getPubDate(), StringItem.PLAIN);
-        dateStringItem.setFont(ListView.FONT_DATE);
+        dateStringItem.setFont(ListForm.FONT_DATE);
         dateStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
 
         StringItem descriptionStringItem = new StringItem(null, selectedItem.getDescription(), StringItem.PLAIN);
-        descriptionStringItem.setFont(ListView.FONT_DESCRIPTION);
+        descriptionStringItem.setFont(ListForm.FONT_DESCRIPTION);
         descriptionStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
 
         this.append(titleStringItem);
@@ -88,7 +88,7 @@ public class DetailsView extends Form implements CommandListener {
                 imageCache.get(selectedItem.getThumbnail(), new RunnableResult() {
                     public void run() {
                         selectedItem.setThumbnailImage((Image)getResult());
-                        DetailsView.this.paintImage();
+                        DetailsForm.this.paintImage();
                         selectedItem.setLoadingImage(false); 
                     }
                 });

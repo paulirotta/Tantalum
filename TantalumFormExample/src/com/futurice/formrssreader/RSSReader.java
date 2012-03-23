@@ -4,32 +4,24 @@
  */
 package com.futurice.formrssreader;
 
+import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
-import javax.microedition.lcdui.Alert;
-import javax.microedition.lcdui.AlertType;
-import javax.microedition.lcdui.Command;
-import javax.microedition.lcdui.CommandListener;
-import javax.microedition.lcdui.Display;
-import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
-
 
 /**
  * @author vand
  */
-public class RSSReader extends MIDlet  implements CommandListener {
-    
+public class RSSReader extends MIDlet implements CommandListener {
+
     public static String INITIAL_FEED_URL = null;
-    
     private boolean midletPaused = false;
     //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
     //</editor-fold>//GEN-END:|fields|0|
-
     private Displayable currentDisplayable;
-
     private SettingsForm settingsForm;
-    private ListView list;
-    
+    private ListForm list;
+
     /**
      * The RSSReader constructor.
      */
@@ -59,7 +51,15 @@ public class RSSReader extends MIDlet  implements CommandListener {
     public void startMIDlet() {//GEN-END:|3-startMIDlet|0|3-preAction
         // write pre-action user code here
         switchDisplayable(null, getList());
-        getList().reload(false);
+        Worker.queue(new Workable() {
+
+            public boolean work() {
+                getList().reload(false);
+
+                return false;
+            }
+        });
+
 //GEN-LINE:|3-startMIDlet|1|3-postAction
         // write post-action user code here
     }//GEN-BEGIN:|3-startMIDlet|2|
@@ -94,14 +94,13 @@ public class RSSReader extends MIDlet  implements CommandListener {
     }//GEN-BEGIN:|5-switchDisplayable|2|
     //</editor-fold>//GEN-END:|5-switchDisplayable|2|
 
-    
-   public ListView getList() {
+    public ListForm getList() {
         if (list == null) {
-            list = new ListView(this, "RSSReader");         
+            list = new ListForm(this, "Tantalum BBC");
         }
         return list;
     }
-   
+
     public void showError(final String errorMessage) {
         Alert alert = new Alert("Error", errorMessage, null, AlertType.ERROR);
         alert.addCommand(new Command("Ok", Command.OK, 0));
@@ -116,9 +115,9 @@ public class RSSReader extends MIDlet  implements CommandListener {
             settingsForm = new SettingsForm(this);
         }
         return settingsForm;
-    } 
-    
-  public void commandAction(Command command, Displayable displayable) {
+    }
+
+    public void commandAction(Command command, Displayable displayable) {
         if (displayable instanceof Alert) {
             switchDisplayable(null, currentDisplayable);
         }
@@ -126,6 +125,7 @@ public class RSSReader extends MIDlet  implements CommandListener {
 
     /**
      * Returns a display instance.
+     *
      * @return the display instance.
      */
     public Display getDisplay() {
@@ -136,14 +136,19 @@ public class RSSReader extends MIDlet  implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        switchDisplayable(null, null);
-        destroyApp(true);
-        notifyDestroyed();
+        Worker.shutdown(new Runnable() {
+
+            public void run() {
+                switchDisplayable(null, null);
+                destroyApp(true);
+                notifyDestroyed();
+            }
+        });
     }
 
     /**
-     * Called when MIDlet is started.
-     * Checks whether the MIDlet have been already started and initialize/starts or resumes the MIDlet.
+     * Called when MIDlet is started. Checks whether the MIDlet have been
+     * already started and initialize/starts or resumes the MIDlet.
      */
     public void startApp() {
         if (midletPaused) {
@@ -164,7 +169,9 @@ public class RSSReader extends MIDlet  implements CommandListener {
 
     /**
      * Called to signal the MIDlet to terminate.
-     * @param unconditional if true, then the MIDlet has to be unconditionally terminated and all resources has to be released.
+     *
+     * @param unconditional if true, then the MIDlet has to be unconditionally
+     * terminated and all resources has to be released.
      */
     public void destroyApp(boolean unconditional) {
     }

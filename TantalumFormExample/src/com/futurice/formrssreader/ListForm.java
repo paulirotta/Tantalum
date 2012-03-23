@@ -18,11 +18,11 @@ import javax.microedition.lcdui.*;
  *
  * @author vand
  */
-public class ListView extends Form implements CommandListener {
+public class ListForm extends Form implements CommandListener {
 
-    private static ListView instance;
+    private static ListForm instance;
     private final RSSReader rssReader;
-    private final DetailsView detailsView;
+    private final DetailsForm detailsView;
     private StaticWebCache feedCache;
     private final RSSModel rssModel = new RSSModel();
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
@@ -30,17 +30,17 @@ public class ListView extends Form implements CommandListener {
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final int MARGIN = FONT_TITLE.getHeight() / 2;
     protected int startIndex;
-    private boolean loading = true;
+    private boolean loading = false;
     private Command exitCommand = new Command("Exit", Command.EXIT, 0);
     private Command reloadCommand = new Command("Reload", Command.ITEM, 0);
     private Command settingsCommand = new Command("Settings", Command.ITEM, 1);
 
-    public ListView(RSSReader rssReader, String title) {
+    public ListForm(RSSReader rssReader, String title) {
         super(title);
 
-        ListView.instance = ListView.this;
+        ListForm.instance = ListForm.this;
         this.rssReader = rssReader;
-        this.detailsView = new DetailsView(rssReader, title);
+        this.detailsView = new DetailsForm(rssReader, title);
         this.feedCache = new StaticWebCache('5', new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
@@ -151,13 +151,13 @@ public class ListView extends Form implements CommandListener {
         rssReader.switchDisplayable(null, this);
     }
 
-    public DetailsView getDetailsView() {
+    public DetailsForm getDetailsView() {
         return detailsView;
     }
 
     private void renderLoading() {
         StringItem loadingStringItem = new StringItem(null, "Loading...", StringItem.PLAIN);
-        loadingStringItem.setFont(ListView.FONT_TITLE);
+        loadingStringItem.setFont(ListForm.FONT_TITLE);
         loadingStringItem.setLayout(Item.LAYOUT_CENTER | Item.LAYOUT_VCENTER);
         append(loadingStringItem);
     }
@@ -178,7 +178,7 @@ public class ListView extends Form implements CommandListener {
             //no items to display
             StringItem noDataStringItem = new StringItem(null, "No data",
                     StringItem.PLAIN);
-            noDataStringItem.setFont(ListView.FONT_TITLE);
+            noDataStringItem.setFont(ListForm.FONT_TITLE);
             noDataStringItem.setLayout(Item.LAYOUT_CENTER | Item.LAYOUT_VCENTER);
             append(noDataStringItem);
             return;
@@ -204,7 +204,7 @@ public class ListView extends Form implements CommandListener {
 
     public void addItem(final RSSItem rssItem) {
         final StringItem titleStringItem = new StringItem(null, rssItem.getTitle(), StringItem.PLAIN);
-        titleStringItem.setFont(ListView.FONT_TITLE);
+        titleStringItem.setFont(ListForm.FONT_TITLE);
         titleStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
         final Command cmdShow = new Command("", Command.OK, 1);
         titleStringItem.setDefaultCommand(cmdShow);
@@ -216,7 +216,7 @@ public class ListView extends Form implements CommandListener {
         });
 
         final StringItem dateStringItem = new StringItem(null, rssItem.getPubDate(), StringItem.PLAIN);
-        dateStringItem.setFont(ListView.FONT_DATE);
+        dateStringItem.setFont(ListForm.FONT_DATE);
         dateStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
         final Image separatorImage = Image.createImage(getWidth(), 1);
 
@@ -225,7 +225,7 @@ public class ListView extends Form implements CommandListener {
         append(separatorImage);
     }
 
-    public static ListView getInstance() {
+    public static ListForm getInstance() {
         return instance;
     }
 
