@@ -1,12 +1,12 @@
 package com.futurice.tantalum2.rms;
 
-import com.futurice.tantalum2.util.LRUVector;
-import com.futurice.tantalum2.util.WeakHashCache;
 import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.util.LRUVector;
 import com.futurice.tantalum2.util.SortedVector;
+import com.futurice.tantalum2.util.WeakHashCache;
 import java.util.Vector;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
@@ -37,8 +37,7 @@ public class StaticCache {
     });
     protected final WeakHashCache cache = new WeakHashCache();
     protected final LRUVector accessOrder = new LRUVector();
-    protected final String name;
-    protected final char priority; // Must be unique, '0'-'9', larger numbers get more space when space is limited
+    protected final char priority; // Must be unique, preferrably and integer, larger characters get more space when space is limited
     protected final DataTypeHandler handler;
     protected int sizeAsBytes = 0;
 
@@ -53,13 +52,12 @@ public class StaticCache {
      * preference for space
      * @param handler
      */
-    public StaticCache(final String name, final char priority, final DataTypeHandler handler) {
-        this.name = name;
+    public StaticCache(final char priority, final DataTypeHandler handler) {
         this.priority = priority;
         this.handler = handler;
 
-        if (priority < '0' || priority > '9') {
-            throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0'-'9'");
+        if (priority < '0') {
+            throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
         synchronized (caches) {
             for (int i = 0; i < caches.size(); i++) {
@@ -113,10 +111,10 @@ public class StaticCache {
         Object o = synchronousRAMCacheGet(key);
 
         if (o == null) {
-            final byte[] bytes = RMSUtils.read(key.hashCode());
+            final byte[] bytes = RMSUtils.cacheRead(key);
 
             if (bytes != null) {
-                Log.l.log("StaticCache hit in RMS", key);
+                Log.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
 
                 o = convertAndPutToHeapCache(key, bytes);
             }
@@ -129,6 +127,7 @@ public class StaticCache {
         final Object ho = synchronousRAMCacheGet(key);
 
         if (ho != null) {
+            Log.l.log("RAM cache hit", "(" + priority + ") " + key);
             result.setResult(ho);
         } else {
             Worker.queue(new Workable() {
@@ -139,6 +138,7 @@ public class StaticCache {
                     if (o != null) {
                         result.setResult(o);
                     } else {
+                        Log.l.log("RMS cache miss", key);
                         result.noResult();
                     }
 
@@ -166,8 +166,8 @@ public class StaticCache {
 
             public boolean work() {
                 try {
-                    Log.l.log("Cache to RMS", key);
-                    RMSUtils.write(key.hashCode(), bytes);
+                    Log.l.log("Cache to RMS", "(" + priority + ") " + key);
+                    RMSUtils.cacheWrite(key, bytes);
                 } catch (Exception e) {
                     Log.l.log("Couldn't store object to RMS", key, e);
                 }
@@ -179,13 +179,14 @@ public class StaticCache {
         return convertAndPutToHeapCache(key, bytes);
     }
 
-    public static void write(final String key, final byte[] data) {
+    public void write(final String key, final byte[] data) {
         do {
             try {
-                RMSUtils.write(key.hashCode(), data);
+                RMSUtils.cacheWrite(key, data);
+                Log.l.log("RMS cache write", key + " (" + data.length + " bytes)");
                 return;
             } catch (RecordStoreFullException ex) {
-                Log.l.log("Clearning space for data, ABORTING", key + " (" + data.length + " bytes)");
+                Log.l.log("Clearning space for data, ABORTING", key + " (" + data.length + " bytes)", ex);
                 if (!clearSpace(data.length)) {
                     Log.l.log("Can not clear enough space for data, ABORTING", key);
                 }
@@ -196,13 +197,15 @@ public class StaticCache {
     /**
      * Remove unused and then currently used items from the RMS cache to make
      * room for new items.
-     * 
+     *
      * @param minSpaceToClear - in bytes
      * @return true if the requested amount of space has been cleared
      */
     private static boolean clearSpace(final int minSpaceToClear) {
         int spaceCleared = 0;
         final Vector rsv = RMSUtils.getCachedRecordStoreNames();
+
+        Log.l.log("Clearing RMS space", minSpaceToClear + " bytes");
 
         // First: clear cached objects not currently appearing in any open cache
         for (int i = rsv.size() - 1; i >= 0; i--) {
@@ -214,6 +217,7 @@ public class StaticCache {
                 spaceCleared += getByteSizeByKey(key);
             }
         }
+        Log.l.log("End phase 1: clearing RMS space", spaceCleared + " bytes recovered");
 
         // Second: remove currently cached items, first from low priority caches
         while (spaceCleared < minSpaceToClear && rsv.size() > 0) {
@@ -227,6 +231,7 @@ public class StaticCache {
                 }
             }
         }
+        Log.l.log("End phase 2: clearing RMS space", spaceCleared + " bytes recovered (total)");
 
         return spaceCleared >= minSpaceToClear;
     }
@@ -263,8 +268,8 @@ public class StaticCache {
             if (containsKey(key)) {
                 this.accessOrder.removeElement(key);
                 this.cache.remove(key);
-                RMSUtils.delete(key);
-                Log.l.log("Removed (from RAM and RMS)", key);
+                RMSUtils.cacheDelete(key);
+                Log.l.log("Cache remove (from RAM and RMS)", key);
             }
         } catch (Exception e) {
             Log.l.log("Couldn't remove object from cache", key, e);
@@ -279,6 +284,7 @@ public class StaticCache {
         while (accessOrder.size() > 0) {
             remove((String) accessOrder.lastElement());
         }
+        Log.l.log("Cache clear", "");
     }
 
     /**
@@ -330,7 +336,7 @@ public class StaticCache {
      * @return
      */
     public synchronized String toString() {
-        String str = "StaticCache " + name + " --- priority: " + priority + " size: " + getSize() + " size (bytes): " + sizeAsBytes + "\n";
+        String str = "StaticCache --- priority: " + priority + " size: " + getSize() + " size (bytes): " + sizeAsBytes + "\n";
 
         for (int i = 0; i < accessOrder.size(); i++) {
             str += accessOrder.elementAt(i) + "\n";

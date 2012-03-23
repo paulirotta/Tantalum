@@ -20,8 +20,8 @@ public class StaticWebCache extends StaticCache {
     private static final int RETRIES = 3;
     private final Hashtable timestamps = new Hashtable();
 
-    public StaticWebCache(final String name, final char priority, final DataTypeHandler handler) {
-        super(name, priority, handler);
+    public StaticWebCache(final char priority, final DataTypeHandler handler) {
+        super(priority, handler);
     }
 
     /**

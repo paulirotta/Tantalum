@@ -4,7 +4,6 @@
  */
 package com.futurice.tantalum2.util;
 
-import com.futurice.tantalum2.util.WeakHashCache;
 import com.futurice.tantalum2.log.Log;
 import java.lang.ref.WeakReference;
 import java.util.Vector;

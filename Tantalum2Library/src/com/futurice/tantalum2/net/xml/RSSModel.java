@@ -12,7 +12,7 @@ import org.xml.sax.SAXException;
  */
 public class RSSModel extends XMLModel {
 
-    private final Vector items = new Vector();
+    private final Vector items = new Vector(50);
     protected RSSItem currentItem;
 
     public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
@@ -20,7 +20,6 @@ public class RSSModel extends XMLModel {
 
         if (qName.equals("item")) {
             currentItem = new RSSItem();
-            items.addElement(currentItem);
         }
     }
 
@@ -43,6 +42,15 @@ public class RSSModel extends XMLModel {
             }
         } catch (Exception e) {
             Log.l.log("RSS parsing error", "qname=" + qName + " - chars=" + chars, e);
+        }
+    }
+
+    public void endElement(final String uri, final String localName, final String qName) throws SAXException {
+        super.endElement(uri, localName, qName);
+
+        if (qName.equals("item")) {
+            items.addElement(currentItem);
+            currentItem = null;
         }
     }
 
