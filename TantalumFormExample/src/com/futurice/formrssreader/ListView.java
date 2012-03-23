@@ -41,14 +41,14 @@ public class ListView extends Form implements CommandListener {
         ListView.instance = ListView.this;
         this.rssReader = rssReader;
         this.detailsView = new DetailsView(rssReader, title);
-        this.feedCache = new StaticWebCache("rss", '5', new DataTypeHandler() {
+        this.feedCache = new StaticWebCache('5', new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
                 try {
                     rssModel.removeAllElements();
                     rssModel.setXML(bytes);
                     notifyListChanged();
-                    
+
                     return rssModel;
                 } catch (Exception e) {
                     Log.l.log("Error parsing XML", rssModel.toString());
