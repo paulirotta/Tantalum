@@ -4,8 +4,8 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.sun.lwuit.list.DefaultListModel;
 import com.sun.lwuit.events.DataChangedListener;
+import com.sun.lwuit.list.DefaultListModel;
 
 /**
  *

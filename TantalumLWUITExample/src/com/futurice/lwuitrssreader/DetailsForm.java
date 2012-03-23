@@ -4,8 +4,9 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.DefaultRunnableResult;
+import com.futurice.tantalum2.RunnableResult;
 import com.futurice.tantalum2.net.StaticWebCache;
+import com.futurice.tantalum2.net.xml.RSSItem;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Form;
@@ -31,12 +32,11 @@ public class DetailsForm extends Form implements ActionListener {
     private Vector linkLabels;
     private RSSReader midlet;
     private RSSItem current;
-    private final StaticWebCache imageCache;
+    private static final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
 
     public DetailsForm(String title, RSSReader midlet) {
         super(title);
         this.midlet = midlet;
-        this.imageCache = new StaticWebCache("imgs", '1', new ImageTypeHandler());
         setScrollableY(true);
         pubDateLabel = new Label("");
 
@@ -84,10 +84,16 @@ public class DetailsForm extends Form implements ActionListener {
         addLabels(descriptionLabels);
         addComponent(imgLabel);
 
-        imageCache.get(item.getImgSrc(), new DefaultRunnableResult() {
+        imageCache.get(item.getThumbnail(), new RunnableResult() {
+
             public void run() {
-                item.setImg((Image) getResult());
-                midlet.getDetailsForm().repaintImg();
+                final Image image = (Image) getResult();
+//                if (image != null) {
+                    imgLabel.setIcon(image);
+//                    if (this.contains(imgLabel)) {
+                        imgLabel.repaint();
+//                    }
+//                }
             }
         });
 
@@ -96,12 +102,6 @@ public class DetailsForm extends Form implements ActionListener {
     }
 
     public void repaintImg() {
-        if (current.getImg() != null) {
-            imgLabel.setIcon(current.getImg());
-            if (this.contains(imgLabel)) {
-                imgLabel.repaint();
-            }
-        }
     }
 
     public Vector getLabels(String str, com.sun.lwuit.Font font, int width) {

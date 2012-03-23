@@ -1,8 +1,8 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.DefaultResult;
-import com.futurice.tantalum2.DefaultRunnableResult;
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.net.StaticWebCache;
+import com.futurice.tantalum2.net.xml.RSSItem;
 import com.sun.lwuit.*;
 import com.sun.lwuit.animations.CommonTransitions;
 import com.sun.lwuit.events.ActionEvent;
@@ -29,7 +29,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
         listModel = new ListModel(this);
         list = new List(listModel);
         list.addActionListener(this);
-        feedCache = new StaticWebCache("feeds", '5', new RSSTypeHandler(listModel));
+        feedCache = new StaticWebCache('5', new RSSTypeHandler(listModel));
 
         addComponent(list);
         addCommand(settingsCommand);
@@ -74,7 +74,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 list.getModel().removeItem(i);
             }
 
-            final DefaultResult result = new DefaultResult() {
+            final Result result = new Result() {
 
                 public void noResult() {
                     isReloading = false;

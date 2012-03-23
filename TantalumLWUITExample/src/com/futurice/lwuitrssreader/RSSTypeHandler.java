@@ -5,6 +5,7 @@
 package com.futurice.lwuitrssreader;
 
 import com.futurice.tantalum2.log.Log;
+import com.futurice.tantalum2.net.xml.RSSModel;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 
 /**
@@ -21,9 +22,11 @@ public class RSSTypeHandler implements DataTypeHandler {
 
     public Object convertToUseForm(byte[] bytes) {
         try {
-            final RSSModel rssModel = new RSSModel(model);
+            final RSSModel rssModel = new RSSModel();
+
             if (bytes.length > 0) {
                 rssModel.setXML(bytes);
+                model.repaint();
             }
             
             return rssModel;
