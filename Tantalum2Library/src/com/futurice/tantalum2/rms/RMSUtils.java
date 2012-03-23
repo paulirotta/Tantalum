@@ -22,6 +22,22 @@ public class RMSUtils {
     private static final String RECORD_HASH_PREFIX = "@";
     private static final LengthLimitedLRUVector openRecordStores = new OpenRecordStores(MAX_OPEN_RECORD_STORES);
 
+        static {
+        /**
+         * Close all open record stores during shutdown
+         *
+         */
+        Worker.queueShutdownTask(new Workable() {
+
+            public boolean work() {
+                while (closeLeastRecentlyUsed());
+
+                return false;
+            }
+        });
+    }
+
+
     private static final class OpenRecordStores extends LengthLimitedLRUVector {
 
         OpenRecordStores(final int maxLength) {
@@ -45,21 +61,6 @@ public class RMSUtils {
         }
 
         return oldest != null;
-    }
-
-    static {
-        /**
-         * Close all open record stores during shutdown
-         *
-         */
-        Worker.queueShutdownTask(new Workable() {
-
-            public boolean work() {
-                while (closeLeastRecentlyUsed());
-
-                return false;
-            }
-        });
     }
 
     public static Vector getCachedRecordStoreNames() {
@@ -147,11 +148,11 @@ public class RMSUtils {
                 rs.setRecord(1, data, 0, data.length);
             }
             Log.l.log("Added to RMS", recordStoreName + " (" + data.length + " bytes)");
-        } catch (RecordStoreFullException e) {
-            Log.l.log("RMS write problem", recordStoreName, e);
-            throw e;
         } catch (Exception e) {
             Log.l.log("RMS write problem", recordStoreName, e);
+            if (e instanceof RecordStoreFullException) {
+                throw (RecordStoreFullException) e;
+            }
 //        } finally {
 //            try {
 //                if (rs != null) {

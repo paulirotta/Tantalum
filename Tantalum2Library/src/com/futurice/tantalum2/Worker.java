@@ -133,15 +133,16 @@ public final class Worker implements Runnable {
                             // Empty queue, or waiting for other Worker tasks to complete before shutdown tasks start
                             q.wait();
                         } else {
+                            // Shutdown
                             while (!shutdownQueue.isEmpty()) {
-                                // Start shutdown actions
+                                // PHASE 1: Start shutdown actions
                                 queue((Workable) shutdownQueue.elementAt(0));
                                 shutdownQueue.removeElementAt(0);
                             }
-                            if (q.isEmpty() && currentlyIdleCount == workerCount) {
-                                // Shutdown actions all complete
-                                --currentlyIdleCount;
+                            if (q.isEmpty() && currentlyIdleCount >= workerCount) {
+                                // PHASE 2: Shutdown actions are all complete
                                 Worker.queueEDT(shutdownCompleteRunnable);
+                                shutdownCompleteRunnable = null;
                                 break;
                             }
                         }
