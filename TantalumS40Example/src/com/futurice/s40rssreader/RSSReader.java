@@ -16,9 +16,7 @@ public class RSSReader extends MIDlet implements CommandListener {
 
     // This is read from the JAD-file
     public static String INITIAL_FEED_URL = null;
-
     private boolean midletPaused = false;
-
     private RSSReaderCanvas canvas;
     private SettingsForm settingsForm;
     private Displayable currentDisplayable;
@@ -29,8 +27,9 @@ public class RSSReader extends MIDlet implements CommandListener {
     public RSSReader() {
     }
 
-    /* Initilizes the application.
-     * It is called only once when the MIDlet is started. The method is called before the <code>startMIDlet</code> method.
+    /*
+     * Initilizes the application. It is called only once when the MIDlet is
+     * started. The method is called before the <code>startMIDlet</code> method.
      */
     private void initialize() {
         Worker.init(this, 2);
@@ -52,8 +51,14 @@ public class RSSReader extends MIDlet implements CommandListener {
     }
 
     /**
-     * Switches a current displayable in a display. The <code>display</code> instance is taken from <code>getDisplay</code> method. This method is used by all actions in the design for switching displayable.
-     * @param alert the Alert which is temporarily set to the display; if <code>null</code>, then <code>nextDisplayable</code> is set immediately
+     * Switches a current displayable in a display. The
+     * <code>display</code> instance is taken from
+     * <code>getDisplay</code> method. This method is used by all actions in the
+     * design for switching displayable.
+     *
+     * @param alert the Alert which is temporarily set to the display; if
+     * <code>null</code>, then
+     * <code>nextDisplayable</code> is set immediately
      * @param nextDisplayable the Displayable to be set
      */
     public void switchDisplayable(Alert alert, Displayable nextDisplayable) {
@@ -66,7 +71,9 @@ public class RSSReader extends MIDlet implements CommandListener {
     }
 
     /**
-     * Called by a system to indicated that a command has been invoked on a particular displayable.
+     * Called by a system to indicated that a command has been invoked on a
+     * particular displayable.
+     *
      * @param command the Command that was invoked
      * @param displayable the Displayable where the command was invoked
      */
@@ -78,17 +85,19 @@ public class RSSReader extends MIDlet implements CommandListener {
 
     /**
      * Returns an initiliazed instance of canvas component.
+     *
      * @return the initialized component instance
      */
     public RSSReaderCanvas getCanvas() {
         if (canvas == null) {
-            canvas = new RSSReaderCanvas(this);         
+            canvas = new RSSReaderCanvas(this);
         }
         return canvas;
     }
 
     /**
      * Returns an initiliazed instance of settingsForm component.
+     *
      * @return the initialized component instance
      */
     public SettingsForm getSettingsForm() {
@@ -100,6 +109,7 @@ public class RSSReader extends MIDlet implements CommandListener {
 
     /**
      * Shows an error popup
+     *
      * @param errorMessage
      */
     public void showError(final String errorMessage) {
@@ -113,9 +123,10 @@ public class RSSReader extends MIDlet implements CommandListener {
 
     /**
      * Returns a display instance.
+     *
      * @return the display instance.
      */
-    public Display getDisplay () {
+    public Display getDisplay() {
         return Display.getDisplay(this);
     }
 
@@ -123,21 +134,26 @@ public class RSSReader extends MIDlet implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        switchDisplayable (null, null);
-        destroyApp(true);
-        notifyDestroyed();
+        Worker.shutdown(new Runnable() {
+
+            public void run() {
+                switchDisplayable(null, null);
+                destroyApp(true);
+                notifyDestroyed();
+            }
+        });
     }
 
     /**
-     * Called when MIDlet is started.
-     * Checks whether the MIDlet have been already started and initialize/starts or resumes the MIDlet.
+     * Called when MIDlet is started. Checks whether the MIDlet have been
+     * already started and initialize/starts or resumes the MIDlet.
      */
     public void startApp() {
         if (midletPaused) {
-            resumeMIDlet ();
+            resumeMIDlet();
         } else {
-            initialize ();
-            startMIDlet ();
+            initialize();
+            startMIDlet();
         }
         midletPaused = false;
     }
@@ -151,7 +167,9 @@ public class RSSReader extends MIDlet implements CommandListener {
 
     /**
      * Called to signal the MIDlet to terminate.
-     * @param unconditional if true, then the MIDlet has to be unconditionally terminated and all resources has to be released.
+     *
+     * @param unconditional if true, then the MIDlet has to be unconditionally
+     * terminated and all resources has to be released.
      */
     public void destroyApp(boolean unconditional) {
     }

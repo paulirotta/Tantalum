@@ -20,11 +20,11 @@ import javax.microedition.lcdui.Image;
  */
 public class DetailsView extends View {
 
-    private RSSItem selectedItem;
     private final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
+    private final Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
+    private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
-    private Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
-    private Command backCommand = new Command("Back", Command.BACK, 0);
+    private RSSItem selectedItem;
 
     public DetailsView(RSSReaderCanvas canvas) {
         super(canvas);
@@ -44,6 +44,7 @@ public class DetailsView extends View {
 
     /**
      * Opens a link in the browser for the selected RSS item
+     * 
      */
     private void openLink() {
         boolean needsToClose;
