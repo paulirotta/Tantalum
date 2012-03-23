@@ -12,7 +12,7 @@ import com.sun.lwuit.Dialog;
  * @author tsaa
  */
 public class RSSReader extends MIDlet {
-    
+
     public static int SCREEN_WIDTH;
     public static int SCREEN_HEIGHT;
     private ListForm listForm;
@@ -47,7 +47,13 @@ public class RSSReader extends MIDlet {
     }
 
     public void destroyApp(boolean unconditional) {
-        this.notifyDestroyed();
+        Worker.shutdown(new Runnable() {
+
+            public void run() {
+                destroyApp(true);
+                notifyDestroyed();
+            }
+        });
     }
 
     public void setUrl(String url) {
