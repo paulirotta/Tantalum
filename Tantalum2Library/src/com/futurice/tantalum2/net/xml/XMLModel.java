@@ -59,24 +59,28 @@ public abstract class XMLModel extends DefaultHandler {
 
     /**
      * Implement this method to store fields of interest in your value object
-     * from the qnameStack, charStack, and 
+     * from the qnameStack, charStack, and
      *
      */
     abstract protected void parseElement(String qname, String chars, XMLAttributes attributes);
 
     public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
         qnameStack[currentDepth] = qName;
-        attributeStack[currentDepth] = new XMLAttributes(attributes);
+        if (attributeStack[currentDepth] == null) {
+            attributeStack[currentDepth] = new XMLAttributes(attributes);
+        } else {
+            attributeStack[currentDepth].setAttributes(attributes);
+        }
         charStack[currentDepth] = "";
-        currentDepth++;
+        ++currentDepth;
     }
 
     public void characters(final char[] ch, final int start, final int length) throws SAXException {
         charStack[currentDepth - 1] = new String(ch, start, length);
     }
 
-    public void endElement(final String uri, final String localName, final String qName) throws SAXException {
-        currentDepth--;
-        parseElement(qnameStack[currentDepth], charStack[currentDepth], attributeStack[currentDepth]);
+    public void endElement(final String uri, final String localName, final String qname) throws SAXException {
+        --currentDepth;
+        parseElement(qname, charStack[currentDepth], attributeStack[currentDepth]);
     }
 }

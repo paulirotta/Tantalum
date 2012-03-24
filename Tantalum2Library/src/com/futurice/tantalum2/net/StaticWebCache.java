@@ -40,14 +40,6 @@ public class StaticWebCache extends StaticCache {
                 update(url, result);
             }
         });
-//        super.get(url, result.prepend(new Result() {
-//
-//            public void noResult() {
-//                super.noResult();
-//
-//                update(url, result);
-//            }
-//        }));
     }
 
     /**
@@ -71,15 +63,6 @@ public class StaticWebCache extends StaticCache {
                 result.noResult();
             }
         }));
-//        Worker.queue(new HttpGetter(url, RETRIES, result.prepend(new Result() {
-//
-//            public void setResult(Object o) {
-//                // Convert the result to use form immediately
-//                o = put(url, (byte[]) o);
-//
-//                super.setResult(o);
-//            }
-//        })));
     }
 
     /**

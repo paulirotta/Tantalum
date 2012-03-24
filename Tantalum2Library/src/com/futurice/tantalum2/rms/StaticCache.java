@@ -79,7 +79,7 @@ public class StaticCache {
      */
     private Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         final Object o = handler.convertToUseForm(bytes);
-        remove(key);
+        //remove(key);
         accessOrder.addElement(key);
         cache.put(key, o);
 

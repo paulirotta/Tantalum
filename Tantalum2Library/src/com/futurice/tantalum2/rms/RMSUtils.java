@@ -20,9 +20,14 @@ public class RMSUtils {
     private static final int MAX_RECORD_NAME_LENGTH = 32;
     private static final int MAX_OPEN_RECORD_STORES = 10;
     private static final String RECORD_HASH_PREFIX = "@";
-    private static final LengthLimitedLRUVector openRecordStores = new OpenRecordStores(MAX_OPEN_RECORD_STORES);
+    private static final LengthLimitedLRUVector openRecordStores = new LengthLimitedLRUVector(MAX_OPEN_RECORD_STORES) {
 
-        static {
+        protected void lengthExceeded() {
+            closeLeastRecentlyUsedRMS();
+        }       
+    };
+
+    static {
         /**
          * Close all open record stores during shutdown
          *
@@ -30,26 +35,21 @@ public class RMSUtils {
         Worker.queueShutdownTask(new Workable() {
 
             public boolean work() {
-                while (closeLeastRecentlyUsed());
+                Log.l.log("Closing record stores during shutdown", "open=" + openRecordStores.size());
+                while (closeLeastRecentlyUsedRMS());
+                Log.l.log("Closed record stores during shutdown", "open=" + openRecordStores.size());
 
                 return false;
             }
         });
     }
 
-
-    private static final class OpenRecordStores extends LengthLimitedLRUVector {
-
-        OpenRecordStores(final int maxLength) {
-            super(maxLength);
-        }
-
-        protected void lengthExceeded() {
-            closeLeastRecentlyUsed();
-        }
-    };
-
-    private static boolean closeLeastRecentlyUsed() {
+    /**
+     * Close one record store, the one least recently accessed
+     * 
+     * @return 
+     */
+    private static boolean closeLeastRecentlyUsedRMS() {
         final RecordStore oldest = (RecordStore) openRecordStores.removeLeastRecentlyUsed();
 
         try {
@@ -133,13 +133,6 @@ public class RMSUtils {
             //delete old value
             Log.l.log("Add to RMS", recordStoreName + " (" + data.length + " bytes)");
             recordStoreName = truncateRecordStoreName(recordStoreName);
-//            try {
-//                RecordStore.deleteRecordStore(recordStoreName);
-//            } catch (RecordStoreNotFoundException recordStoreNotFoundException) {
-//                //ignore
-//            } catch (RecordStoreException recordStoreException) {
-//                Log.l.log("RMS delete problem", recordStoreName, recordStoreException);
-//            }
             rs = getRecordStore(recordStoreName, true);
 
             if (rs.getNumRecords() == 0) {
@@ -153,13 +146,6 @@ public class RMSUtils {
             if (e instanceof RecordStoreFullException) {
                 throw (RecordStoreFullException) e;
             }
-//        } finally {
-//            try {
-//                if (rs != null) {
-//                    rs.closeRecordStore();
-//                }
-//            } catch (Exception e) {
-//            }
         }
     }
 
@@ -188,6 +174,20 @@ public class RMSUtils {
     public static void delete(String recordStoreName) {
         try {
             recordStoreName = truncateRecordStoreName(recordStoreName);
+            RecordStore rs = null;
+            synchronized (openRecordStores) {
+                for (int i = 0; i < openRecordStores.size(); i++) {
+                    rs = (RecordStore) openRecordStores.elementAt(i);
+                    if (rs.getName().equals(recordStoreName)) {
+                        openRecordStores.removeElementAt(i);
+                        break;
+                    }
+                    rs = null;
+                }
+            }
+            if (rs != null) {
+                rs.closeRecordStore();
+            }
             RecordStore.deleteRecordStore(recordStoreName);
         } catch (RecordStoreNotFoundException ex) {
         } catch (RecordStoreException ex) {
@@ -225,14 +225,6 @@ public class RMSUtils {
             }
         } catch (Exception e) {
             Log.l.log("Can not read RMS", recordStoreName, e);
-//        } finally {
-//            try {
-//                if (rs != null) {
-//                    rs.closeRecordStore();
-//                }
-//            } catch (RecordStoreException e) {
-//                Log.l.log("RMS close error", recordStoreName, e);
-//            }
         }
 
         return data;

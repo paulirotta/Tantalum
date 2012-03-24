@@ -1,23 +1,40 @@
 package com.futurice.tantalum2.util;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Vector;
 import javax.microedition.lcdui.Font;
 
 /**
  * Utility methods for String handling
+ *
  * @author ssaa
  */
 public class StringUtils {
 
+    private static StringUtils singleton;
     private final static String ELIPSIS = "...";
 
+    private static synchronized StringUtils getStringUtils() {
+        if (singleton == null) {
+            singleton = new StringUtils();
+        }
+        
+        return singleton;
+    }
+    
+    private StringUtils() {
+    };
+    
     /**
-     * Truncates the string to fit the maxWidth. If truncated, an elipsis "..." is displayed to indicate this.
-     * 
+     * Truncates the string to fit the maxWidth. If truncated, an elipsis "..."
+     * is displayed to indicate this.
+     *
      * @param str
      * @param font
      * @param maxWidth
-     * @return String - truncated string with ellipsis added to end of the string
+     * @return String - truncated string with ellipsis added to end of the
+     * string
      */
     public static String truncate(final String str, final Font font, final int maxWidth) {
         if (font.stringWidth(str) <= maxWidth) {
@@ -34,7 +51,8 @@ public class StringUtils {
     }
 
     /**
-     * Split a string in to several lines of text which will display within a maximum width.
+     * Split a string in to several lines of text which will display within a
+     * maximum width.
      *
      * @param str
      * @param font
@@ -64,7 +82,7 @@ public class StringUtils {
 
         while (currentIndex != -1 && currentIndex < str.length()) {
 
-            word = str.substring(currentIndex, wordBoundaryIndex+1);
+            word = str.substring(currentIndex, wordBoundaryIndex + 1);
 
             if (currentIndex == 0) {
                 currentLine.append(word);
@@ -81,7 +99,7 @@ public class StringUtils {
             currentIndex = wordBoundaryIndex + 1;
             wordBoundaryIndex = str.indexOf(' ', currentIndex);
             if (wordBoundaryIndex == -1) {
-                wordBoundaryIndex = str.length()-1;
+                wordBoundaryIndex = str.length() - 1;
                 for (int i = currentIndex; i < str.length(); i++) {
                     if (font.stringWidth(str.substring(currentIndex, i)) > maxWidth) {
                         wordBoundaryIndex = i;
@@ -93,5 +111,21 @@ public class StringUtils {
         lines.addElement(currentLine.toString());
 
         return lines;
+    }
+
+    private byte[] doReadBytesFromJAR(final String name) throws IOException {
+        final InputStream in = getClass().getResourceAsStream(name);
+        final byte[] bytes = new byte[in.available()];
+        in.read(bytes);
+
+        return bytes;
+    }
+    
+    public static byte[] readBytesFromJAR(final String name) throws IOException {
+        return getStringUtils().doReadBytesFromJAR(name);
+    }
+
+    public static String readStringFromJAR(final String name) throws IOException {
+        return new String(readBytesFromJAR(name));
     }
 }
