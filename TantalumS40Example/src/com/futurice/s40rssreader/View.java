@@ -1,7 +1,5 @@
 package com.futurice.s40rssreader;
 
-import com.nokia.mid.ui.DirectGraphics;
-import com.nokia.mid.ui.DirectUtils;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Graphics;
@@ -21,7 +19,7 @@ public abstract class View implements CommandListener {
     }
 
     /**
-     * Renderds the view using the Graphics object
+     * Renders the view using the Graphics object
      * @param g
      */
     public abstract void render(Graphics g, int width, int height);

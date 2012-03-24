@@ -11,15 +11,17 @@ import org.xml.sax.SAXException;
  * @author ssaa
  */
 public class LiveUpdateRSSModel extends RSSModel {
+
+    private static final Runnable updateRunnable = new Runnable() {
+
+        public void run() {
+            RSSReaderCanvas.getInstance().getListView().notifyListChanged();
+        }
+    };
+
     public void endElement(final String uri, final String localName, final String qName) throws SAXException {
         if (currentItem != null && qName.equals("item")) {
-            final RSSItem item = currentItem;
-            Worker.queueEDT(new Runnable() {
-
-                public void run() {
-                    RSSReaderCanvas.getInstance().getListView().notifyListChanged();
-                }
-            });
+            Worker.queueEDT(updateRunnable);
         }
 
         super.endElement(uri, localName, qName);

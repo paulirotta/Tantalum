@@ -26,7 +26,7 @@ public class DetailsView extends View {
     private int contentHeight;
     private RSSItem selectedItem;
 
-    public DetailsView(RSSReaderCanvas canvas) {
+    public DetailsView(final RSSReaderCanvas canvas) {
         super(canvas);
     }
 

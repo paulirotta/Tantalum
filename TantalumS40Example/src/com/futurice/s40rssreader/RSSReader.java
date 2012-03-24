@@ -1,12 +1,8 @@
 package com.futurice.s40rssreader;
 
+import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
-import javax.microedition.lcdui.Alert;
-import javax.microedition.lcdui.AlertType;
-import javax.microedition.lcdui.Command;
-import javax.microedition.lcdui.CommandListener;
-import javax.microedition.lcdui.Display;
-import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 
 /**
@@ -32,7 +28,7 @@ public class RSSReader extends MIDlet implements CommandListener {
      * started. The method is called before the <code>startMIDlet</code> method.
      */
     private void initialize() {
-        Worker.init(this, 2);
+        Worker.init(this, 4);
         INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
     }
 
@@ -41,7 +37,14 @@ public class RSSReader extends MIDlet implements CommandListener {
      */
     public void startMIDlet() {
         switchDisplayable(null, getCanvas());
-        getCanvas().getListView().reload(true);
+        Worker.queue(new Workable() {
+
+            public boolean work() {
+                getCanvas().getListView().reload(true);
+                
+                return false;
+            }
+        });
     }
 
     /**
