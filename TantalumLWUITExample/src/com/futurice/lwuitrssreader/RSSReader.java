@@ -1,12 +1,12 @@
 package com.futurice.lwuitrssreader;
 
 import com.futurice.tantalum2.Worker;
-import javax.microedition.midlet.MIDlet;
-import com.sun.lwuit.Display;
-import com.sun.lwuit.plaf.UIManager;
-import com.sun.lwuit.plaf.DefaultLookAndFeel;
-import com.sun.lwuit.Font;
 import com.sun.lwuit.Dialog;
+import com.sun.lwuit.Display;
+import com.sun.lwuit.Font;
+import com.sun.lwuit.plaf.DefaultLookAndFeel;
+import com.sun.lwuit.plaf.UIManager;
+import javax.microedition.midlet.MIDlet;
 
 /**
  * @author tsaa
