@@ -136,14 +136,7 @@ public class RSSReader extends MIDlet implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        Worker.shutdown(new Runnable() {
-
-            public void run() {
-                switchDisplayable(null, null);
-                destroyApp(true);
-                notifyDestroyed();
-            }
-        });
+        Worker.shutdown(false);
     }
 
     /**
@@ -174,5 +167,6 @@ public class RSSReader extends MIDlet implements CommandListener {
      * terminated and all resources has to be released.
      */
     public void destroyApp(boolean unconditional) {
+        Worker.shutdown(unconditional);
     }
 }
