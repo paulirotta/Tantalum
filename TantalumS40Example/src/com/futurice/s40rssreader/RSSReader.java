@@ -41,7 +41,7 @@ public class RSSReader extends MIDlet implements CommandListener {
 
             public boolean work() {
                 getCanvas().getListView().reload(true);
-                
+
                 return false;
             }
         });
@@ -134,20 +134,6 @@ public class RSSReader extends MIDlet implements CommandListener {
     }
 
     /**
-     * Exits MIDlet.
-     */
-    public void exitMIDlet() {
-        Worker.shutdown(new Runnable() {
-
-            public void run() {
-                switchDisplayable(null, null);
-                destroyApp(true);
-                notifyDestroyed();
-            }
-        });
-    }
-
-    /**
      * Called when MIDlet is started. Checks whether the MIDlet have been
      * already started and initialize/starts or resumes the MIDlet.
      */
@@ -169,11 +155,19 @@ public class RSSReader extends MIDlet implements CommandListener {
     }
 
     /**
+     * Exits MIDlet.
+     */
+    public void exitMIDlet() {
+        Worker.shutdown(false);
+    }
+
+    /**
      * Called to signal the MIDlet to terminate.
      *
      * @param unconditional if true, then the MIDlet has to be unconditionally
      * terminated and all resources has to be released.
      */
-    public void destroyApp(boolean unconditional) {
+    public void destroyApp(final boolean unconditional) {
+        Worker.shutdown(unconditional);
     }
 }

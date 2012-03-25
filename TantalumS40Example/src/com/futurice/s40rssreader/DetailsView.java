@@ -19,21 +19,21 @@ import javax.microedition.lcdui.Image;
  * @author ssaa
  */
 public class DetailsView extends View {
-
+    
     private final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
     private final Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
     private RSSItem selectedItem;
-
+    
     public DetailsView(final RSSReaderCanvas canvas) {
         super(canvas);
     }
-
+    
     public Command[] getCommands() {
         return new Command[]{openLinkCommand, backCommand};
     }
-
+    
     public void commandAction(Command command, Displayable d) {
         if (command == openLinkCommand) {
             openLink();
@@ -44,7 +44,7 @@ public class DetailsView extends View {
 
     /**
      * Opens a link in the browser for the selected RSS item
-     * 
+     *
      */
     private void openLink() {
         boolean needsToClose;
@@ -71,26 +71,26 @@ public class DetailsView extends View {
         } else if (this.renderY > 0) {
             this.renderY = 0;
         }
-
+        
         int curY = renderY;
-
+        
         g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND);
         g.fillRect(0, 0, width, height);
-
+        
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_FOREGROUND);
         curY = renderLines(g, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), StringUtils.splitToLines(selectedItem.getTitle(), RSSReaderCanvas.FONT_TITLE, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
-
+        
         g.setFont(RSSReaderCanvas.FONT_DATE);
         g.drawString(selectedItem.getPubDate(), 10, curY, Graphics.LEFT | Graphics.TOP);
-
+        
         curY += RSSReaderCanvas.FONT_DATE.getHeight() * 2;
-
+        
         g.setFont(RSSReaderCanvas.FONT_DESCRIPTION);
         curY = renderLines(g, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), StringUtils.splitToLines(selectedItem.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
-
+        
         curY += RSSReaderCanvas.FONT_DESCRIPTION.getHeight();
-
+        
         final String url = selectedItem.getThumbnail();
         if (url != null) {
             final Image image = (Image) imageCache.synchronousRAMCacheGet(url);
@@ -102,7 +102,7 @@ public class DetailsView extends View {
                 final RSSItem item = selectedItem;
                 item.setLoadingImage(true);
                 imageCache.get(item.getThumbnail(), new Result() {
-
+                    
                     public void setResult(Object o) {
                         super.setResult(o);
                         item.setLoadingImage(false);
@@ -111,28 +111,29 @@ public class DetailsView extends View {
                 });
             }
         }
-
+        
         contentHeight = curY - renderY;
-
+        
         renderScrollBar(g, contentHeight);
     }
-
+    
     private int renderLines(final Graphics g, int curY, final int lineHeight, final Vector lines) {
         final int len = lines.size();
-
+        
         for (int i = 0; i < len; i++) {
             g.drawString((String) lines.elementAt(i), RSSReaderCanvas.MARGIN, curY, Graphics.LEFT | Graphics.TOP);
             curY += lineHeight;
         }
-
+        
         return curY;
     }
-
+    
     public RSSItem getSelectedItem() {
         return selectedItem;
     }
-
+    
     public void setSelectedItem(RSSItem selectedItem) {
+        this.setRenderY(0);
         this.selectedItem = selectedItem;
     }
 }

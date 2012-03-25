@@ -98,15 +98,17 @@ public final class ListView extends View {
             final int contentHeight = rssModel.size() * ITEM_HEIGHT;
 
             //limit the renderY not to keep the content on the screen
-            if (contentHeight < canvas.getHeight()) {
+            if (contentHeight < height) {
                 this.renderY = 0;
-            } else if (this.renderY < -contentHeight + canvas.getHeight()) {
-                this.renderY = -contentHeight + canvas.getHeight();
+            } else if (this.renderY < -contentHeight + height) {
+                this.renderY = -contentHeight + height;
             } else if (this.renderY > 0) {
                 this.renderY = 0;
             }
 
             if (loading) {
+                g.setColor(RSSReaderCanvas.COLOR_BACKGROUND);
+                g.fillRect(0, 0, width, height);
                 g.setColor(RSSReaderCanvas.COLOR_FOREGROUND);
                 g.drawString("Loading...", canvas.getWidth() >> 1, canvas.getHeight() >> 1, Graphics.BASELINE | Graphics.HCENTER);
                 return;
@@ -136,17 +138,19 @@ public final class ListView extends View {
                     g.drawImage(itemImage, 0, curY, Graphics.TOP | Graphics.LEFT);
                 } else {
                     // Reduce load on the garbage collector when scrolling
-                    Log.l.log("1", "");
                     renderCache.remove(rssModel.elementAt(i));
                 }
                 curY += ITEM_HEIGHT;
 
                 //stop rendering below the screen
                 if (curY > height) {
-//                    Log.l.log("2", "");
-//                    renderCache.remove(rssModel.elementAt(i));
                     break;
                 }
+            }
+            if (curY < height) {
+                // Background fill below all items. For very short feeds
+                g.setColor(RSSReaderCanvas.COLOR_BACKGROUND);
+                g.fillRect(0, curY, width, height);
             }
 
             renderScrollBar(g, contentHeight);
