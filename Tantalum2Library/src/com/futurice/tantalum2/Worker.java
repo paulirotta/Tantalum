@@ -24,7 +24,6 @@ public final class Worker implements Runnable {
     private static volatile int workerCount = 0;
     private static int currentlyIdleCount = 0;
     private static boolean shuttingDown = false;
-    private static Runnable shutdownCompleteRunnable = null;
 
     /**
      * Initialize the Worker class at the start of your MIDlet.
@@ -110,11 +109,36 @@ public final class Worker implements Runnable {
         }
     }
 
-    public static void shutdown(final Runnable shutdownCompleteRunnable) {
-        synchronized (q) {
-            shuttingDown = true;
-            Worker.shutdownCompleteRunnable = shutdownCompleteRunnable;
-            q.notifyAll();
+    /**
+     * Call MIDlet.notifyDestroyed() after all current queued and shutdown
+     * Workable tasks are completed. Resources held by the system will be closed
+     * and queued work such as writing to the RMS or file system will complete.
+     * 
+     * @param block Block the calling thread up to three seconds to allow orderly
+     * shutdown. This is only needed in MIDlet.notifyDestroyed(true) which is called
+     * for example by the user pressing the red HANGUP button.
+     */
+    public static void shutdown(final boolean block) {
+        try {
+            synchronized (q) {
+                shuttingDown = true;
+                q.notifyAll();
+            }
+            if (block) {
+                final long shutdownTimeout = System.currentTimeMillis() + 3000;
+                long timeRemaining;
+                
+                while (workerCount > 0) {
+                    timeRemaining = shutdownTimeout - System.currentTimeMillis();
+                    if (timeRemaining <= 0) {
+                        break;
+                    }
+                    synchronized (q) {
+                        q.wait(timeRemaining);
+                    }
+                }
+            }
+        } catch (InterruptedException ex) {
         }
     }
 
@@ -141,8 +165,12 @@ public final class Worker implements Runnable {
                             }
                             if (q.isEmpty() && currentlyIdleCount >= workerCount) {
                                 // PHASE 2: Shutdown actions are all complete
-                                Worker.queueEDT(shutdownCompleteRunnable);
-                                shutdownCompleteRunnable = null;
+                                Worker.queueEDT(new Runnable() {
+
+                                    public void run() {
+                                        midlet.notifyDestroyed();
+                                    }
+                                });
                                 break;
                             }
                         }

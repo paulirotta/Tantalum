@@ -32,12 +32,23 @@ public class StaticWebCache extends StaticCache {
      */
     public void get(final String url, final Result result) {
         super.get(url, new Result() {
+
             public void setResult(Object o) {
                 result.setResult(o);
             }
 
             public void noResult() {
-                update(url, result);
+//                update(url, result);
+                new HttpGetter(url, RETRIES, new Result() {
+
+                    public void setResult(Object o) {
+                        result.setResult(put(url, (byte[]) o));
+                    }
+
+                    public void noResult() {
+                        result.noResult();
+                    }
+                }).work();
             }
         });
     }
@@ -53,12 +64,9 @@ public class StaticWebCache extends StaticCache {
         Worker.queue(new HttpGetter(url, RETRIES, new Result() {
 
             public void setResult(Object o) {
-                super.setResult(o);
-
-                o = put(url, (byte[]) o); // Convert to use form
-                result.setResult(o);
+                result.setResult(put(url, (byte[]) o));
             }
-            
+
             public void noResult() {
                 result.noResult();
             }
