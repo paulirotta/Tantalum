@@ -58,7 +58,7 @@ public abstract class View implements CommandListener {
         final int barHeight = Math.max(2, canvas.getHeight() * canvas.getHeight() / contentHeight);
 
         //fill bar
-        g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND);
+        g.setColor(RSSReader.COLOR_HIGHLIGHTED_BACKGROUND);
         g.fillRect(canvas.getWidth() - SCROLL_BAR_WIDTH, barY, SCROLL_BAR_WIDTH, barHeight);
     }
 }

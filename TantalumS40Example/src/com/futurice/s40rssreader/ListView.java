@@ -1,9 +1,11 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.tantalum2.Result;
+import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.net.xml.RSSItem;
+import com.futurice.tantalum2.net.xml.RSSModel;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.RMSUtils;
 import com.futurice.tantalum2.util.PoolingWeakHashCache;
@@ -12,6 +14,7 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+import org.xml.sax.SAXException;
 
 /**
  * View for rendering list of RSS items
@@ -107,9 +110,9 @@ public final class ListView extends View {
             }
 
             if (loading) {
-                g.setColor(RSSReaderCanvas.COLOR_BACKGROUND);
+                g.setColor(RSSReader.COLOR_BACKGROUND);
                 g.fillRect(0, 0, width, height);
-                g.setColor(RSSReaderCanvas.COLOR_FOREGROUND);
+                g.setColor(RSSReader.COLOR_FOREGROUND);
                 g.drawString("Loading...", canvas.getWidth() >> 1, canvas.getHeight() >> 1, Graphics.BASELINE | Graphics.HCENTER);
                 return;
             }
@@ -149,7 +152,7 @@ public final class ListView extends View {
             }
             if (curY < height) {
                 // Background fill below all items. For very short feeds
-                g.setColor(RSSReaderCanvas.COLOR_BACKGROUND);
+                g.setColor(RSSReader.COLOR_BACKGROUND);
                 g.fillRect(0, curY, width, height);
             }
 
@@ -191,22 +194,22 @@ public final class ListView extends View {
 
         if (image != null) {
             g = image.getGraphics();
-            g.setColor(selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND : RSSReaderCanvas.COLOR_BACKGROUND);
+            g.setColor(selected ? RSSReader.COLOR_HIGHLIGHTED_BACKGROUND : RSSReader.COLOR_BACKGROUND);
             g.fillRect(0, 0, width, ITEM_HEIGHT);
         } else {
-            image = DirectUtils.createImage(width, ITEM_HEIGHT, selected ? 0xFF000000 | RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND : 0xFF000000 | RSSReaderCanvas.COLOR_BACKGROUND);
+            image = DirectUtils.createImage(width, ITEM_HEIGHT, selected ? 0xFF000000 | RSSReader.COLOR_HIGHLIGHTED_BACKGROUND : 0xFF000000 | RSSReader.COLOR_BACKGROUND);
             g = image.getGraphics();
             this.renderCache.put(item, image);
         }
 
-        g.setColor(selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_FOREGROUND : RSSReaderCanvas.COLOR_FOREGROUND);
+        g.setColor(selected ? RSSReader.COLOR_HIGHLIGHTED_FOREGROUND : RSSReader.COLOR_FOREGROUND);
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         final int w = width - 2 * RSSReaderCanvas.MARGIN;
         g.drawString(item.getTruncatedTitle(RSSReaderCanvas.FONT_TITLE, w), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN, Graphics.LEFT | Graphics.TOP);
         g.setFont(RSSReaderCanvas.FONT_DATE);
         g.drawString(item.getPubDate(), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN + RSSReaderCanvas.FONT_TITLE.getHeight(), Graphics.LEFT | Graphics.TOP);
 
-        g.setColor(selected ? RSSReaderCanvas.COLOR_HIGHLIGHTED_BORDER : RSSReaderCanvas.COLOR_BORDER);
+        g.setColor(selected ? RSSReader.COLOR_HIGHLIGHTED_BORDER : RSSReader.COLOR_BORDER);
         g.drawLine(0, ITEM_HEIGHT, canvas.getWidth(), ITEM_HEIGHT);
 
         return image;
@@ -287,5 +290,23 @@ public final class ListView extends View {
             renderCache.remove(rssModel.elementAt(newIndex));
         }
         selectedIndex = newIndex;
+    }
+
+    private class LiveUpdateRSSModel extends RSSModel {
+
+        private final Runnable updateRunnable = new Runnable() {
+
+            public void run() {
+                RSSReaderCanvas.getInstance().getListView().notifyListChanged();
+            }
+        };
+
+        public void endElement(final String uri, final String localName, final String qName) throws SAXException {
+            if (currentItem != null && qName.equals("item")) {
+                Worker.queueEDT(updateRunnable);
+            }
+
+            super.endElement(uri, localName, qName);
+        }
     }
 }

@@ -12,45 +12,20 @@ public class RSSReader extends MIDlet implements CommandListener {
 
     // This is read from the JAD-file
     public static String INITIAL_FEED_URL = null;
-    private boolean midletPaused = false;
     private RSSReaderCanvas canvas;
     private SettingsForm settingsForm;
     private Displayable currentDisplayable;
+    public static int COLOR_BACKGROUND;
+    public static int COLOR_HIGHLIGHTED_BACKGROUND;
+    public static int COLOR_FOREGROUND;
+    public static int COLOR_HIGHLIGHTED_FOREGROUND;
+    public static int COLOR_BORDER;
+    public static int COLOR_HIGHLIGHTED_BORDER;
 
     /**
      * The RSSReader constructor.
      */
     public RSSReader() {
-    }
-
-    /*
-     * Initilizes the application. It is called only once when the MIDlet is
-     * started. The method is called before the <code>startMIDlet</code> method.
-     */
-    private void initialize() {
-        Worker.init(this, 4);
-        INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
-    }
-
-    /**
-     * Performs an action assigned to the Mobile Device - MIDlet Started point.
-     */
-    public void startMIDlet() {
-        switchDisplayable(null, getCanvas());
-        Worker.queue(new Workable() {
-
-            public boolean work() {
-                getCanvas().getListView().reload(true);
-
-                return false;
-            }
-        });
-    }
-
-    /**
-     * Performs an action assigned to the Mobile Device - MIDlet Resumed point.
-     */
-    public void resumeMIDlet() {
     }
 
     /**
@@ -138,20 +113,24 @@ public class RSSReader extends MIDlet implements CommandListener {
      * already started and initialize/starts or resumes the MIDlet.
      */
     public void startApp() {
-        if (midletPaused) {
-            resumeMIDlet();
-        } else {
-            initialize();
-            startMIDlet();
-        }
-        midletPaused = false;
-    }
+        Worker.init(this, 4);
+        INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
+        final Display display = getDisplay();
+        COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
+        COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
+        COLOR_FOREGROUND = display.getColor(Display.COLOR_FOREGROUND);
+        COLOR_HIGHLIGHTED_FOREGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
+        COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
+        COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
+        switchDisplayable(null, getCanvas());
+        Worker.queue(new Workable() {
 
-    /**
-     * Called when MIDlet is paused.
-     */
-    public void pauseApp() {
-        midletPaused = true;
+            public boolean work() {
+                getCanvas().getListView().reload(true);
+
+                return false;
+            }
+        });
     }
 
     /**
@@ -169,5 +148,8 @@ public class RSSReader extends MIDlet implements CommandListener {
      */
     public void destroyApp(final boolean unconditional) {
         Worker.shutdown(unconditional);
+    }
+
+    protected void pauseApp() {
     }
 }

@@ -8,7 +8,6 @@ import com.nokia.mid.ui.gestures.GestureInteractiveZone;
 import com.nokia.mid.ui.gestures.GestureListener;
 import com.nokia.mid.ui.gestures.GestureRegistrationManager;
 import javax.microedition.lcdui.Canvas;
-import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 
@@ -33,13 +32,6 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
 
-    public static int COLOR_BACKGROUND;
-    public static int COLOR_HIGHLIGHTED_BACKGROUND;
-    public static int COLOR_FOREGROUND;
-    public static int COLOR_HIGHLIGHTED_FOREGROUND;
-    public static int COLOR_BORDER;
-    public static int COLOR_HIGHLIGHTED_BORDER;
-
     public static final int MARGIN = FONT_TITLE.getHeight() / 2;
 
     /**
@@ -50,8 +42,6 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
         super();
         instance = this;
         this.rssReader = rssReader;
-
-        initColors();
 
         listView = new ListView(this);
         detailsView = new DetailsView(this);
@@ -68,15 +58,6 @@ public class RSSReaderCanvas extends Canvas implements GestureListener, FrameAni
         GestureRegistrationManager.setListener(this, this);
 
         setCurrentView(listView);
-    }
-
-    private void initColors() {
-        COLOR_BACKGROUND = rssReader.getDisplay().getColor(Display.COLOR_BACKGROUND);
-        COLOR_HIGHLIGHTED_BACKGROUND = rssReader.getDisplay().getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
-        COLOR_FOREGROUND = rssReader.getDisplay().getColor(Display.COLOR_FOREGROUND);
-        COLOR_HIGHLIGHTED_FOREGROUND = rssReader.getDisplay().getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
-        COLOR_BORDER = rssReader.getDisplay().getColor(Display.COLOR_BORDER);
-        COLOR_HIGHLIGHTED_BORDER = rssReader.getDisplay().getColor(Display.COLOR_HIGHLIGHTED_BORDER);
     }
 
     /**
