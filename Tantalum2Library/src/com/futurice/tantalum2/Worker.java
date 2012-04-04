@@ -113,10 +113,10 @@ public final class Worker implements Runnable {
      * Call MIDlet.notifyDestroyed() after all current queued and shutdown
      * Workable tasks are completed. Resources held by the system will be closed
      * and queued work such as writing to the RMS or file system will complete.
-     * 
-     * @param block Block the calling thread up to three seconds to allow orderly
-     * shutdown. This is only needed in MIDlet.notifyDestroyed(true) which is called
-     * for example by the user pressing the red HANGUP button.
+     *
+     * @param block Block the calling thread up to three seconds to allow
+     * orderly shutdown. This is only needed in MIDlet.notifyDestroyed(true)
+     * which is called for example by the user pressing the red HANGUP button.
      */
     public static void shutdown(final boolean block) {
         try {
@@ -127,10 +127,11 @@ public final class Worker implements Runnable {
             if (block) {
                 final long shutdownTimeout = System.currentTimeMillis() + 3000;
                 long timeRemaining;
-                
+
                 while (workerCount > 0) {
                     timeRemaining = shutdownTimeout - System.currentTimeMillis();
                     if (timeRemaining <= 0) {
+                        Log.l.log("Blocked shutdown timeout", null);
                         break;
                     }
                     synchronized (q) {
@@ -140,8 +141,15 @@ public final class Worker implements Runnable {
             }
         } catch (InterruptedException ex) {
         }
+        Log.l.log("Shutdown exit", "workers=" + workerCount);
     }
 
+    /**
+     * Main worker loop. Each Worker thread pulls tasks from the common queue.
+     * 
+     * The worker thread exits on uncaught errors or after shutdown() has been
+     * called and all pending tasks and shutdown tasks have completed.
+     */
     public void run() {
         try {
             Workable workable = null;

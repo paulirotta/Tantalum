@@ -8,14 +8,9 @@
 package com.futurice.tantalum2.net.xml;
 
 
-import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.util.StringUtils;
-import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
 
 
 /**
@@ -53,5 +48,29 @@ public class RSSModelTest extends TestCase {
             fail("Can not parse RSS: " + ex);
         }
         assertEquals("rss size", 78, instance.size());
+        try {
+            instance.setXML(null);
+            fail("Should not attempt to parse null RSS");
+        } catch (IllegalArgumentException e) {
+            // Correct answer
+        } catch (Exception ex) {
+            fail("Can not parse null RSS: " + ex);
+        }
+        try {
+            instance.setXML(new byte[0]);
+            fail("Should not handle 0 byte RSS");
+        } catch (IllegalArgumentException e) {
+            // Correct answer
+        } catch (Exception ex) {
+            fail("Can not handle 0 byte RSS: " + ex);
+        }
+        try {
+            instance.setXML(new byte[1]);
+            fail("Should not handle 1 byte RSS");
+        } catch (IllegalArgumentException e) {
+            fail("Wrong exception on parse bad 1 byte RSS: " + e);
+        } catch (Exception ex) {
+            // Correct
+        }
     }
 }

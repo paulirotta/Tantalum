@@ -35,7 +35,10 @@ public abstract class XMLModel extends DefaultHandler {
     public XMLModel() {
     }
 
-    public synchronized void setXML(final byte[] xml) throws ParserConfigurationException, SAXException, IOException {
+    public synchronized void setXML(final byte[] xml) throws ParserConfigurationException, SAXException, IOException, IllegalArgumentException {
+        if (xml == null || xml.length == 0) {
+            throw new IllegalArgumentException("Attempt to XML parse a null or zero byte value");
+        }
         final InputStream in = new ByteArrayInputStream(xml);
 
         qnameStack = new String[100];
