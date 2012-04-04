@@ -14,22 +14,19 @@ import com.sun.lwuit.list.ListCellRenderer;
  */
 public final class ListForm extends Form implements ActionListener, ListCellRenderer {
 
-    static Command settingsCommand = new Command("Settings");
-    static Command reloadCommand = new Command("Reload");
-    static Command exitCommand = new Command("Exit");
-    public final List list;
-    private final ListModel listModel;
+    static final Command settingsCommand = new Command("Settings");
+    static final Command reloadCommand = new Command("Reload");
+    static final Command exitCommand = new Command("Exit");
+    private final ListModel listModel = new ListModel(this);
+    public final List list = new List(listModel);
+    private final StaticWebCache feedCache = new StaticWebCache('5', listModel);
     private RSSReader midlet;
     private boolean isReloading = false;
-    private StaticWebCache feedCache;
 
     public ListForm(String title, RSSReader midlet) {
         super(title);
         this.midlet = midlet;
-        listModel = new ListModel(this);
-        list = new List(listModel);
         list.addActionListener(this);
-        feedCache = new StaticWebCache('5', new RSSTypeHandler(listModel));
 
         addComponent(list);
         addCommand(settingsCommand);

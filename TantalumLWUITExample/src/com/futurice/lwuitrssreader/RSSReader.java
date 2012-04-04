@@ -25,9 +25,9 @@ public class RSSReader extends MIDlet {
     public static Font underlinedFont;
 
     public void startApp() {
+        Worker.init(this, 4);
         Display.init(this);
         UIManager.getInstance().setLookAndFeel(new DefaultLookAndFeel());
-        Worker.init(this, 2);
 
         mediumFont = Font.createSystemFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_MEDIUM);
         plainFont = Font.createSystemFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
@@ -35,12 +35,12 @@ public class RSSReader extends MIDlet {
         underlinedFont = Font.createSystemFont(Font.FACE_PROPORTIONAL, Font.STYLE_UNDERLINED, Font.SIZE_SMALL);
         url = "http://feeds.bbci.co.uk/news/rss.xml";
         listForm = new ListForm("LWUIT RSS Reader", this);
-        settingsForm = new SettingsForm("LWUIT RSS Reader", this);
-        detailsForm = new DetailsForm("LWUIT RSS Reader", this);
 
         SCREEN_WIDTH = listForm.getWidth();
         SCREEN_HEIGHT = listForm.getHeight();
         listForm.show();
+        settingsForm = new SettingsForm("LWUIT RSS Reader", this);
+        detailsForm = new DetailsForm("LWUIT RSS Reader", this);
     }
 
     public void pauseApp() {

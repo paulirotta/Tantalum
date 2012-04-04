@@ -87,6 +87,7 @@ public class DetailsForm extends Form implements ActionListener {
         imageCache.get(item.getThumbnail(), new RunnableResult() {
 
             public void run() {
+                Object o = getResult();
                 final Image image = (Image) getResult();
 //                if (image != null) {
                     imgLabel.setIcon(image);
