@@ -11,6 +11,7 @@ package com.futurice.tantalum2.net.xml;
 import com.futurice.tantalum2.util.StringUtils;
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
+import org.xml.sax.SAXException;
 
 
 /**
@@ -67,10 +68,10 @@ public class RSSModelTest extends TestCase {
         try {
             instance.setXML(new byte[1]);
             fail("Should not handle 1 byte RSS");
-        } catch (IllegalArgumentException e) {
-            fail("Wrong exception on parse bad 1 byte RSS: " + e);
-        } catch (Exception ex) {
+        } catch (SAXException ex) {
             // Correct
+        } catch (Exception e) {
+            fail("Wrong exception on parse bad 1 byte RSS: " + e);
         }
     }
 }
