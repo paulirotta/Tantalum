@@ -1,14 +1,14 @@
 package com.futurice.s40rssreader;
 
+import com.futurice.tantalum2.TantalumMIDlet;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import javax.microedition.lcdui.*;
-import javax.microedition.midlet.MIDlet;
 
 /**
  * @author ssaa
  */
-public class RSSReader extends MIDlet implements CommandListener {
+public class RSSReader extends TantalumMIDlet implements CommandListener {
 
     // This is read from the JAD-file
     public static String INITIAL_FEED_URL = null;
@@ -23,12 +23,6 @@ public class RSSReader extends MIDlet implements CommandListener {
     public static int COLOR_HIGHLIGHTED_BORDER;
 
     /**
-     * The RSSReader constructor.
-     */
-    public RSSReader() {
-    }
-
-    /**
      * Switches a current displayable in a display. The
      * <code>display</code> instance is taken from
      * <code>getDisplay</code> method. This method is used by all actions in the
@@ -40,7 +34,8 @@ public class RSSReader extends MIDlet implements CommandListener {
      * @param nextDisplayable the Displayable to be set
      */
     public void switchDisplayable(Alert alert, Displayable nextDisplayable) {
-        Display display = getDisplay();
+        final Display display = getDisplay();
+        
         if (alert == null) {
             display.setCurrent(nextDisplayable);
         } else {
@@ -113,7 +108,6 @@ public class RSSReader extends MIDlet implements CommandListener {
      * already started and initialize/starts or resumes the MIDlet.
      */
     public void startApp() {
-        Worker.init(this, 4);
         INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
         final Display display = getDisplay();
         COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
@@ -131,23 +125,6 @@ public class RSSReader extends MIDlet implements CommandListener {
                 return false;
             }
         });
-    }
-
-    /**
-     * Exits MIDlet.
-     */
-    public void exitMIDlet() {
-        Worker.shutdown(false);
-    }
-
-    /**
-     * Called to signal the MIDlet to terminate.
-     *
-     * @param unconditional if true, then the MIDlet has to be unconditionally
-     * terminated and all resources has to be released.
-     */
-    public void destroyApp(final boolean unconditional) {
-        Worker.shutdown(unconditional);
     }
 
     protected void pauseApp() {

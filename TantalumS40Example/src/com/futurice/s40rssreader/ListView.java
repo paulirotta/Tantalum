@@ -59,7 +59,7 @@ public final class ListView extends View {
 
     public void commandAction(final Command command, final Displayable d) {
         if (command == exitCommand) {
-            canvas.getRssReader().exitMIDlet();
+            canvas.getRssReader().exitMIDlet(false);
         } else if (command == reloadCommand) {
             reload(false);
         } else if (command == settingsCommand) {

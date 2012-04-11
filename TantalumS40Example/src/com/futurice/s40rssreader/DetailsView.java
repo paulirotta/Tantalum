@@ -53,7 +53,7 @@ public class DetailsView extends View {
         try {
             needsToClose = canvas.getRssReader().platformRequest(url);
             if (needsToClose) {
-                canvas.getRssReader().exitMIDlet();
+                canvas.getRssReader().exitMIDlet(false);
             }
         } catch (ConnectionNotFoundException ex) {
             Log.l.log("Can not open browser to URL", url, ex);
