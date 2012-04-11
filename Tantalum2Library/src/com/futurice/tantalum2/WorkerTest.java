@@ -21,7 +21,7 @@ public class WorkerTest extends TestCase {
     }
 
     public void test(int testNumber) throws Throwable {
-        Worker.init(this, 2);
+        Worker.init(this, 4);
         switch (testNumber) {
             case 0:
                 testRun();
@@ -76,6 +76,7 @@ public class WorkerTest extends TestCase {
         }
         
         assertEquals("yes", (String) wr.getResult());
+        assertEquals(4, Worker.getNumberOfWorkers());
     }
 
     /**

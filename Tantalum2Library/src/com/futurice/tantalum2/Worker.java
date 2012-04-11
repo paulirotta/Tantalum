@@ -145,6 +145,15 @@ public final class Worker implements Runnable {
     }
 
     /**
+     * For unit testing
+     * 
+     * @return 
+     */
+    static int getNumberOfWorkers() {
+        return workerCount;
+    }
+
+    /**
      * Main worker loop. Each Worker thread pulls tasks from the common queue.
      * 
      * The worker thread exits on uncaught errors or after shutdown() has been
