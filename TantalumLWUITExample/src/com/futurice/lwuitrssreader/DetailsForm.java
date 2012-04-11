@@ -7,7 +7,6 @@ package com.futurice.lwuitrssreader;
 import com.futurice.tantalum2.RunnableResult;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.net.xml.RSSItem;
-import com.futurice.tantalum2.rms.ImageTypeHandler;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Image;
@@ -32,7 +31,7 @@ public class DetailsForm extends Form implements ActionListener {
     private Vector linkLabels;
     private RSSReader midlet;
     private RSSItem current;
-    private static final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
+    private static final StaticWebCache imageCache = new StaticWebCache('1', new LWUITImageTypeHandler());
 
     public DetailsForm(String title, RSSReader midlet) {
         super(title);
@@ -90,9 +89,9 @@ public class DetailsForm extends Form implements ActionListener {
                 Object o = getResult();
                 final Image image = (Image) getResult();
 //                if (image != null) {
-                    imgLabel.setIcon(image);
+                imgLabel.setIcon(image);
 //                    if (this.contains(imgLabel)) {
-                        imgLabel.repaint();
+                imgLabel.repaint();
 //                    }
 //                }
             }
