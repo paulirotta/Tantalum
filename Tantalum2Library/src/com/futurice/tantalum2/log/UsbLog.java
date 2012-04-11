@@ -40,7 +40,7 @@ public final class UsbLog extends Log {
      *
      * @param string string to print
      */
-    protected void printMessage(String string) {
+    protected synchronized void printMessage(String string) {
         if (string != null && this.os != null) {
             try {
                 this.os.write(string.getBytes());

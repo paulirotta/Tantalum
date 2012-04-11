@@ -6,9 +6,7 @@ package com.futurice.tantalum2.net.xml;
 
 import com.futurice.tantalum2.log.Log;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -35,7 +33,7 @@ public abstract class XMLModel extends DefaultHandler {
     public XMLModel() {
     }
 
-    public synchronized void setXML(final byte[] xml) throws ParserConfigurationException, SAXException, IOException, IllegalArgumentException {
+    public synchronized void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
         if (xml == null || xml.length == 0) {
             throw new IllegalArgumentException("Attempt to XML parse a null or zero byte value");
         }
@@ -47,13 +45,19 @@ public abstract class XMLModel extends DefaultHandler {
         currentDepth = 0;
 
         try {
-            Log.l.log("Start parse", "");
+            Log.l.log("Start parse", "length=" + xml.length);
             SAXParserFactory.newInstance().newSAXParser().parse(in, this);
-            Log.l.log("End parse", "");
+            Log.l.log("End parse", "length=" + xml.length);
+        } catch (SAXException t) {
+            Log.l.log("SAX Parse error", new String(xml), t);
+            throw t;
         } catch (Throwable t) {
             Log.l.log("Parse error", "", t);
         } finally {
-            in.close();
+            try {
+                in.close();
+            } catch (Exception e) {
+            }
             qnameStack = null;
             charStack = null;
             attributeStack = null;

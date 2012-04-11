@@ -161,11 +161,18 @@ public class RMSUtils {
      */
     public static RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws RecordStoreException {
         RecordStore rs = null;
+        boolean success = false;
 
         try {
             rs = RecordStore.openRecordStore(recordStoreName, createIfNecessary);
             openRecordStores.addElement(rs);
+            success = true;
         } catch (RecordStoreNotFoundException e) {
+        } finally {
+            if (!success) {
+                Log.l.log("Can not open record store", "Deleting " + recordStoreName);
+                delete(recordStoreName);
+            }
         }
 
         return rs;

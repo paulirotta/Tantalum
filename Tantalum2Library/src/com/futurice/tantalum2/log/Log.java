@@ -46,7 +46,7 @@ public class Log {
      *
      * @param string string to print
      */
-    protected void printMessage(final String string) {
+    protected synchronized void printMessage(final String string) {
         System.out.println(string);
     }
 
