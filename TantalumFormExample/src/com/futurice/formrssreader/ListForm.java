@@ -43,7 +43,7 @@ public class ListForm extends Form implements CommandListener {
         this.detailsView = new DetailsForm(rssReader, title);
         this.feedCache = new StaticWebCache('5', new DataTypeHandler() {
 
-            public Object convertToUseForm(byte[] bytes) {
+            public Object convertToUseForm(final byte[] bytes) {
                 try {
                     rssModel.removeAllElements();
                     rssModel.setXML(bytes);
