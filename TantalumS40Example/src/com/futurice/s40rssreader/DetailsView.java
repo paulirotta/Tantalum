@@ -20,7 +20,7 @@ import javax.microedition.lcdui.Image;
  */
 public class DetailsView extends View {
     
-    private final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
+    public static final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
     private final Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;

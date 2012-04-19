@@ -35,7 +35,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
      */
     public void switchDisplayable(Alert alert, Displayable nextDisplayable) {
         final Display display = getDisplay();
-        
+
         if (alert == null) {
             display.setCurrent(nextDisplayable);
         } else {
@@ -121,7 +121,6 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
 
             public boolean work() {
                 getCanvas().getListView().reload(true);
-
                 return false;
             }
         });

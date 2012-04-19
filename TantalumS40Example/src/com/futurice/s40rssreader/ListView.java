@@ -23,6 +23,7 @@ import org.xml.sax.SAXException;
  */
 public final class ListView extends View {
 
+    private static final boolean PREFETCH_IMAGES = true;
     private final int ITEM_HEIGHT = RSSReaderCanvas.FONT_TITLE.getHeight()
             + RSSReaderCanvas.FONT_DATE.getHeight() + 2 * RSSReaderCanvas.MARGIN;
     private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
@@ -30,7 +31,7 @@ public final class ListView extends View {
     private final Command settingsCommand = new Command("Settings", Command.ITEM, 1);
     private final LiveUpdateRSSModel rssModel = new LiveUpdateRSSModel();
     private final StaticWebCache feedCache;
-    private boolean loading = false;
+    private boolean loading = true;
     private int selectedIndex = -1;
     private final PoolingWeakHashCache renderCache = new PoolingWeakHashCache();
 
@@ -241,16 +242,14 @@ public final class ListView extends View {
         if (initialLoad) {
             feedCache.get(feedUrl, new Result() {
 
-                public void setResult(Object o) {
-                    super.setResult(o);
+                public void setResult(final Object o) {
                     notifyListChanged();
                 }
             });
         } else {
             feedCache.update(feedUrl, new Result() {
 
-                public void setResult(Object o) {
-                    super.setResult(o);
+                public void setResult(final Object o) {
                     notifyListChanged();
                 }
             });
@@ -304,6 +303,9 @@ public final class ListView extends View {
         public void endElement(final String uri, final String localName, final String qName) throws SAXException {
             if (currentItem != null && qName.equals("item")) {
                 Worker.queueEDT(updateRunnable);
+                if (PREFETCH_IMAGES) {
+                    DetailsView.imageCache.get(currentItem.getThumbnail(), null);
+                }
             }
 
             super.endElement(uri, localName, qName);
