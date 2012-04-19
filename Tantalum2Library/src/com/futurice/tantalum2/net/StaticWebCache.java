@@ -18,6 +18,7 @@ import java.util.Hashtable;
 public class StaticWebCache extends StaticCache {
 
     private static final int RETRIES = 3;
+    private static final int PREFETCH_RETRIES = 0;
     private final Hashtable timestamps = new Hashtable();
 
     public StaticWebCache(final char priority, final DataTypeHandler handler) {
@@ -28,27 +29,47 @@ public class StaticWebCache extends StaticCache {
      * Retrieve the object from 1. RAM if available 2. RMS if available 3. WEB
      *
      * @param url
-     * @param result
+     * @param getResult
      */
-    public void get(final String url, final Result result) {
+    public void get(final String url, final Result getResult) {
         super.get(url, new Result() {
 
+            /**
+             * Local Cache get returned a result, no need to get it from the
+             * network
+             *
+             */
             public void setResult(Object o) {
-                result.setResult(o);
+                if (getResult != null) {
+                    getResult.setResult(o);
+                }
             }
 
+            /**
+             * Local Cache get failed to return a result- not cached
+             *
+             */
             public void noResult() {
-//                update(url, result);
-                new HttpGetter(url, RETRIES, new Result() {
+                final HttpGetter httpGetter = new HttpGetter(url, RETRIES, new Result() {
 
-                    public void setResult(Object o) {
-                        result.setResult(put(url, (byte[]) o));
+                    public void setResult(final Object o) {
+                        // Update the UI immediately
+                        if (getResult != null) {
+                            getResult.setResult(convertAndPutToHeapCache(url, (byte[]) o));
+                        }
+                        // Then store to RMS, which might take some time
+                        updateTimestamp(url);
+                        synchronousPut(url, (byte[]) o, getResult == null);
                     }
 
                     public void noResult() {
-                        result.noResult();
+                        getResult.noResult();
                     }
-                }).work();
+                });
+
+                // Continue the HTTP GET attempt immediately on the same Worker thread
+                // This avoids possible queue delays
+                httpGetter.work();
             }
         });
     }
@@ -71,6 +92,25 @@ public class StaticWebCache extends StaticCache {
                 result.noResult();
             }
         }));
+    }
+    
+    /**
+     * Retrieve the object from WEB if it is not already cached locally.
+     *
+     * @param url
+     * @param updateResult
+     */
+    public void prefetch(final String url, final boolean forceRefresh) {
+        if (forceRefresh || synchronousRAMCacheGet(url) == null) {
+            Worker.queueIdleWork(new HttpGetter(url, PREFETCH_RETRIES, new Result() {
+
+                public void setResult(final Object o) {
+                    // Then store to RMS, with converted form cached to RAM
+                    updateTimestamp(url);
+                    synchronousPut(url, (byte[]) o, true);
+                }
+            }));
+        }
     }
 
     /**

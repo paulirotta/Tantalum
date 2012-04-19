@@ -169,7 +169,7 @@ public class RMSUtils {
             success = true;
         } catch (RecordStoreNotFoundException e) {
         } finally {
-            if (!success) {
+            if (!success && !createIfNecessary) {
                 Log.l.log("Can not open record store", "Deleting " + recordStoreName);
                 delete(recordStoreName);
             }
@@ -211,7 +211,7 @@ public class RMSUtils {
     }
 
     /**
-     * Reads the data from the given recordstore.
+     * Reads the data from the given record store.
      *
      * @param recordStoreName
      * @return byte[]

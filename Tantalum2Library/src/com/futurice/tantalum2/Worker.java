@@ -18,6 +18,7 @@ import javax.microedition.midlet.MIDlet;
 public final class Worker implements Runnable {
 
     private static final Vector q = new Vector();
+    private static final Vector idleQ = new Vector();
     private static final Vector shutdownQueue = new Vector();
     private static MIDlet midlet;
     private static Display display;
@@ -70,13 +71,36 @@ public final class Worker implements Runnable {
     }
 
     /**
-     * Add an object to be executed in the background on the worker thread
+     * Add an object to be executed in the background on the worker thread.
+     *
+     * Shutdown() will be delayed indefinitely until items in the queue complete
+     * execution. If the shutdown signal comes from the phone (usually because
+     * the user pressed the RED button to exit the application), then shutdown
+     * will be delayed by only a maximum of 3 seconds.
      *
      * @param workable
      */
     public static void queue(final Workable workable) {
         synchronized (q) {
             q.addElement(workable);
+            q.notifyAll();
+        }
+    }
+
+    /**
+     * Add an object to be executed at low priority in the background on the
+     * worker thread. Execution will only begin when there are no foreground
+     * tasks, and only if at least 1 Worker thread is left ready for immediate
+     * execution of normal priority Workable tasks.
+     *
+     * Items in the idleQueue will not be executed if shutdown() is called
+     * before they begin.
+     *
+     * @param workable
+     */
+    public static void queueIdleWork(final Workable workable) {
+        synchronized (q) {
+            idleQ.addElement(workable);
             q.notifyAll();
         }
     }
@@ -146,8 +170,8 @@ public final class Worker implements Runnable {
 
     /**
      * For unit testing
-     * 
-     * @return 
+     *
+     * @return
      */
     static int getNumberOfWorkers() {
         return workerCount;
@@ -155,7 +179,7 @@ public final class Worker implements Runnable {
 
     /**
      * Main worker loop. Each Worker thread pulls tasks from the common queue.
-     * 
+     *
      * The worker thread exits on uncaught errors or after shutdown() has been
      * called and all pending tasks and shutdown tasks have completed.
      */
@@ -166,32 +190,40 @@ public final class Worker implements Runnable {
             while (true) {
                 synchronized (q) {
                     if (q.size() > 0) {
+                         // Normal work
                         workable = (Workable) q.elementAt(0);
                         q.removeElementAt(0);
                     } else {
-                        ++currentlyIdleCount;
-                        if (!shuttingDown || currentlyIdleCount < workerCount) {
-                            // Empty queue, or waiting for other Worker tasks to complete before shutdown tasks start
-                            q.wait();
+                        if (idleQ.size() > 0 && !shuttingDown && currentlyIdleCount > 0) {
+                            // Idle work, at least 1 thread is left for new normal work
+                            workable = (Workable) idleQ.elementAt(0);
+                            idleQ.removeElementAt(0);
                         } else {
-                            // Shutdown
-                            while (!shutdownQueue.isEmpty()) {
-                                // PHASE 1: Start shutdown actions
-                                queue((Workable) shutdownQueue.elementAt(0));
-                                shutdownQueue.removeElementAt(0);
-                            }
-                            if (q.isEmpty() && currentlyIdleCount >= workerCount) {
-                                // PHASE 2: Shutdown actions are all complete
-                                Worker.queueEDT(new Runnable() {
+                            // Nothing to do
+                            ++currentlyIdleCount;
+                            if (!shuttingDown || currentlyIdleCount < workerCount) {
+                                // Empty queue, or waiting for other Worker tasks to complete before shutdown tasks start
+                                q.wait();
+                            } else {
+                                // Shutdown
+                                while (!shutdownQueue.isEmpty()) {
+                                    // PHASE 1: Start shutdown actions
+                                    queue((Workable) shutdownQueue.elementAt(0));
+                                    shutdownQueue.removeElementAt(0);
+                                }
+                                if (q.isEmpty() && currentlyIdleCount >= workerCount) {
+                                    // PHASE 2: Shutdown actions are all complete
+                                    Worker.queueEDT(new Runnable() {
 
-                                    public void run() {
-                                        midlet.notifyDestroyed();
-                                    }
-                                });
-                                break;
+                                        public void run() {
+                                            midlet.notifyDestroyed();
+                                        }
+                                    });
+                                    break;
+                                }
                             }
+                            --currentlyIdleCount;
                         }
-                        --currentlyIdleCount;
                     }
                 }
                 if (workable != null && workable.work() && workable instanceof Runnable) {

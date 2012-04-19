@@ -77,11 +77,13 @@ public class StaticCache {
      * @param key
      * @param o
      */
-    private Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
+    protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
+        Log.l.log("Start to convert", key, new Error());
         final Object o = handler.convertToUseForm(bytes);
         //remove(key);
         accessOrder.addElement(key);
         cache.put(key, o);
+        Log.l.log("End convert", key);
 
         return o;
     }
@@ -149,28 +151,27 @@ public class StaticCache {
     }
 
     /**
-     * Store a value to heap and flash memory
+     * Store a value to heap and flash memory.
+     * 
+     * Note that the storage to RMS is done asynchronously in the background
+     * which may lead to large binary objects being queued up on the Worker
+     * thread. If you do this many times, you could run short on memory, and should
+     * re-factor with use of synchronousPut() instead.
+     * 
+     * Note that conversion to use form happens immediately and synchronously
+     * on the calling thread before before this method returns. If conversion
+     * may take a long time (XML parsing, etc) then consider not calling this
+     * from the user event dispatch thread.
      *
      * @param key
      * @param bytes
      * @return the byte[] converted to use form by the cache's Handler
      */
     public synchronized Object put(final String key, final byte[] bytes) {
-        if (key == null) {
-            throw new IllegalArgumentException("Null key put to cache");
-        }
-        if (bytes == null) {
-            throw new IllegalArgumentException("Null bytes put to cache");
-        }
         Worker.queue(new Workable() {
 
             public boolean work() {
-                try {
-                    Log.l.log("Cache to RMS", "(" + priority + ") " + key);
-                    RMSUtils.cacheWrite(key, bytes);
-                } catch (Exception e) {
-                    Log.l.log("Couldn't store object to RMS", key, e);
-                }
+                synchronousPut(key, bytes, false);
 
                 return false;
             }
@@ -179,19 +180,49 @@ public class StaticCache {
         return convertAndPutToHeapCache(key, bytes);
     }
 
-    public void write(final String key, final byte[] data) {
-        do {
-            try {
-                RMSUtils.cacheWrite(key, data);
-                Log.l.log("RMS cache write", key + " (" + data.length + " bytes)");
-                return;
-            } catch (RecordStoreFullException ex) {
-                Log.l.log("Clearning space for data, ABORTING", key + " (" + data.length + " bytes)", ex);
-                if (!clearSpace(data.length)) {
-                    Log.l.log("Can not clear enough space for data, ABORTING", key);
+    /**
+     * Store the object to RMS, blocking the calling thread until the write is
+     * complete.
+     * 
+     * Generally you should use this method if you are on a Worker thread to avoid
+     * adding large objects in the Worker queue waiting to be stored to the RMS
+     * which could lead to a memory shortage. If you are on the EDT, use the
+     * asynchronous put() method instead to avoid blocking the calling thread.
+     * 
+     * @param key
+     * @param bytes
+     * @param putToHeapCache - Set "true" unless an overriding method has already done this
+     * @return 
+     */
+    public Object synchronousPut(final String key, final byte[] bytes, final boolean putToHeapCache) {
+        if (key == null) {
+            throw new IllegalArgumentException("Null key put to cache");
+        }
+        if (bytes == null) {
+            throw new IllegalArgumentException("Null bytes put to cache");
+        }
+        try {
+            do {
+
+                try {
+                    RMSUtils.cacheWrite(key, bytes);
+                    Log.l.log("RMS cache write", key + " (" + bytes.length + " bytes)");
+                    break;
+                } catch (RecordStoreFullException ex) {
+                    Log.l.log("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
+                    if (!clearSpace(bytes.length)) {
+                        Log.l.log("Can not clear enough space for data, ABORTING", key);
+                    }
                 }
+            } while (true);
+            if (putToHeapCache) {
+                return convertAndPutToHeapCache(key, bytes);
             }
-        } while (true);
+        } catch (Exception e) {
+            Log.l.log("Couldn't store object to RMS", key, e);
+        }
+        
+        return null;
     }
 
     /**
