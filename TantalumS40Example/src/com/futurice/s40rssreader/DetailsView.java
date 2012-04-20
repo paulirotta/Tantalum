@@ -20,11 +20,12 @@ import javax.microedition.lcdui.Image;
  */
 public class DetailsView extends View {
     
-    public static final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
+    public static final StaticWebCache imageCache = new StaticWebCache('1', new HalfImageTypeHandler());
     private final Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
     private RSSItem selectedItem;
+    private Image image; // Most recently used image (hard link prevents WeakReference gc)
     
     public DetailsView(final RSSReaderCanvas canvas) {
         super(canvas);
@@ -93,7 +94,7 @@ public class DetailsView extends View {
         
         final String url = selectedItem.getThumbnail();
         if (url != null) {
-            final Image image = (Image) imageCache.synchronousRAMCacheGet(url);
+            image = (Image) imageCache.synchronousRAMCacheGet(url);
             if (image != null) {
                 g.drawImage(image, canvas.getWidth() >> 1, curY, Graphics.TOP | Graphics.HCENTER);
                 curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
@@ -104,7 +105,6 @@ public class DetailsView extends View {
                 imageCache.get(item.getThumbnail(), new Result() {
                     
                     public void setResult(Object o) {
-                        super.setResult(o);
                         item.setLoadingImage(false);
                         DetailsView.this.getCanvas().repaint();
                     }

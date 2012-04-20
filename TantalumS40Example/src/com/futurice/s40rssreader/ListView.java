@@ -34,6 +34,7 @@ public final class ListView extends View {
     private boolean loading = true;
     private int selectedIndex = -1;
     private final PoolingWeakHashCache renderCache = new PoolingWeakHashCache();
+    private boolean prefetchImagesOverNetwork = true;
 
     public ListView(final RSSReaderCanvas canvas) {
         super(canvas);
@@ -304,7 +305,7 @@ public final class ListView extends View {
             if (currentItem != null && qName.equals("item")) {
                 Worker.queueEDT(updateRunnable);
                 if (PREFETCH_IMAGES) {
-                    DetailsView.imageCache.get(currentItem.getThumbnail(), null);
+                    DetailsView.imageCache.prefetch(currentItem.getThumbnail(), prefetchImagesOverNetwork);
                 }
             }
 
