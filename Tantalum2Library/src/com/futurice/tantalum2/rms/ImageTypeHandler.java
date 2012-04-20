@@ -8,12 +8,12 @@ import com.futurice.tantalum2.log.Log;
 import javax.microedition.lcdui.Image;
 
 /**
- *
+ * This is a helper class for creating an image class. It automatically converts
+ * the byte[] to an Image as the data is loaded from the network or cache.
+ * 
  * @author tsaa
  */
 public final class ImageTypeHandler implements DataTypeHandler {
-
-//    public static final Image DEFAULT_IMAGE = Image.createImage(1, 1);
 
     public Object convertToUseForm(final byte[] bytes) {
         try {

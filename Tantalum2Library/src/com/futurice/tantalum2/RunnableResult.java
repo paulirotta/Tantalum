@@ -5,7 +5,10 @@
 package com.futurice.tantalum2;
 
 /**
- *
+ * An asynchronous callback object which is first run with setResult() on a
+ * Worker thread, then queued to the Event Dispatch Thread (EDT) for updating
+ * of user-interface synchronous results.
+ * 
  * @author phou
  */
 public abstract class RunnableResult extends Result implements Runnable {

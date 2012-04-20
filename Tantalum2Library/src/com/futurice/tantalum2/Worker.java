@@ -17,6 +17,13 @@ import javax.microedition.midlet.MIDlet;
  */
 public final class Worker implements Runnable {
 
+    /*
+     * Synchronize on the following object if your processing routine will
+     * temporarily need a large amount of memory. Only one such activity
+     * can be active at a time
+     */
+    public static final Object LARGE_MEMORY_MUTEX = new Object();
+
     private static final Vector q = new Vector();
     private static final Vector idleQ = new Vector();
     private static final Vector shutdownQueue = new Vector();
