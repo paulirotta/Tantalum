@@ -197,14 +197,14 @@ public final class ImageUtils {
      * and MODE_BOX_FILTER - box filtered resizing (default).
      * @return The resized image.
      */
-    public static Image resizeImage(final int[] srcPixels, final int srcWidth, final int srcHeight, final int destW, final int destH) {
-        final int[] argb = resizeImageHorizontally(srcPixels, srcWidth, srcHeight, destW);
-        return resizeImageVertically(argb, destW, srcHeight, destH);
+    public static Image resizeImage(final int[] srcPixels, final int srcW, final int srcH, final int destW, final int destH) {
+        final int[] argb = resizeImageHorizontally(srcPixels, srcW, srcH, destW);
+        return resizeImageVertically(argb, destW, srcH, destH);
     }
 
     private static int[] resizeImageHorizontally(int[] srcPixels, final int srcW, final int srcH, final int destW) {
         // create pixel arrays
-        final int[] destPixels = new int[destW * srcH]; // array to hold destination pixels
+        //final int[] destPixels = new int[destW * srcH]; // array to hold destination pixels
 
         // precalculate src/dest ratios
         final int ratioW = (srcW << FP_SHIFT) / destW;
@@ -243,23 +243,23 @@ public final class ImageUtils {
                 r >>>= 16;
                 g >>>= 8;
                 if (count == predictedCount) {
-                    destPixels[destX + destY * destW] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
+                    srcPixels[destX + destY * destW] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
                 } else {
                     a /= count;
                     r /= count;
                     g /= count;
                     b /= count;
-                    destPixels[destX + destY * destW] = ((a << 24) | (r << 16) | (g << 8) | b);
+                    srcPixels[destX + destY * destW] = ((a << 24) | (r << 16) | (g << 8) | b);
                 }
             }
         }
 
-        return destPixels;
+        return srcPixels;
     }
 
     private static Image resizeImageVertically(final int[] srcPixels, final int srcW, final int srcH, final int destH) {
         // create pixel arrays
-        final int[] destPixels = new int[srcW * destH]; // array to hold destination pixels
+//        final int[] destPixels = new int[srcW * destH]; // array to hold destination pixels
         // precalculate src/dest ratios
         final int ratioH = (srcH << FP_SHIFT) / destH;
         final int predictedCount = 1 + (srcH / destH);
@@ -295,18 +295,18 @@ public final class ImageUtils {
                 r >>>= 16;
                 g >>>= 8;
                 if (count == predictedCount) {
-                    destPixels[destX + destY * srcW] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
+                    srcPixels[destX + destY * srcW] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
                 } else {
                     a /= count;
                     r /= count;
                     g /= count;
                     b /= count;
-                    destPixels[destX + destY * srcW] = (a << 24) | (r << 16) | (g << 8) | b;
+                    srcPixels[destX + destY * srcW] = (a << 24) | (r << 16) | (g << 8) | b;
                 }
             }
         }
 
         // return a new image created from the destination pixel buffer
-        return Image.createRGBImage(destPixels, srcW, destH, true);
+        return Image.createRGBImage(srcPixels, srcW, destH, true);
     }
 }
