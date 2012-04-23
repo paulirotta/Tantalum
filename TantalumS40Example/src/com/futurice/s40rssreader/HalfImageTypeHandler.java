@@ -19,10 +19,11 @@ public class HalfImageTypeHandler implements DataTypeHandler {
         try {
             Image image = Image.createImage(bytes, 0, bytes.length);
             final int w = image.getWidth();
+            final int h = image.getHeight();
             final int[] data = new int[w * image.getHeight()];
             image.getRGB(data, 0, w, 0, 0, w, image.getHeight());
             image = null;
-            return ImageUtils.quarterImage(data, w);
+            return ImageUtils.resizeImage(data, w, h, w / 3, h / 3);
         } catch (Exception e) {
             Log.l.log("Error converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
         }
