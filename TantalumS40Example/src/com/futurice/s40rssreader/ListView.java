@@ -1,6 +1,7 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.tantalum2.Result;
+import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
@@ -29,6 +30,7 @@ public final class ListView extends View {
     private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
     private final Command reloadCommand = new Command("Reload", Command.ITEM, 0);
     private final Command settingsCommand = new Command("Settings", Command.ITEM, 1);
+    private final Command clearCacheCommand = new Command("Clear Cache", Command.SCREEN, 5);
     private final LiveUpdateRSSModel rssModel = new LiveUpdateRSSModel();
     private final StaticWebCache feedCache;
     private boolean loading = true;
@@ -56,7 +58,7 @@ public final class ListView extends View {
     }
 
     public Command[] getCommands() {
-        return new Command[]{reloadCommand, settingsCommand, exitCommand};
+        return new Command[]{reloadCommand, settingsCommand, exitCommand, clearCacheCommand};
     }
 
     public void commandAction(final Command command, final Displayable d) {
@@ -64,6 +66,18 @@ public final class ListView extends View {
             canvas.getRssReader().exitMIDlet(false);
         } else if (command == reloadCommand) {
             reload(false);
+        } else if (command == clearCacheCommand) {
+            Worker.queue(new Workable() {
+
+                public boolean work() {
+                    renderCache.clear();
+                    feedCache.clear();
+                    DetailsView.imageCache.clear();
+                    reload(false);
+                    
+                    return false;
+                }
+            });
         } else if (command == settingsCommand) {
             String feedUrl = RSSReader.INITIAL_FEED_URL;
 

@@ -5,6 +5,7 @@ import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.net.xml.RSSItem;
 import com.futurice.tantalum2.rms.ImageTypeHandler;
+import com.futurice.tantalum2.util.ImageUtils;
 import com.futurice.tantalum2.util.StringUtils;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
@@ -19,8 +20,11 @@ import javax.microedition.lcdui.Image;
  * @author ssaa
  */
 public class DetailsView extends View {
+    private static int zoom = 100;
     
-    public static final StaticWebCache imageCache = new StaticWebCache('1', new HalfImageTypeHandler());
+    
+    public static final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
+//    public static final StaticWebCache imageCache = new StaticWebCache('1', new HalfImageTypeHandler());
     private final Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
@@ -96,8 +100,17 @@ public class DetailsView extends View {
         if (url != null) {
             image = (Image) imageCache.synchronousRAMCacheGet(url);
             if (image != null) {
-                g.drawImage(image, canvas.getWidth() >> 1, curY, Graphics.TOP | Graphics.HCENTER);
+//                g.drawImage(image, canvas.getWidth() >> 1, curY, Graphics.TOP | Graphics.HCENTER);
+//                curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
+                final int[] data = new int[image.getWidth() * image.getHeight()];
+                image.getRGB(data, 0, image.getWidth(), 0, 0, image.getWidth(), image.getHeight());
+                final Image shrunkImage = ImageUtils.shrinkImageProportional(data, image.getWidth(), image.getHeight(), image.getWidth() * zoom / 100, image.getHeight(), false, true);
+                g.drawImage(shrunkImage, canvas.getWidth() >> 1, curY, Graphics.TOP | Graphics.HCENTER);
                 curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
+                zoom -= 10;
+                if (zoom == 0) {
+                    zoom = 100;
+                }
             } else if (!selectedItem.isLoadingImage()) {
                 // Not already loading image, so request it
                 final RSSItem item = selectedItem;

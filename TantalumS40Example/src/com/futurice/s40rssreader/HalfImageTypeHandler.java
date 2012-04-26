@@ -23,7 +23,7 @@ public class HalfImageTypeHandler implements DataTypeHandler {
             final int[] data = new int[w * image.getHeight()];
             image.getRGB(data, 0, w, 0, 0, w, image.getHeight());
             image = null;
-            return ImageUtils.shrinkImage(data, w, h, w / 3, h / 3);
+            return ImageUtils.shrinkImageProportional(data, w, h, w / 3, h, false, true);
         } catch (Exception e) {
             Log.l.log("Error converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
         }
