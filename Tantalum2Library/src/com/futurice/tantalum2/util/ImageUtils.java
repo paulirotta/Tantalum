@@ -5,6 +5,7 @@
 package com.futurice.tantalum2.util;
 
 import com.futurice.tantalum2.Worker;
+import com.futurice.tantalum2.log.Log;
 import javax.microedition.lcdui.Image;
 
 /**
@@ -163,7 +164,7 @@ public final class ImageUtils {
 
     /**
      * Shrink an image to fit within max dimensions, preserving aspect ratio.
-     * 
+     *
      * @param data - The ARGB image
      * @param srcWidth
      * @param srcHeight
@@ -171,16 +172,32 @@ public final class ImageUtils {
      * @param maxHeight
      * @return
      */
-    public static Image shrinkImageProportional(final int[] data, final int srcWidth, final int srcHeight, int maxWidth, int maxHeight, final boolean processAlpha) {
+    public static Image shrinkImageProportional(final int[] data, final int srcWidth, final int srcHeight, int maxWidth, int maxHeight, final boolean processAlpha, final boolean preserveAspectRatio) {
         final float byWidth = maxWidth / (float) srcWidth;
         final float byHeight = maxHeight / (float) srcHeight;
 
-        if (byWidth < byHeight) {
-            maxWidth = (int) (srcWidth * byWidth);
-            maxHeight = (int) (srcHeight * byWidth);
-        } else {
-            maxWidth = (int) (srcWidth * byHeight);
-            maxHeight = (int) (srcHeight * byHeight);
+        if (preserveAspectRatio) {
+            if (byWidth < byHeight) {
+                maxWidth = (int) (srcWidth * byWidth);
+                maxHeight = (int) (srcHeight * byWidth);
+            } else {
+                maxWidth = (int) (srcWidth * byHeight);
+                maxHeight = (int) (srcHeight * byHeight);
+            }
+        }
+        boolean widthIsMaxed = false;
+        if (maxWidth >= srcWidth) {
+            maxWidth = srcWidth;
+            widthIsMaxed = true;
+        }
+        if (maxHeight >= srcHeight) {
+            if (widthIsMaxed) {
+                // No resize needed
+                Log.l.log("No image shrink needed", "(" + srcWidth + "," + srcHeight + ") -> (" + maxWidth + "," + maxHeight);
+                maxHeight = srcHeight;
+                return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
+            }
+            maxHeight = srcHeight;
         }
 
         if (processAlpha) {
@@ -203,7 +220,7 @@ public final class ImageUtils {
      * and MODE_BOX_FILTER - box filtered resizing (default).
      * @return The resized image.
      */
-    public static Image shrinkImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH) {
+    private static Image shrinkImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH) {
         {
             // precalculate src/dest ratios
             final int ratioW = (srcW << FP_SHIFT) / destW;
@@ -221,7 +238,7 @@ public final class ImageUtils {
                     int count = 0;
                     int a = 0;
                     int r = 0;
-                    int g = 0; // initialize color blending vars
+                    int g = 0;
                     int b = 0;
                     int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
                     final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
@@ -229,11 +246,11 @@ public final class ImageUtils {
                     // now loop from srcX to srcX2 and add up the values for each channel
                     do {
                         final int argb = data[srcX + destY * srcW];
-                        a += (argb & ALPHA) >>> 24; // alpha channel
-                        r += argb & RED; // red channel
-                        g += argb & GREEN; // green channel
-                        b += argb & BLUE; // blue channel
-                        ++count; // count the pixel
+                        a += (argb & ALPHA) >>> 24;
+                        r += argb & RED;
+                        g += argb & GREEN;
+                        b += argb & BLUE;
+                        ++count; // count the pixels
                         ++srcX; // move on to the next pixel
                     } while (srcX <= srcX2 && srcX + destY * srcW < data.length);
 
@@ -269,7 +286,7 @@ public final class ImageUtils {
                 int count = 0;
                 int a = 0;
                 int r = 0;
-                int g = 0; // initialize color blending vars
+                int g = 0;
                 int b = 0;
                 int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
                 final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
@@ -277,10 +294,10 @@ public final class ImageUtils {
                 // now loop from srcY to srcY2 and add up the values for each channel
                 do {
                     final int argb = data[destX + srcY * destW];
-                    a += (argb & ALPHA) >>> 24; // alpha channel
-                    r += argb & RED; // red channel
-                    g += argb & GREEN; // green channel
-                    b += argb & BLUE; // blue channel
+                    a += (argb & ALPHA) >>> 24;
+                    r += argb & RED;
+                    g += argb & GREEN;
+                    b += argb & BLUE;
                     ++count; // count the pixel
                     ++srcY; // move on to the next pixel
                 } while (srcY <= srcY2 && destX + srcY * destW < data.length);
@@ -307,15 +324,15 @@ public final class ImageUtils {
     /**
      * Slightly faster version of shrinkImage() since the ALPHA component is
      * assumed to be 0xFF
-     * 
+     *
      * @param data
      * @param srcW
      * @param srcH
      * @param destW
      * @param destH
-     * @return 
+     * @return
      */
-    public static Image shrinkOpaqueImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH) {
+    private static Image shrinkOpaqueImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH) {
         {
             // precalculate src/dest ratios
             final int ratioW = (srcW << FP_SHIFT) / destW;
@@ -329,23 +346,24 @@ public final class ImageUtils {
 
             // horizontal resampling
             for (int destY = 0; destY < srcH; ++destY) {
+                final int rowStart = destY * srcW;
                 for (int destX = 0; destX < destW; ++destX) {
                     int count = 0;
                     int r = 0;
-                    int g = 0; // initialize color blending vars
+                    int g = 0;
                     int b = 0;
                     int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
                     final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
 
                     // now loop from srcX to srcX2 and add up the values for each channel
                     do {
-                        final int rgb = data[srcX + destY * srcW];
-                        r += rgb & RED; // red channel
-                        g += rgb & GREEN; // green channel
-                        b += rgb & BLUE; // blue channel
+                        final int rgb = data[rowStart + srcX];
+                        r += rgb & RED;
+                        g += rgb & GREEN;
+                        b += rgb & BLUE;
                         ++count; // count the pixel
                         ++srcX; // move on to the next pixel
-                    } while (srcX <= srcX2 && srcX + destY * srcW < data.length);
+                    } while (srcX <= srcX2 && rowStart + srcX < data.length);
 
                     // average out the channel values
                     // recreate color from the averaged channels and place it into the destination buffer
@@ -377,20 +395,21 @@ public final class ImageUtils {
             for (int destY = 0; destY < destH; ++destY) {
                 int count = 0;
                 int r = 0;
-                int g = 0; // initialize color blending vars
+                int g = 0;
                 int b = 0;
                 int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
+                final int columnStart = srcY * destW;
                 final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
 
                 // now loop from srcY to srcY2 and add up the values for each channel
                 do {
-                    final int argb = data[destX + srcY * destW];
-                    r += argb & RED; // red channel
-                    g += argb & GREEN; // green channel
-                    b += argb & BLUE; // blue channel
+                    final int argb = data[columnStart + destX];
+                    r += argb & RED;
+                    g += argb & GREEN;
+                    b += argb & BLUE;
                     ++count; // count the pixel
                     ++srcY; // move on to the next pixel
-                } while (srcY <= srcY2 && destX + srcY * destW < data.length);
+                } while (srcY <= srcY2 && columnStart + destX < data.length);
 
                 // average out the channel values
                 r >>>= 16;
