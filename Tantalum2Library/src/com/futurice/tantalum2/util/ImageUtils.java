@@ -238,13 +238,13 @@ public final class ImageUtils {
                 final int destRowStartIndex = destY * destW;
                 
                 for (int destX = 0; destX < destW; ++destX) {
-                    int count = 0;
+                    int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
+                    final int initialSrcX = srcX;
+                    final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
                     int a = 0;
                     int r = 0;
                     int g = 0;
                     int b = 0;
-                    int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
-                    final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
 
                     // now loop from srcX to srcX2 and add up the values for each channel
                     do {
@@ -253,7 +253,6 @@ public final class ImageUtils {
                         r += argb & RED;
                         g += argb & GREEN;
                         b += argb & BLUE;
-                        ++count; // count the pixels
                         ++srcX; // move on to the next pixel
                     } while (srcX <= srcX2 && srcX + srcRowStartIndex < data.length);
 
@@ -261,6 +260,7 @@ public final class ImageUtils {
                     // recreate color from the averaged channels and place it into the destination buffer
                     r >>>= 16;
                     g >>>= 8;
+                    final int count = srcX - initialSrcX;
                     if (count == predictedCount) {
                         data[destX + destRowStartIndex] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
                     } else {
@@ -286,13 +286,13 @@ public final class ImageUtils {
         // vertical resampling (srcX = destX)
         for (int destX = 0; destX < destW; ++destX) {
             for (int destY = 0; destY < destH; ++destY) {
-                int count = 0;
+                int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
+                final int initialSrcY = srcY;
+                final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
                 int a = 0;
                 int r = 0;
                 int g = 0;
                 int b = 0;
-                int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
-                final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
 
                 // now loop from srcY to srcY2 and add up the values for each channel
                 do {
@@ -301,13 +301,13 @@ public final class ImageUtils {
                     r += argb & RED;
                     g += argb & GREEN;
                     b += argb & BLUE;
-                    ++count; // count the pixel
                     ++srcY; // move on to the next pixel
                 } while (srcY <= srcY2 && destX + srcY * destW < data.length);
 
                 // average out the channel values
                 r >>>= 16;
                 g >>>= 8;
+                final int count = srcY - initialSrcY;
                 if (count == predictedCount) {
                     data[destX + destY * destW] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
                 } else {
@@ -353,12 +353,12 @@ public final class ImageUtils {
                 final int destRowStartIndex = destY * destW;
                 
                 for (int destX = 0; destX < destW; ++destX) {
-                    int count = 0;
+                    int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
+                    final int initialSrcX = srcX;
+                    final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
                     int r = 0;
                     int g = 0;
                     int b = 0;
-                    int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
-                    final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
 
                     // now loop from srcX to srcX2 and add up the values for each channel
                     do {
@@ -366,7 +366,6 @@ public final class ImageUtils {
                         r += rgb & RED;
                         g += rgb & GREEN;
                         b += rgb & BLUE;
-                        ++count; // count the pixel
                         ++srcX; // move on to the next pixel
                     } while (srcX <= srcX2 && srcRowStartIndex + srcX < data.length);
 
@@ -374,6 +373,7 @@ public final class ImageUtils {
                     // recreate color from the averaged channels and place it into the destination buffer
                     r >>>= 16;
                     g >>>= 8;
+                    final int count = srcX - initialSrcX;
                     if (count == predictedCount) {
                         data[destX + destRowStartIndex] = (lut[r] << 16) | (lut[g] << 8) | lut[b];
                     } else {
@@ -398,13 +398,13 @@ public final class ImageUtils {
         // vertical resampling (srcX = destX)
         for (int destX = 0; destX < destW; ++destX) {
             for (int destY = 0; destY < destH; ++destY) {
-                int count = 0;
+                int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
+                final int initialSrcY = srcY;
+                final int columnStart = srcY * destW;
+                final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
                 int r = 0;
                 int g = 0;
                 int b = 0;
-                int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
-                final int columnStart = srcY * destW;
-                final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
 
                 // now loop from srcY to srcY2 and add up the values for each channel
                 do {
@@ -412,13 +412,13 @@ public final class ImageUtils {
                     r += argb & RED;
                     g += argb & GREEN;
                     b += argb & BLUE;
-                    ++count; // count the pixel
                     ++srcY; // move on to the next pixel
                 } while (srcY <= srcY2 && columnStart + destX < data.length);
 
                 // average out the channel values
                 r >>>= 16;
                 g >>>= 8;
+                final int count = srcY - initialSrcY;
                 if (count == predictedCount) {
                     data[destX + destY * destW] = (lut[r] << 16) | (lut[g] << 8) | lut[b];
                 } else {
