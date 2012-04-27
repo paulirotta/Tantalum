@@ -232,8 +232,11 @@ public final class ImageUtils {
                 lut[i] = i / predictedCount;
             }
 
-            // horizontal resampling
+            // horizontal resampling (srcY = destY)
             for (int destY = 0; destY < srcH; ++destY) {
+                final int srcRowStartIndex = destY * srcW;
+                final int destRowStartIndex = destY * destW;
+                
                 for (int destX = 0; destX < destW; ++destX) {
                     int count = 0;
                     int a = 0;
@@ -245,27 +248,27 @@ public final class ImageUtils {
 
                     // now loop from srcX to srcX2 and add up the values for each channel
                     do {
-                        final int argb = data[srcX + destY * srcW];
+                        final int argb = data[srcX + srcRowStartIndex];
                         a += (argb & ALPHA) >>> 24;
                         r += argb & RED;
                         g += argb & GREEN;
                         b += argb & BLUE;
                         ++count; // count the pixels
                         ++srcX; // move on to the next pixel
-                    } while (srcX <= srcX2 && srcX + destY * srcW < data.length);
+                    } while (srcX <= srcX2 && srcX + srcRowStartIndex < data.length);
 
                     // average out the channel values
                     // recreate color from the averaged channels and place it into the destination buffer
                     r >>>= 16;
                     g >>>= 8;
                     if (count == predictedCount) {
-                        data[destX + destY * destW] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
+                        data[destX + destRowStartIndex] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
                     } else {
                         a /= count;
                         r /= count;
                         g /= count;
                         b /= count;
-                        data[destX + destY * destW] = ((a << 24) | (r << 16) | (g << 8) | b);
+                        data[destX + destRowStartIndex] = ((a << 24) | (r << 16) | (g << 8) | b);
                     }
                 }
             }
@@ -280,7 +283,7 @@ public final class ImageUtils {
         for (int i = 0; i < lut.length; i++) {
             lut[i] = i / predictedCount;
         }
-        // vertical resampling of the temporary buffer (which has been horizontally resampled)
+        // vertical resampling (srcX = destX)
         for (int destX = 0; destX < destW; ++destX) {
             for (int destY = 0; destY < destH; ++destY) {
                 int count = 0;
@@ -344,9 +347,11 @@ public final class ImageUtils {
                 lut[i] = i / predictedCount;
             }
 
-            // horizontal resampling
+            // horizontal resampling (srcY = destY)
             for (int destY = 0; destY < srcH; ++destY) {
-                final int rowStart = destY * srcW;
+                final int srcRowStartIndex = destY * srcW;
+                final int destRowStartIndex = destY * destW;
+                
                 for (int destX = 0; destX < destW; ++destX) {
                     int count = 0;
                     int r = 0;
@@ -357,25 +362,25 @@ public final class ImageUtils {
 
                     // now loop from srcX to srcX2 and add up the values for each channel
                     do {
-                        final int rgb = data[rowStart + srcX];
+                        final int rgb = data[srcRowStartIndex + srcX];
                         r += rgb & RED;
                         g += rgb & GREEN;
                         b += rgb & BLUE;
                         ++count; // count the pixel
                         ++srcX; // move on to the next pixel
-                    } while (srcX <= srcX2 && rowStart + srcX < data.length);
+                    } while (srcX <= srcX2 && srcRowStartIndex + srcX < data.length);
 
                     // average out the channel values
                     // recreate color from the averaged channels and place it into the destination buffer
                     r >>>= 16;
                     g >>>= 8;
                     if (count == predictedCount) {
-                        data[destX + destY * destW] = (lut[r] << 16) | (lut[g] << 8) | lut[b];
+                        data[destX + destRowStartIndex] = (lut[r] << 16) | (lut[g] << 8) | lut[b];
                     } else {
                         r /= count;
                         g /= count;
                         b /= count;
-                        data[destX + destY * destW] = (r << 16) | (g << 8) | b;
+                        data[destX + destRowStartIndex] = (r << 16) | (g << 8) | b;
                     }
                 }
             }
@@ -390,7 +395,7 @@ public final class ImageUtils {
         for (int i = 0; i < lut.length; i++) {
             lut[i] = i / predictedCount;
         }
-        // vertical resampling of the temporary buffer (which has been horizontally resampled)
+        // vertical resampling (srcX = destX)
         for (int destX = 0; destX < destW; ++destX) {
             for (int destY = 0; destY < destH; ++destY) {
                 int count = 0;
