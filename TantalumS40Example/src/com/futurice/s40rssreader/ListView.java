@@ -74,7 +74,7 @@ public final class ListView extends View {
                     feedCache.clear();
                     DetailsView.imageCache.clear();
                     reload(false);
-                    
+
                     return false;
                 }
             });
@@ -293,9 +293,15 @@ public final class ListView extends View {
         }
     }
 
-    public void setSelectedIndex(final int newIndex) {
+    public void deselectItem() {
+        if (setSelectedIndex(-1)) {
+            canvas.repaint();
+        }
+    }
+
+    public boolean setSelectedIndex(final int newIndex) {
         if (selectedIndex == newIndex) {
-            return;
+            return false;
         }
         if (selectedIndex >= 0) {
             renderCache.remove(rssModel.elementAt(selectedIndex));
@@ -304,6 +310,8 @@ public final class ListView extends View {
             renderCache.remove(rssModel.elementAt(newIndex));
         }
         selectedIndex = newIndex;
+
+        return true;
     }
 
     private class LiveUpdateRSSModel extends RSSModel {
