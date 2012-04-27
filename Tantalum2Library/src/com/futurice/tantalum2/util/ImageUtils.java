@@ -201,9 +201,9 @@ public final class ImageUtils {
         }
 
         if (processAlpha) {
-            return ImageUtils.shrinkImage(data, srcWidth, srcHeight, maxWidth, maxHeight);
+            return ImageUtils.shrinkImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
         } else {
-            return ImageUtils.shrinkOpaqueImage(data, srcWidth, srcHeight, maxWidth, maxHeight);
+            return ImageUtils.shrinkOpaqueImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
         }
     }
 
@@ -220,23 +220,23 @@ public final class ImageUtils {
      * and MODE_BOX_FILTER - box filtered resizing (default).
      * @return The resized image.
      */
-    private static Image shrinkImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH) {
+    private static Image shrinkImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
+        final int predictedCount = 1 + (srcW / destW);
+        final int[] lut = new int[predictedCount << 8];
+
+        // Init division lookup table
+        for (int i = 0; i < lut.length; i++) {
+            lut[i] = i / predictedCount;
+        }
         {
             // precalculate src/dest ratios
             final int ratioW = (srcW << FP_SHIFT) / destW;
-            final int predictedCount = 1 + (srcW / destW);
-            final int[] lut = new int[predictedCount << 8];
-
-            // Init division lookup table
-            for (int i = 0; i < lut.length; i++) {
-                lut[i] = i / predictedCount;
-            }
 
             // horizontal resampling (srcY = destY)
             for (int destY = 0; destY < srcH; ++destY) {
                 final int srcRowStartIndex = destY * srcW;
                 final int destRowStartIndex = destY * destW;
-                
+
                 for (int destX = 0; destX < destW; ++destX) {
                     int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
                     final int initialSrcX = srcX;
@@ -275,15 +275,22 @@ public final class ImageUtils {
         }
 
         // precalculate src/dest ratios
-        final int ratioH = (srcH << FP_SHIFT) / destH;
-        final int predictedCount = 1 + (srcH / destH);
-        final int[] lut = new int[predictedCount << 8];
+        final int predictedCount2;
+        final int[] lut2;
+        if (preserveAspectRatio) {
+            predictedCount2 = predictedCount;
+            lut2 = lut;
+        } else {
+            predictedCount2 = 1 + (srcH / destH);
+            lut2 = new int[predictedCount2 << 8];
 
-        // Init division lookup table
-        for (int i = 0; i < lut.length; i++) {
-            lut[i] = i / predictedCount;
+            // Init division lookup table
+            for (int i = 0; i < lut2.length; i++) {
+                lut2[i] = i / predictedCount2;
+            }
         }
         // vertical resampling (srcX = destX)
+        final int ratioH = (srcH << FP_SHIFT) / destH;
         for (int destX = 0; destX < destW; ++destX) {
             for (int destY = 0; destY < destH; ++destY) {
                 int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
@@ -308,8 +315,8 @@ public final class ImageUtils {
                 r >>>= 16;
                 g >>>= 8;
                 final int count = srcY - initialSrcY;
-                if (count == predictedCount) {
-                    data[destX + destY * destW] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
+                if (count == predictedCount2) {
+                    data[destX + destY * destW] = (lut2[a] << 24) | (lut2[r] << 16) | (lut2[g] << 8) | lut2[b];
                 } else {
                     a /= count;
                     r /= count;
@@ -335,23 +342,23 @@ public final class ImageUtils {
      * @param destH
      * @return
      */
-    private static Image shrinkOpaqueImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH) {
+    private static Image shrinkOpaqueImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
+        final int predictedCount = 1 + (srcW / destW);
+        final int[] lut = new int[predictedCount << 8];
+
+        // Init division lookup table
+        for (int i = 0; i < lut.length; i++) {
+            lut[i] = i / predictedCount;
+        }
         {
             // precalculate src/dest ratios
             final int ratioW = (srcW << FP_SHIFT) / destW;
-            final int predictedCount = 1 + (srcW / destW);
-            final int[] lut = new int[predictedCount << 8];
-
-            // Init division lookup table
-            for (int i = 0; i < lut.length; i++) {
-                lut[i] = i / predictedCount;
-            }
 
             // horizontal resampling (srcY = destY)
             for (int destY = 0; destY < srcH; ++destY) {
                 final int srcRowStartIndex = destY * srcW;
                 final int destRowStartIndex = destY * destW;
-                
+
                 for (int destX = 0; destX < destW; ++destX) {
                     int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
                     final int initialSrcX = srcX;
@@ -387,15 +394,22 @@ public final class ImageUtils {
         }
 
         // precalculate src/dest ratios
-        final int ratioH = (srcH << FP_SHIFT) / destH;
-        final int predictedCount = 1 + (srcH / destH);
-        final int[] lut = new int[predictedCount << 8];
+        final int predictedCount2;
+        final int[] lut2;
+        if (preserveAspectRatio) {
+            predictedCount2 = predictedCount;
+            lut2 = lut;
+        } else {
+            predictedCount2 = 1 + (srcH / destH);
+            lut2 = new int[predictedCount2 << 8];
 
-        // Init division lookup table
-        for (int i = 0; i < lut.length; i++) {
-            lut[i] = i / predictedCount;
+            // Init division lookup table
+            for (int i = 0; i < lut2.length; i++) {
+                lut2[i] = i / predictedCount2;
+            }
         }
         // vertical resampling (srcX = destX)
+        final int ratioH = (srcH << FP_SHIFT) / destH;
         for (int destX = 0; destX < destW; ++destX) {
             for (int destY = 0; destY < destH; ++destY) {
                 int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
@@ -419,8 +433,8 @@ public final class ImageUtils {
                 r >>>= 16;
                 g >>>= 8;
                 final int count = srcY - initialSrcY;
-                if (count == predictedCount) {
-                    data[destX + destY * destW] = (lut[r] << 16) | (lut[g] << 8) | lut[b];
+                if (count == predictedCount2) {
+                    data[destX + destY * destW] = (lut2[r] << 16) | (lut2[g] << 8) | lut2[b];
                 } else {
                     r /= count;
                     g /= count;
