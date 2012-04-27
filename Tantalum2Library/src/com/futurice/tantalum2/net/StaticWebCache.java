@@ -8,7 +8,6 @@ import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
-import java.util.Hashtable;
 
 /**
  * A cache of remote http contents backed by local flash memory storage
@@ -19,7 +18,6 @@ public class StaticWebCache extends StaticCache {
 
     private static final int RETRIES = 3;
     private static final int PREFETCH_RETRIES = 0;
-    private final Hashtable timestamps = new Hashtable();
 
     public StaticWebCache(final char priority, final DataTypeHandler handler) {
         super(priority, handler);
@@ -58,7 +56,6 @@ public class StaticWebCache extends StaticCache {
                             getResult.setResult(convertAndPutToHeapCache(url, (byte[]) o));
                         }
                         // Then store to RMS, which might take some time
-                        updateTimestamp(url);
                         synchronousPut(url, (byte[]) o, getResult == null);
                     }
 
@@ -84,7 +81,7 @@ public class StaticWebCache extends StaticCache {
     public void update(final String url, final Result result) {
         Worker.queue(new HttpGetter(url, RETRIES, new Result() {
 
-            public void setResult(Object o) {
+            public void setResult(final Object o) {
                 result.setResult(put(url, (byte[]) o));
             }
 
@@ -106,32 +103,9 @@ public class StaticWebCache extends StaticCache {
 
                 public void setResult(final Object o) {
                     // Then store to RMS, with converted form cached to RAM
-                    updateTimestamp(url);
-                    synchronousPut(url, (byte[]) o, true);
+                    synchronousPut(url, (byte[]) o, false);
                 }
             }));
         }
-    }
-
-    /**
-     * Remove the object from the cache
-     *
-     * @param url
-     */
-    public synchronized void remove(String url) {
-        super.remove(url);
-
-        if (timestamps.contains(url)) {
-            timestamps.remove(url);
-        }
-    }
-
-    /**
-     * Update the freshness timestamp associated with the cached object
-     *
-     * @param url
-     */
-    public synchronized void updateTimestamp(final String url) {
-        timestamps.put(url, new Long(System.currentTimeMillis()));
     }
 }

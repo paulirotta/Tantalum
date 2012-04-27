@@ -19,7 +19,7 @@ public final class ImageTypeHandler implements DataTypeHandler {
         try {
             return Image.createImage(bytes, 0, bytes.length);
         } catch (Exception e) {
-            Log.l.log("Error converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
+            Log.l.log("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
         }
 
         return null;

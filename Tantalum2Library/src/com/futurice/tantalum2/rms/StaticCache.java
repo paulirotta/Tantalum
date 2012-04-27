@@ -78,9 +78,8 @@ public class StaticCache {
      * @param o
      */
     protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
-        Log.l.log("Start to convert", key, new Error());
+        Log.l.log("Start to convert", key);
         final Object o = handler.convertToUseForm(bytes);
-        //remove(key);
         accessOrder.addElement(key);
         cache.put(key, o);
         Log.l.log("End convert", key);
