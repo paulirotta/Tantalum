@@ -24,7 +24,7 @@ import org.xml.sax.SAXException;
  */
 public final class ListView extends View {
 
-    private static final boolean PREFETCH_IMAGES = true;
+    private static boolean prefetchImages = false;
     private final int ITEM_HEIGHT = RSSReaderCanvas.FONT_TITLE.getHeight()
             + RSSReaderCanvas.FONT_DATE.getHeight() + 2 * RSSReaderCanvas.MARGIN;
     private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
@@ -41,6 +41,7 @@ public final class ListView extends View {
     public ListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
+        prefetchImages = prefetchImages();
         feedCache = new StaticWebCache('5', new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
@@ -55,6 +56,19 @@ public final class ListView extends View {
                 }
             }
         });
+    }
+
+    /**
+     * Network access type of active connection or a set default access point.
+     *
+     * pd, pd.EDGE, pd.3G, pd.HSDPA, csd, bt_pan, wlan, na (can't tell)
+     *
+     * @return
+     */
+    public static boolean prefetchImages() {
+        final String status = System.getProperty("com.nokia.network.access");
+
+        return status != null && (status.equals("wlan") || status.equals("bt_pan"));
     }
 
     public Command[] getCommands() {
@@ -326,7 +340,7 @@ public final class ListView extends View {
         public void endElement(final String uri, final String localName, final String qName) throws SAXException {
             if (currentItem != null && qName.equals("item")) {
                 Worker.queueEDT(updateRunnable);
-                if (PREFETCH_IMAGES) {
+                if (prefetchImages) {
                     DetailsView.imageCache.prefetch(currentItem.getThumbnail(), prefetchImagesOverNetwork);
                 }
             }
