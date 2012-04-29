@@ -11,8 +11,18 @@ package com.futurice.tantalum2.log;
  */
 public class Log {
 
-    public static final Log l = new UsbLog(); // Replace with UsbLog to debug by console from your PC
+    public final static Log l; // Replace with UsbLog to debug by console from your PC
     private static long startTime = System.currentTimeMillis();
+
+    static {
+        Log log;
+        //#if UsbDebug
+//#         log = new UsbLog(); // Replace with UsbLog to debug by console from your PC
+        //#else
+        log = new Log(); // Replace with UsbLog to debug by console from your PC
+        //#endif
+        l = log;
+    }
 
     /**
      * Logs given message.
@@ -70,9 +80,9 @@ public class Log {
     }
 
     /**
-     * Close any open resources. This is the last action before the MIDlet
-     * calls MIDlet.notifyDestoryed(). This is used by UsbLog.
-     * 
+     * Close any open resources. This is the last action before the MIDlet calls
+     * MIDlet.notifyDestoryed(). This is used by UsbLog.
+     *
      */
     public void shutdown() {
     }
