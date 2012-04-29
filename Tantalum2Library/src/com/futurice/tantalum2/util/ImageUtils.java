@@ -36,12 +36,11 @@ public final class ImageUtils {
      * @param inWidth
      * @return
      */
-    private static Image halfImage(final int[] in, final int inWidth) {
+    private static void halfImage(final int[] in, final int inWidth) {
         Log.l.log("Half image", "START, w=" + inWidth);
         synchronized (Worker.LARGE_MEMORY_MUTEX) {
             final int inHeight = in.length / inWidth;
             final int outWidth = inWidth >> 1;
-            final int outHeight = inHeight >> 1;
             int x, y, z = 0, i, r, g, b;
 
             for (y = 0; y < inHeight - 1; y += 2) {
@@ -68,17 +67,14 @@ public final class ImageUtils {
                 }
             }
             Log.l.log("Half image", "STOP, w=" + inWidth);
-
-            return Image.createRGBImage(in, outWidth, outHeight, false);
         }
     }
 
-    private static Image quarterImage(final int[] in, final int inWidth) {
+    private static void quarterImage(final int[] in, final int inWidth) {
         Log.l.log("Quarter image", "START, w=" + inWidth);
         synchronized (Worker.LARGE_MEMORY_MUTEX) {
             final int inHeight = in.length / inWidth;
             final int outWidth = inWidth >> 2;
-            final int outHeight = inHeight >> 2;
             int x, y, z = 0, i, r, g, b;
 
             for (y = 0; y < inHeight - 3; y += 4) {
@@ -161,8 +157,6 @@ public final class ImageUtils {
                 }
             }
             Log.l.log("Quater image", "STOP, w=" + inWidth);
-
-            return Image.createRGBImage(in, outWidth, outHeight, false);
         }
     }
 
@@ -192,10 +186,12 @@ public final class ImageUtils {
                 }
                 if (!processAlpha) {
                     if (maxWidth == srcWidth / 2) {
-                        return ImageUtils.halfImage(data, srcWidth);
+                        ImageUtils.halfImage(data, srcWidth);
+                        return Image.createRGBImage(data, maxWidth, maxHeight, false);
                     }
                     if (maxWidth == srcWidth / 4) {
-                        return ImageUtils.quarterImage(data, srcWidth);
+                        ImageUtils.quarterImage(data, srcWidth);
+                        return Image.createRGBImage(data, maxWidth, maxHeight, false);
                     }
                 }
             }
@@ -215,9 +211,11 @@ public final class ImageUtils {
             }
 
             if (processAlpha) {
-                return ImageUtils.doShrinkImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
+                ImageUtils.doShrinkImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
+                return Image.createRGBImage(data, maxWidth, maxHeight, true);
             } else {
-                return ImageUtils.doShrinkOpaqueImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
+                ImageUtils.doShrinkOpaqueImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
+                return Image.createRGBImage(data, maxWidth, maxHeight, false);
             }
         } finally {
             Log.l.log("Shrink image", "STOP, w=" + srcWidth + " -> " + maxWidth);
@@ -237,7 +235,7 @@ public final class ImageUtils {
      * and MODE_BOX_FILTER - box filtered resizing (default).
      * @return The resized image.
      */
-    private static Image doShrinkImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
+    private static void doShrinkImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / destW);
         final int[] lut = new int[predictedCount << 8];
 
@@ -343,9 +341,6 @@ public final class ImageUtils {
                 }
             }
         }
-
-        // return a new image created from the destination pixel buffer
-        return Image.createRGBImage(data, destW, destH, true);
     }
 
     /**
@@ -359,7 +354,7 @@ public final class ImageUtils {
      * @param destH
      * @return
      */
-    private static Image doShrinkOpaqueImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
+    private static void doShrinkOpaqueImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / destW);
         final int[] lut = new int[predictedCount << 8];
 
@@ -460,8 +455,5 @@ public final class ImageUtils {
                 }
             }
         }
-
-        // return a new image created from the destination pixel buffer
-        return Image.createRGBImage(data, destW, destH, false);
     }
 }
