@@ -104,7 +104,7 @@ public class DetailsView extends View {
                 final Image shrunkImage = ImageUtils.shrinkImage(data, image.getWidth(), image.getHeight(), image.getWidth() * zoom / 100, image.getHeight(), false, true);
                 g.drawImage(shrunkImage, canvas.getWidth() >> 1, curY, Graphics.TOP | Graphics.HCENTER);
                 curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
-                zoom -= 25;
+                zoom -= 5;
                 if (zoom == 0) {
                     zoom = 100;
                 }
