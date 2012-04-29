@@ -97,8 +97,8 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param updateResult
      */
-    public void prefetch(final String url, final boolean forceRefresh) {
-        if (forceRefresh || synchronousRAMCacheGet(url) == null) {
+    public void prefetch(final String url) {
+        if (synchronousRAMCacheGet(url) == null) {
             Worker.queueIdleWork(new HttpGetter(url, PREFETCH_RETRIES, new Result() {
 
                 public void setResult(final Object o) {

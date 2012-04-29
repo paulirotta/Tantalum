@@ -36,7 +36,8 @@ public final class ImageUtils {
      * @param inWidth
      * @return
      */
-    public static Image halfImage(final int[] in, final int inWidth) {
+    private static Image halfImage(final int[] in, final int inWidth) {
+        Log.l.log("Half image", "START, w=" + inWidth);
         synchronized (Worker.LARGE_MEMORY_MUTEX) {
             final int inHeight = in.length / inWidth;
             final int outWidth = inWidth >> 1;
@@ -66,12 +67,14 @@ public final class ImageUtils {
                     i -= inWidth - 2;
                 }
             }
+            Log.l.log("Half image", "STOP, w=" + inWidth);
 
             return Image.createRGBImage(in, outWidth, outHeight, false);
         }
     }
 
-    public static Image quarterImage(final int[] in, final int inWidth) {
+    private static Image quarterImage(final int[] in, final int inWidth) {
+        Log.l.log("Quarter image", "START, w=" + inWidth);
         synchronized (Worker.LARGE_MEMORY_MUTEX) {
             final int inHeight = in.length / inWidth;
             final int outWidth = inWidth >> 2;
@@ -157,6 +160,7 @@ public final class ImageUtils {
                     z++;
                 }
             }
+            Log.l.log("Quater image", "STOP, w=" + inWidth);
 
             return Image.createRGBImage(in, outWidth, outHeight, false);
         }
@@ -172,38 +176,51 @@ public final class ImageUtils {
      * @param maxHeight
      * @return
      */
-    public static Image shrinkImageProportional(final int[] data, final int srcWidth, final int srcHeight, int maxWidth, int maxHeight, final boolean processAlpha, final boolean preserveAspectRatio) {
-        final float byWidth = maxWidth / (float) srcWidth;
-        final float byHeight = maxHeight / (float) srcHeight;
+    public static Image shrinkImage(final int[] data, final int srcWidth, final int srcHeight, int maxWidth, int maxHeight, final boolean processAlpha, final boolean preserveAspectRatio) {
+        Log.l.log("Shrink image", "START, w=" + srcWidth + " -> " + maxWidth);
+        try {
+            final float byWidth = maxWidth / (float) srcWidth;
+            final float byHeight = maxHeight / (float) srcHeight;
 
-        if (preserveAspectRatio) {
-            if (byWidth < byHeight) {
-                maxWidth = (int) (srcWidth * byWidth);
-                maxHeight = (int) (srcHeight * byWidth);
-            } else {
-                maxWidth = (int) (srcWidth * byHeight);
-                maxHeight = (int) (srcHeight * byHeight);
+            if (preserveAspectRatio) {
+                if (byWidth < byHeight) {
+                    maxWidth = (int) (srcWidth * byWidth);
+                    maxHeight = (int) (srcHeight * byWidth);
+                } else {
+                    maxWidth = (int) (srcWidth * byHeight);
+                    maxHeight = (int) (srcHeight * byHeight);
+                }
+                if (!processAlpha) {
+                    if (maxWidth == srcWidth / 2) {
+                        return ImageUtils.halfImage(data, srcWidth);
+                    }
+                    if (maxWidth == srcWidth / 4) {
+                        return ImageUtils.quarterImage(data, srcWidth);
+                    }
+                }
             }
-        }
-        boolean widthIsMaxed = false;
-        if (maxWidth >= srcWidth) {
-            maxWidth = srcWidth;
-            widthIsMaxed = true;
-        }
-        if (maxHeight >= srcHeight) {
-            if (widthIsMaxed) {
-                // No resize needed
-                Log.l.log("No image shrink needed", "(" + srcWidth + "," + srcHeight + ") -> (" + maxWidth + "," + maxHeight);
+            boolean widthIsMaxed = false;
+            if (maxWidth >= srcWidth) {
+                maxWidth = srcWidth;
+                widthIsMaxed = true;
+            }
+            if (maxHeight >= srcHeight) {
+                if (widthIsMaxed) {
+                    // No resize needed
+                    Log.l.log("No image shrink needed", "(" + srcWidth + "," + srcHeight + ") -> (" + maxWidth + "," + maxHeight);
+                    maxHeight = srcHeight;
+                    return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
+                }
                 maxHeight = srcHeight;
-                return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
             }
-            maxHeight = srcHeight;
-        }
 
-        if (processAlpha) {
-            return ImageUtils.shrinkImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
-        } else {
-            return ImageUtils.shrinkOpaqueImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
+            if (processAlpha) {
+                return ImageUtils.doShrinkImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
+            } else {
+                return ImageUtils.doShrinkOpaqueImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
+            }
+        } finally {
+            Log.l.log("Shrink image", "STOP, w=" + srcWidth + " -> " + maxWidth);
         }
     }
 
@@ -220,7 +237,7 @@ public final class ImageUtils {
      * and MODE_BOX_FILTER - box filtered resizing (default).
      * @return The resized image.
      */
-    private static Image shrinkImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
+    private static Image doShrinkImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / destW);
         final int[] lut = new int[predictedCount << 8];
 
@@ -342,7 +359,7 @@ public final class ImageUtils {
      * @param destH
      * @return
      */
-    private static Image shrinkOpaqueImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
+    private static Image doShrinkOpaqueImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / destW);
         final int[] lut = new int[predictedCount << 8];
 

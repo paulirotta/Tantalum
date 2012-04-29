@@ -212,7 +212,7 @@ public final class Worker implements Runnable {
                                 // Empty queue, or waiting for other Worker tasks to complete before shutdown tasks start
                                 q.wait();
                             } else {
-                                // Shutdown
+                                Log.l.log("Shutdown in progress", "");
                                 while (!shutdownQueue.isEmpty()) {
                                     // PHASE 1: Start shutdown actions
                                     queue((Workable) shutdownQueue.elementAt(0));
@@ -223,6 +223,8 @@ public final class Worker implements Runnable {
                                     Worker.queueEDT(new Runnable() {
 
                                         public void run() {
+                                            Log.l.log("notifyDestroyed", "");
+                                            Log.l.shutdown();
                                             midlet.notifyDestroyed();
                                         }
                                     });
