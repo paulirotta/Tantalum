@@ -31,17 +31,15 @@ public final class ListView extends View {
     private final Command reloadCommand = new Command("Reload", Command.ITEM, 0);
     private final Command settingsCommand = new Command("Settings", Command.ITEM, 1);
     private final Command clearCacheCommand = new Command("Clear Cache", Command.SCREEN, 5);
+    private final Command prefetchImagesCommand = new Command("Prefetch Images", Command.SCREEN, 2);
     private final LiveUpdateRSSModel rssModel = new LiveUpdateRSSModel();
     private final StaticWebCache feedCache;
-    private boolean loading = true;
     private int selectedIndex = -1;
     private final PoolingWeakHashCache renderCache = new PoolingWeakHashCache();
-    private boolean prefetchImagesOverNetwork = true;
 
     public ListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        prefetchImages = prefetchImages();
         feedCache = new StaticWebCache('5', new DataTypeHandler() {
 
             public Object convertToUseForm(byte[] bytes) {
@@ -65,10 +63,10 @@ public final class ListView extends View {
      *
      * @return
      */
-    public static boolean prefetchImages() {
+    public static void checkForWLAN() {
         final String status = System.getProperty("com.nokia.network.access");
 
-        return status != null && (status.equals("wlan") || status.equals("bt_pan"));
+        prefetchImages |= status != null && status.equals("wlan");
     }
 
     public Command[] getCommands() {
@@ -79,19 +77,12 @@ public final class ListView extends View {
         if (command == exitCommand) {
             canvas.getRssReader().exitMIDlet(false);
         } else if (command == reloadCommand) {
-            reload(false);
+            reload(true);
         } else if (command == clearCacheCommand) {
-            Worker.queue(new Workable() {
-
-                public boolean work() {
-                    renderCache.clear();
-                    feedCache.clear();
-                    DetailsView.imageCache.clear();
-                    reload(false);
-
-                    return false;
-                }
-            });
+            clearCache();
+        } else if (command == prefetchImagesCommand) {
+            prefetchImages = true;
+            clearCache();
         } else if (command == settingsCommand) {
             String feedUrl = RSSReader.INITIAL_FEED_URL;
 
@@ -109,11 +100,24 @@ public final class ListView extends View {
         }
     }
 
+    private void clearCache() {
+        Worker.queue(new Workable() {
+
+            public boolean work() {
+                renderCache.clear();
+                feedCache.clear();
+                DetailsView.imageCache.clear();
+                reload(true);
+
+                return false;
+            }
+        });
+    }
+
     /**
      * Called when the list of items changes
      */
     public void notifyListChanged() {
-        loading = false;
         canvas.repaint();
     }
 
@@ -139,17 +143,11 @@ public final class ListView extends View {
                 this.renderY = 0;
             }
 
-            if (loading) {
+            if (rssModel.size() == 0) {
                 g.setColor(RSSReader.COLOR_BACKGROUND);
                 g.fillRect(0, 0, width, height);
                 g.setColor(RSSReader.COLOR_FOREGROUND);
                 g.drawString("Loading...", canvas.getWidth() >> 1, canvas.getHeight() >> 1, Graphics.BASELINE | Graphics.HCENTER);
-                return;
-            }
-
-            if (rssModel.size() == 0) {
-                //no items to display
-                g.drawString("No data", canvas.getWidth() / 2, canvas.getHeight() / 2, Graphics.BASELINE | Graphics.HCENTER);
                 return;
             }
 
@@ -248,13 +246,7 @@ public final class ListView extends View {
     /**
      * Reloads the feed
      */
-    public void reload(final boolean initialLoad) {
-        if (loading && !initialLoad) {
-            //already loading
-            return;
-        }
-
-        loading = true;
+    public void reload(final boolean forceNetLoad) {
         this.renderY = 0;
         this.renderCache.clear();
 
@@ -268,15 +260,15 @@ public final class ListView extends View {
         } catch (Exception e) {
             Log.l.log("Can not read settings", "", e);
         }
-        if (initialLoad) {
-            feedCache.get(feedUrl, new Result() {
+        if (forceNetLoad) {
+            feedCache.update(feedUrl, new Result() {
 
                 public void setResult(final Object o) {
                     notifyListChanged();
                 }
             });
         } else {
-            feedCache.update(feedUrl, new Result() {
+            feedCache.get(feedUrl, new Result() {
 
                 public void setResult(final Object o) {
                     notifyListChanged();
@@ -337,11 +329,16 @@ public final class ListView extends View {
             }
         };
 
+        public void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
+            checkForWLAN(); // If this just came in over a WLAN net, get the images also
+            super.setXML(xml);
+        }
+
         public void endElement(final String uri, final String localName, final String qName) throws SAXException {
             if (currentItem != null && qName.equals("item")) {
                 Worker.queueEDT(updateRunnable);
                 if (prefetchImages) {
-                    DetailsView.imageCache.prefetch(currentItem.getThumbnail(), prefetchImagesOverNetwork);
+                    DetailsView.imageCache.prefetch(currentItem.getThumbnail());
                 }
             }
 

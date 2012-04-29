@@ -21,10 +21,7 @@ import javax.microedition.lcdui.Image;
  */
 public class DetailsView extends View {
     private static int zoom = 100;
-    
-    
     public static final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
-//    public static final StaticWebCache imageCache = new StaticWebCache('1', new HalfImageTypeHandler());
     private final Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
@@ -104,10 +101,10 @@ public class DetailsView extends View {
 //                curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
                 final int[] data = new int[image.getWidth() * image.getHeight()];
                 image.getRGB(data, 0, image.getWidth(), 0, 0, image.getWidth(), image.getHeight());
-                final Image shrunkImage = ImageUtils.shrinkImageProportional(data, image.getWidth(), image.getHeight(), image.getWidth() * zoom / 100, image.getHeight(), false, true);
+                final Image shrunkImage = ImageUtils.shrinkImage(data, image.getWidth(), image.getHeight(), image.getWidth() * zoom / 100, image.getHeight(), false, true);
                 g.drawImage(shrunkImage, canvas.getWidth() >> 1, curY, Graphics.TOP | Graphics.HCENTER);
                 curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
-                zoom -= 10;
+                zoom -= 25;
                 if (zoom == 0) {
                     zoom = 100;
                 }

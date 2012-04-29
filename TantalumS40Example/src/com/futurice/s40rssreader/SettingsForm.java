@@ -2,11 +2,7 @@ package com.futurice.s40rssreader;
 
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.rms.RMSUtils;
-import javax.microedition.lcdui.Command;
-import javax.microedition.lcdui.CommandListener;
-import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.TextBox;
-import javax.microedition.lcdui.TextField;
+import javax.microedition.lcdui.*;
 import javax.microedition.rms.RecordStoreFullException;
 
 /**
@@ -45,7 +41,7 @@ public class SettingsForm extends TextBox implements CommandListener {
                 Log.l.log("Can not write settings", "", ex);
             }
             midlet.switchDisplayable(null, midlet.getCanvas());
-            midlet.getCanvas().getListView().reload(false);
+            midlet.getCanvas().getListView().reload(true);
         } else if (command == backCommand) {
             midlet.switchDisplayable(null, midlet.getCanvas());
         }
