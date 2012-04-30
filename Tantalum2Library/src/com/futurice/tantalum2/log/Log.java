@@ -11,18 +11,12 @@ package com.futurice.tantalum2.log;
  */
 public class Log {
 
-    public final static Log l; // Replace with UsbLog to debug by console from your PC
+//#if UsbDebug
+//#     public final static Log l = new UsbLog();
+//#else
+    public final static Log l = new Log();
+//#endif
     private static long startTime = System.currentTimeMillis();
-
-    static {
-        Log log;
-        //#if UsbDebug
-//#         log = new UsbLog(); // Replace with UsbLog to debug by console from your PC
-        //#else
-        log = new Log(); // Replace with UsbLog to debug by console from your PC
-        //#endif
-        l = log;
-    }
 
     /**
      * Logs given message.

@@ -12,7 +12,7 @@ import java.util.Vector;
  *
  * @author phou
  */
-public final class PoolingWeakHashCache extends WeakHashCache {
+public class PoolingWeakHashCache extends WeakHashCache {
 
     private final Vector pool = new Vector();
 

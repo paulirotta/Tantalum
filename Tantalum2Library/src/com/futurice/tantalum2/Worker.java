@@ -162,7 +162,7 @@ public final class Worker implements Runnable {
                 while (workerCount > 0) {
                     timeRemaining = shutdownTimeout - System.currentTimeMillis();
                     if (timeRemaining <= 0) {
-                        Log.l.log("Blocked shutdown timeout", null);
+                        Log.l.log("Blocked shutdown timeout", "");
                         break;
                     }
                     synchronized (q) {
