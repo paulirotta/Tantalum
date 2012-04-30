@@ -35,6 +35,9 @@ public class HttpGetter implements Workable {
      * @param result - optional object notified on the EDT with the result
      */
     public HttpGetter(final String url, final int retriesRemaining, final Result result) {
+        if (url == null || url.indexOf(':') <= 0) {
+            throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
+        }
         this.url = url;
         this.retriesRemaining = retriesRemaining;
         this.result = result;
@@ -67,13 +70,15 @@ public class HttpGetter implements Workable {
             bos.close();
             bos = null;
             if (bytes != null) {
+                Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
                 result.setResult(bytes);
                 success = true;
-                Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
                 bytes = null;
             } else {
                 Log.l.log("HttpGetter null response", url);
             }
+        } catch (IllegalArgumentException e) {
+            Log.l.log("HttpGetter has a problem", url, e);
         } catch (IOException e) {
             Log.l.log("Retries remaining", url + ", retries=" + retriesRemaining, e);
             if (retriesRemaining > 0) {

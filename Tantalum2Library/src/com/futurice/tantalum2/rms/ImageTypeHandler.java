@@ -10,7 +10,7 @@ import javax.microedition.lcdui.Image;
 /**
  * This is a helper class for creating an image class. It automatically converts
  * the byte[] to an Image as the data is loaded from the network or cache.
- * 
+ *
  * @author tsaa
  */
 public final class ImageTypeHandler implements DataTypeHandler {

@@ -155,7 +155,7 @@ public class StaticCache {
      * Note that the storage to RMS is done asynchronously in the background
      * which may lead to large binary objects being queued up on the Worker
      * thread. If you do this many times, you could run short on memory, and should
-     * re-factor with use of synchronousPut() instead.
+     * re-factor with use of synchronousPutToRMS() instead.
      * 
      * Note that conversion to use form happens immediately and synchronously
      * on the calling thread before before this method returns. If conversion
@@ -167,10 +167,10 @@ public class StaticCache {
      * @return the byte[] converted to use form by the cache's Handler
      */
     public synchronized Object put(final String key, final byte[] bytes) {
-        Worker.queue(new Workable() {
+        Worker.queuePriority(new Workable() {
 
             public boolean work() {
-                synchronousPut(key, bytes, false);
+                synchronousPutToRMS(key, bytes);
 
                 return false;
             }
@@ -193,19 +193,21 @@ public class StaticCache {
      * @param putToHeapCache - Set "true" unless an overriding method has already done this
      * @return 
      */
-    public Object synchronousPut(final String key, final byte[] bytes, final boolean putToHeapCache) {
+    protected Object synchronousPutToRMS(final String key, final byte[] bytes) {
         if (key == null) {
             throw new IllegalArgumentException("Null key put to cache");
         }
         if (bytes == null) {
             throw new IllegalArgumentException("Null bytes put to cache");
         }
+        Object o = null;
+        
         try {
             do {
-
                 try {
+                    Log.l.log("RMS cache write start", key + " (" + bytes.length + " bytes)");
                     RMSUtils.cacheWrite(key, bytes);
-                    Log.l.log("RMS cache write", key + " (" + bytes.length + " bytes)");
+                    Log.l.log("RMS cache write end", key + " (" + bytes.length + " bytes)");
                     break;
                 } catch (RecordStoreFullException ex) {
                     Log.l.log("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
@@ -214,14 +216,11 @@ public class StaticCache {
                     }
                 }
             } while (true);
-            if (putToHeapCache) {
-                return convertAndPutToHeapCache(key, bytes);
-            }
         } catch (Exception e) {
             Log.l.log("Couldn't store object to RMS", key, e);
         }
         
-        return null;
+        return o;
     }
 
     /**
@@ -311,10 +310,11 @@ public class StaticCache {
      *
      */
     public synchronized void clear() {
+        Log.l.log("Start Cache Clear", "ID=" + priority);
         while (accessOrder.size() > 0) {
             remove((String) accessOrder.lastElement());
         }
-        Log.l.log("Cache clear", "");
+        Log.l.log("Cache cleared", "ID=" + priority);
     }
 
     /**

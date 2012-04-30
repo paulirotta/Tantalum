@@ -6,6 +6,7 @@ package com.futurice.tantalum2.net;
 
 import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.Worker;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
 
@@ -27,9 +28,9 @@ public class StaticWebCache extends StaticCache {
      * Retrieve the object from 1. RAM if available 2. RMS if available 3. WEB
      *
      * @param url
-     * @param getResult
+     * @param result
      */
-    public void get(final String url, final Result getResult) {
+    public void get(final String url, final Result result) {
         super.get(url, new Result() {
 
             /**
@@ -37,9 +38,9 @@ public class StaticWebCache extends StaticCache {
              * network
              *
              */
-            public void setResult(Object o) {
-                if (getResult != null) {
-                    getResult.setResult(o);
+            public void setResult(final Object o) {
+                if (result != null) {
+                    result.setResult(o);
                 }
             }
 
@@ -51,16 +52,18 @@ public class StaticWebCache extends StaticCache {
                 final HttpGetter httpGetter = new HttpGetter(url, RETRIES, new Result() {
 
                     public void setResult(final Object o) {
-                        // Update the UI immediately
-                        if (getResult != null) {
-                            getResult.setResult(convertAndPutToHeapCache(url, (byte[]) o));
+                        if (result != null) {
+                            result.setResult(put(url, (byte[]) o));
+                        } else {
+                            // Prefetch only, no need to convert and put to RAM, this causes too much heap thrash
+                            synchronousPutToRMS(url, (byte[]) o);
                         }
-                        // Then store to RMS, which might take some time
-                        synchronousPut(url, (byte[]) o, getResult == null);
                     }
 
                     public void noResult() {
-                        getResult.noResult();
+                        if (result != null) {
+                            result.noResult();
+                        }
                     }
                 });
 
@@ -90,7 +93,7 @@ public class StaticWebCache extends StaticCache {
             }
         }));
     }
-    
+
     /**
      * Retrieve the object from WEB if it is not already cached locally.
      *
@@ -102,8 +105,8 @@ public class StaticWebCache extends StaticCache {
             Worker.queueIdleWork(new HttpGetter(url, PREFETCH_RETRIES, new Result() {
 
                 public void setResult(final Object o) {
-                    // Then store to RMS, with converted form cached to RAM
-                    synchronousPut(url, (byte[]) o, false);
+                    // Then store to RMS, but not in RAM
+                    synchronousPutToRMS(url, (byte[]) o);
                 }
             }));
         }

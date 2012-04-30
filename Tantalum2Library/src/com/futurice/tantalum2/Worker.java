@@ -95,6 +95,23 @@ public final class Worker implements Runnable {
     }
 
     /**
+     * Jump an object to the beginning of the queue.
+     * 
+     * Note that this is best used for ensuring that operations
+     * holding a lot of memory are finished as soon as possible. If
+     * you are relying on this for performance, be warned that multiple
+     * calls to this method may still bog the system down.
+     * 
+     * @param workable 
+     */
+    public static void queuePriority(final Workable workable) {
+        synchronized (q) {
+            q.insertElementAt(workable, 0);
+            q.notifyAll();
+        }
+    }
+
+    /**
      * Add an object to be executed at low priority in the background on the
      * worker thread. Execution will only begin when there are no foreground
      * tasks, and only if at least 1 Worker thread is left ready for immediate
