@@ -56,10 +56,12 @@ public class HttpGetter implements Workable {
         boolean success = false;
 
         try {
-            final byte[] readBuffer = new byte[8192];
+            byte[] readBuffer = new byte[16384];
 
             httpConnection = (HttpConnection) Connector.open(url);
+            Thread.sleep(100);
             httpConnection.setRequestMethod(HttpConnection.GET);
+            Thread.sleep(100);
             inputStream = httpConnection.openInputStream();
 
             int bytesRead;
@@ -67,8 +69,6 @@ public class HttpGetter implements Workable {
                 bos.write(readBuffer, 0, bytesRead);
             }
             byte[] bytes = bos.toByteArray();
-            bos.close();
-            bos = null;
             if (bytes != null) {
                 Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
                 result.setResult(bytes);
@@ -77,6 +77,7 @@ public class HttpGetter implements Workable {
             } else {
                 Log.l.log("HttpGetter null response", url);
             }
+            readBuffer = null;
         } catch (IllegalArgumentException e) {
             Log.l.log("HttpGetter has a problem", url, e);
         } catch (IOException e) {
@@ -95,9 +96,7 @@ public class HttpGetter implements Workable {
             } catch (Exception e) {
             }
             try {
-                if (bos != null) {
-                    bos.close();
-                }
+                bos.close();
             } catch (Exception e) {
             }
             try {
