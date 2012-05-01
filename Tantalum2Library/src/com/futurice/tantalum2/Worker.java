@@ -62,7 +62,10 @@ public final class Worker implements Runnable {
     }
 
     private static void createWorker() {
-        new Thread(new Worker(), "Worker" + ++workerCount).start();
+        final Thread thread = new Thread(new Worker(), "Worker" + ++workerCount);
+
+        thread.start();
+        thread.setPriority(Thread.MIN_PRIORITY);
     }
 
     /**

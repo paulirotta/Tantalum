@@ -12,7 +12,7 @@ import org.xml.sax.SAXException;
  */
 public class RSSModel extends XMLModel {
 
-    private final Vector items = new Vector(50);
+    protected final Vector items = new Vector(50);
     protected RSSItem currentItem;
 
     public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
@@ -49,7 +49,10 @@ public class RSSModel extends XMLModel {
         super.endElement(uri, localName, qName);
 
         if (qName.equals("item")) {
-            items.addElement(currentItem);
+            //FIXME DEBUG SETTING
+            if (items.size() < 30) {
+                items.addElement(currentItem);
+            }
             currentItem = null;
         }
     }

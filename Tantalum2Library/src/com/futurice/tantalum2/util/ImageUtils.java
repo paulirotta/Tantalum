@@ -177,7 +177,7 @@ public final class ImageUtils {
             final float byHeight = maxHeight / (float) srcHeight;
 
             if (preserveAspectRatio) {
-                if (byWidth < byHeight) {
+                if (byWidth <= byHeight) {
                     maxWidth = (int) (srcWidth * byWidth);
                     maxHeight = (int) (srcHeight * byWidth);
                 } else {
