@@ -100,31 +100,12 @@ public class StaticCache {
 //            Log.l.log("StaticCache hit in RAM", key);
             this.accessOrder.addElement(key);
             o = cache.get(key);
-            if (o != null) {
-                return o;
-            }
         }
 
         return o;
     }
 
-    public synchronized Object synchronousRAMCacheAndRMSGet(final String key) {
-        Object o = synchronousRAMCacheGet(key);
-
-        if (o == null) {
-            final byte[] bytes = RMSUtils.cacheRead(key);
-
-            if (bytes != null) {
-                Log.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
-
-                o = convertAndPutToHeapCache(key, bytes);
-            }
-        }
-
-        return o;
-    }
-
-    public void get(final String key, final Result result) {
+    public synchronized void get(final String key, final Result result) {
         final Object ho = synchronousRAMCacheGet(key);
 
         if (ho != null) {
@@ -134,8 +115,17 @@ public class StaticCache {
             Worker.queue(new Workable() {
 
                 public boolean work() {
-                    final Object o = synchronousRAMCacheAndRMSGet(key);
+                    Object o = synchronousRAMCacheGet(key);
 
+                    if (o == null) {
+                        final byte[] bytes = RMSUtils.cacheRead(key);
+
+                        if (bytes != null) {
+                            Log.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
+
+                            o = convertAndPutToHeapCache(key, bytes);
+                        }
+                    }
                     if (o != null) {
                         result.setResult(o);
                     } else {
@@ -151,16 +141,16 @@ public class StaticCache {
 
     /**
      * Store a value to heap and flash memory.
-     * 
+     *
      * Note that the storage to RMS is done asynchronously in the background
      * which may lead to large binary objects being queued up on the Worker
-     * thread. If you do this many times, you could run short on memory, and should
-     * re-factor with use of synchronousPutToRMS() instead.
-     * 
-     * Note that conversion to use form happens immediately and synchronously
-     * on the calling thread before before this method returns. If conversion
-     * may take a long time (XML parsing, etc) then consider not calling this
-     * from the user event dispatch thread.
+     * thread. If you do this many times, you could run short on memory, and
+     * should re-factor with use of synchronousPutToRMS() instead.
+     *
+     * Note that conversion to use form happens immediately and synchronously on
+     * the calling thread before before this method returns. If conversion may
+     * take a long time (XML parsing, etc) then consider not calling this from
+     * the user event dispatch thread.
      *
      * @param key
      * @param bytes
@@ -182,16 +172,18 @@ public class StaticCache {
     /**
      * Store the object to RMS, blocking the calling thread until the write is
      * complete.
-     * 
-     * Generally you should use this method if you are on a Worker thread to avoid
-     * adding large objects in the Worker queue waiting to be stored to the RMS
-     * which could lead to a memory shortage. If you are on the EDT, use the
-     * asynchronous put() method instead to avoid blocking the calling thread.
-     * 
+     *
+     * Generally you should use this method if you are on a Worker thread to
+     * avoid adding large objects in the Worker queue waiting to be stored to
+     * the RMS which could lead to a memory shortage. If you are on the EDT, use
+     * the asynchronous put() method instead to avoid blocking the calling
+     * thread.
+     *
      * @param key
      * @param bytes
-     * @param putToHeapCache - Set "true" unless an overriding method has already done this
-     * @return 
+     * @param putToHeapCache - Set "true" unless an overriding method has
+     * already done this
+     * @return
      */
     protected Object synchronousPutToRMS(final String key, final byte[] bytes) {
         if (key == null) {
@@ -201,7 +193,7 @@ public class StaticCache {
             throw new IllegalArgumentException("Null bytes put to cache");
         }
         Object o = null;
-        
+
         try {
             do {
                 try {
@@ -219,7 +211,7 @@ public class StaticCache {
         } catch (Exception e) {
             Log.l.log("Couldn't store object to RMS", key, e);
         }
-        
+
         return o;
     }
 

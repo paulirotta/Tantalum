@@ -65,7 +65,6 @@ public final class Worker implements Runnable {
         final Thread thread = new Thread(new Worker(), "Worker" + ++workerCount);
 
         thread.start();
-        thread.setPriority(Thread.MIN_PRIORITY);
     }
 
     /**
