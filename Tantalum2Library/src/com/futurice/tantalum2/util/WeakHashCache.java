@@ -38,8 +38,8 @@ public class WeakHashCache {
 
     public Object get(final Object key) {
         synchronized (hash) {
-            Object o = null;
             final WeakReference reference = (WeakReference) hash.get(key);
+            Object o = null;
 
             if (reference != null) {
                 o = reference.get();

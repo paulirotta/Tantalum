@@ -7,6 +7,7 @@ import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.util.LRUVector;
 import com.futurice.tantalum2.util.SortedVector;
 import com.futurice.tantalum2.util.WeakHashCache;
+import java.util.Hashtable;
 import java.util.Vector;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
@@ -36,6 +37,7 @@ public class StaticCache {
         }
     });
     protected final WeakHashCache cache = new WeakHashCache();
+    private final Hashtable putData = new Hashtable();
     protected final LRUVector accessOrder = new LRUVector();
     protected final char priority; // Must be unique, preferrably and integer, larger characters get more space when space is limited
     protected final DataTypeHandler handler;
@@ -105,27 +107,29 @@ public class StaticCache {
         return o;
     }
 
-    public synchronized void get(final String key, final Result result) {
+    /**
+     * Retrieve an object from RAM or RMS storage.
+     *
+     *
+     * @param key
+     * @param result
+     * @param highPriority - set true if you want the results quickly. Note that
+     * your request for priority may be denied if you have recently changed the
+     * value and the value happens to have expired from the RAM cache due to a
+     * low memory condition.
+     */
+    public synchronized void get(final String key, final Result result, final boolean highPriority) {
         final Object ho = synchronousRAMCacheGet(key);
 
         if (ho != null) {
             Log.l.log("RAM cache hit", "(" + priority + ") " + key);
             result.setResult(ho);
         } else {
-            Worker.queue(new Workable() {
+            final Workable getWorkable = new Workable() {
 
                 public boolean work() {
-                    Object o = synchronousRAMCacheGet(key);
+                    final Object o = synchronousGet(key);
 
-                    if (o == null) {
-                        final byte[] bytes = RMSUtils.cacheRead(key);
-
-                        if (bytes != null) {
-                            Log.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
-
-                            o = convertAndPutToHeapCache(key, bytes);
-                        }
-                    }
                     if (o != null) {
                         result.setResult(o);
                     } else {
@@ -135,8 +139,31 @@ public class StaticCache {
 
                     return false;
                 }
-            });
+            };
+
+            if (highPriority && !putData.contains(key)) {
+                Worker.queuePriority(getWorkable);
+            } else {
+                Worker.queue(getWorkable);
+            }
         }
+    }
+
+    private Object synchronousGet(final String key) {
+        Object o = synchronousRAMCacheGet(key);
+
+        if (o == null) {
+            // Load from flash memory
+            final byte[] bytes = RMSUtils.cacheRead(key);
+
+            if (bytes != null) {
+                Log.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
+
+                o = convertAndPutToHeapCache(key, bytes);
+            }
+        }
+        
+        return o;
     }
 
     /**
@@ -157,10 +184,11 @@ public class StaticCache {
      * @return the byte[] converted to use form by the cache's Handler
      */
     public synchronized Object put(final String key, final byte[] bytes) {
+        putData.put(key, bytes);
         Worker.queuePriority(new Workable() {
 
             public boolean work() {
-                synchronousPutToRMS(key, bytes);
+                synchronousPutToRMS(key);
 
                 return false;
             }
@@ -185,16 +213,27 @@ public class StaticCache {
      * already done this
      * @return
      */
-    protected Object synchronousPutToRMS(final String key, final byte[] bytes) {
+    private void synchronousPutToRMS(final String key) {
         if (key == null) {
             throw new IllegalArgumentException("Null key put to cache");
-        }
-        if (bytes == null) {
-            throw new IllegalArgumentException("Null bytes put to cache");
         }
         Object o = null;
 
         try {
+            final byte[] bytes;
+            synchronized (this) {
+                bytes = (byte[]) putData.remove(key);
+            }
+
+            if (o == null) {
+                /*
+                 * The object was put() several times quickly to the work queue
+                 * and this is not the first time the object was saved to RMS.
+                 * We instead return the already previously saved value.
+                 */
+                Log.l.log("Duplicate save warning", "Object \"" + key + "\" was saved very recently, it is possible conflicting, simultaneous assertions were may by different parts of the program");
+                return;
+            }
             do {
                 try {
                     Log.l.log("RMS cache write start", key + " (" + bytes.length + " bytes)");
@@ -211,8 +250,6 @@ public class StaticCache {
         } catch (Exception e) {
             Log.l.log("Couldn't store object to RMS", key, e);
         }
-
-        return o;
     }
 
     /**

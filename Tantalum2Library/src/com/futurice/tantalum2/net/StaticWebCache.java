@@ -29,7 +29,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public void get(final String url, final Result result) {
+    public void get(final String url, final Result result, final boolean highPriority) {
         super.get(url, new Result() {
 
             /**
@@ -50,12 +50,10 @@ public class StaticWebCache extends StaticCache {
             public void noResult() {
                 final HttpGetter httpGetter = new HttpGetter(url, RETRIES, new Result() {
 
-                    public void setResult(final Object o) {
+                    public void setResult(Object o) {
+                        o = put(url, (byte[]) o);
                         if (result != null) {
-                            result.setResult(put(url, (byte[]) o));
-                        } else {
-                            // Prefetch only, no need to convert and put to RAM, this causes too much heap thrash
-                            synchronousPutToRMS(url, (byte[]) o);
+                            result.setResult(o);
                         }
                     }
 
@@ -70,7 +68,7 @@ public class StaticWebCache extends StaticCache {
                 // This avoids possible queue delays
                 httpGetter.work();
             }
-        });
+        }, highPriority);
     }
 
     /**
@@ -105,7 +103,7 @@ public class StaticWebCache extends StaticCache {
 
                 public void setResult(final Object o) {
                     // Then store to RMS, but not in RAM
-                    synchronousPutToRMS(url, (byte[]) o);
+                    put(url, (byte[]) o);
                 }
             }));
         }
