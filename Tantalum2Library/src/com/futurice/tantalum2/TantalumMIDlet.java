@@ -20,7 +20,7 @@ public abstract class TantalumMIDlet extends MIDlet {
      *
      */
     protected TantalumMIDlet() {
-        Worker.init(this, 4);
+        Worker.init(this, 2);
     }
 
     /**

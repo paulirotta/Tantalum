@@ -59,9 +59,8 @@ public class HttpGetter implements Workable {
             byte[] readBuffer = new byte[16384];
 
             httpConnection = (HttpConnection) Connector.open(url);
-            Thread.sleep(100);
             httpConnection.setRequestMethod(HttpConnection.GET);
-            Thread.sleep(100);
+            Thread.sleep(10);
             inputStream = httpConnection.openInputStream();
 
             int bytesRead;

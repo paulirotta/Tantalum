@@ -185,10 +185,10 @@ public final class ImageUtils {
                     maxHeight = (int) (srcHeight * byHeight);
                 }
                 if (!processAlpha) {
-                    if (maxWidth == srcWidth / 2) {
-                        ImageUtils.halfImage(data, srcWidth);
-                        return Image.createRGBImage(data, maxWidth, maxHeight, false);
-                    }
+//                    if (maxWidth == srcWidth / 2) {
+//                        ImageUtils.halfImage(data, srcWidth);
+//                        return Image.createRGBImage(data, maxWidth, maxHeight, false);
+//                    }
                     if (maxWidth == srcWidth / 4) {
                         ImageUtils.quarterImage(data, srcWidth);
                         return Image.createRGBImage(data, maxWidth, maxHeight, false);
