@@ -37,8 +37,8 @@ public final class ImageUtils {
      * @return
      */
     private static void halfImage(final int[] in, final int inWidth) {
-        Log.l.log("Half image", "START, w=" + inWidth);
         synchronized (Worker.LARGE_MEMORY_MUTEX) {
+            Log.l.log("Half image", "START, w=" + inWidth);
             final int inHeight = in.length / inWidth;
             final int outWidth = inWidth >> 1;
             int x, y, z = 0, i, r, g, b;
@@ -48,21 +48,18 @@ public final class ImageUtils {
                 for (x = 0; x < outWidth; x++) {
                     r = in[i] & RED;
                     g = in[i] & GREEN;
-                    b = in[i] & BLUE;
-                    i++;
+                    b = in[i++] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
                     b += in[i] & BLUE;
                     i += inWidth;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i--;
+                    b += in[i--] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
                     b += in[i] & BLUE;
-                    in[z] = ((r & (RED << 2)) | (g & (GREEN << 2)) | (b & (BLUE << 2))) >>> 2;
-                    z++;
+                    in[z++] = ((r & (RED << 2)) | (g & (GREEN << 2)) | (b & (BLUE << 2))) >>> 2;
                     i -= inWidth - 2;
                 }
             }
@@ -71,29 +68,26 @@ public final class ImageUtils {
     }
 
     private static void quarterImage(final int[] in, final int inWidth) {
-        Log.l.log("Quarter image", "START, w=" + inWidth);
         synchronized (Worker.LARGE_MEMORY_MUTEX) {
+            Log.l.log("Quarter image", "START, w=" + inWidth);
             final int inHeight = in.length / inWidth;
             final int outWidth = inWidth >> 2;
-            int x, y, z = 0, i, r, g, b;
+            int x, y = 0, z = 0, i, r, g, b;
 
-            for (y = 0; y < inHeight - 3; y += 4) {
+            for (; y < inHeight - 3; y += 4) {
                 for (x = 0; x < outWidth; x++) {
                     i = y * inWidth + 4 * x;
 
                     // Row 1
                     r = in[i] & RED;
                     g = in[i] & GREEN;
-                    b = in[i] & BLUE;
-                    i++;
+                    b = in[i++] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i++;
+                    b += in[i++] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i++;
+                    b += in[i++] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
                     b += in[i] & BLUE;
@@ -102,16 +96,13 @@ public final class ImageUtils {
                     i += inWidth;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i--;
+                    b += in[i--] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i--;
+                    b += in[i--] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i--;
+                    b += in[i--] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
                     b += in[i] & BLUE;
@@ -120,16 +111,13 @@ public final class ImageUtils {
                     i += inWidth;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i++;
+                    b += in[i++] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i++;
+                    b += in[i++] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i++;
+                    b += in[i++] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
                     b += in[i] & BLUE;
@@ -138,25 +126,76 @@ public final class ImageUtils {
                     i += inWidth;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i--;
+                    b += in[i--] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i--;
+                    b += in[i--] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
-                    b += in[i] & BLUE;
-                    i--;
+                    b += in[i--] & BLUE;
                     r += in[i] & RED;
                     g += in[i] & GREEN;
                     b += in[i] & BLUE;
 
-                    in[z] = ((r & (RED << 4)) | (g & (GREEN << 4)) | (b & BLUE << 4)) >>> 4;
-                    z++;
+                    in[z++] = ((r & (RED << 4)) | (g & (GREEN << 4)) | (b & BLUE << 4)) >>> 4;
                 }
             }
             Log.l.log("Quater image", "STOP, w=" + inWidth);
+        }
+    }
+    final static int M1 = 127 | 127 << 8 | 127 << 16;
+    final static int M2 = 31 | 31 << 8 | 31 << 16;
+
+    private static void downscale(final int[] in, final int inWidth, final int inHeight, final int w, final int h) {
+        synchronized (Worker.LARGE_MEMORY_MUTEX) {
+            Log.l.log("Downscale image", "START (" + inWidth + ", " + inHeight + ")");
+            final float dx = inWidth / (float) (w + 1);
+            final float dy = inHeight / (float) (h + 1);
+            int x, y = 0, z = 0, e;
+
+            for (; y < h; y++) {
+                for (x = 0; x < w; x++) {
+                    int i = 1 + inWidth + (inWidth * (int) (y * dy)) + (int) (x * dx);
+                    e = (in[i--] >>> 1) & M1;
+                    i -= inWidth;
+                    e += ((in[i++] >>> 3) & M2) + ((in[++i] >>> 3) & M2);
+                    i += inWidth << 1;
+                    in[z++] = e + ((in[i--] >>> 3) & M2) + ((in[--i] >>> 3) & M2);
+                }
+            }
+            Log.l.log("Downscale image", "END (" + w + ", " + y + ")");
+        }
+    }
+
+    public static Image downscaleImage(final int[] data, final int srcWidth, final int srcHeight, int maxWidth, int maxHeight, final boolean processAlpha) {
+        synchronized (Worker.LARGE_MEMORY_MUTEX) {
+            final float byWidth = maxWidth / (float) srcWidth;
+            final float byHeight = maxHeight / (float) srcHeight;
+
+            if (byWidth <= byHeight) {
+                maxWidth = (int) (srcWidth * byWidth);
+                maxHeight = (int) (srcHeight * byWidth);
+            } else {
+                maxWidth = (int) (srcWidth * byHeight);
+                maxHeight = (int) (srcHeight * byHeight);
+            }
+            boolean widthIsMaxed = false;
+            if (maxWidth >= srcWidth) {
+                maxWidth = srcWidth;
+                widthIsMaxed = true;
+            }
+            if (maxHeight >= srcHeight) {
+                if (widthIsMaxed) {
+                    // No resize needed
+                    Log.l.log("No image downscale needed", "(" + srcWidth + "," + srcHeight + ") -> (" + maxWidth + "," + maxHeight);
+                    maxHeight = srcHeight;
+                    return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
+                }
+                maxHeight = srcHeight;
+            }
+
+            ImageUtils.downscale(data, srcWidth, srcHeight, maxWidth, maxHeight);
+            return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
         }
     }
 
@@ -171,54 +210,56 @@ public final class ImageUtils {
      * @return
      */
     public static Image shrinkImage(final int[] data, final int srcWidth, final int srcHeight, int maxWidth, int maxHeight, final boolean processAlpha, final boolean preserveAspectRatio) {
-        Log.l.log("Shrink image", "START, w=" + srcWidth + " -> " + maxWidth);
-        try {
-            final float byWidth = maxWidth / (float) srcWidth;
-            final float byHeight = maxHeight / (float) srcHeight;
+        synchronized (Worker.LARGE_MEMORY_MUTEX) {
+            Log.l.log("Shrink image", "START, w=" + srcWidth + " -> " + maxWidth);
+            try {
+                final float byWidth = maxWidth / (float) srcWidth;
+                final float byHeight = maxHeight / (float) srcHeight;
 
-            if (preserveAspectRatio) {
-                if (byWidth <= byHeight) {
-                    maxWidth = (int) (srcWidth * byWidth);
-                    maxHeight = (int) (srcHeight * byWidth);
-                } else {
-                    maxWidth = (int) (srcWidth * byHeight);
-                    maxHeight = (int) (srcHeight * byHeight);
-                }
-                if (!processAlpha) {
-//                    if (maxWidth == srcWidth / 2) {
-//                        ImageUtils.halfImage(data, srcWidth);
-//                        return Image.createRGBImage(data, maxWidth, maxHeight, false);
-//                    }
-                    if (maxWidth == srcWidth / 4) {
-                        ImageUtils.quarterImage(data, srcWidth);
-                        return Image.createRGBImage(data, maxWidth, maxHeight, false);
+                if (preserveAspectRatio) {
+                    if (byWidth <= byHeight) {
+                        maxWidth = (int) (srcWidth * byWidth);
+                        maxHeight = (int) (srcHeight * byWidth);
+                    } else {
+                        maxWidth = (int) (srcWidth * byHeight);
+                        maxHeight = (int) (srcHeight * byHeight);
+                    }
+                    if (!processAlpha) {
+                        if (maxWidth == srcWidth / 2) {
+                            ImageUtils.halfImage(data, srcWidth);
+                            return Image.createRGBImage(data, maxWidth, maxHeight, false);
+                        }
+                        if (maxWidth == srcWidth / 4) {
+                            ImageUtils.quarterImage(data, srcWidth);
+                            return Image.createRGBImage(data, maxWidth, maxHeight, false);
+                        }
                     }
                 }
-            }
-            boolean widthIsMaxed = false;
-            if (maxWidth >= srcWidth) {
-                maxWidth = srcWidth;
-                widthIsMaxed = true;
-            }
-            if (maxHeight >= srcHeight) {
-                if (widthIsMaxed) {
-                    // No resize needed
-                    Log.l.log("No image shrink needed", "(" + srcWidth + "," + srcHeight + ") -> (" + maxWidth + "," + maxHeight);
-                    maxHeight = srcHeight;
-                    return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
+                boolean widthIsMaxed = false;
+                if (maxWidth >= srcWidth) {
+                    maxWidth = srcWidth;
+                    widthIsMaxed = true;
                 }
-                maxHeight = srcHeight;
-            }
+                if (maxHeight >= srcHeight) {
+                    if (widthIsMaxed) {
+                        // No resize needed
+                        Log.l.log("No image shrink needed", "(" + srcWidth + "," + srcHeight + ") -> (" + maxWidth + "," + maxHeight);
+                        maxHeight = srcHeight;
+                        return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
+                    }
+                    maxHeight = srcHeight;
+                }
 
-            if (processAlpha) {
-                ImageUtils.doShrinkImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
-                return Image.createRGBImage(data, maxWidth, maxHeight, true);
-            } else {
-                ImageUtils.doShrinkOpaqueImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
-                return Image.createRGBImage(data, maxWidth, maxHeight, false);
+                if (processAlpha) {
+                    ImageUtils.doShrinkImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
+                    return Image.createRGBImage(data, maxWidth, maxHeight, true);
+                } else {
+                    ImageUtils.doShrinkOpaqueImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
+                    return Image.createRGBImage(data, maxWidth, maxHeight, false);
+                }
+            } finally {
+                Log.l.log("Shrink image", "STOP, w=" + srcWidth + " -> " + maxWidth);
             }
-        } finally {
-            Log.l.log("Shrink image", "STOP, w=" + srcWidth + " -> " + maxWidth);
         }
     }
 
