@@ -4,6 +4,7 @@
  */
 package com.futurice.tantalum2.util;
 
+import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
 import javax.microedition.lcdui.Image;
 
@@ -16,502 +17,378 @@ import javax.microedition.lcdui.Image;
  */
 public final class ImageUtils {
 
-    final static int M1 = 127 | 127 << 8 | 127 << 16 | 127 << 24;
-    final static int M2 = 63 | 63 << 8 | 63 << 16 | 63 << 24;
-    final static int M3 = 31 | 31 << 8 | 31 << 16 | 31 << 24;
+    private static final int M1 = 127 | 127 << 8 | 127 << 16 | 127 << 24;
+    private static final int M2 = 63 | 63 << 8 | 63 << 16 | 63 << 24;
+    private static final int M3 = 31 | 31 << 8 | 31 << 16 | 31 << 24;
+    private static final int FP_SHIFT = 13;
+    private static final int ALPHA = 0xFF000000;
+    private static final int RED = 0x00FF0000;
+    private static final int GREEN = 0x0000FF00;
+    private static final int BLUE = 0x000000FF;
 
-//    private static final int FP_SHIFT = 13;
-//    private static final int ALPHA = 0xFF000000;
-//    private static final int RED = 0x00FF0000;
-//    private static final int GREEN = 0x0000FF00;
-//    private static final int BLUE = 0x000000FF;
     /**
-     * Return an RGB image where width and height are half the original.
+     * Return an image which is smaller then the original.
+     * 
+     * The destination size can be defined exactly, or to fit within a bounding
+     * box with aspect ratio preserved.
+     * 
+     * To ensure your application does not use too much memory to scale the image
+     * at the same time other parts of the program have a peak memory usage,
+     * use the following calling pattern, modify as appropriate for your needs.
+     * 
+     *  synchronized (Worker.LARGE_MEMORY_MUTEX) {
+     *      int[] data = new int[w * h];
+     *      image.getRGB(data, 0, w, 0, 0, w, h);
+     *      image = null;
+     *      image = ImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false, false);
+     *      data = null;
+     *  }
+     * 
+     * @param data - ARGB data for the image
+     * @param srcW - Source data row width
+     * @param srcH - Source data column height
+     * @param maxW - maximum bounding width of scaled image
+     * @param maxH - maximum bounding size of scaled image
+     * @param preserveAspectRatio - set true except for special effects
+     * @param processAlpha - set true for translucent PNG images, false for JPG
+     * @param bestQuality - set true for roughly 4x slower, more accurate scaling
+     * @return 
+     */
+    public static Image downscaleImage(final int[] data, int srcW, int srcH, int maxW, int maxH, final boolean preserveAspectRatio, final boolean processAlpha, final boolean bestQuality) {
+        final float byWidth = maxW / (float) srcW;
+        final float byHeight = maxH / (float) srcH;
+        boolean widthIsMaxed = false;
+
+        if (preserveAspectRatio) {
+            if (byWidth <= byHeight) {
+                maxW = (int) (srcW * byWidth);
+                maxH = (int) (srcH * byWidth);
+            } else {
+                maxW = (int) (srcW * byHeight);
+                maxH = (int) (srcH * byHeight);
+            }
+        }
+        if (maxW >= srcW) {
+            maxW = srcW;
+            widthIsMaxed = true;
+        }
+        if (maxH >= srcH) {
+            if (widthIsMaxed) {
+                // No resize needed
+                Log.l.log("No image downscale needed", "(" + srcW + "," + srcH + ") -> (" + maxW + "," + maxH);
+                maxH = srcH;
+                return Image.createRGBImage(data, maxW, maxH, processAlpha);
+            }
+            maxH = srcH;
+        }
+        if (bestQuality) {
+            if (processAlpha) {
+                ImageUtils.pureDownscale(data, srcW, srcH, maxW, maxH, preserveAspectRatio);
+            } else {
+                ImageUtils.pureOpaqueDownscale(data, srcW, srcH, maxW, maxH, preserveAspectRatio);
+            }
+        } else {
+            while (srcW >> 1 >= maxW && srcH >> 1 >= maxH) {
+                ImageUtils.half(data, srcW, srcW >>= 1, srcH >>= 1);
+            }
+            if (srcW != maxW && srcH != maxH) {
+                ImageUtils.downscale(data, srcW, srcH, maxW, maxH);
+            }
+        }
+
+        return Image.createRGBImage(data, maxW, maxH, processAlpha);
+    }
+
+    /**
+     * Return an ARGB image where width and height are half the original.
      *
-     * 4 pixels are combined into 1. The image is passed in as a reference to an
-     * integer array to minimize peak memory usage during image processing. You
-     * should delete all strong references to the Image from which this int[] is
-     * created _before_ calling this routine. The int[] will be altered by this
-     * routine.
+     * 4 pixels are combined into 1 with 6 bit accuracy.
      *
      * @param in
-     * @param inWidth
+     * @param srcW
      * @return
      */
-    private static void halfImage(final int[] in, final int inWidth, final int w, final int h) {
-        Log.l.log("Half image", "START, w=" + inWidth);
+    private static void half(final int[] in, final int srcW, final int w, final int h) {
+        Log.l.log("Half image", "START, w=" + srcW);
         int x, y = 0, z = 0, i;
 
         for (; y < h; y++) {
-            i = (y << 1) * inWidth;
+            i = (y << 1) * srcW;
             for (x = 0; x < w; x++) {
                 final int e = (in[i++] >>> 2 & M2) + (in[i] >>> 2 & M2);
-                i += inWidth;
+                i += srcW;
                 in[z++] = e + (in[i--] >>> 2 & M2) + (in[i++] >>> 2 & M2);
                 i++;
-                i -= inWidth;
+                i -= srcW;
             }
         }
-        Log.l.log("Half image", "STOP, w=" + inWidth);
-    }
-
-    private static void quarterImage(final int[] in, final int inWidth, final int w, final int h) {
-        Log.l.log("Quarter image", "START, w=" + inWidth);
-        int x, y = 0, z = 0, i, e;
-
-        for (; y < h; y++) {
-            i = (y * inWidth) << 2;
-            for (x = 0; x < w; x++) {
-                e = (in[i++] >>> 3 & M3) + (in[i++] >>> 3 & M3) + (in[i] >>> 3 & M3) + (in[i] >>> 3 & M3);
-                i += inWidth;
-                e += (in[i--] >>> 3 & M3) + (in[i--] >>> 3 & M3) + (in[i--] >>> 3 & M3) + (in[i--] >>> 3 & M3) + (in[i] >>> 3 & M3);
-                i += inWidth;
-                e += (in[i++] >>> 3 & M3) + (in[i++] >>> 3 & M3) + (in[i++] >>> 3 & M3) + (in[i++] >>> 3) & M3 + (in[i] >>> 3 & M3);
-                i += inWidth;
-                in[z++] = e + (in[i--] >>> 3 & M3) + (in[i--] >>> 3 & M3) + (in[i--] >>> 3 & M3) + (in[i] >>> 3 & M3);
-                i -= 3 * inWidth - 4;
-            }
-        }
-        Log.l.log("Quater image", "STOP, w=" + inWidth);
-//        synchronized (Worker.LARGE_MEMORY_MUTEX) {
-//            Log.l.log("Quarter image", "START, w=" + inWidth);
-//            final int inHeight = in.length / inWidth;
-//            final int outWidth = inWidth >> 2;
-//            int x, y = 0, z = 0, i, r, g, b;
-//
-//            for (; y < inHeight - 3; y += 4) {
-//                for (x = 0; x < outWidth; x++) {
-//                    i = y * inWidth + 4 * x;
-//
-//                    // Row 1
-//                    r = in[i] & RED;
-//                    g = in[i] & GREEN;
-//                    b = in[i++] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i++] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i++] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i] & BLUE;
-//
-//                    // Row 2
-//                    i += inWidth;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i--] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i--] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i--] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i] & BLUE;
-//
-//                    // Row 3
-//                    i += inWidth;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i++] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i++] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i++] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i] & BLUE;
-//
-//                    // Row 4
-//                    i += inWidth;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i--] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i--] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i--] & BLUE;
-//                    r += in[i] & RED;
-//                    g += in[i] & GREEN;
-//                    b += in[i] & BLUE;
-//
-//                    in[z++] = ((r & (RED << 4)) | (g & (GREEN << 4)) | (b & BLUE << 4)) >>> 4;
-//                }
-//            }
-//            Log.l.log("Quater image", "STOP, w=" + inWidth);
-//        }
+        Log.l.log("Half image", "STOP, w=" + srcW);
     }
 
     /**
      * Special thanks to Dr Teemu Korhonen for the original, very fast Matlab
-     * algorithm and tests.
+     * algorithm and tests. A weighted "X" is slid across the source image to
+     * generate destination pixels.
      *
      * @param in
-     * @param inWidth
-     * @param inHeight
+     * @param srcW
+     * @param srcH
      * @param w
      * @param h
      */
-    private static void downscale(final int[] in, final int inWidth, final int inHeight, final int w, final int h) {
-        Log.l.log("Downscale image", "START (" + inWidth + ", " + inHeight + ")");
-        final float dx = inWidth / (float) (w + 1);
-        final float dy = inHeight / (float) (h + 1);
+    private static void downscale(final int[] in, final int srcW, final int srcH, final int w, final int h) {
+        Log.l.log("Downscale image", "START (" + srcW + ", " + srcH + ")");
+        final float dx = srcW / (float) (w + 1);
+        final float dy = srcH / (float) (h + 1);
         int x, y = 0, z = 0, e;
 
         for (; y < h; y++) {
-            final int rowstart = 1 + inWidth + (inWidth * (int) (y * dy));
+            final int rowstart = 1 + srcW + (srcW * (int) (y * dy));
             for (x = 0; x < w; x++) {
                 int i = rowstart + (int) (x * dx);
                 e = in[i--] >>> 1 & M1;
-                i -= inWidth;
+                i -= srcW;
                 e += (in[i++] >>> 3 & M3) + (in[++i] >>> 3 & M3);
-                i += inWidth << 1;
+                i += srcW << 1;
                 in[z++] = e + (in[i--] >>> 3 & M3) + (in[--i] >>> 3 & M3);
             }
         }
         Log.l.log("Downscale image", "END (" + w + ", " + y + ")");
     }
 
-    public static Image downscaleImage(final int[] data, int srcWidth, int srcHeight, int maxWidth, int maxHeight, final boolean preserveAspectRatio, final boolean processAlpha) {
-        final float byWidth = maxWidth / (float) srcWidth;
-        final float byHeight = maxHeight / (float) srcHeight;
-        boolean widthIsMaxed = false;
+    /**
+     * Additive blending shrinkImage, 8 bit accuracy. For speed, integers are
+     * used with fixed point accuracy instead of floats.
+     *
+     * Gets a source image along with new size for it and resizes it to fit
+     * within max dimensions.
+     * 
+     * @param data - ARGB image
+     * @param srcW - source image width
+     * @param srcH - source image height
+     * @param w - final image width
+     * @param h - final image height
+     * @param preserveAspectRatio 
+     */
+    private static void pureDownscale(final int[] data, final int srcW, final int srcH, final int w, final int h, final boolean preserveAspectRatio) {
+        final int predictedCount = 1 + (srcW / w);
+        final int[] lut = new int[predictedCount << 8];
 
+        // Init division lookup table
+        for (int i = 0; i < lut.length; i++) {
+            lut[i] = i / predictedCount;
+        }
+        {
+            // precalculate src/dest ratios
+            final int ratioW = (srcW << FP_SHIFT) / w;
+
+            // horizontal resampling (srcY = destY)
+            for (int destY = 0; destY < srcH; ++destY) {
+                final int srcRowStartIndex = destY * srcW;
+                final int destRowStartIndex = destY * w;
+
+                for (int destX = 0; destX < w; ++destX) {
+                    int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
+                    final int initialSrcX = srcX;
+                    final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
+                    int a = 0;
+                    int r = 0;
+                    int g = 0;
+                    int b = 0;
+
+                    // now loop from srcX to srcX2 and add up the values for each channel
+                    do {
+                        final int argb = data[srcX + srcRowStartIndex];
+                        a += (argb & ALPHA) >>> 24;
+                        r += argb & RED;
+                        g += argb & GREEN;
+                        b += argb & BLUE;
+                        ++srcX; // move on to the next pixel
+                    } while (srcX <= srcX2 && srcX + srcRowStartIndex < data.length);
+
+                    // average out the channel values
+                    // recreate color from the averaged channels and place it into the destination buffer
+                    r >>>= 16;
+                    g >>>= 8;
+                    final int count = srcX - initialSrcX;
+                    if (count == predictedCount) {
+                        data[destX + destRowStartIndex] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
+                    } else {
+                        a /= count;
+                        r /= count;
+                        g /= count;
+                        b /= count;
+                        data[destX + destRowStartIndex] = ((a << 24) | (r << 16) | (g << 8) | b);
+                    }
+                }
+            }
+        }
+
+        // precalculate src/dest ratios
+        final int predictedCount2;
+        final int[] lut2;
         if (preserveAspectRatio) {
-            if (byWidth <= byHeight) {
-                maxWidth = (int) (srcWidth * byWidth);
-                maxHeight = (int) (srcHeight * byWidth);
-            } else {
-                maxWidth = (int) (srcWidth * byHeight);
-                maxHeight = (int) (srcHeight * byHeight);
+            predictedCount2 = predictedCount;
+            lut2 = lut;
+        } else {
+            predictedCount2 = 1 + (srcH / h);
+            lut2 = new int[predictedCount2 << 8];
+
+            // Init division lookup table
+            for (int i = 0; i < lut2.length; i++) {
+                lut2[i] = i / predictedCount2;
             }
         }
-        if (maxWidth >= srcWidth) {
-            maxWidth = srcWidth;
-            widthIsMaxed = true;
-        }
-        if (maxHeight >= srcHeight) {
-            if (widthIsMaxed) {
-                // No resize needed
-                Log.l.log("No image downscale needed", "(" + srcWidth + "," + srcHeight + ") -> (" + maxWidth + "," + maxHeight);
-                maxHeight = srcHeight;
-                return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
+        // vertical resampling (srcX = destX)
+        final int ratioH = (srcH << FP_SHIFT) / h;
+        for (int destX = 0; destX < w; ++destX) {
+            for (int destY = 0; destY < h; ++destY) {
+                int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
+                final int initialSrcY = srcY;
+                final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
+                int a = 0;
+                int r = 0;
+                int g = 0;
+                int b = 0;
+
+                // now loop from srcY to srcY2 and add up the values for each channel
+                do {
+                    final int argb = data[destX + srcY * w];
+                    a += (argb & ALPHA) >>> 24;
+                    r += argb & RED;
+                    g += argb & GREEN;
+                    b += argb & BLUE;
+                    ++srcY; // move on to the next pixel
+                } while (srcY <= srcY2 && destX + srcY * w < data.length);
+
+                // average out the channel values
+                r >>>= 16;
+                g >>>= 8;
+                final int count = srcY - initialSrcY;
+                if (count == predictedCount2) {
+                    data[destX + destY * w] = (lut2[a] << 24) | (lut2[r] << 16) | (lut2[g] << 8) | lut2[b];
+                } else {
+                    a /= count;
+                    r /= count;
+                    g /= count;
+                    b /= count;
+                    data[destX + destY * w] = (a << 24) | (r << 16) | (g << 8) | b;
+                }
             }
-            maxHeight = srcHeight;
         }
-        while (srcWidth >> 2 >= maxWidth && srcHeight >> 2 >= maxHeight) {
-            ImageUtils.quarterImage(data, srcWidth, srcWidth >>= 2, srcHeight >>= 2);
+    }
+
+    /**
+     * Additive blending shrinkImage, 8 bit accuracy. Slightly faster because
+     * Alpha is not calculated.
+     * 
+     * @param data - Opaque RGB image
+     * @param srcW - source image width
+     * @param srcH - source image height
+     * @param w - final image width
+     * @param h - final image height
+     * @param preserveAspectRatio 
+     */
+    private static void pureOpaqueDownscale(final int[] data, final int srcW, final int srcH, final int w, final int h, final boolean preserveAspectRatio) {
+        final int predictedCount = 1 + (srcW / w);
+        final int[] lut = new int[predictedCount << 8];
+
+        // Init division lookup table
+        for (int i = 0; i < lut.length; i++) {
+            lut[i] = i / predictedCount;
         }
-        if (srcWidth >> 1 >= maxWidth && srcHeight >> 1 >= maxHeight) {
-            ImageUtils.halfImage(data, srcWidth, srcWidth >>= 1, srcHeight >>= 1);
-        }
-        if (srcWidth != maxWidth && srcHeight != maxHeight) {
-            ImageUtils.downscale(data, srcWidth, srcHeight, maxWidth, maxHeight);
+        {
+            // precalculate src/dest ratios
+            final int ratioW = (srcW << FP_SHIFT) / w;
+
+            // horizontal resampling (srcY = destY)
+            for (int destY = 0; destY < srcH; ++destY) {
+                final int srcRowStartIndex = destY * srcW;
+                final int destRowStartIndex = destY * w;
+
+                for (int destX = 0; destX < w; ++destX) {
+                    int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
+                    final int initialSrcX = srcX;
+                    final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
+                    int r = 0;
+                    int g = 0;
+                    int b = 0;
+
+                    // now loop from srcX to srcX2 and add up the values for each channel
+                    do {
+                        final int rgb = data[srcRowStartIndex + srcX];
+                        r += rgb & RED;
+                        g += rgb & GREEN;
+                        b += rgb & BLUE;
+                        ++srcX; // move on to the next pixel
+                    } while (srcX <= srcX2 && srcRowStartIndex + srcX < data.length);
+
+                    // average out the channel values
+                    // recreate color from the averaged channels and place it into the destination buffer
+                    r >>>= 16;
+                    g >>>= 8;
+                    final int count = srcX - initialSrcX;
+                    if (count == predictedCount) {
+                        data[destX + destRowStartIndex] = (lut[r] << 16) | (lut[g] << 8) | lut[b];
+                    } else {
+                        r /= count;
+                        g /= count;
+                        b /= count;
+                        data[destX + destRowStartIndex] = (r << 16) | (g << 8) | b;
+                    }
+                }
+            }
         }
 
-        return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
+        // precalculate src/dest ratios
+        final int predictedCount2;
+        final int[] lut2;
+        if (preserveAspectRatio) {
+            predictedCount2 = predictedCount;
+            lut2 = lut;
+        } else {
+            predictedCount2 = 1 + (srcH / h);
+            lut2 = new int[predictedCount2 << 8];
+
+            // Init division lookup table
+            for (int i = 0; i < lut2.length; i++) {
+                lut2[i] = i / predictedCount2;
+            }
+        }
+        // vertical resampling (srcX = destX)
+        final int ratioH = (srcH << FP_SHIFT) / h;
+        for (int destX = 0; destX < w; ++destX) {
+            for (int destY = 0; destY < h; ++destY) {
+                int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
+                final int initialSrcY = srcY;
+                final int columnStart = srcY * w;
+                final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
+                int r = 0;
+                int g = 0;
+                int b = 0;
+
+                // now loop from srcY to srcY2 and add up the values for each channel
+                do {
+                    final int argb = data[columnStart + destX];
+                    r += argb & RED;
+                    g += argb & GREEN;
+                    b += argb & BLUE;
+                    ++srcY; // move on to the next pixel
+                } while (srcY <= srcY2 && columnStart + destX < data.length);
+
+                // average out the channel values
+                r >>>= 16;
+                g >>>= 8;
+                final int count = srcY - initialSrcY;
+                if (count == predictedCount2) {
+                    data[destX + destY * w] = (lut2[r] << 16) | (lut2[g] << 8) | lut2[b];
+                } else {
+                    r /= count;
+                    g /= count;
+                    b /= count;
+                    data[destX + destY * w] = (r << 16) | (g << 8) | b;
+                }
+            }
+        }
     }
-    /**
-     * Shrink an image to fit within max dimensions, preserving aspect ratio.
-     *
-     * @param data - The ARGB image
-     * @param srcWidth
-     * @param srcHeight
-     * @param maxWidth
-     * @param maxHeight
-     * @return
-     */
-//    public static Image shrinkImage(final int[] data, final int srcWidth, final int srcHeight, int maxWidth, int maxHeight, final boolean processAlpha, final boolean preserveAspectRatio) {
-//        synchronized (Worker.LARGE_MEMORY_MUTEX) {
-//            Log.l.log("Shrink image", "START, w=" + srcWidth + " -> " + maxWidth);
-//            try {
-//                final float byWidth = maxWidth / (float) srcWidth;
-//                final float byHeight = maxHeight / (float) srcHeight;
-//
-//                if (preserveAspectRatio) {
-//                    if (byWidth <= byHeight) {
-//                        maxWidth = (int) (srcWidth * byWidth);
-//                        maxHeight = (int) (srcHeight * byWidth);
-//                    } else {
-//                        maxWidth = (int) (srcWidth * byHeight);
-//                        maxHeight = (int) (srcHeight * byHeight);
-//                    }
-//                    if (!processAlpha) {
-//                        if (maxWidth == srcWidth / 2) {
-//                            ImageUtils.halfImage(data, srcWidth);
-//                            return Image.createRGBImage(data, maxWidth, maxHeight, false);
-//                        }
-//                        if (maxWidth == srcWidth / 4) {
-//                            ImageUtils.quarterImage(data, srcWidth);
-//                            return Image.createRGBImage(data, maxWidth, maxHeight, false);
-//                        }
-//                    }
-//                }
-//                boolean widthIsMaxed = false;
-//                if (maxWidth >= srcWidth) {
-//                    maxWidth = srcWidth;
-//                    widthIsMaxed = true;
-//                }
-//                if (maxHeight >= srcHeight) {
-//                    if (widthIsMaxed) {
-//                        // No resize needed
-//                        Log.l.log("No image shrink needed", "(" + srcWidth + "," + srcHeight + ") -> (" + maxWidth + "," + maxHeight);
-//                        maxHeight = srcHeight;
-//                        return Image.createRGBImage(data, maxWidth, maxHeight, processAlpha);
-//                    }
-//                    maxHeight = srcHeight;
-//                }
-//
-//                if (processAlpha) {
-//                    ImageUtils.doShrinkImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
-//                    return Image.createRGBImage(data, maxWidth, maxHeight, true);
-//                } else {
-//                    ImageUtils.doShrinkOpaqueImage(data, srcWidth, srcHeight, maxWidth, maxHeight, preserveAspectRatio);
-//                    return Image.createRGBImage(data, maxWidth, maxHeight, false);
-//                }
-//            } finally {
-//                Log.l.log("Shrink image", "STOP, w=" + srcWidth + " -> " + maxWidth);
-//            }
-//        }
-//    }
-    /**
-     * additive blending shrinkImage
-     *
-     * Gets a source image along with new size for it and resizes it.
-     *
-     * @param src The source image.
-     * @param destW The new width for the destination image.
-     * @param destH The new heigth for the destination image.
-     * @param mode A flag indicating what type of resizing we want to do. It
-     * currently supports two type: MODE_POINT_SAMPLE - point sampled resizing,
-     * and MODE_BOX_FILTER - box filtered resizing (default).
-     * @return The resized image.
-     */
-//    private static void doShrinkImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
-//        final int predictedCount = 1 + (srcW / destW);
-//        final int[] lut = new int[predictedCount << 8];
-//
-//        // Init division lookup table
-//        for (int i = 0; i < lut.length; i++) {
-//            lut[i] = i / predictedCount;
-//        }
-//        {
-//            // precalculate src/dest ratios
-//            final int ratioW = (srcW << FP_SHIFT) / destW;
-//
-//            // horizontal resampling (srcY = destY)
-//            for (int destY = 0; destY < srcH; ++destY) {
-//                final int srcRowStartIndex = destY * srcW;
-//                final int destRowStartIndex = destY * destW;
-//
-//                for (int destX = 0; destX < destW; ++destX) {
-//                    int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
-//                    final int initialSrcX = srcX;
-//                    final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
-//                    int a = 0;
-//                    int r = 0;
-//                    int g = 0;
-//                    int b = 0;
-//
-//                    // now loop from srcX to srcX2 and add up the values for each channel
-//                    do {
-//                        final int argb = data[srcX + srcRowStartIndex];
-//                        a += (argb & ALPHA) >>> 24;
-//                        r += argb & RED;
-//                        g += argb & GREEN;
-//                        b += argb & BLUE;
-//                        ++srcX; // move on to the next pixel
-//                    } while (srcX <= srcX2 && srcX + srcRowStartIndex < data.length);
-//
-//                    // average out the channel values
-//                    // recreate color from the averaged channels and place it into the destination buffer
-//                    r >>>= 16;
-//                    g >>>= 8;
-//                    final int count = srcX - initialSrcX;
-//                    if (count == predictedCount) {
-//                        data[destX + destRowStartIndex] = (lut[a] << 24) | (lut[r] << 16) | (lut[g] << 8) | lut[b];
-//                    } else {
-//                        a /= count;
-//                        r /= count;
-//                        g /= count;
-//                        b /= count;
-//                        data[destX + destRowStartIndex] = ((a << 24) | (r << 16) | (g << 8) | b);
-//                    }
-//                }
-//            }
-//        }
-//
-//        // precalculate src/dest ratios
-//        final int predictedCount2;
-//        final int[] lut2;
-//        if (preserveAspectRatio) {
-//            predictedCount2 = predictedCount;
-//            lut2 = lut;
-//        } else {
-//            predictedCount2 = 1 + (srcH / destH);
-//            lut2 = new int[predictedCount2 << 8];
-//
-//            // Init division lookup table
-//            for (int i = 0; i < lut2.length; i++) {
-//                lut2[i] = i / predictedCount2;
-//            }
-//        }
-//        // vertical resampling (srcX = destX)
-//        final int ratioH = (srcH << FP_SHIFT) / destH;
-//        for (int destX = 0; destX < destW; ++destX) {
-//            for (int destY = 0; destY < destH; ++destY) {
-//                int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
-//                final int initialSrcY = srcY;
-//                final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
-//                int a = 0;
-//                int r = 0;
-//                int g = 0;
-//                int b = 0;
-//
-//                // now loop from srcY to srcY2 and add up the values for each channel
-//                do {
-//                    final int argb = data[destX + srcY * destW];
-//                    a += (argb & ALPHA) >>> 24;
-//                    r += argb & RED;
-//                    g += argb & GREEN;
-//                    b += argb & BLUE;
-//                    ++srcY; // move on to the next pixel
-//                } while (srcY <= srcY2 && destX + srcY * destW < data.length);
-//
-//                // average out the channel values
-//                r >>>= 16;
-//                g >>>= 8;
-//                final int count = srcY - initialSrcY;
-//                if (count == predictedCount2) {
-//                    data[destX + destY * destW] = (lut2[a] << 24) | (lut2[r] << 16) | (lut2[g] << 8) | lut2[b];
-//                } else {
-//                    a /= count;
-//                    r /= count;
-//                    g /= count;
-//                    b /= count;
-//                    data[destX + destY * destW] = (a << 24) | (r << 16) | (g << 8) | b;
-//                }
-//            }
-//        }
-//    }
-    /**
-     * Slightly faster version of shrinkImage() since the ALPHA component is
-     * assumed to be 0xFF
-     *
-     * @param data
-     * @param srcW
-     * @param srcH
-     * @param destW
-     * @param destH
-     * @return
-     */
-//    private static void doShrinkOpaqueImage(final int[] data, final int srcW, final int srcH, final int destW, final int destH, final boolean preserveAspectRatio) {
-//        final int predictedCount = 1 + (srcW / destW);
-//        final int[] lut = new int[predictedCount << 8];
-//
-//        // Init division lookup table
-//        for (int i = 0; i < lut.length; i++) {
-//            lut[i] = i / predictedCount;
-//        }
-//        {
-//            // precalculate src/dest ratios
-//            final int ratioW = (srcW << FP_SHIFT) / destW;
-//
-//            // horizontal resampling (srcY = destY)
-//            for (int destY = 0; destY < srcH; ++destY) {
-//                final int srcRowStartIndex = destY * srcW;
-//                final int destRowStartIndex = destY * destW;
-//
-//                for (int destX = 0; destX < destW; ++destX) {
-//                    int srcX = (destX * ratioW) >> FP_SHIFT; // calculate beginning of sample
-//                    final int initialSrcX = srcX;
-//                    final int srcX2 = ((destX + 1) * ratioW) >> FP_SHIFT; // calculate end of sample
-//                    int r = 0;
-//                    int g = 0;
-//                    int b = 0;
-//
-//                    // now loop from srcX to srcX2 and add up the values for each channel
-//                    do {
-//                        final int rgb = data[srcRowStartIndex + srcX];
-//                        r += rgb & RED;
-//                        g += rgb & GREEN;
-//                        b += rgb & BLUE;
-//                        ++srcX; // move on to the next pixel
-//                    } while (srcX <= srcX2 && srcRowStartIndex + srcX < data.length);
-//
-//                    // average out the channel values
-//                    // recreate color from the averaged channels and place it into the destination buffer
-//                    r >>>= 16;
-//                    g >>>= 8;
-//                    final int count = srcX - initialSrcX;
-//                    if (count == predictedCount) {
-//                        data[destX + destRowStartIndex] = (lut[r] << 16) | (lut[g] << 8) | lut[b];
-//                    } else {
-//                        r /= count;
-//                        g /= count;
-//                        b /= count;
-//                        data[destX + destRowStartIndex] = (r << 16) | (g << 8) | b;
-//                    }
-//                }
-//            }
-//        }
-//
-//        // precalculate src/dest ratios
-//        final int predictedCount2;
-//        final int[] lut2;
-//        if (preserveAspectRatio) {
-//            predictedCount2 = predictedCount;
-//            lut2 = lut;
-//        } else {
-//            predictedCount2 = 1 + (srcH / destH);
-//            lut2 = new int[predictedCount2 << 8];
-//
-//            // Init division lookup table
-//            for (int i = 0; i < lut2.length; i++) {
-//                lut2[i] = i / predictedCount2;
-//            }
-//        }
-//        // vertical resampling (srcX = destX)
-//        final int ratioH = (srcH << FP_SHIFT) / destH;
-//        for (int destX = 0; destX < destW; ++destX) {
-//            for (int destY = 0; destY < destH; ++destY) {
-//                int srcY = (destY * ratioH) >> FP_SHIFT; // calculate beginning of sample
-//                final int initialSrcY = srcY;
-//                final int columnStart = srcY * destW;
-//                final int srcY2 = ((destY + 1) * ratioH) >> FP_SHIFT; // calculate end of sample
-//                int r = 0;
-//                int g = 0;
-//                int b = 0;
-//
-//                // now loop from srcY to srcY2 and add up the values for each channel
-//                do {
-//                    final int argb = data[columnStart + destX];
-//                    r += argb & RED;
-//                    g += argb & GREEN;
-//                    b += argb & BLUE;
-//                    ++srcY; // move on to the next pixel
-//                } while (srcY <= srcY2 && columnStart + destX < data.length);
-//
-//                // average out the channel values
-//                r >>>= 16;
-//                g >>>= 8;
-//                final int count = srcY - initialSrcY;
-//                if (count == predictedCount2) {
-//                    data[destX + destY * destW] = (lut2[r] << 16) | (lut2[g] << 8) | lut2[b];
-//                } else {
-//                    r /= count;
-//                    g /= count;
-//                    b /= count;
-//                    data[destX + destY * destW] = (r << 16) | (g << 8) | b;
-//                }
-//            }
-//        }
-//    }
 }

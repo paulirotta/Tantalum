@@ -60,7 +60,9 @@ public class HttpGetter implements Workable {
 
             httpConnection = (HttpConnection) Connector.open(url);
             httpConnection.setRequestMethod(HttpConnection.GET);
-            Thread.sleep(10);
+            // Give the underlying native C drivers and hardware settling time
+            // This improves network realiability on some phones
+            Thread.sleep(50);
             inputStream = httpConnection.openInputStream();
 
             int bytesRead;
