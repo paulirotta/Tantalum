@@ -4,8 +4,8 @@
  */
 package com.futurice.tantalum2.util;
 
-import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.log.Log;
+import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
 /**
@@ -90,7 +90,7 @@ public final class ImageUtils {
             while (srcW >> 1 >= maxW && srcH >> 1 >= maxH) {
                 ImageUtils.half(data, srcW, srcW >>= 1, srcH >>= 1);
             }
-            if (srcW != maxW && srcH != maxH) {
+            if (srcW != maxW || srcH != maxH) {
                 ImageUtils.downscale(data, srcW, srcH, maxW, maxH);
             }
         }
@@ -98,48 +98,32 @@ public final class ImageUtils {
         return Image.createRGBImage(data, maxW, maxH, processAlpha);
     }
 
-//    public static Image flipshade(final int[] data, int srcW, int srcH, int maxW, int maxH, final boolean horizontal, final int startBrightnessPercent, final int endBrightnessPercent, final boolean processAlpha) {
-//        while (srcW >> 1 >= maxW && srcH >> 1 >= maxH) {
-//            ImageUtils.half(data, srcW, srcW >>= 1, srcH >>= 1);
-//        }
-//        if (srcW != maxW && srcH != maxH) {
-//            ImageUtils.downscale(data, srcW, srcH, maxW, maxH);
-//        }
-//        final int alpha = (int) (0xFF * startBrightnessPercent / 100.0);
-//        final int omega = (int) (0xFF * endBrightnessPercent / 100.0);
-//
-//        if (horizontal) {
-//            final float step = (omega - alpha) / (float) maxW;
-//            int z = 0;
-//            float f = alpha;
-//            for (int x = 0; x < maxW; x++) {
-//                for (int y = 0; y < maxH; y++) {
-//                    final int p = data[z];
-//                    data[z] = p & ALPHA | (int) (((p & RED) >>> 16) * f) << 16
-//                            | (int) (((p & GREEN) >>> 8) * f) << 8
-//                            | (int) ((p & BLUE) * f);
-//                    z += maxW;
-//                }
-//                f += step;
-//                z %= maxW * maxH;
-//            }
-//        } else {
-//            // Vertical
-//            final float step = (omega - alpha) / (float) maxH;
-//            int z = 0;
-//            float f = alpha;
-//            for (int x = 0; x < maxW; x++) {
-//                for (int y = 0; y < maxH; y++) {
-//                    final int p = data[z];
-//                    data[z++] = p & ALPHA | (int) (((p & RED) >>> 16) * f) << 16
-//                            | (int) (((p & GREEN) >>> 8) * f) << 8
-//                            | (int) ((p & BLUE) * f);
-//                }
-//                f += step;
-//            }
-//
-//            return Image.createRGBImage(data, maxW, maxH, processAlpha);
-//        }
+    /**
+     * Draw at center anchor point
+     * 
+     * @param g
+     * @param x
+     * @param y
+     * @param data
+     * @param srcW
+     * @param srcH
+     * @param maxW
+     * @param maxH
+     * @param processAlpha 
+     */
+    public static void drawFlipshade(final Graphics g, final int x, final int y, final int[] data, int srcW, int srcH, int maxW, int maxH, final boolean processAlpha) {
+        while (srcW >> 1 >= maxW && srcH >> 1 >= maxH) {
+            ImageUtils.half(data, srcW, srcW >>= 1, srcH >>= 1);
+        }
+        maxW = Math.min(srcW, maxW);
+        maxH = Math.min(srcH, maxH);
+        Log.l.log("drawFlipshade", "(" + x + ", " + y + ") from (" + srcW + " , " + srcH + ") to (" + maxW + ", " + maxH + ")");
+        if (srcW != maxW || srcH != maxH) {
+            ImageUtils.downscale(data, srcW, srcH, maxW, maxH);
+        }
+        g.drawRGB(data, 0, maxW, x - (maxW >> 1), y - (maxH >> 1), maxW, maxH, processAlpha);
+    }
+
     /**
      * Return an ARGB image where width and height are half the original.
      *
@@ -178,12 +162,12 @@ public final class ImageUtils {
      * @param h
      */
     private static void downscale(final int[] in, final int srcW, final int srcH, final int w, final int h) {
-        Log.l.log("Downscale image", "START (" + srcW + ", " + srcH + ")");
+        Log.l.log("Downscale image", "START (" + srcW + ", " + srcH + ") -> (" + w + ", " + h + ")");
         final float dx = srcW / (float) (w + 1);
         final float dy = srcH / (float) (h + 1);
         int x, y = 0, z = 0, e;
 
-        for (; y < h; y++) {
+        for (; y < h /*!!!*/ - 1; y++) {
             final int rowstart = 1 + srcW + (srcW * (int) (y * dy));
             for (x = 0; x < w; x++) {
                 int i = rowstart + (int) (x * dx);
@@ -191,6 +175,7 @@ public final class ImageUtils {
                 i -= srcW;
                 e += (in[i++] >>> 3 & M3) + (in[++i] >>> 3 & M3);
                 i += srcW << 1;
+//                Log.l.log("down x=" + x + " y=" + y, "z=" + z + " i=" + i + " datalength=" + in.length);
                 in[z++] = e + (in[i--] >>> 3 & M3) + (in[--i] >>> 3 & M3);
             }
         }
