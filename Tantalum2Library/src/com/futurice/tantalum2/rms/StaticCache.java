@@ -185,7 +185,7 @@ public class StaticCache {
      */
     public synchronized Object put(final String key, final byte[] bytes) {
         putData.put(key, bytes);
-        Worker.queuePriority(new Workable() {
+        Worker.queue(new Workable() {
 
             public boolean work() {
                 synchronousPutToRMS(key);
@@ -217,15 +217,13 @@ public class StaticCache {
         if (key == null) {
             throw new IllegalArgumentException("Null key put to cache");
         }
-        Object o = null;
-
         try {
-            final byte[] bytes;
+            byte[] bytes;
             synchronized (this) {
                 bytes = (byte[]) putData.remove(key);
             }
 
-            if (o == null) {
+            if (bytes == null) {
                 /*
                  * The object was put() several times quickly to the work queue
                  * and this is not the first time the object was saved to RMS.
@@ -247,6 +245,7 @@ public class StaticCache {
                     }
                 }
             } while (true);
+            bytes = null;
         } catch (Exception e) {
             Log.l.log("Couldn't store object to RMS", key, e);
         }
