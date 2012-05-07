@@ -23,7 +23,7 @@ public class RMSUtils {
     private static final LengthLimitedLRUVector openRecordStores = new LengthLimitedLRUVector(MAX_OPEN_RECORD_STORES) {
 
         protected void lengthExceeded() {
-            closeLeastRecentlyUsedRMS();
+            closeLeastRecentlyUsedRecordStore();
         }       
     };
 
@@ -36,7 +36,7 @@ public class RMSUtils {
 
             public boolean work() {
                 Log.l.log("Closing record stores during shutdown", "open=" + openRecordStores.size());
-                while (closeLeastRecentlyUsedRMS());
+                while (closeLeastRecentlyUsedRecordStore());
                 Log.l.log("Closed record stores during shutdown", "open=" + openRecordStores.size());
 
                 return false;
@@ -49,7 +49,7 @@ public class RMSUtils {
      * 
      * @return 
      */
-    private static boolean closeLeastRecentlyUsedRMS() {
+    private static boolean closeLeastRecentlyUsedRecordStore() {
         final RecordStore oldest = (RecordStore) openRecordStores.removeLeastRecentlyUsed();
 
         try {

@@ -320,6 +320,13 @@ public class StaticCache {
         return cache;
     }
 
+    /**
+     * Note that delete is synchronous, so while this operation does not take
+     * long, other operations using the RMS may cause a slight stagger or pause
+     * before this operation can complete.
+     * 
+     * @param key 
+     */
     public synchronized void remove(final String key) {
         try {
             if (containsKey(key)) {

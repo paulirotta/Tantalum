@@ -5,7 +5,9 @@
 package com.futurice.tantalum2.net;
 
 import com.futurice.tantalum2.Result;
+import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
+import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.rms.DataTypeHandler;
 import com.futurice.tantalum2.rms.StaticCache;
 
@@ -16,8 +18,7 @@ import com.futurice.tantalum2.rms.StaticCache;
  */
 public class StaticWebCache extends StaticCache {
 
-    private static final int RETRIES = 3;
-    private static final int PREFETCH_RETRIES = 0;
+    private static final int HTTP_GET_RETRIES = 3;
 
     public StaticWebCache(final char priority, final DataTypeHandler handler) {
         super(priority, handler);
@@ -29,7 +30,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public void get(final String url, final Result result, final boolean highPriority) {
+    public synchronized void get(final String url, final Result result, final boolean highPriority) {
         super.get(url, new Result() {
 
             /**
@@ -48,12 +49,14 @@ public class StaticWebCache extends StaticCache {
              *
              */
             public void noResult() {
-                final HttpGetter httpGetter = new HttpGetter(url, RETRIES, new Result() {
+                Log.l.log("No result from cache get, shift to HTTP", url);
+                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Result() {
 
-                    public void setResult(Object o) {
-                        o = put(url, (byte[]) o);
-                        if (result != null) {
-                            result.setResult(o);
+                    public void setResult(final Object o) {
+                        super.setResult(put(url, (byte[]) o));
+                        if (getResult() != null) {
+                            result.setResult(getResult());
+                            Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
                         }
                     }
 
@@ -79,16 +82,27 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     public void update(final String url, final Result result) {
-        Worker.queue(new HttpGetter(url, RETRIES, new Result() {
+        Worker.queuePriority(new Workable() {
 
-            public void setResult(final Object o) {
-                result.setResult(put(url, (byte[]) o));
-            }
+            public boolean work() {
+                synchronized (StaticWebCache.this) {
+                    remove(url);
+                    get(url, result, true);
 
-            public void noResult() {
-                result.noResult();
+                    return false;
+                }
             }
-        }));
+        });
+//        Worker.queue(new HttpGetter(url, RETRIES, new Result() {
+//
+//            public void setResult(final Object o) {
+//                result.setResult(put(url, (byte[]) o));
+//            }
+//
+//            public void noResult() {
+//                result.noResult();
+//            }
+//        }));
     }
 
     /**
@@ -99,13 +113,21 @@ public class StaticWebCache extends StaticCache {
      */
     public void prefetch(final String url) {
         if (synchronousRAMCacheGet(url) == null) {
-            Worker.queueIdleWork(new HttpGetter(url, PREFETCH_RETRIES, new Result() {
+            Worker.queueIdleWork(new Workable() {
 
-                public void setResult(final Object o) {
-                    // Then store to RMS, but not in RAM
-                    put(url, (byte[]) o);
+                public boolean work() {
+                    get(url, null, false);
+
+                    return false;
                 }
-            }));
+            });
+            //            Worker.queueIdleWork(new HttpGetter(url, PREFETCH_RETRIES, new Result() {
+//
+//                public void setResult(final Object o) {
+//                    // Then store to RMS, but not in RAM
+//                    put(url, (byte[]) o);
+//                }
+//            }));
         }
     }
 }
