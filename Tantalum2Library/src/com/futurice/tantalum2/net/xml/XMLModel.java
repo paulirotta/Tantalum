@@ -29,35 +29,33 @@ public abstract class XMLModel extends DefaultHandler {
     protected int currentDepth;
 
     public void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
-        synchronized (Worker.LARGE_MEMORY_MUTEX) {
-            if (xml == null || xml.length == 0) {
-                throw new IllegalArgumentException("Attempt to XML parse a null or zero byte value");
-            }
-            final InputStream in = new ByteArrayInputStream(xml);
+        if (xml == null || xml.length == 0) {
+            throw new IllegalArgumentException("Attempt to XML parse a null or zero byte value");
+        }
+        final InputStream in = new ByteArrayInputStream(xml);
 
-            qnameStack = new String[100];
-            charStack = new String[100];
-            attributeStack = new XMLAttributes[100];
-            currentDepth = 0;
+        qnameStack = new String[100];
+        charStack = new String[100];
+        attributeStack = new XMLAttributes[100];
+        currentDepth = 0;
 
+        try {
+            Log.l.log("Start parse", "length=" + xml.length);
+            SAXParserFactory.newInstance().newSAXParser().parse(in, this);
+            Log.l.log("End parse", "length=" + xml.length);
+        } catch (SAXException t) {
+            Log.l.log("SAX Parse error", new String(xml), t);
+            throw t;
+        } catch (Throwable t) {
+            Log.l.log("Parse error", "", t);
+        } finally {
             try {
-                Log.l.log("Start parse", "length=" + xml.length);
-                SAXParserFactory.newInstance().newSAXParser().parse(in, this);
-                Log.l.log("End parse", "length=" + xml.length);
-            } catch (SAXException t) {
-                Log.l.log("SAX Parse error", new String(xml), t);
-                throw t;
-            } catch (Throwable t) {
-                Log.l.log("Parse error", "", t);
-            } finally {
-                try {
-                    in.close();
-                } catch (Exception e) {
-                }
-                qnameStack = null;
-                charStack = null;
-                attributeStack = null;
+                in.close();
+            } catch (Exception e) {
             }
+            qnameStack = null;
+            charStack = null;
+            attributeStack = null;
         }
     }
 

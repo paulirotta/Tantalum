@@ -14,7 +14,12 @@ public class RSSModel extends XMLModel {
 
     protected final Vector items = new Vector(50);
     protected RSSItem currentItem;
+    protected final int maxLength;
 
+    public RSSModel(final int maxLength) {
+        this.maxLength = maxLength;
+    }
+    
     public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
 
@@ -49,8 +54,7 @@ public class RSSModel extends XMLModel {
         super.endElement(uri, localName, qName);
 
         if (qName.equals("item")) {
-            //FIXME DEBUG SETTING
-            if (items.size() < 30) {
+            if (items.size() < maxLength) {
                 items.addElement(currentItem);
             }
             currentItem = null;

@@ -28,22 +28,20 @@ public final class ImageUtils {
 
     /**
      * Return an image which is smaller then the original.
-     * 
+     *
      * The destination size can be defined exactly, or to fit within a bounding
      * box with aspect ratio preserved.
-     * 
-     * To ensure your application does not use too much memory to scale the image
-     * at the same time other parts of the program have a peak memory usage,
-     * use the following calling pattern, modify as appropriate for your needs.
-     * 
-     *  synchronized (Worker.LARGE_MEMORY_MUTEX) {
-     *      int[] data = new int[w * h];
-     *      image.getRGB(data, 0, w, 0, 0, w, h);
-     *      image = null;
-     *      image = ImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false, false);
-     *      data = null;
-     *  }
-     * 
+     *
+     * To ensure your application does not use too much memory to scale the
+     * image at the same time other parts of the program have a peak memory
+     * usage, use the following calling pattern, modify as appropriate for your
+     * needs.
+     *
+     * synchronized (Worker.LARGE_MEMORY_MUTEX) { int[] data = new int[w * h];
+     * image.getRGB(data, 0, w, 0, 0, w, h); image = null; image =
+     * ImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false, false);
+     * data = null; }
+     *
      * @param data - ARGB data for the image
      * @param srcW - Source data row width
      * @param srcH - Source data column height
@@ -51,8 +49,9 @@ public final class ImageUtils {
      * @param maxH - maximum bounding size of scaled image
      * @param preserveAspectRatio - set true except for special effects
      * @param processAlpha - set true for translucent PNG images, false for JPG
-     * @param bestQuality - set true for roughly 4x slower, more accurate scaling
-     * @return 
+     * @param bestQuality - set true for roughly 4x slower, more accurate
+     * scaling
+     * @return
      */
     public static Image downscaleImage(final int[] data, int srcW, int srcH, int maxW, int maxH, final boolean preserveAspectRatio, final boolean processAlpha, final boolean bestQuality) {
         final float byWidth = maxW / (float) srcW;
@@ -99,6 +98,48 @@ public final class ImageUtils {
         return Image.createRGBImage(data, maxW, maxH, processAlpha);
     }
 
+//    public static Image flipshade(final int[] data, int srcW, int srcH, int maxW, int maxH, final boolean horizontal, final int startBrightnessPercent, final int endBrightnessPercent, final boolean processAlpha) {
+//        while (srcW >> 1 >= maxW && srcH >> 1 >= maxH) {
+//            ImageUtils.half(data, srcW, srcW >>= 1, srcH >>= 1);
+//        }
+//        if (srcW != maxW && srcH != maxH) {
+//            ImageUtils.downscale(data, srcW, srcH, maxW, maxH);
+//        }
+//        final int alpha = (int) (0xFF * startBrightnessPercent / 100.0);
+//        final int omega = (int) (0xFF * endBrightnessPercent / 100.0);
+//
+//        if (horizontal) {
+//            final float step = (omega - alpha) / (float) maxW;
+//            int z = 0;
+//            float f = alpha;
+//            for (int x = 0; x < maxW; x++) {
+//                for (int y = 0; y < maxH; y++) {
+//                    final int p = data[z];
+//                    data[z] = p & ALPHA | (int) (((p & RED) >>> 16) * f) << 16
+//                            | (int) (((p & GREEN) >>> 8) * f) << 8
+//                            | (int) ((p & BLUE) * f);
+//                    z += maxW;
+//                }
+//                f += step;
+//                z %= maxW * maxH;
+//            }
+//        } else {
+//            // Vertical
+//            final float step = (omega - alpha) / (float) maxH;
+//            int z = 0;
+//            float f = alpha;
+//            for (int x = 0; x < maxW; x++) {
+//                for (int y = 0; y < maxH; y++) {
+//                    final int p = data[z];
+//                    data[z++] = p & ALPHA | (int) (((p & RED) >>> 16) * f) << 16
+//                            | (int) (((p & GREEN) >>> 8) * f) << 8
+//                            | (int) ((p & BLUE) * f);
+//                }
+//                f += step;
+//            }
+//
+//            return Image.createRGBImage(data, maxW, maxH, processAlpha);
+//        }
     /**
      * Return an ARGB image where width and height are half the original.
      *
@@ -162,13 +203,13 @@ public final class ImageUtils {
      *
      * Gets a source image along with new size for it and resizes it to fit
      * within max dimensions.
-     * 
+     *
      * @param data - ARGB image
      * @param srcW - source image width
      * @param srcH - source image height
      * @param w - final image width
      * @param h - final image height
-     * @param preserveAspectRatio 
+     * @param preserveAspectRatio
      */
     private static void pureDownscale(final int[] data, final int srcW, final int srcH, final int w, final int h, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / w);
@@ -281,13 +322,13 @@ public final class ImageUtils {
     /**
      * Additive blending shrinkImage, 8 bit accuracy. Slightly faster because
      * Alpha is not calculated.
-     * 
+     *
      * @param data - Opaque RGB image
      * @param srcW - source image width
      * @param srcH - source image height
      * @param w - final image width
      * @param h - final image height
-     * @param preserveAspectRatio 
+     * @param preserveAspectRatio
      */
     private static void pureOpaqueDownscale(final int[] data, final int srcW, final int srcH, final int w, final int h, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / w);

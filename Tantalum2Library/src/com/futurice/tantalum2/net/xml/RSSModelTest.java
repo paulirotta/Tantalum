@@ -42,7 +42,7 @@ public class RSSModelTest extends TestCase {
      */
     public void testParseElement() throws AssertionFailedException {
         System.out.println("parseElement");
-        RSSModel instance = new RSSModel();
+        RSSModel instance = new RSSModel(100);
         try {
             instance.setXML(xml);
         } catch (Exception ex) {
