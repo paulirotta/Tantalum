@@ -93,16 +93,6 @@ public class StaticWebCache extends StaticCache {
                 }
             }
         });
-//        Worker.queue(new HttpGetter(url, RETRIES, new Result() {
-//
-//            public void setResult(final Object o) {
-//                result.setResult(put(url, (byte[]) o));
-//            }
-//
-//            public void noResult() {
-//                result.noResult();
-//            }
-//        }));
     }
 
     /**
@@ -121,13 +111,6 @@ public class StaticWebCache extends StaticCache {
                     return false;
                 }
             });
-            //            Worker.queueIdleWork(new HttpGetter(url, PREFETCH_RETRIES, new Result() {
-//
-//                public void setResult(final Object o) {
-//                    // Then store to RMS, but not in RAM
-//                    put(url, (byte[]) o);
-//                }
-//            }));
         }
     }
 }
