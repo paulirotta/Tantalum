@@ -19,6 +19,7 @@ public class RSSItem {
     private String thumbnail = "";
     private Image thumbnailImage = null;
     private boolean loadingImage = false;
+    private boolean newItem = true;
     private Font truncatedFont;
     private int truncatedTitleWidth = 0;
 
@@ -88,6 +89,14 @@ public class RSSItem {
 
     public synchronized void setLoadingImage(boolean loadingImage) {
         this.loadingImage = loadingImage;
+    }
+
+    public synchronized boolean isNewItem() {
+        return newItem;
+    }
+
+    public synchronized void setNewItem(boolean newItem) {
+        this.newItem = newItem;
     }
 
     public String toString() {
