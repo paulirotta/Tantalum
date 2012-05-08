@@ -12,7 +12,7 @@ package com.futurice.tantalum2;
  * @author phou
  */
 public abstract class RunnableResult extends Result implements Runnable {
-    public synchronized void setResult(final Object o) {
+    public void setResult(final Object o) {
         super.setResult(o);
         Worker.queueEDT(this);
     }    

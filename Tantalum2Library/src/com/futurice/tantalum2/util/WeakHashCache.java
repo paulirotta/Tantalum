@@ -37,31 +37,30 @@ public class WeakHashCache {
     protected final Hashtable hash = new Hashtable();
 
     public Object get(final Object key) {
-        synchronized (hash) {
-            final WeakReference reference = (WeakReference) hash.get(key);
-            Object o = null;
+        final WeakReference reference = (WeakReference) hash.get(key);
 
-            if (reference != null) {
-                o = reference.get();
-            }
-
-            return o;
+        if (reference != null) {
+            return reference.get();
         }
+
+        return null;
     }
 
     public void put(final Object key, final Object value) {
-        if (key == null) {
-            //#debug
-            Log.l.log("WeakHash put", "key is null");
-            return;
+        synchronized (hash) {
+            if (key == null) {
+                //#debug
+                Log.l.log("WeakHash put", "key is null");
+                return;
+            }
+            if (value == null) {
+                //#debug
+                Log.l.log("WeakHash put", "value is null, key removed");
+                hash.remove(key);
+                return;
+            }
+            hash.put(key, new WeakReference(value));
         }
-        if (value == null) {
-            //#debug
-            Log.l.log("WeakHash put", "value is null, key removed");
-            hash.remove(key);
-            return;
-        }
-        hash.put(key, new WeakReference(value));
     }
 
     public void remove(final Object key) {

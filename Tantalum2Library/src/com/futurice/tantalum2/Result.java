@@ -21,15 +21,14 @@ package com.futurice.tantalum2;
  *
  * The run() method will be automatically completed on the EDT thread after
  * changes in supporting methods in the Tantalum library.
- *
- * Be sure to use volatile or synchronized() to stay thread safe
+ * 
  * @author tsaa, paul houghton
  */
 public class Result {
 
-    private Object o; // volatile is important, this result may be accessed by multiple threads
+    private volatile Object o;
 
-    public synchronized Object getResult() {
+    public Object getResult() {
         return o;
     }
 
@@ -39,7 +38,7 @@ public class Result {
      *
      * @param o - the object returned from asynchronous Worker work
      */
-    public synchronized void setResult(final Object o) {
+    public void setResult(final Object o) {
         this.o = o;
     }
 
@@ -50,6 +49,6 @@ public class Result {
      * the cache, etc.
      *
      */
-    public synchronized void noResult() {
+    public void noResult() {
     }
 }

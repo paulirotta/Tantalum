@@ -30,7 +30,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public synchronized void get(final String url, final Result result, final boolean highPriority) {
+    public void get(final String url, final Result result, final boolean highPriority) {
         super.get(url, new Result() {
 
             /**
@@ -53,12 +53,16 @@ public class StaticWebCache extends StaticCache {
                 Log.l.log("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Result() {
 
-                    public void setResult(final Object o) {
-                        super.setResult(put(url, (byte[]) o));
-                        if (getResult() != null) {
-                            result.setResult(getResult());
-                            //#debug
-                            Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
+                    public void setResult(Object o) {
+                        o = put(url, (byte[]) o); // Convert to use form
+                        if (result != null) {
+                            if (o != null) {
+                                result.setResult(o);
+                                //#debug
+                                Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
+                            } else {
+                                result.noResult();
+                            }
                         }
                     }
 

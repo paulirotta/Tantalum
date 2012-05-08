@@ -8,7 +8,7 @@ import javax.microedition.lcdui.Font;
 /**
  * Utility methods for String handling
  *
- * @author ssaa
+ * @author ssaa, paul houghton
  */
 public class StringUtils {
 
@@ -113,6 +113,13 @@ public class StringUtils {
         return lines;
     }
 
+    /**
+     * This method can not be static in order to access the current instance's path
+     * 
+     * @param name
+     * @return
+     * @throws IOException 
+     */
     private byte[] doReadBytesFromJAR(final String name) throws IOException {
         final InputStream in = getClass().getResourceAsStream(name);
         final byte[] bytes = new byte[in.available()];
@@ -120,11 +127,25 @@ public class StringUtils {
 
         return bytes;
     }
-    
+
+    /**
+     * Return a byte[] stored as a file in the JAR package
+     * 
+     * @param name
+     * @return
+     * @throws IOException 
+     */
     public static byte[] readBytesFromJAR(final String name) throws IOException {
         return getStringUtils().doReadBytesFromJAR(name);
     }
 
+    /**
+     * Return a String object stored as a file in the JAR package
+     * 
+     * @param name
+     * @return
+     * @throws IOException 
+     */
     public static String readStringFromJAR(final String name) throws IOException {
         return new String(readBytesFromJAR(name));
     }

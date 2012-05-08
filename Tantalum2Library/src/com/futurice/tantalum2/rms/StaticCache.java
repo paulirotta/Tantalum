@@ -79,7 +79,7 @@ public class StaticCache {
      * @param key
      * @param o
      */
-    protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
+    protected synchronized Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         //#debug
         Log.l.log("Start to convert", key);
         final Object o = handler.convertToUseForm(bytes);
@@ -134,6 +134,8 @@ public class StaticCache {
                     final Object o = synchronousGet(key);
 
                     if (o != null) {
+                        //#debug
+                        Log.l.log("RMS cache hit", key);
                         result.setResult(o);
                     } else {
                         //#debug
@@ -324,11 +326,13 @@ public class StaticCache {
     private static StaticCache getCacheContainingKey(String key) {
         StaticCache cache = null;
 
-        for (int i = 0; i < caches.size(); i++) {
-            final StaticCache currentCache = (StaticCache) caches.elementAt(i);
-            if (currentCache.containsKey(key)) {
-                cache = currentCache;
-                break;
+        synchronized (caches) {
+            for (int i = 0; i < caches.size(); i++) {
+                final StaticCache currentCache = (StaticCache) caches.elementAt(i);
+                if (currentCache.containsKey(key)) {
+                    cache = currentCache;
+                    break;
+                }
             }
         }
 

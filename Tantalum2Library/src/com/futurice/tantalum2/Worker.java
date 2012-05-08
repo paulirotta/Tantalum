@@ -91,7 +91,7 @@ public final class Worker implements Runnable {
     public static void queue(final Workable workable) {
         synchronized (q) {
             q.addElement(workable);
-            q.notifyAll();
+            q.notify();
         }
     }
 
@@ -108,7 +108,7 @@ public final class Worker implements Runnable {
     public static void queuePriority(final Workable workable) {
         synchronized (q) {
             q.insertElementAt(workable, 0);
-            q.notifyAll();
+            q.notify();
         }
     }
 
@@ -126,7 +126,7 @@ public final class Worker implements Runnable {
     public static void queueIdleWork(final Workable workable) {
         synchronized (q) {
             idleQ.addElement(workable);
-            q.notifyAll();
+            q.notify();
         }
     }
 
@@ -138,7 +138,7 @@ public final class Worker implements Runnable {
     public static void queueShutdownTask(final Workable workable) {
         synchronized (q) {
             shutdownQueue.addElement(workable);
-            q.notifyAll();
+            q.notify();
         }
     }
 
