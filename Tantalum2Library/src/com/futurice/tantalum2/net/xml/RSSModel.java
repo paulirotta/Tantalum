@@ -19,7 +19,7 @@ public class RSSModel extends XMLModel {
     public RSSModel(final int maxLength) {
         this.maxLength = maxLength;
     }
-    
+
     public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
 
@@ -46,6 +46,7 @@ public class RSSModel extends XMLModel {
                 }
             }
         } catch (Exception e) {
+            //#debug
             Log.l.log("RSS parsing error", "qname=" + qName + " - chars=" + chars, e);
         }
     }

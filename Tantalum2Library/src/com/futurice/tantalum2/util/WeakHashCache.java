@@ -51,10 +51,12 @@ public class WeakHashCache {
 
     public void put(final Object key, final Object value) {
         if (key == null) {
+            //#debug
             Log.l.log("WeakHash put", "key is null");
             return;
         }
         if (value == null) {
+            //#debug
             Log.l.log("WeakHash put", "value is null, key removed");
             hash.remove(key);
             return;
@@ -66,6 +68,7 @@ public class WeakHashCache {
         if (key != null) {
             hash.remove(key);
         } else {
+            //#debug
             Log.l.log("WeakHashCache", "remove() with null key");
         }
     }
@@ -74,6 +77,7 @@ public class WeakHashCache {
         if (key != null) {
             return hash.containsKey(key);
         } else {
+            //#debug
             Log.l.log("WeakHashCache", "containsKey() with null key");
             return false;
         }

@@ -49,6 +49,7 @@ public class StaticWebCache extends StaticCache {
              *
              */
             public void noResult() {
+                //#debug
                 Log.l.log("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Result() {
 
@@ -56,6 +57,7 @@ public class StaticWebCache extends StaticCache {
                         super.setResult(put(url, (byte[]) o));
                         if (getResult() != null) {
                             result.setResult(getResult());
+                            //#debug
                             Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
                         }
                     }

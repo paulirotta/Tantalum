@@ -24,7 +24,7 @@ public class RMSUtils {
 
         protected void lengthExceeded() {
             closeLeastRecentlyUsedRecordStore();
-        }       
+        }
     };
 
     static {
@@ -35,8 +35,10 @@ public class RMSUtils {
         Worker.queueShutdownTask(new Workable() {
 
             public boolean work() {
+                //#debug
                 Log.l.log("Closing record stores during shutdown", "open=" + openRecordStores.size());
                 while (closeLeastRecentlyUsedRecordStore());
+                //#debug
                 Log.l.log("Closed record stores during shutdown", "open=" + openRecordStores.size());
 
                 return false;
@@ -46,8 +48,8 @@ public class RMSUtils {
 
     /**
      * Close one record store, the one least recently accessed
-     * 
-     * @return 
+     *
+     * @return
      */
     private static boolean closeLeastRecentlyUsedRecordStore() {
         final RecordStore oldest = (RecordStore) openRecordStores.removeLeastRecentlyUsed();
@@ -57,6 +59,7 @@ public class RMSUtils {
                 oldest.closeRecordStore();
             }
         } catch (RecordStoreException ex) {
+            //#debug
             Log.l.log("Can not close LRU record store", "", ex);
         }
 
@@ -131,6 +134,7 @@ public class RMSUtils {
 
         try {
             //delete old value
+            //#debug
             Log.l.log("Add to RMS", recordStoreName + " (" + data.length + " bytes)");
             recordStoreName = truncateRecordStoreName(recordStoreName);
             rs = getRecordStore(recordStoreName, true);
@@ -140,8 +144,10 @@ public class RMSUtils {
             } else {
                 rs.setRecord(1, data, 0, data.length);
             }
+            //#debug
             Log.l.log("Added to RMS", recordStoreName + " (" + data.length + " bytes)");
         } catch (Exception e) {
+            //#debug
             Log.l.log("RMS write problem", recordStoreName, e);
             if (e instanceof RecordStoreFullException) {
                 throw (RecordStoreFullException) e;
@@ -170,6 +176,7 @@ public class RMSUtils {
         } catch (RecordStoreNotFoundException e) {
         } finally {
             if (!success && !createIfNecessary) {
+                //#debug
                 Log.l.log("Can not open record store", "Deleting " + recordStoreName);
                 delete(recordStoreName);
             }
@@ -198,6 +205,7 @@ public class RMSUtils {
             RecordStore.deleteRecordStore(recordStoreName);
         } catch (RecordStoreNotFoundException ex) {
         } catch (RecordStoreException ex) {
+            //#debug
             Log.l.log("RMS delete problem", recordStoreName, ex);
         }
     }
@@ -222,15 +230,19 @@ public class RMSUtils {
 
         try {
             recordStoreName = truncateRecordStoreName(recordStoreName);
+            //#debug
             Log.l.log("Read from RMS", recordStoreName);
             rs = getRecordStore(recordStoreName, false);
             if (rs != null && rs.getNumRecords() > 0) {
                 data = rs.getRecord(1);
+                //#debug
                 Log.l.log("End read from RMS", recordStoreName + " (" + data.length + " bytes)");
             } else {
+                //#debug
                 Log.l.log("End read from RMS", recordStoreName + " (NOTHING TO READ)");
             }
         } catch (Exception e) {
+            //#debug
             Log.l.log("Can not read RMS", recordStoreName, e);
         }
 

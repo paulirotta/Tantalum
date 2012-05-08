@@ -40,13 +40,17 @@ public abstract class XMLModel extends DefaultHandler {
         currentDepth = 0;
 
         try {
+            //#debug
             Log.l.log("Start parse", "length=" + xml.length);
             SAXParserFactory.newInstance().newSAXParser().parse(in, this);
+            //#debug
             Log.l.log("End parse", "length=" + xml.length);
         } catch (SAXException t) {
+            //#debug
             Log.l.log("SAX Parse error", new String(xml), t);
             throw t;
         } catch (Throwable t) {
+            //#debug
             Log.l.log("Parse error", "", t);
         } finally {
             try {

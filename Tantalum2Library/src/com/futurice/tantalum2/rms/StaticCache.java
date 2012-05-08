@@ -80,10 +80,12 @@ public class StaticCache {
      * @param o
      */
     protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
+        //#debug
         Log.l.log("Start to convert", key);
         final Object o = handler.convertToUseForm(bytes);
         accessOrder.addElement(key);
         cache.put(key, o);
+        //#debug
         Log.l.log("End convert", key);
 
         return o;
@@ -122,6 +124,7 @@ public class StaticCache {
         final Object ho = synchronousRAMCacheGet(key);
 
         if (ho != null) {
+            //#debug
             Log.l.log("RAM cache hit", "(" + priority + ") " + key);
             result.setResult(ho);
         } else {
@@ -133,6 +136,7 @@ public class StaticCache {
                     if (o != null) {
                         result.setResult(o);
                     } else {
+                        //#debug
                         Log.l.log("RMS cache miss", key);
                         result.noResult();
                     }
@@ -157,12 +161,13 @@ public class StaticCache {
             final byte[] bytes = RMSUtils.cacheRead(key);
 
             if (bytes != null) {
+                //#debug
                 Log.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
 
                 o = convertAndPutToHeapCache(key, bytes);
             }
         }
-        
+
         return o;
     }
 
@@ -229,24 +234,30 @@ public class StaticCache {
                  * and this is not the first time the object was saved to RMS.
                  * We instead return the already previously saved value.
                  */
+                //#debug
                 Log.l.log("Duplicate save warning", "Object \"" + key + "\" was saved very recently, it is possible conflicting, simultaneous assertions were may by different parts of the program");
                 return;
             }
             do {
                 try {
+                    //#debug
                     Log.l.log("RMS cache write start", key + " (" + bytes.length + " bytes)");
                     RMSUtils.cacheWrite(key, bytes);
+                    //#debug
                     Log.l.log("RMS cache write end", key + " (" + bytes.length + " bytes)");
                     break;
                 } catch (RecordStoreFullException ex) {
+                    //#debug
                     Log.l.log("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
                     if (!clearSpace(bytes.length)) {
+                        //#debug
                         Log.l.log("Can not clear enough space for data, ABORTING", key);
                     }
                 }
             } while (true);
             bytes = null;
         } catch (Exception e) {
+            //#debug
             Log.l.log("Couldn't store object to RMS", key, e);
         }
     }
@@ -262,6 +273,7 @@ public class StaticCache {
         int spaceCleared = 0;
         final Vector rsv = RMSUtils.getCachedRecordStoreNames();
 
+        //#debug
         Log.l.log("Clearing RMS space", minSpaceToClear + " bytes");
 
         // First: clear cached objects not currently appearing in any open cache
@@ -274,6 +286,7 @@ public class StaticCache {
                 spaceCleared += getByteSizeByKey(key);
             }
         }
+        //#debug
         Log.l.log("End phase 1: clearing RMS space", spaceCleared + " bytes recovered");
 
         // Second: remove currently cached items, first from low priority caches
@@ -288,6 +301,7 @@ public class StaticCache {
                 }
             }
         }
+        //#debug
         Log.l.log("End phase 2: clearing RMS space", spaceCleared + " bytes recovered (total)");
 
         return spaceCleared >= minSpaceToClear;
@@ -300,6 +314,7 @@ public class StaticCache {
             final RecordStore rs = RMSUtils.getRecordStore(key, false);
             size = rs.getSize();
         } catch (RecordStoreException ex) {
+            //#debug
             Log.l.log("Can not check size of record store to clear space", key, ex);
         }
 
@@ -324,8 +339,8 @@ public class StaticCache {
      * Note that delete is synchronous, so while this operation does not take
      * long, other operations using the RMS may cause a slight stagger or pause
      * before this operation can complete.
-     * 
-     * @param key 
+     *
+     * @param key
      */
     public synchronized void remove(final String key) {
         try {
@@ -333,9 +348,11 @@ public class StaticCache {
                 this.accessOrder.removeElement(key);
                 this.cache.remove(key);
                 RMSUtils.cacheDelete(key);
+                //#debug
                 Log.l.log("Cache remove (from RAM and RMS)", key);
             }
         } catch (Exception e) {
+            //#debug
             Log.l.log("Couldn't remove object from cache", key, e);
         }
     }
@@ -345,10 +362,12 @@ public class StaticCache {
      *
      */
     public synchronized void clear() {
+        //#debug
         Log.l.log("Start Cache Clear", "ID=" + priority);
         while (accessOrder.size() > 0) {
             remove((String) accessOrder.lastElement());
         }
+        //#debug
         Log.l.log("Cache cleared", "ID=" + priority);
     }
 

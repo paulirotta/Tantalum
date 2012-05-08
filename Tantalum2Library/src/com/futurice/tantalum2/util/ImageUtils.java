@@ -74,6 +74,7 @@ public final class ImageUtils {
         if (maxH >= srcH) {
             if (widthIsMaxed) {
                 // No resize needed
+                //#debug
                 Log.l.log("No image downscale needed", "(" + srcW + "," + srcH + ") -> (" + maxW + "," + maxH);
                 maxH = srcH;
                 return Image.createRGBImage(data, maxW, maxH, processAlpha);
@@ -100,7 +101,7 @@ public final class ImageUtils {
 
     /**
      * Draw at center anchor point
-     * 
+     *
      * @param g
      * @param x
      * @param y
@@ -109,7 +110,7 @@ public final class ImageUtils {
      * @param srcH
      * @param maxW
      * @param maxH
-     * @param processAlpha 
+     * @param processAlpha
      */
     public static void drawFlipshade(final Graphics g, final int x, final int y, final int[] data, int srcW, int srcH, int maxW, int maxH, final boolean processAlpha) {
         while (srcW >> 1 >= maxW && srcH >> 1 >= maxH) {
@@ -117,6 +118,7 @@ public final class ImageUtils {
         }
         maxW = Math.min(srcW, maxW);
         maxH = Math.min(srcH, maxH);
+        //#debug
         Log.l.log("drawFlipshade", "(" + x + ", " + y + ") from (" + srcW + " , " + srcH + ") to (" + maxW + ", " + maxH + ")");
         if (srcW != maxW || srcH != maxH) {
             ImageUtils.downscale(data, srcW, srcH, maxW, maxH);
@@ -134,6 +136,7 @@ public final class ImageUtils {
      * @return
      */
     private static void half(final int[] in, final int srcW, final int w, final int h) {
+        //#debug
         Log.l.log("Half image", "START, w=" + srcW);
         int x, y = 0, z = 0, i;
 
@@ -147,6 +150,7 @@ public final class ImageUtils {
                 i -= srcW;
             }
         }
+        //#debug
         Log.l.log("Half image", "STOP, w=" + srcW);
     }
 
@@ -162,12 +166,15 @@ public final class ImageUtils {
      * @param h
      */
     private static void downscale(final int[] in, final int srcW, final int srcH, final int w, final int h) {
+        //#debug
         Log.l.log("Downscale image", "START (" + srcW + ", " + srcH + ") -> (" + w + ", " + h + ")");
         final float dx = srcW / (float) (w + 1);
         final float dy = srcH / (float) (h + 1);
         int x, y = 0, z = 0, e;
 
-        for (; y < h /*!!!*/ - 1; y++) {
+        for (; y < h /*
+                 * !!!
+                 */ - 1; y++) {
             final int rowstart = 1 + srcW + (srcW * (int) (y * dy));
             for (x = 0; x < w; x++) {
                 int i = rowstart + (int) (x * dx);
@@ -179,6 +186,7 @@ public final class ImageUtils {
                 in[z++] = e + (in[i--] >>> 3 & M3) + (in[--i] >>> 3 & M3);
             }
         }
+        //#debug
         Log.l.log("Downscale image", "END (" + w + ", " + y + ")");
     }
 

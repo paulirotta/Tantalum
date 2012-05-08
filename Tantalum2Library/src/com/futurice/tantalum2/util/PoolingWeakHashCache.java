@@ -18,6 +18,7 @@ public class PoolingWeakHashCache extends WeakHashCache {
 
     public void remove(final Object key) {
         if (key == null) {
+            //#debug
             Log.l.log("PoolingWeakHashCache", "remove() with null key");
             return;
         }
@@ -27,6 +28,7 @@ public class PoolingWeakHashCache extends WeakHashCache {
             if (wr != null) {
                 hash.remove(key);
                 if (wr.get() != null) {
+                    //#debug
                     Log.l.log("Adding to pool", key.toString());
                     pool.addElement(wr);
                 }

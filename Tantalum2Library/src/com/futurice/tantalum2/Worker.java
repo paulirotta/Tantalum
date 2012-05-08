@@ -19,11 +19,10 @@ public final class Worker implements Runnable {
 
     /*
      * Synchronize on the following object if your processing routine will
-     * temporarily need a large amount of memory. Only one such activity
-     * can be active at a time
+     * temporarily need a large amount of memory. Only one such activity can be
+     * active at a time
      */
     public static final Object LARGE_MEMORY_MUTEX = new Object();
-
     private static final Vector q = new Vector();
     private static final Vector idleQ = new Vector();
     private static final Vector shutdownQueue = new Vector();
@@ -98,13 +97,13 @@ public final class Worker implements Runnable {
 
     /**
      * Jump an object to the beginning of the queue.
-     * 
-     * Note that this is best used for ensuring that operations
-     * holding a lot of memory are finished as soon as possible. If
-     * you are relying on this for performance, be warned that multiple
-     * calls to this method may still bog the system down.
-     * 
-     * @param workable 
+     *
+     * Note that this is best used for ensuring that operations holding a lot of
+     * memory are finished as soon as possible. If you are relying on this for
+     * performance, be warned that multiple calls to this method may still bog
+     * the system down.
+     *
+     * @param workable
      */
     public static void queuePriority(final Workable workable) {
         synchronized (q) {
@@ -181,6 +180,7 @@ public final class Worker implements Runnable {
                 while (workerCount > 0) {
                     timeRemaining = shutdownTimeout - System.currentTimeMillis();
                     if (timeRemaining <= 0) {
+                        //#debug
                         Log.l.log("Blocked shutdown timeout", "");
                         break;
                     }
@@ -191,6 +191,7 @@ public final class Worker implements Runnable {
             }
         } catch (InterruptedException ex) {
         }
+        //#debug
         Log.l.log("Shutdown exit", "workers=" + workerCount);
     }
 
@@ -216,7 +217,7 @@ public final class Worker implements Runnable {
             while (true) {
                 synchronized (q) {
                     if (q.size() > 0) {
-                         // Normal work
+                        // Normal work
                         workable = (Workable) q.elementAt(0);
                         q.removeElementAt(0);
                     } else {
@@ -231,6 +232,7 @@ public final class Worker implements Runnable {
                                 // Empty queue, or waiting for other Worker tasks to complete before shutdown tasks start
                                 q.wait();
                             } else {
+                                //#debug
                                 Log.l.log("Shutdown in progress", "");
                                 while (!shutdownQueue.isEmpty()) {
                                     // PHASE 1: Start shutdown actions
@@ -242,6 +244,7 @@ public final class Worker implements Runnable {
                                     Worker.queueEDT(new Runnable() {
 
                                         public void run() {
+                                            //#debug
                                             Log.l.log("notifyDestroyed", "");
                                             Log.l.shutdown();
                                             midlet.notifyDestroyed();
@@ -260,9 +263,11 @@ public final class Worker implements Runnable {
                 workable = null;
             }
         } catch (Throwable t) {
+            //#debug
             Log.l.log("Worker error", "", t);
         } finally {
             --workerCount;
+            //#debug
             Log.l.log("Worker stop", "workerCount=" + workerCount);
         }
     }
