@@ -218,12 +218,12 @@ public final class Worker implements Runnable {
                 synchronized (q) {
                     if (q.size() > 0) {
                         // Normal work
-                        workable = (Workable) q.elementAt(0);
+                        workable = (Workable) q.firstElement();
                         q.removeElementAt(0);
                     } else {
                         if (idleQ.size() > 0 && !shuttingDown && currentlyIdleCount > 0) {
                             // Idle work, at least 1 thread is left for new normal work
-                            workable = (Workable) idleQ.elementAt(0);
+                            workable = (Workable) idleQ.firstElement();
                             idleQ.removeElementAt(0);
                         } else {
                             // Nothing to do
@@ -231,27 +231,18 @@ public final class Worker implements Runnable {
                             if (!shuttingDown || currentlyIdleCount < workerCount) {
                                 // Empty queue, or waiting for other Worker tasks to complete before shutdown tasks start
                                 q.wait();
-                            } else {
-                                //#debug
-                                Log.l.log("Shutdown in progress", "");
-                                while (!shutdownQueue.isEmpty()) {
-                                    // PHASE 1: Start shutdown actions
-                                    queue((Workable) shutdownQueue.elementAt(0));
-                                    shutdownQueue.removeElementAt(0);
-                                }
-                                if (q.isEmpty() && currentlyIdleCount >= workerCount) {
-                                    // PHASE 2: Shutdown actions are all complete
-                                    Worker.queueEDT(new Runnable() {
-
-                                        public void run() {
-                                            //#debug
-                                            Log.l.log("notifyDestroyed", "");
-                                            Log.l.shutdown();
-                                            midlet.notifyDestroyed();
-                                        }
-                                    });
-                                    break;
-                                }
+                            } else if (!shutdownQueue.isEmpty()) {
+                                // PHASE 1: Execute shutdown actions
+                                workable = (Workable) shutdownQueue.firstElement();
+                                shutdownQueue.removeElementAt(0);
+                            } else if (currentlyIdleCount >= workerCount) {
+                                // PHASE 2: Shutdown actions are all complete
+                                //#mdebug
+                                Log.l.log("notifyDestroyed", "");
+                                Log.l.shutdown();
+                                //#enddebug
+                                midlet.notifyDestroyed();
+                                break;
                             }
                             --currentlyIdleCount;
                         }

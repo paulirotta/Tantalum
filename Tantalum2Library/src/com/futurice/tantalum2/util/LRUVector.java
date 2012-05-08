@@ -40,7 +40,7 @@ public class LRUVector extends Vector {
         Object o = null;
         
         if (size() > 0) {
-            o = elementAt(0);
+            o = firstElement();
             removeElementAt(0);
         }
         

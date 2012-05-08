@@ -37,10 +37,19 @@ public final class ImageUtils {
      * usage, use the following calling pattern, modify as appropriate for your
      * needs.
      *
-     * synchronized (Worker.LARGE_MEMORY_MUTEX) { int[] data = new int[w * h];
-     * image.getRGB(data, 0, w, 0, 0, w, h); image = null; image =
-     * ImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false, false);
-     * data = null; }
+     * synchronized (Worker.LARGE_MEMORY_MUTEX) {
+     * 
+     * int[] data = new int[w * h];
+     * 
+     * image.getRGB(data, 0, w, 0, 0, w, h);
+     * 
+     * image = null;
+     * 
+     * image = ImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false, false);
+     * 
+     * data = null;
+     * 
+     * }
      *
      * @param data - ARGB data for the image
      * @param srcW - Source data row width

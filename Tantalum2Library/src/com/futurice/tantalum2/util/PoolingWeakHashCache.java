@@ -17,12 +17,12 @@ public class PoolingWeakHashCache extends WeakHashCache {
     private final Vector pool = new Vector();
 
     public void remove(final Object key) {
-        if (key == null) {
-            //#debug
-            Log.l.log("PoolingWeakHashCache", "remove() with null key");
-            return;
-        }
         synchronized (hash) {
+            if (key == null) {
+                //#debug
+                Log.l.log("PoolingWeakHashCache", "remove() with null key");
+                return;
+            }
             final WeakReference wr = (WeakReference) hash.get(key);
 
             if (wr != null) {
@@ -37,12 +37,12 @@ public class PoolingWeakHashCache extends WeakHashCache {
     }
 
     public Object getFromPool() {
-        synchronized (pool) {
+        synchronized (hash) {
             Object o = null;
             WeakReference wr;
 
             while (pool.size() > 0) {
-                wr = (WeakReference) pool.elementAt(0);
+                wr = (WeakReference) pool.firstElement();
                 pool.removeElementAt(0);
                 o = wr.get();
                 if (o != null) {
@@ -55,8 +55,10 @@ public class PoolingWeakHashCache extends WeakHashCache {
     }
 
     public void clear() {
-        super.clear();
+        synchronized (hash) {
+            super.clear();
 
-        pool.removeAllElements();
+            pool.removeAllElements();
+        }
     }
 }

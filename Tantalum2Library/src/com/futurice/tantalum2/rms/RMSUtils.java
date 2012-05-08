@@ -37,7 +37,16 @@ public class RMSUtils {
             public boolean work() {
                 //#debug
                 Log.l.log("Closing record stores during shutdown", "open=" + openRecordStores.size());
-                while (closeLeastRecentlyUsedRecordStore());
+                RecordStore oldest;
+
+                while ((oldest = (RecordStore) openRecordStores.removeLeastRecentlyUsed()) != null) {
+                    try {
+                        oldest.closeRecordStore();
+                    } catch (RecordStoreException ex) {
+                        //#debug
+                        Log.l.log("Can not close LRU record store", "", ex);
+                    }
+                }
                 //#debug
                 Log.l.log("Closed record stores during shutdown", "open=" + openRecordStores.size());
 
@@ -51,19 +60,24 @@ public class RMSUtils {
      *
      * @return
      */
-    private static boolean closeLeastRecentlyUsedRecordStore() {
+    private static void closeLeastRecentlyUsedRecordStore() {
         final RecordStore oldest = (RecordStore) openRecordStores.removeLeastRecentlyUsed();
 
-        try {
-            if (oldest != null) {
-                oldest.closeRecordStore();
-            }
-        } catch (RecordStoreException ex) {
-            //#debug
-            Log.l.log("Can not close LRU record store", "", ex);
-        }
+        if (oldest != null) {
+            Worker.queue(new Workable() {
 
-        return oldest != null;
+                public boolean work() {
+                    try {
+                        oldest.closeRecordStore();
+                    } catch (RecordStoreException ex) {
+                        //#debug
+                        Log.l.log("Can not close LRU record store", "", ex);
+                    }
+
+                    return false;
+                }
+            });
+        }
     }
 
     public static Vector getCachedRecordStoreNames() {

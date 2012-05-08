@@ -22,7 +22,7 @@ public abstract class LengthLimitedLRUVector extends LRUVector {
      */
     protected abstract void lengthExceeded();
 
-    public synchronized void addElement(Object o) {
+    public void addElement(Object o) {
         super.addElement(o);
 
         if (size() > maxLength) {
