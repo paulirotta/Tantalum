@@ -5,7 +5,7 @@ import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Image;
 
 /**
- * RSS Item object
+ * RSS Item object, associated with RSSModel which is a list of such objects.
  *
  * @author ssaa
  */
