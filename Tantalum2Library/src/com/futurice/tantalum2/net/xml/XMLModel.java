@@ -28,7 +28,7 @@ public abstract class XMLModel extends DefaultHandler {
     protected XMLAttributes[] attributeStack = new XMLAttributes[100];
     protected int currentDepth;
 
-    public void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
+    public synchronized void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
         if (xml == null || xml.length == 0) {
             throw new IllegalArgumentException("Attempt to XML parse a null or zero byte value");
         }

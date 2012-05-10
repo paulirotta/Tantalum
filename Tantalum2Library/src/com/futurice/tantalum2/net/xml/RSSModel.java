@@ -20,7 +20,7 @@ public class RSSModel extends XMLModel {
         this.maxLength = maxLength;
     }
 
-    public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
+    public synchronized void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
 
         if (qName.equals("item")) {
@@ -28,7 +28,7 @@ public class RSSModel extends XMLModel {
         }
     }
 
-    protected void parseElement(final String qName, final String chars, final XMLAttributes attributes) {
+    protected synchronized void parseElement(final String qName, final String chars, final XMLAttributes attributes) {
         try {
             if (currentItem != null) {
                 synchronized (currentItem) {
@@ -51,7 +51,7 @@ public class RSSModel extends XMLModel {
         }
     }
 
-    public void endElement(final String uri, final String localName, final String qName) throws SAXException {
+    public synchronized void endElement(final String uri, final String localName, final String qName) throws SAXException {
         super.endElement(uri, localName, qName);
 
         if (qName.equals("item")) {
@@ -62,15 +62,15 @@ public class RSSModel extends XMLModel {
         }
     }
 
-    public void removeAllElements() {
+    public synchronized void removeAllElements() {
         items.removeAllElements();
     }
 
-    public int size() {
+    public synchronized int size() {
         return items.size();
     }
 
-    public RSSItem elementAt(int i) {
+    public synchronized RSSItem elementAt(int i) {
         return (RSSItem) items.elementAt(i);
     }
 }

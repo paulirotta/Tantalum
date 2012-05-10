@@ -127,8 +127,6 @@ public final class ImageUtils {
         }
         maxW = Math.min(srcW, maxW);
         maxH = Math.min(srcH, maxH);
-        //#debug
-        Log.l.log("drawFlipshade", "(" + x + ", " + y + ") from (" + srcW + " , " + srcH + ") to (" + maxW + ", " + maxH + ")");
         if (srcW != maxW || srcH != maxH) {
             ImageUtils.downscale(data, srcW, srcH, maxW, maxH);
         }
