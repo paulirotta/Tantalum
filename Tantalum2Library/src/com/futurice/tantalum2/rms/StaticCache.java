@@ -141,7 +141,7 @@ public class StaticCache {
      * value and the value happens to have expired from the RAM cache due to a
      * low memory condition.
      */
-    public synchronized void get(final String key, final Result result, final boolean highPriority) {
+    public void get(final String key, final Result result, final boolean highPriority) {
         if (key == null || key.length() == 0) {
             Log.l.log("Trivial get", "");
             result.noResult();
