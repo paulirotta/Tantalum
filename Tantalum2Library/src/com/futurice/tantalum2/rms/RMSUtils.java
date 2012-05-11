@@ -23,7 +23,36 @@ public class RMSUtils {
     private static final LengthLimitedLRUVector openRecordStores = new LengthLimitedLRUVector(MAX_OPEN_RECORD_STORES) {
 
         protected void lengthExceeded() {
-            closeLeastRecentlyUsedRecordStore();
+            Worker.queuePriority(trimOpenRecordStoresWorkable);
+        }
+    };
+    private static final Workable trimOpenRecordStoresWorkable = new Workable() {
+
+        public boolean work() {
+            while (openRecordStores.isLengthExceeded()) {
+                RecordStore rs = null;
+                String rsName = "";
+                
+                try {
+
+                    synchronized (openRecordStores) {
+                        if (openRecordStores.isLengthExceeded()) {
+                            rs = (RecordStore) openRecordStores.removeLeastRecentlyUsed();
+                        }
+                    }
+                    if (rs != null) {
+                        //#debug
+                        rsName = rs.getName();
+                        Log.l.log("Closing LRU record store", rsName + " open=" + openRecordStores.size());
+                        rs.closeRecordStore();
+                    }
+                } catch (RecordStoreException ex) {
+                    //#debug
+                    Log.l.log("Can not close LRU record store", rsName, ex);
+                }
+            }
+
+            return false;
         }
     };
 
@@ -35,6 +64,7 @@ public class RMSUtils {
         Worker.queueShutdownTask(new Workable() {
 
             public boolean work() {
+                openRecordStores.setMaxLength(0);
                 //#debug
                 Log.l.log("Closing record stores during shutdown", "open=" + openRecordStores.size());
                 RecordStore oldest;
@@ -53,31 +83,6 @@ public class RMSUtils {
                 return false;
             }
         });
-    }
-
-    /**
-     * Close one record store, the one least recently accessed
-     *
-     * @return
-     */
-    private static void closeLeastRecentlyUsedRecordStore() {
-        final RecordStore oldest = (RecordStore) openRecordStores.removeLeastRecentlyUsed();
-
-        if (oldest != null) {
-            Worker.queue(new Workable() {
-
-                public boolean work() {
-                    try {
-                        oldest.closeRecordStore();
-                    } catch (RecordStoreException ex) {
-                        //#debug
-                        Log.l.log("Can not close LRU record store", "", ex);
-                    }
-
-                    return false;
-                }
-            });
-        }
     }
 
     public static Vector getCachedRecordStoreNames() {

@@ -9,7 +9,7 @@ package com.futurice.tantalum2.util;
  * @author phou
  */
 public abstract class LengthLimitedLRUVector extends LRUVector {
-    private final int maxLength;
+    private int maxLength;
 
     public LengthLimitedLRUVector(final int maxLength) {
         super(maxLength + 1);
@@ -25,6 +25,17 @@ public abstract class LengthLimitedLRUVector extends LRUVector {
     public void addElement(Object o) {
         super.addElement(o);
 
+        if (size() > maxLength) {
+            lengthExceeded();
+        }
+    }
+    
+    public final boolean isLengthExceeded() {
+        return size() > maxLength;
+    }
+    
+    public void setMaxLength(final int maxLength) {
+        this.maxLength = maxLength;
         if (size() > maxLength) {
             lengthExceeded();
         }
