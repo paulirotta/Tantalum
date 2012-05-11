@@ -34,7 +34,6 @@ public class RMSUtils {
                 String rsName = "";
                 
                 try {
-
                     synchronized (openRecordStores) {
                         if (openRecordStores.isLengthExceeded()) {
                             rs = (RecordStore) openRecordStores.removeLeastRecentlyUsed();

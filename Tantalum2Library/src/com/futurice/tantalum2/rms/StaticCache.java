@@ -39,20 +39,24 @@ public class StaticCache {
     private static final Workable writeAllPending = new Workable() {
 
         public boolean work() {
-            Workable work;
-            while (!rmsWriteWorkables.isEmpty()) {
-                synchronized (rmsWriteWorkables) {
-                    work = (Workable) rmsWriteWorkables.firstElement();
-                    rmsWriteWorkables.removeElementAt(0);
-                }
-                work.work();
-                if (!rmsWriteWorkables.isEmpty()) {
-                    try {
-                        // DEBUG TEST- be kind to slow phones, avoid crashes
-                        Thread.sleep(50);
-                    } catch (InterruptedException ex) {
+            try {
+                Workable work;
+                while (!rmsWriteWorkables.isEmpty()) {
+                    synchronized (rmsWriteWorkables) {
+                        work = (Workable) rmsWriteWorkables.firstElement();
+                        rmsWriteWorkables.removeElementAt(0);
+                    }
+                    work.work();
+                    if (!rmsWriteWorkables.isEmpty()) {
+                        try {
+                            // DEBUG TEST- be kind to slow phones, avoid crashes
+                            Thread.sleep(50);
+                        } catch (InterruptedException ex) {
+                        }
                     }
                 }
+            } catch (Exception e) {
+                Log.l.log("Can not write all pending", "", e);
             }
 
             return false;
@@ -157,16 +161,21 @@ public class StaticCache {
             final Workable getWorkable = new Workable() {
 
                 public boolean work() {
-                    final Object o = synchronousGet(key);
+                    try {
+                        final Object o = synchronousGet(key);
 
-                    if (o != null) {
+                        if (o != null) {
+                            //#debug
+                            Log.l.log("RMS cache hit", key);
+                            result.setResult(o);
+                        } else {
+                            //#debug
+                            Log.l.log("RMS cache miss", key);
+                            result.noResult();
+                        }
+                    } catch (Exception e) {
                         //#debug
-                        Log.l.log("RMS cache hit", key);
-                        result.setResult(o);
-                    } else {
-                        //#debug
-                        Log.l.log("RMS cache miss", key);
-                        result.noResult();
+                        Log.l.log("Can not get", key, e);
                     }
 
                     return false;
@@ -217,10 +226,20 @@ public class StaticCache {
      * @return the byte[] converted to use form by the cache's Handler
      */
     public synchronized Object put(final String key, final byte[] bytes) {
+        if (key == null || key.length() == 0) {
+            throw new IllegalArgumentException("Attempt to put trivial key to cache");
+        }
+        if (bytes == null) {
+            throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
+        }
         rmsWriteWorkables.addElement(new Workable() {
 
             public boolean work() {
-                synchronousPutToRMS(key, bytes);
+                try {
+                    synchronousPutToRMS(key, bytes);
+                } catch (Exception e) {
+                    Log.l.log("Can not synch write to RMS", key, e);
+                }
 
                 return false;
             }

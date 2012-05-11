@@ -83,7 +83,6 @@ public final class UsbLog extends Log {
             try {
                 byte[] bytes = null;
 
-                Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
                 while (!shutdown || !byteArrayQueue.isEmpty()) {
                     synchronized (byteArrayQueue) {
                         if (byteArrayQueue.size() > 0) {

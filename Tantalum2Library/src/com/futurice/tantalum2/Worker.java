@@ -51,8 +51,14 @@ public final class Worker implements Runnable {
              * The first worker creates the others in the background
              */
             public boolean work() {
-                for (int i = 1; i < numberOfWorkers; i++) {
-                    createWorker();
+                int i = 1;
+
+                try {
+                    for (; i < numberOfWorkers; i++) {
+                        createWorker();
+                    }
+                } catch (Exception e) {
+                    Log.l.log("Can not create worker", "i=" + i, e);
                 }
 
                 return false;
@@ -248,8 +254,12 @@ public final class Worker implements Runnable {
                         }
                     }
                 }
-                if (workable != null && workable.work() && workable instanceof Runnable) {
-                    Worker.queueEDT((Runnable) workable);
+                try {
+                    if (workable != null && workable.work() && workable instanceof Runnable) {
+                        Worker.queueEDT((Runnable) workable);
+                    }
+                } catch (Exception e) {
+                    Log.l.log("Uncaught worker error", "workers=" + workerCount, e);
                 }
                 workable = null;
             }

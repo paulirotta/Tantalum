@@ -54,15 +54,21 @@ public class StaticWebCache extends StaticCache {
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Result() {
 
                     public void setResult(Object o) {
-                        o = put(url, (byte[]) o); // Convert to use form
-                        if (result != null) {
-                            if (o != null) {
-                                result.setResult(o);
-                                //#debug
-                                Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
-                            } else {
-                                result.noResult();
+                        try {
+                            o = put(url, (byte[]) o); // Convert to use form
+                            if (result != null) {
+                                if (o != null) {
+                                    result.setResult(o);
+                                    //#debug
+                                    Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
+                                } else {
+                                    result.noResult();
+                                }
                             }
+                        } catch (Exception e) {
+                            //#debug
+                            Log.l.log("Can not set result", url, e);
+                            noResult();
                         }
                     }
 
@@ -91,12 +97,17 @@ public class StaticWebCache extends StaticCache {
         Worker.queuePriority(new Workable() {
 
             public boolean work() {
-                synchronized (StaticWebCache.this) {
-                    remove(url);
-                    get(url, result, true);
-
-                    return false;
+                try {
+                    synchronized (StaticWebCache.this) {
+                        remove(url);
+                        get(url, result, true);
+                    }
+                } catch (Exception e) {
+                    //#debug
+                    Log.l.log("Can not update", url, e);
                 }
+
+                return false;
             }
         });
     }
@@ -112,7 +123,12 @@ public class StaticWebCache extends StaticCache {
             Worker.queueIdleWork(new Workable() {
 
                 public boolean work() {
-                    get(url, null, false);
+                    try {
+                        get(url, null, false);
+                    } catch (Exception e) {
+                        //#debug
+                        Log.l.log("Can not prefetch", url, e);
+                    }
 
                     return false;
                 }

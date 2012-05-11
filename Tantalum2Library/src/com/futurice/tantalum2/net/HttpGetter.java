@@ -38,6 +38,9 @@ public class HttpGetter implements Workable {
         if (url == null || url.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }
+        if (result == null) {
+            throw new IllegalArgumentException("HttpGetter was null result handler- meaningless get operation: " + url);
+        }
         this.url = url;
         this.retriesRemaining = retriesRemaining;
         this.result = result;
@@ -122,6 +125,8 @@ public class HttpGetter implements Workable {
                 }
 
                 return this.work();
+            } else if (!success) {
+                result.noResult();
             }
             //#debug
             Log.l.log("End HttpGet", url);
