@@ -40,12 +40,14 @@ public class RMSUtils {
                         }
                     }
                     if (rs != null) {
-                        //#debug
                         rsName = rs.getName();
+                        //#debug
                         Log.l.log("Closing LRU record store", rsName + " open=" + openRecordStores.size());
                         rs.closeRecordStore();
+                        //#debug
+                        Log.l.log("LRU record store closed", rsName + " open=" + openRecordStores.size());
                     }
-                } catch (RecordStoreException ex) {
+                } catch (Exception ex) {
                     //#debug
                     Log.l.log("Can not close LRU record store", rsName, ex);
                 }
@@ -192,8 +194,10 @@ public class RMSUtils {
             openRecordStores.addElement(rs);
             success = true;
         } catch (RecordStoreNotFoundException e) {
+            success = !createIfNecessary;
+            rs = null;
         } finally {
-            if (!success && !createIfNecessary) {
+            if (!success) {
                 //#debug
                 Log.l.log("Can not open record store", "Deleting " + recordStoreName);
                 delete(recordStoreName);

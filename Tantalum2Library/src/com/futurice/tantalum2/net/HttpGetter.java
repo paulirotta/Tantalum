@@ -53,27 +53,60 @@ public class HttpGetter implements Workable {
     public boolean work() {
         //#debug
         Log.l.log("HttpGetter start", url);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ByteArrayOutputStream bos = null;
         HttpConnection httpConnection = null;
         InputStream inputStream = null;
+        byte[] bytes = null;
         boolean tryAgain = false;
         boolean success = false;
 
         try {
-            byte[] readBuffer = new byte[16384];
-
             httpConnection = (HttpConnection) Connector.open(url);
             httpConnection.setRequestMethod(HttpConnection.GET);
             // Give the underlying native C drivers and hardware settling time
             // This improves network realiability on some phones
-            Thread.sleep(200);
+//            Thread.sleep(200);
             inputStream = httpConnection.openInputStream();
-
-            int bytesRead;
-            while ((bytesRead = inputStream.read(readBuffer)) != -1) {
-                bos.write(readBuffer, 0, bytesRead);
+            final long length = httpConnection.getLength();
+            if (length > 0 && length < 1000000) {
+                //#debug
+                Log.l.log("Start fixed_length read", url + " content_length=" + length);
+                int bytesRead = 0;
+                bytes = new byte[(int) length];
+                while (bytesRead < bytes.length) {
+                    final int br = inputStream.read(bytes, bytesRead, bytes.length - bytesRead);
+                    if (br > 0) {
+                        bytesRead += br;
+//                    } else if (br == 0) {
+//                        Thread.sleep(50);
+                    } else {
+                        //#debug
+                        Log.l.log("Recived EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
+                        break;
+                    }
+                }
+            } else {
+                //#debug
+                Log.l.log("Start variable length read", url);
+                bos = new ByteArrayOutputStream();
+                byte[] readBuffer = new byte[16384];
+                while (true) {
+                    final int bytesRead = inputStream.read(readBuffer);
+                    if (bytesRead > 0) {
+                        bos.write(readBuffer, 0, bytesRead);
+//                    } else if (bytesRead == 0) {
+//                        Thread.sleep(50);
+                    } else {
+                        break;
+                    }
+                }
+                bytes = bos.toByteArray();
+                readBuffer = null;
             }
-            byte[] bytes = bos.toByteArray();
+
+//            while ((bytesRead = inputStream.read(readBuffer)) != -1) {
+//                bos.write(readBuffer, 0, bytesRead);
+//            }
             if (bytes != null) {
                 //#debug
                 Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
@@ -84,7 +117,6 @@ public class HttpGetter implements Workable {
                 //#debug
                 Log.l.log("HttpGetter null response", url);
             }
-            readBuffer = null;
         } catch (IllegalArgumentException e) {
             //#debug
             Log.l.log("HttpGetter has a problem", url, e);
@@ -107,7 +139,9 @@ public class HttpGetter implements Workable {
             } catch (Exception e) {
             }
             try {
-                bos.close();
+                if (bos != null) {
+                    bos.close();
+                }
             } catch (Exception e) {
             }
             try {

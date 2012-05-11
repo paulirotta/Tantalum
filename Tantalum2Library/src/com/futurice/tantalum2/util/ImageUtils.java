@@ -144,7 +144,7 @@ public final class ImageUtils {
      */
     private static void half(final int[] in, final int srcW, final int w, final int h) {
         //#debug
-        Log.l.log("Half image", "START, w=" + srcW);
+//        Log.l.log("Half image", "START, w=" + srcW);
         int x, y = 0, z = 0, i;
 
         for (; y < h; y++) {
@@ -158,7 +158,7 @@ public final class ImageUtils {
             }
         }
         //#debug
-        Log.l.log("Half image", "STOP, w=" + srcW);
+//        Log.l.log("Half image", "STOP, w=" + srcW);
     }
 
     /**
@@ -174,7 +174,7 @@ public final class ImageUtils {
      */
     private static void downscale(final int[] in, final int srcW, final int srcH, final int w, final int h) {
         //#debug
-        Log.l.log("Downscale image", "START (" + srcW + ", " + srcH + ") -> (" + w + ", " + h + ")");
+//        Log.l.log("Downscale image", "START (" + srcW + ", " + srcH + ") -> (" + w + ", " + h + ")");
         final float dx = srcW / (float) (w + 1);
         final float dy = srcH / (float) (h + 1);
         int x, y = 0, z = 0, e;
@@ -194,7 +194,7 @@ public final class ImageUtils {
             }
         }
         //#debug
-        Log.l.log("Downscale image", "END (" + w + ", " + y + ")");
+//        Log.l.log("Downscale image", "END (" + w + ", " + y + ")");
     }
 
     /**
