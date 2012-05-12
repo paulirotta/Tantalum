@@ -75,19 +75,43 @@ public class RSSModel extends XMLModel {
     }
 
     /**
-     * Copy the current list into a working array which can safely be used outside
-     * of synchronized blocks. This guards against simultaneous changes to the list
-     * on another thread.
-     * 
+     * Copy the current list into a working array which can safely be used
+     * outside of synchronized blocks. This guards against simultaneous changes
+     * to the list on another thread.
+     *
      * @param copy
-     * @return 
+     * @return
      */
     public final synchronized RSSItem[] copy(RSSItem[] copy) {
         if (copy == null || copy.length != size()) {
             copy = new RSSItem[size()];
         }
         items.copyInto(copy);
-        
+
         return copy;
+    }
+
+    /**
+     * Return the item before or after the specified item.
+     *
+     * null is returned if the item is not found, or there are no more items in
+     * the specified direction.
+     *
+     * @param item
+     * @param before
+     * @return
+     */
+    public synchronized RSSItem itemNextTo(final RSSItem item, final boolean before) {
+        int i = items.indexOf(item);
+
+        if (before) {
+            if (i > 0) {
+                return (RSSItem) items.elementAt(--i);
+            }
+        } else if (i < size() - 1) {
+            return (RSSItem) items.elementAt(++i);
+        }
+
+        return null;
     }
 }
