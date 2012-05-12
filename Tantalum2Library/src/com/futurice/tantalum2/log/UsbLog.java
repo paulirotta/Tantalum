@@ -16,7 +16,7 @@ public final class UsbLog extends Log {
 
     private static final byte[] LFCR = "\n\r".getBytes();
     private static final Vector byteArrayQueue = new Vector();
-    private static UsbWriter usbWriter = null;
+    private final UsbWriter usbWriter = new UsbWriter();
     private OutputStream os = null;
     private static CommConnection comm = null;
 
@@ -29,7 +29,6 @@ public final class UsbLog extends Log {
             if (commPort != null) {
                 comm = (CommConnection) Connector.open("comm:" + commPort);
                 os = comm.openOutputStream();
-                usbWriter = new UsbWriter();
                 new Thread(usbWriter).start();
             }
         } catch (IOException ex) {
@@ -41,14 +40,20 @@ public final class UsbLog extends Log {
      *
      * @param string string to print
      */
-    protected void printMessage(final String string) {
-        if (this.os != null) {
-            final byte[] bytes = string.getBytes();
-            synchronized (byteArrayQueue) {
-                byteArrayQueue.addElement(bytes);
-                byteArrayQueue.addElement(LFCR);
-                byteArrayQueue.notifyAll();
-            }
+    protected synchronized void printMessage(final String string) {
+        if (os != null) {
+            byteArrayQueue.addElement(string.getBytes());
+            this.notifyAll();
+//            try {
+//                os.write((byte[]) string.getBytes());
+//                os.write(LFCR);
+//            } catch (Exception e) {
+//                try {
+//                    os.close();
+//                } catch (Exception e2) {
+//                }
+//                os = null;
+//            }
         }
     }
 
@@ -60,42 +65,42 @@ public final class UsbLog extends Log {
      */
     public void shutdown() {
         if (usbWriter != null) {
-            synchronized (byteArrayQueue) {
-                usbWriter.shutdown = true;
-                byteArrayQueue.notifyAll();
+            synchronized (this) {
+                usbWriter.shutdownStarted = true;
+                this.notifyAll();
             }
 
             // Give the queue time to flush final messages
-            synchronized (this) {
+            synchronized (usbWriter) {
                 try {
-                    this.wait(1000);
+                    if (!usbWriter.shutdownComplete) {
+                        usbWriter.wait(1000);
+                    }
                 } catch (InterruptedException ex) {
                 }
             }
         }
     }
 
-    private class UsbWriter implements Runnable {
+    private final class UsbWriter implements Runnable {
 
-        public boolean shutdown = false;
+        boolean shutdownStarted = false;
+        boolean shutdownComplete = false;
 
         public void run() {
             try {
-                byte[] bytes = null;
-
-                while (!shutdown || !byteArrayQueue.isEmpty()) {
-                    synchronized (byteArrayQueue) {
-                        if (byteArrayQueue.size() > 0) {
-                            bytes = (byte[]) byteArrayQueue.firstElement();
-                            byteArrayQueue.removeElementAt(0);
-                        } else {
-                            bytes = null;
-                            byteArrayQueue.wait();
+                while (!shutdownStarted || !byteArrayQueue.isEmpty()) {
+                    synchronized (UsbLog.this) {
+                        if (byteArrayQueue.isEmpty()) {
+                            UsbLog.this.wait(1000);
                         }
                     }
-                    if (bytes != null) {
-                        os.write(bytes);
+                    while (!byteArrayQueue.isEmpty()) {
+                        os.write((byte[]) byteArrayQueue.firstElement());
+                        byteArrayQueue.removeElementAt(0);
+                        os.write(LFCR);
                     }
+                    os.flush();
                 }
             } catch (Exception e) {
             } finally {
@@ -109,6 +114,7 @@ public final class UsbLog extends Log {
                 } catch (IOException ex) {
                 }
                 synchronized (this) {
+                    shutdownComplete = true;
                     this.notifyAll(); // All done- let shutdown() proceed
                 }
             }

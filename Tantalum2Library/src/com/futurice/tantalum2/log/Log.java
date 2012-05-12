@@ -24,7 +24,7 @@ public class Log {
      * @param tag name of the class logging this message
      * @param message message to log
      */
-    public final synchronized void log(final String tag, final String message) {
+    public final void log(final String tag, final String message) {
         //#debug
         printMessage(getMessage(tag, message));
     }
@@ -36,7 +36,7 @@ public class Log {
      * @param message message to log
      * @param th throwable to log
      */
-    public final synchronized void log(final String tag, final String message, final Throwable th) {
+    public final void log(final String tag, final String message, final Throwable th) {
         //#mdebug
         printMessage(getMessage(tag, message) + ", EXCEPTION: " + th);
         if (th != null) {
@@ -50,7 +50,7 @@ public class Log {
      *
      * @param string string to print
      */
-    protected void printMessage(final String string) {
+    protected synchronized void printMessage(final String string) {
         System.out.println(string);
     }
 
@@ -60,17 +60,9 @@ public class Log {
      * @return message string
      */
     private String getMessage(final String tag, final String message) {
-        return currentTime() + " (" + Thread.currentThread().getName() + "): " + tag + ": " + message;
-    }
-
-    /**
-     * Return current time and thread name as string.
-     *
-     * @return current time as string
-     */
-    private String currentTime() {
         final long t = System.currentTimeMillis() - startTime;
-        return (t / 1000) + "." + (t % 1000);
+        
+        return (t / 1000) + "." + (t % 1000) + " (" + Thread.currentThread().getName() + "): " + tag + ": " + message;
     }
 
     /**

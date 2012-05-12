@@ -22,7 +22,11 @@ public abstract class LengthLimitedLRUVector extends LRUVector {
      */
     protected abstract void lengthExceeded();
 
-    public void addElement(Object o) {
+    public void addElement(final Object o) {
+        if (maxLength == 0) {
+            throw new IllegalArgumentException("Max length of LRU vector is currently 0, can not add: " + o);
+        }
+        
         super.addElement(o);
 
         if (size() > maxLength) {

@@ -23,12 +23,12 @@ public class RMSUtils {
     private static final LengthLimitedLRUVector openRecordStores = new LengthLimitedLRUVector(MAX_OPEN_RECORD_STORES) {
 
         protected void lengthExceeded() {
-            Worker.queuePriority(trimOpenRecordStoresWorkable);
-        }
-    };
-    private static final Workable trimOpenRecordStoresWorkable = new Workable() {
-
-        public boolean work() {
+//            Worker.queuePriority(trimOpenRecordStoresWorkable);
+//        }
+//    };
+//    private static final Workable trimOpenRecordStoresWorkable = new Workable() {
+//
+//        public boolean work() {
             while (openRecordStores.isLengthExceeded()) {
                 RecordStore rs = null;
                 String rsName = "";
@@ -52,8 +52,8 @@ public class RMSUtils {
                     Log.l.log("Can not close LRU record store", rsName, ex);
                 }
             }
-
-            return false;
+//
+//            return false;
         }
     };
 
@@ -65,19 +65,9 @@ public class RMSUtils {
         Worker.queueShutdownTask(new Workable() {
 
             public boolean work() {
-                openRecordStores.setMaxLength(0);
                 //#debug
                 Log.l.log("Closing record stores during shutdown", "open=" + openRecordStores.size());
-                RecordStore oldest;
-
-                while ((oldest = (RecordStore) openRecordStores.removeLeastRecentlyUsed()) != null) {
-                    try {
-                        oldest.closeRecordStore();
-                    } catch (RecordStoreException ex) {
-                        //#debug
-                        Log.l.log("Can not close LRU record store", "", ex);
-                    }
-                }
+                openRecordStores.setMaxLength(0);
                 //#debug
                 Log.l.log("Closed record stores during shutdown", "open=" + openRecordStores.size());
 

@@ -18,8 +18,8 @@ public class RSSItem {
     private String pubDate = "";
     private String thumbnail = "";
     private Image thumbnailImage = null;
-    private boolean loadingImage = false;
-    private boolean newItem = true;
+    private volatile boolean loadingImage = false;
+    private volatile boolean newItem = true;
     private Font truncatedFont;
     private int truncatedTitleWidth = 0;
     
@@ -83,23 +83,23 @@ public class RSSItem {
         this.thumbnailImage = thumbnailImage;
     }
 
-    public synchronized boolean isLoadingImage() {
+    public boolean isLoadingImage() {
         return loadingImage;
     }
 
-    public synchronized void setLoadingImage(boolean loadingImage) {
+    public void setLoadingImage(boolean loadingImage) {
         this.loadingImage = loadingImage;
     }
 
-    public synchronized boolean isNewItem() {
+    public boolean isNewItem() {
         return newItem;
     }
 
-    public synchronized void setNewItem(boolean newItem) {
+    public void setNewItem(final boolean newItem) {
         this.newItem = newItem;
     }
 
-    public String toString() {
+    public synchronized String toString() {
         return "RSSItem- title:" + title + " truncatedTitle:" + truncatedTitle + " description:" + description + " link:" + link + " pubDate:" + pubDate + " thumbnail:" + thumbnail;
     }
 }
