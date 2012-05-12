@@ -73,4 +73,21 @@ public class RSSModel extends XMLModel {
     public synchronized RSSItem elementAt(int i) {
         return (RSSItem) items.elementAt(i);
     }
+
+    /**
+     * Copy the current list into a working array which can safely be used outside
+     * of synchronized blocks. This guards against simultaneous changes to the list
+     * on another thread.
+     * 
+     * @param copy
+     * @return 
+     */
+    public final synchronized RSSItem[] copy(RSSItem[] copy) {
+        if (copy == null || copy.length != size()) {
+            copy = new RSSItem[size()];
+        }
+        items.copyInto(copy);
+        
+        return copy;
+    }
 }
