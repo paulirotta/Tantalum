@@ -313,8 +313,8 @@ public class StaticCache {
             final StaticCache cache = getCacheContainingKey(key);
 
             if (cache != null) {
-                cache.remove(key);
                 spaceCleared += getByteSizeByKey(key);
+                cache.remove(key);
             }
         }
         //#debug
@@ -325,10 +325,10 @@ public class StaticCache {
             for (int i = 0; i < caches.size(); i++) {
                 final StaticCache cache = (StaticCache) caches.elementAt(i);
 
-                while (cache.accessOrder.size() > 0 && spaceCleared < minSpaceToClear) {
+                while (!cache.accessOrder.isEmpty() && spaceCleared < minSpaceToClear) {
                     final String key = (String) cache.accessOrder.removeLeastRecentlyUsed();
-                    cache.remove(key);
                     spaceCleared += getByteSizeByKey(key);
+                    cache.remove(key);
                 }
             }
         }
@@ -375,11 +375,13 @@ public class StaticCache {
      *
      * @param key
      */
-    public synchronized void remove(final String key) {
+    protected void remove(final String key) {
         try {
             if (containsKey(key)) {
-                this.accessOrder.removeElement(key);
-                this.cache.remove(key);
+                synchronized (StaticCache.this) {
+                    accessOrder.removeElement(key);
+                    cache.remove(key);
+                }
                 RMSUtils.cacheDelete(key);
                 //#debug
                 Log.l.log("Cache remove (from RAM and RMS)", key);
@@ -394,11 +396,17 @@ public class StaticCache {
      * Remove all elements from this cache
      *
      */
-    public synchronized void clear() {
+    public void clear() {
         //#debug
         Log.l.log("Start Cache Clear", "ID=" + priority);
-        while (accessOrder.size() > 0) {
-            remove((String) accessOrder.lastElement());
+        final String[] keys;
+        
+        synchronized (this) {
+            keys = new String[accessOrder.size()];
+            accessOrder.copyInto(keys);
+        }        
+        for (int i = 0; i < keys.length; i++) {
+            remove(keys[i]);
         }
         //#debug
         Log.l.log("Cache cleared", "ID=" + priority);

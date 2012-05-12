@@ -87,8 +87,7 @@ public class StaticWebCache extends StaticCache {
     }
 
     /**
-     * Retrieve the object from WEB, replacing any existing version when the new
-     * version arrives.
+     * Delete any existing version, then retrieve the object from WEB.
      *
      * @param url
      * @param result
@@ -98,10 +97,8 @@ public class StaticWebCache extends StaticCache {
 
             public boolean work() {
                 try {
-                    synchronized (StaticWebCache.this) {
-                        remove(url);
-                        get(url, result, true);
-                    }
+                    remove(url);
+                    get(url, result, true);
                 } catch (Exception e) {
                     //#debug
                     Log.l.log("Can not update", url, e);

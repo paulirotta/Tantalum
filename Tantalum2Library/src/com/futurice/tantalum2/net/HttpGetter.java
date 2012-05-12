@@ -65,7 +65,6 @@ public class HttpGetter implements Workable {
             httpConnection.setRequestMethod(HttpConnection.GET);
             // Give the underlying native C drivers and hardware settling time
             // This improves network realiability on some phones
-//            Thread.sleep(200);
             inputStream = httpConnection.openInputStream();
             final long length = httpConnection.getLength();
             if (length > 0 && length < 1000000) {
@@ -77,8 +76,6 @@ public class HttpGetter implements Workable {
                     final int br = inputStream.read(bytes, bytesRead, bytes.length - bytesRead);
                     if (br > 0) {
                         bytesRead += br;
-//                    } else if (br == 0) {
-//                        Thread.sleep(50);
                     } else {
                         //#debug
                         Log.l.log("Recived EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
@@ -94,8 +91,6 @@ public class HttpGetter implements Workable {
                     final int bytesRead = inputStream.read(readBuffer);
                     if (bytesRead > 0) {
                         bos.write(readBuffer, 0, bytesRead);
-//                    } else if (bytesRead == 0) {
-//                        Thread.sleep(50);
                     } else {
                         break;
                     }
@@ -104,19 +99,11 @@ public class HttpGetter implements Workable {
                 readBuffer = null;
             }
 
-//            while ((bytesRead = inputStream.read(readBuffer)) != -1) {
-//                bos.write(readBuffer, 0, bytesRead);
-//            }
-            if (bytes != null) {
-                //#debug
-                Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
-                result.setResult(bytes);
-                success = true;
-                bytes = null;
-            } else {
-                //#debug
-                Log.l.log("HttpGetter null response", url);
-            }
+            //#debug
+            Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
+            result.setResult(bytes);
+            success = true;
+            bytes = null;
         } catch (IllegalArgumentException e) {
             //#debug
             Log.l.log("HttpGetter has a problem", url, e);
