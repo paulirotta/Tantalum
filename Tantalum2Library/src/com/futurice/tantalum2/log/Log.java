@@ -61,8 +61,23 @@ public class Log {
      */
     private String getMessage(final String tag, final String message) {
         final long t = System.currentTimeMillis() - startTime;
+        final StringBuffer sb = new StringBuffer(20 + tag.length() + message.length());
+        final String millis = Long.toString(t % 1000);
         
-        return (t / 1000) + "." + (t % 1000) + " (" + Thread.currentThread().getName() + "): " + tag + ": " + message;
+        sb.append(t / 1000);
+        sb.append('.');
+        for (int i = millis.length(); i < 3; i++) {
+            sb.append('0');
+        }
+        sb.append(millis);
+        sb.append(" (");
+        sb.append(Thread.currentThread().getName());
+        sb.append("): ");
+        sb.append(tag);
+        sb.append(": ");
+        sb.append(message);
+
+        return sb.toString();
     }
 
     /**
