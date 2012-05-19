@@ -18,7 +18,7 @@ import org.xml.sax.SAXException;
 public class ListModel extends DefaultListModel implements DataChangedListener, DataTypeHandler {
 
     private ListForm listForm;
-    private final LiveUpdateRSSModel rssModel = new LiveUpdateRSSModel();
+    private final LiveUpdateRSSModel rssModel = new LiveUpdateRSSModel(60);
 
     public ListModel(ListForm listForm) {
         this.listForm = listForm;
@@ -50,6 +50,10 @@ public class ListModel extends DefaultListModel implements DataChangedListener, 
     }
 
     private class LiveUpdateRSSModel extends RSSModel {
+        
+        public LiveUpdateRSSModel(final int maxSize) {
+            super(maxSize);
+        }
 
         public void endElement(final String uri, final String localName, final String qName) throws SAXException {
             if (currentItem != null && qName.equals("item")) {

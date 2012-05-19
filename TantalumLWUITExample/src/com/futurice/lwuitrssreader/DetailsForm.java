@@ -95,7 +95,7 @@ public class DetailsForm extends Form implements ActionListener {
 //                    }
 //                }
             }
-        });
+        }, true);
 
         addLabels(linkLabels);
         setScrollY(0);
