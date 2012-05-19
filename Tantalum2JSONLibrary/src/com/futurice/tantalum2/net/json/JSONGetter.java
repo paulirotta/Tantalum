@@ -24,7 +24,6 @@ package com.futurice.tantalum2.net.json;
 
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.HttpGetter;
-import com.futurice.tantalum2.net.HttpGetter;
 
 /**
  *
@@ -58,7 +57,7 @@ public class JSONGetter /*implements ResultHandler*/ {
 
                 return true;
             } catch (Exception e) {
-                Log.logThrowable(e, "JSONGetter HTTP response problem at " + this.httpGetter.getUrl() + " : " + value);
+                Log.l.log("JSONGetter HTTP response problem", this.httpGetter.getUrl() + " : " + value, e);
                 this.exception(e);
 
                 return false;
