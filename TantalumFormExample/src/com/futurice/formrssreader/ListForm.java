@@ -24,7 +24,7 @@ public class ListForm extends Form implements CommandListener {
     private final RSSReader rssReader;
     private final DetailsForm detailsView;
     private StaticWebCache feedCache;
-    private final RSSModel rssModel = new RSSModel();
+    private final RSSModel rssModel = new RSSModel(60);
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
@@ -135,7 +135,7 @@ public class ListForm extends Form implements CommandListener {
                     loading = false;
                     notifyListChanged();
                 }
-            });
+            }, true);
         }
     }
 
@@ -146,7 +146,6 @@ public class ListForm extends Form implements CommandListener {
     }
 
     public void showList() {
-        detailsView.getSelectedItem().setThumbnailImage(null);
         detailsView.setSelectedItem(null);
         rssReader.switchDisplayable(null, this);
     }

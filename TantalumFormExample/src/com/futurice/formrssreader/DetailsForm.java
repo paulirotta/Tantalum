@@ -47,7 +47,7 @@ public class DetailsForm extends Form implements CommandListener {
                 rssReader.exitMIDlet();
             }
         } catch (ConnectionNotFoundException connectionNotFoundException) {
-            Log.l.log("Error opening link" , ListForm.getInstance().getDetailsView().getSelectedItem().getLink(), connectionNotFoundException);
+            Log.l.log("Error opening link", ListForm.getInstance().getDetailsView().getSelectedItem().getLink(), connectionNotFoundException);
             rssReader.showError("Could not open link");
         }
     }
@@ -80,24 +80,25 @@ public class DetailsForm extends Form implements CommandListener {
         this.append(descriptionStringItem);
 
         if (selectedItem.getThumbnail() != null) {
-            if (selectedItem.getThumbnailImage() != null) {
-                paintImage();
+            final Image image = (Image) imageCache.synchronousRAMCacheGet(selectedItem.getThumbnail());
+            if (image != null) {
+                DetailsForm.this.appendImageItem();
             } else if (!selectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
                 imageCache.get(selectedItem.getThumbnail(), new RunnableResult() {
                     public void run() {
-                        selectedItem.setThumbnailImage((Image)getResult());
-                        DetailsForm.this.paintImage();
-                        selectedItem.setLoadingImage(false); 
+                        DetailsForm.this.appendImageItem();
+                        selectedItem.setLoadingImage(false);
                     }
-                });
+                }, true);
             }
         }
     }
 
-    public void paintImage() {
-        ImageItem imageItem = new ImageItem(null, selectedItem.getThumbnailImage(), Item.LAYOUT_CENTER, "");
+    public void appendImageItem() {
+        final Image image = (Image) imageCache.synchronousRAMCacheGet(selectedItem.getThumbnail());
+        final ImageItem imageItem = new ImageItem(null, image, Item.LAYOUT_CENTER, "");
         this.append(imageItem);
     }
 }
