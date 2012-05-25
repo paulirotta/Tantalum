@@ -22,6 +22,7 @@
  */
 package com.futurice.tantalum2.net.json;
 
+import com.futurice.tantalum2.Result;
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.HttpGetter;
 
@@ -29,52 +30,31 @@ import com.futurice.tantalum2.net.HttpGetter;
  *
  * @author Paul Houghton
  */
-public class JSONGetter /*implements ResultHandler*/ {
+public class JSONGetter extends Result {
 
     private final HttpGetter httpGetter;
     private final JSONModel jsonvo;
 
-    public JSONGetter(final String url, final JSONModel jsonModel, final int retriesRemaining) {
-        this.httpGetter = null;//new HttpGetter(url, retriesRemaining);
+    public JSONGetter(final String url, final JSONModel jsonModel, final Result result, final int retriesRemaining) {
+        this.httpGetter = new HttpGetter(url, retriesRemaining, result);
         this.jsonvo = jsonModel;
     }
 
-    public void setHttpGetter(HttpGetter httpGetter) {
-        //this.httpGetter = httpGetter;
-    }
+    public void setResult(final Object o) {
+        super.setResult(o);
 
-    public boolean work() {
-        if (httpGetter.work()) {
-            String value = "";
+        String value = "";
 
-            try {
-                value = this.getResult().toString().trim();
-                if (value.startsWith("[")) {
-                    // Parser expects non-array base object- add one
-                    value = "{\"base:\"" + value + "}";
-                }
-                jsonvo.setJSON(value);
-
-                return true;
-            } catch (Exception e) {
-                Log.l.log("JSONGetter HTTP response problem", this.httpGetter.getUrl() + " : " + value, e);
-                this.exception(e);
-
-                return false;
+        try {
+            value = this.getResult().toString().trim();
+            if (value.startsWith("[")) {
+                // Parser expects non-array base object- add one
+                value = "{\"base:\"" + value + "}";
             }
+            jsonvo.setJSON(value);
+        } catch (Exception e) {
+            Log.l.log("JSONGetter HTTP response problem", this.httpGetter.getUrl() + " : " + value, e);
+            noResult();
         }
-
-        return false;
-    }
-
-    public void setResult(Object result) {
-        //this.result = result;
-    }
-
-    public Object getResult() {
-        return null;
-    }
-
-    public void exception(Exception e) {
     }
 }

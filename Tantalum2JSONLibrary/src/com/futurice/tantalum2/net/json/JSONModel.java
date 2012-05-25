@@ -22,6 +22,7 @@
  */
 package com.futurice.tantalum2.net.json;
 
+import com.futurice.tantalum2.Result;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
