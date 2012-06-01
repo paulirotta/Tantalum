@@ -1,17 +1,16 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.Worker;
+import com.futurice.tantalum2.TantalumMIDlet;
 import com.sun.lwuit.Dialog;
 import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
 import com.sun.lwuit.plaf.DefaultLookAndFeel;
 import com.sun.lwuit.plaf.UIManager;
-import javax.microedition.midlet.MIDlet;
 
 /**
  * @author tsaa
  */
-public class RSSReader extends MIDlet {
+public class RSSReader extends TantalumMIDlet {
 
     public static int SCREEN_WIDTH;
     public static int SCREEN_HEIGHT;
@@ -24,8 +23,11 @@ public class RSSReader extends MIDlet {
     public static Font italicFont;
     public static Font underlinedFont;
 
+    public RSSReader() {
+        super(4);
+    }
+    
     public void startApp() {
-        Worker.init(this, 4);
         Display.init(this);
         UIManager.getInstance().setLookAndFeel(new DefaultLookAndFeel());
 
@@ -41,13 +43,6 @@ public class RSSReader extends MIDlet {
         listForm.show();
         settingsForm = new SettingsForm("LWUIT RSS Reader", this);
         detailsForm = new DetailsForm("LWUIT RSS Reader", this);
-    }
-
-    public void pauseApp() {
-    }
-
-    public void destroyApp(boolean unconditional) {
-        Worker.shutdown(unconditional);
     }
 
     public void setUrl(String url) {

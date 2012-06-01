@@ -1,6 +1,7 @@
 package com.futurice.lwuitrssreader;
 
 import com.futurice.tantalum2.Result;
+import com.futurice.tantalum2.Worker;
 import com.futurice.tantalum2.net.StaticWebCache;
 import com.futurice.tantalum2.net.xml.RSSItem;
 import com.sun.lwuit.*;
@@ -52,7 +53,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 reload(true);
             }
             if (cmdStr.equals("Exit")) {
-                midlet.destroyApp(true);
+                Worker.shutdown(true); 
             }
         } else {
             int selectedIndex = ((List) ae.getSource()).getSelectedIndex();
@@ -79,7 +80,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
 
                 public void setResult(Object o) {
                     super.setResult(o);
-                    
+
                     isReloading = false;
                 }
             };
