@@ -25,7 +25,7 @@ public abstract class RSSListView extends View {
     private final Result rssResult = new Result() {
 
         public void setResult(final Object o) {
-            notifyListChanged();
+            canvas.queueRepaint();
         }
     };
 
@@ -86,13 +86,6 @@ public abstract class RSSListView extends View {
     }
 
     /**
-     * Called when the list of items changes
-     */
-    public void notifyListChanged() {
-        canvas.queueRepaint();
-    }
-
-    /**
      * Network access type of active connection or a set default access point.
      *
      * pd, pd.EDGE, pd.3G, pd.HSDPA, csd, bt_pan, wlan, na (can't tell)
@@ -110,12 +103,6 @@ public abstract class RSSListView extends View {
         LiveUpdateRSSModel() {
             super(60);
         }
-        private final Runnable updateRunnable = new Runnable() {
-
-            public void run() {
-                notifyListChanged();
-            }
-        };
 
         public void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
             checkForWLAN(); // If this just came in over a WLAN net, get the images also
@@ -123,16 +110,15 @@ public abstract class RSSListView extends View {
         }
 
         public void endElement(final String uri, final String localName, final String qName) throws SAXException {
+            super.endElement(uri, localName, qName);
             if (currentItem != null && qName.equals("item")) {
                 if (items.size() < maxLength) {
-                    Worker.queueEDT(updateRunnable);
                     if (prefetchImages) {
                         DetailsView.imageCache.prefetch(currentItem.getThumbnail());
                     }
+                    canvas.queueRepaint();
                 }
             }
-
-            super.endElement(uri, localName, qName);
         }
     }
 }
