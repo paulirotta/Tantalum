@@ -4,15 +4,15 @@
  */
 package com.futurice.formrssreader;
 
+import com.futurice.tantalum2.TantalumMIDlet;
 import com.futurice.tantalum2.Workable;
 import com.futurice.tantalum2.Worker;
 import javax.microedition.lcdui.*;
-import javax.microedition.midlet.MIDlet;
 
 /**
  * @author vand
  */
-public class RSSReader extends MIDlet implements CommandListener {
+public class RSSReader extends TantalumMIDlet implements CommandListener {
 
     public static String INITIAL_FEED_URL = null;
     private boolean midletPaused = false;
@@ -26,6 +26,7 @@ public class RSSReader extends MIDlet implements CommandListener {
      * The RSSReader constructor.
      */
     public RSSReader() {
+        super(4);
     }
 
     //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
@@ -37,7 +38,6 @@ public class RSSReader extends MIDlet implements CommandListener {
      */
     private void initialize() {//GEN-END:|0-initialize|0|0-preInitialize
         // write pre-initialize user code here
-        Worker.init(this, 2);
         INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
 //GEN-LINE:|0-initialize|1|0-postInitialize
         // write post-initialize user code here
@@ -158,15 +158,5 @@ public class RSSReader extends MIDlet implements CommandListener {
      */
     public void pauseApp() {
         midletPaused = true;
-    }
-
-    /**
-     * Called to signal the MIDlet to terminate.
-     *
-     * @param unconditional if true, then the MIDlet has to be unconditionally
-     * terminated and all resources has to be released.
-     */
-    public void destroyApp(boolean unconditional) {
-        Worker.shutdown(unconditional);
     }
 }
