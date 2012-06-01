@@ -17,10 +17,14 @@ public abstract class TantalumMIDlet extends MIDlet {
      * If you create a MIDlet constructor, you must call super() as the first
      * line of your MIDlet's constructor. Alternatively, you can call
      * Worker.init() yourself with custom parameters for special needs.
-     *
+     * 
+     * 4 worker threads are recommended for most applications.
+     * 
+     * @param numberOfThreads 
+     * 
      */
-    protected TantalumMIDlet() {
-        Worker.init(this, 4);
+    protected TantalumMIDlet(final int numberOfThreads) {
+        Worker.init(this, numberOfThreads);
     }
 
     /**
@@ -54,5 +58,12 @@ public abstract class TantalumMIDlet extends MIDlet {
      */
     protected final void destroyApp(final boolean unconditional) throws MIDletStateChangeException {
         exitMIDlet(unconditional);
+    }
+
+    /**
+     * Do nothing, not generally used
+     * 
+     */
+    protected void pauseApp() {
     }
 }
