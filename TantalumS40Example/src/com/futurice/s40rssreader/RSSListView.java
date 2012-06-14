@@ -121,4 +121,10 @@ public abstract class RSSListView extends View {
             }
         }
     }
+    
+    public abstract boolean setSelectedIndex(int i);
+    
+    public abstract void selectItem(final int x, final int y, boolean tapped);
+    
+    public abstract void deselectItem();
 }

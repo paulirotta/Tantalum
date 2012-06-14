@@ -30,7 +30,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
 //#ifndef Profile
     private final FrameAnimator animator;
 //#endif
-    private final IconListView iconListView;
+    private final RSSListView listView;
     private final DetailsView detailsView;
     private View currentView;
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
@@ -38,6 +38,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final int MARGIN = FONT_TITLE.getHeight() / 2;
     private static volatile boolean repaintIsCurrentlyQueued = false;
+    private static volatile boolean portrait = true;
 
     /**
      * Constructor for RSSReaderCanvas
@@ -48,8 +49,11 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         super();
         instance = this;
         this.rssReader = rssReader;
+        
+        portrait = getWidth() < getHeight();
 
-        iconListView = new IconListView(this);
+        //listView = new VerticalListView(this);
+        listView = new IconListView(this);
         detailsView = new DetailsView(this);
 
 //#ifndef Profile        
@@ -65,7 +69,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         GestureRegistrationManager.setListener(this, this);
 //#endif
 
-        setCurrentView(iconListView);
+        setCurrentView(listView);
     }
 
     /**
@@ -81,8 +85,8 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         return rssReader;
     }
 
-    public IconListView getIconListView() {
-        return iconListView;
+    public RSSListView getListView() {
+        return listView;
     }
 
     public DetailsView getDetailsView() {
@@ -121,7 +125,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
 //        detailsView.getCurrentItem().setThumbnailImage(null);
         detailsView.hide();
 //        iconListView.rssModel.itemNextTo(selectedItem, true), iconListView.rssModel.itemNextTo(selectedItem, false), 0);
-        setCurrentView(iconListView);
+        setCurrentView(listView);
     }
 
     /**
@@ -138,7 +142,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
 //#ifndef Profile
         animator.stop();
 //#endif        
-        detailsView.setCurrentItem(selectedItem, iconListView.rssModel.itemNextTo(selectedItem, true), iconListView.rssModel.itemNextTo(selectedItem, false), x);
+        detailsView.setCurrentItem(selectedItem, listView.rssModel.itemNextTo(selectedItem, true), listView.rssModel.itemNextTo(selectedItem, false), x);
         setCurrentView(detailsView);
     }
 
@@ -150,8 +154,8 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     public void gestureAction(Object o, GestureInteractiveZone giz, GestureEvent ge) {
         switch (ge.getType()) {
             case GestureInteractiveZone.GESTURE_DRAG:
-                if (currentView == iconListView) {
-                    iconListView.setSelectedIndex(-1);
+                if (currentView == listView) {
+                    listView.setSelectedIndex(-1);
                 }
                 currentView.setRenderY(currentView.getRenderY() + ge.getDragDistanceY());
                 animator.drag(0, currentView.getRenderY() + ge.getDragDistanceY());
@@ -161,8 +165,8 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
                 break;
             case GestureInteractiveZone.GESTURE_FLICK:
                 boolean scroll = true;
-                if (currentView == iconListView) {
-                    iconListView.setSelectedIndex(-1);
+                if (currentView == listView) {
+                    listView.setSelectedIndex(-1);
                 } else if (currentView == detailsView) {
                     scroll = !detailsView.horizontalFlick(ge.getFlickDirection());
                 }
@@ -177,9 +181,9 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
                 //no-op
                 break;
             case GestureInteractiveZone.GESTURE_TAP:
-                if (currentView == iconListView) {
+                if (currentView == listView) {
                     //selects the tapped item
-                    iconListView.selectItem(ge.getStartX(), ge.getStartY(), true);
+                    listView.selectItem(ge.getStartX(), ge.getStartY(), true);
                 }
                 break;
         }
@@ -188,12 +192,12 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
 
     protected void pointerPressed(int x, int y) {
         //just paints the highlight on the selected item
-        iconListView.selectItem(x, y, false);
+        listView.selectItem(x, y, false);
     }
 
     protected void pointerReleased(int x, int y) {
         //just paints the highlight on the selected item
-        iconListView.deselectItem();
+        listView.deselectItem();
         //#ifdef Profile
 //#         if (currentView == iconListView) {
 //#             //selects the tapped item
