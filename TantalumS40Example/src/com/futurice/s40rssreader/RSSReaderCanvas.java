@@ -2,14 +2,12 @@ package com.futurice.s40rssreader;
 
 import com.futurice.tantalum2.log.Log;
 import com.futurice.tantalum2.net.xml.RSSItem;
-//#ifndef Profile
 import com.nokia.mid.ui.frameanimator.FrameAnimator;
 import com.nokia.mid.ui.frameanimator.FrameAnimatorListener;
 import com.nokia.mid.ui.gestures.GestureEvent;
 import com.nokia.mid.ui.gestures.GestureInteractiveZone;
 import com.nokia.mid.ui.gestures.GestureListener;
 import com.nokia.mid.ui.gestures.GestureRegistrationManager;
-//#endif
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
@@ -38,7 +36,6 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final int MARGIN = FONT_TITLE.getHeight() / 2;
     private static volatile boolean repaintIsCurrentlyQueued = false;
-    private static volatile boolean portrait = true;
 
     /**
      * Constructor for RSSReaderCanvas
@@ -49,8 +46,6 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         super();
         instance = this;
         this.rssReader = rssReader;
-        
-        portrait = getWidth() < getHeight();
 
         //listView = new VerticalListView(this);
         listView = new IconListView(this);
@@ -69,6 +64,11 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         GestureRegistrationManager.setListener(this, this);
 //#endif
 
+        try {
+            Class.forName("com.futurice.s40rssreader.Orientator").newInstance();
+        } catch (Throwable t) {
+            Log.l.log("Orientation changes not supported", "", t);
+        }
         setCurrentView(listView);
     }
 
@@ -199,9 +199,9 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         //just paints the highlight on the selected item
         listView.deselectItem();
         //#ifdef Profile
-//#         if (currentView == iconListView) {
+//#         if (currentView == listView) {
 //#             //selects the tapped item
-//#             iconListView.selectItem(x, y, true);
+//#             listView.selectItem(x, y, true);
 //#         }
         //#endif
     }
@@ -232,5 +232,9 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         }
         setCommandListener(currentView);
         queueRepaint();
+    }
+
+    public boolean isPortrait() {
+        return getWidth() <= 240;
     }
 }

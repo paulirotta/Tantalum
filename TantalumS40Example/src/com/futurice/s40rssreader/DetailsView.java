@@ -90,7 +90,7 @@ public final class DetailsView extends View {
 
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_FOREGROUND);
-        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), StringUtils.splitToLines(item.getTitle(), RSSReaderCanvas.FONT_TITLE, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
+        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), StringUtils.splitToLines(item.getTitle(), RSSReaderCanvas.FONT_TITLE, width - 2 * RSSReaderCanvas.MARGIN));
 
         g.setFont(RSSReaderCanvas.FONT_DATE);
         g.drawString(item.getPubDate(), 10 + x, curY, Graphics.LEFT | Graphics.TOP);
@@ -98,7 +98,7 @@ public final class DetailsView extends View {
         curY += RSSReaderCanvas.FONT_DATE.getHeight() * 2;
 
         g.setFont(RSSReaderCanvas.FONT_DESCRIPTION);
-        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), StringUtils.splitToLines(item.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, canvas.getWidth() - 2 * RSSReaderCanvas.MARGIN));
+        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), StringUtils.splitToLines(item.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, width - 2 * RSSReaderCanvas.MARGIN));
 
         curY += RSSReaderCanvas.FONT_DESCRIPTION.getHeight();
 

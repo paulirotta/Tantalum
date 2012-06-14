@@ -29,7 +29,7 @@ public final class IconListView extends RSSListView {
     private final Command clearCacheCommand = new Command("Clear Cache", Command.SCREEN, 5);
     private final Command prefetchImagesCommand = new Command("Prefetch Images", Command.SCREEN, 2);
     private int selectedIndex = -1;
-    private final int numberOfColumns = 3;
+    public int numberOfColumns = 3;
     private final Hashtable icons = new Hashtable();
     private int columnWidth = 100;
     private static int[] data = null;
@@ -67,6 +67,7 @@ public final class IconListView extends RSSListView {
      */
     public void render(final Graphics g, final int width, final int height) {
         try {
+            numberOfColumns = canvas.isPortrait() ? 3 : 4;
             modelCopy = rssModel.copy(modelCopy);
             if (modelCopy.length == 0) {
                 g.setColor(RSSReader.COLOR_BACKGROUND);
