@@ -71,7 +71,7 @@ public final class DetailsView extends View {
     /*
      * Renders the details of the selected item
      */
-    public void render(final Graphics g, final int width, final int height) {
+    public void render(final Graphics g, int width, final int height) {
         final RSSItem item = currentItem;
 
         x >>= 1;
@@ -86,7 +86,11 @@ public final class DetailsView extends View {
         int curY = renderY;
 
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_BACKGROUND);
-        g.fillRect(x, 0, x + width, height);
+        g.fillRect(x, 0, x + width + SCROLL_BAR_WIDTH, height);
+
+        if (!canvas.isPortrait()) {
+            width >>= 1;
+        }
 
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_FOREGROUND);
@@ -106,9 +110,12 @@ public final class DetailsView extends View {
         if (url != null) {
             image = (Image) imageCache.synchronousRAMCacheGet(url);
             if (image != null) {
-                g.drawImage(image, (x + canvas.getWidth()) >> 1, curY, Graphics.TOP | Graphics.HCENTER);
-                curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
                 currentIcon = image;
+                if (canvas.isPortrait()) {
+                    g.drawImage(image, (x + canvas.getWidth()) >> 1, curY, Graphics.TOP | Graphics.HCENTER);
+                } else {
+                    g.drawImage(image, canvas.getWidth()/2 + (x + canvas.getWidth()) >> 1, renderY + RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), Graphics.TOP | Graphics.HCENTER);
+                }
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
