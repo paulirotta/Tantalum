@@ -21,7 +21,7 @@ public final class VerticalListView extends RSSListView {
     private static final int ROW_HEIGHT = RSSReaderCanvas.FONT_TITLE.getHeight()
             + RSSReaderCanvas.FONT_DATE.getHeight() + 2 * RSSReaderCanvas.MARGIN;
     private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
-    private final Command updateCommand = new Command("Update", Command.ITEM, 0);
+    private final Command updateCommand = new Command("Update", Command.OK, 0);
     private final Command clearCacheCommand = new Command("Clear Cache", Command.SCREEN, 5);
     private final Command prefetchImagesCommand = new Command("Prefetch Images", Command.SCREEN, 2);
     private int selectedIndex = -1;
