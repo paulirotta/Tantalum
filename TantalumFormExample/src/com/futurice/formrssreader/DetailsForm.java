@@ -4,11 +4,11 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.RunnableResult;
-import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.net.StaticWebCache;
-import com.futurice.tantalum2.net.xml.RSSItem;
-import com.futurice.tantalum2.rms.ImageTypeHandler;
+import com.futurice.tantalum3.RunnableResult;
+import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.net.StaticWebCache;
+import com.futurice.tantalum3.net.xml.RSSItem;
+import com.futurice.tantalum3.rms.ImageTypeHandler;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.*;
 
@@ -87,6 +87,7 @@ public class DetailsForm extends Form implements CommandListener {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
                 imageCache.get(selectedItem.getThumbnail(), new RunnableResult() {
+
                     public void run() {
                         DetailsForm.this.appendImageItem();
                         selectedItem.setLoadingImage(false);

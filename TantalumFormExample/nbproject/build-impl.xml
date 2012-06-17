@@ -312,16 +312,16 @@
     </target>
     <!--deps-jar-->
     <target name="deps-jar" depends="conditional-clean" unless="no.deps">
-        <ant target="jar" inheritall="false" antfile="${project.Tantalum2}/build.xml">
+        <ant target="jar" inheritall="false" antfile="${project.Tantalum3}/build.xml">
             <property name="config.active" value=""/>
         </ant>
-        <ant target="jar" inheritall="false" antfile="${project.Tantalum2Library}/build.xml">
+        <ant target="jar" inheritall="false" antfile="${project.Tantalum3Library}/build.xml">
             <property name="config.active" value=""/>
         </ant>
-        <ant target="jar" inheritall="false" antfile="${project.Tantalum2Library}/build.xml">
+        <ant target="jar" inheritall="false" antfile="${project.Tantalum3Library}/build.xml">
             <property name="config.active" value="Release"/>
         </ant>
-        <ant target="jar" inheritall="false" antfile="${project.Tantalum2Library}/build.xml">
+        <ant target="jar" inheritall="false" antfile="${project.Tantalum3Library}/build.xml">
             <property name="config.active" value="UsbDebug"/>
         </ant>
     </target>

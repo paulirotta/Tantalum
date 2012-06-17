@@ -4,9 +4,9 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum2.TantalumMIDlet;
-import com.futurice.tantalum2.Workable;
-import com.futurice.tantalum2.Worker;
+import com.futurice.tantalum3.TantalumMIDlet;
+import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Worker;
 import javax.microedition.lcdui.*;
 
 /**
@@ -96,7 +96,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
 
     public ListForm getList() {
         if (list == null) {
-            list = new ListForm(this, "Tantalum BBC");
+            list = new ListForm(this, "Tantalum3 BBC");
         }
         return list;
     }
