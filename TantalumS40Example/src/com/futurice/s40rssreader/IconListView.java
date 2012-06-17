@@ -4,11 +4,11 @@
  */
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum2.Result;
-import com.futurice.tantalum2.Worker;
-import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.net.xml.RSSItem;
-import com.futurice.tantalum2.util.ImageUtils;
+import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.Worker;
+import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.net.xml.RSSItem;
+import com.futurice.tantalum3.util.ImageUtils;
 import java.util.Hashtable;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;

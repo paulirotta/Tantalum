@@ -4,13 +4,13 @@
  */
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum2.Result;
-import com.futurice.tantalum2.Workable;
-import com.futurice.tantalum2.Worker;
-import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.net.StaticWebCache;
-import com.futurice.tantalum2.net.xml.RSSModel;
-import com.futurice.tantalum2.rms.DataTypeHandler;
+import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Worker;
+import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.net.StaticWebCache;
+import com.futurice.tantalum3.net.xml.RSSModel;
+import com.futurice.tantalum3.rms.DataTypeHandler;
 import org.xml.sax.SAXException;
 
 /**

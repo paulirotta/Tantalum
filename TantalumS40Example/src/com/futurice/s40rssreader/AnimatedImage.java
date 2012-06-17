@@ -4,7 +4,7 @@
  */
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum2.util.ImageUtils;
+import com.futurice.tantalum3.util.ImageUtils;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 

@@ -1,11 +1,11 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.net.xml.RSSItem;
-import com.futurice.tantalum2.util.PoolingWeakImageHashCache;
 //#ifndef Profile
 import com.nokia.mid.ui.DirectUtils;
 //#endif
+import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.net.xml.RSSItem;
+import com.futurice.tantalum3.util.PoolingWeakImageHashCache;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;

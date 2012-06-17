@@ -8,9 +8,9 @@
         </data>
         <references xmlns="http://www.netbeans.org/ns/ant-project-references/2">
             <reference>
-                <foreign-project>Tantalum2</foreign-project>
+                <foreign-project>Tantalum3</foreign-project>
                 <artifact-type>jar</artifact-type>
-                <script>${project.Tantalum2}/build.xml</script>
+                <script>${project.Tantalum3}/build.xml</script>
                 <target>jar</target>
                 <clean-target>clean</clean-target>
                 <id>jar</id>
@@ -19,9 +19,9 @@
                 </properties>
             </reference>
             <reference>
-                <foreign-project>Tantalum2Library</foreign-project>
+                <foreign-project>Tantalum3Library</foreign-project>
                 <artifact-type>jar</artifact-type>
-                <script>${project.Tantalum2Library}/build.xml</script>
+                <script>${project.Tantalum3Library}/build.xml</script>
                 <target>jar</target>
                 <clean-target>clean</clean-target>
                 <id>jar</id>
@@ -30,9 +30,9 @@
                 </properties>
             </reference>
             <reference>
-                <foreign-project>Tantalum2Library</foreign-project>
+                <foreign-project>Tantalum3Library</foreign-project>
                 <artifact-type>jar</artifact-type>
-                <script>${project.Tantalum2Library}/build.xml</script>
+                <script>${project.Tantalum3Library}/build.xml</script>
                 <target>jar</target>
                 <clean-target>clean</clean-target>
                 <id>jar.Release</id>
@@ -41,9 +41,9 @@
                 </properties>
             </reference>
             <reference>
-                <foreign-project>Tantalum2Library</foreign-project>
+                <foreign-project>Tantalum3Library</foreign-project>
                 <artifact-type>jar</artifact-type>
-                <script>${project.Tantalum2Library}/build.xml</script>
+                <script>${project.Tantalum3Library}/build.xml</script>
                 <target>jar</target>
                 <clean-target>clean</clean-target>
                 <id>jar.UsbDebug</id>
