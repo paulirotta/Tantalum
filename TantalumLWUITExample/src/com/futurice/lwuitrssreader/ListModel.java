@@ -4,9 +4,9 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.net.xml.RSSModel;
-import com.futurice.tantalum2.rms.DataTypeHandler;
+import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.net.xml.RSSModel;
+import com.futurice.tantalum3.rms.DataTypeHandler;
 import com.sun.lwuit.events.DataChangedListener;
 import com.sun.lwuit.list.DefaultListModel;
 import org.xml.sax.SAXException;
@@ -50,7 +50,7 @@ public class ListModel extends DefaultListModel implements DataChangedListener, 
     }
 
     private class LiveUpdateRSSModel extends RSSModel {
-        
+
         public LiveUpdateRSSModel(final int maxSize) {
             super(maxSize);
         }

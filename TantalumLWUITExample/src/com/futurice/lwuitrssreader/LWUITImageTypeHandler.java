@@ -4,8 +4,8 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.log.Log;
-import com.futurice.tantalum2.rms.DataTypeHandler;
+import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.rms.DataTypeHandler;
 import com.sun.lwuit.Image;
 
 /**

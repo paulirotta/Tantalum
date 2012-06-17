@@ -4,9 +4,9 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.RunnableResult;
-import com.futurice.tantalum2.net.StaticWebCache;
-import com.futurice.tantalum2.net.xml.RSSItem;
+import com.futurice.tantalum3.RunnableResult;
+import com.futurice.tantalum3.net.StaticWebCache;
+import com.futurice.tantalum3.net.xml.RSSItem;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Image;

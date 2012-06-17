@@ -1,9 +1,9 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum2.Result;
-import com.futurice.tantalum2.Worker;
-import com.futurice.tantalum2.net.StaticWebCache;
-import com.futurice.tantalum2.net.xml.RSSItem;
+import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.Worker;
+import com.futurice.tantalum3.net.StaticWebCache;
+import com.futurice.tantalum3.net.xml.RSSItem;
 import com.sun.lwuit.*;
 import com.sun.lwuit.animations.CommonTransitions;
 import com.sun.lwuit.events.ActionEvent;
@@ -31,8 +31,8 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
 
         addComponent(list);
         addCommand(settingsCommand);
-        addCommand(reloadCommand);
         addCommand(exitCommand);
+        addCommand(reloadCommand);
 
         setTransitionOutAnimator(
                 CommonTransitions.createSlide(
@@ -53,7 +53,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 reload(true);
             }
             if (cmdStr.equals("Exit")) {
-                Worker.shutdown(true); 
+                Worker.shutdown(true);
             }
         } else {
             int selectedIndex = ((List) ae.getSource()).getSelectedIndex();
