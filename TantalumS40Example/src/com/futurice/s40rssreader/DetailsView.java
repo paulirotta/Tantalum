@@ -88,18 +88,18 @@ public final class DetailsView extends View {
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_BACKGROUND);
         g.fillRect(x, 0, x + width + SCROLL_BAR_WIDTH, height);
 
-        if (!canvas.isPortrait()) {
-            width >>= 1;
-        }
-
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_FOREGROUND);
         curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), StringUtils.splitToLines(item.getTitle(), RSSReaderCanvas.FONT_TITLE, width - 2 * RSSReaderCanvas.MARGIN));
 
+        if (!canvas.isPortrait()) {
+            width >>= 1;
+        }
+
         g.setFont(RSSReaderCanvas.FONT_DATE);
         g.drawString(item.getPubDate(), 10 + x, curY, Graphics.LEFT | Graphics.TOP);
 
-        curY += RSSReaderCanvas.FONT_DATE.getHeight() * 2;
+        curY += RSSReaderCanvas.FONT_DATE.getHeight() << 1;
 
         g.setFont(RSSReaderCanvas.FONT_DESCRIPTION);
         curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), StringUtils.splitToLines(item.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, width - 2 * RSSReaderCanvas.MARGIN));
@@ -113,8 +113,9 @@ public final class DetailsView extends View {
                 currentIcon = image;
                 if (canvas.isPortrait()) {
                     g.drawImage(image, (x + canvas.getWidth()) >> 1, curY, Graphics.TOP | Graphics.HCENTER);
+                    curY += image.getHeight() + RSSReaderCanvas.FONT_TITLE.getHeight();
                 } else {
-                    g.drawImage(image, canvas.getWidth()/2 + (x + canvas.getWidth()) >> 1, renderY + RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), Graphics.TOP | Graphics.HCENTER);
+                    g.drawImage(image, (canvas.getWidth() >> 1) + (x + canvas.getWidth()) >> 1, renderY + height >> 1, Graphics.VCENTER | Graphics.HCENTER);
                 }
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
