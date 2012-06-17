@@ -25,7 +25,7 @@ public final class IconListView extends RSSListView {
 
     private static final int ROW_HEIGHT = 40 + 2 * RSSReaderCanvas.MARGIN;
     private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
-    private final Command updateCommand = new Command("Update", Command.OK, 0);
+    private Command updateCommand = new Command("Update", Command.OK, 0);
     private final Command clearCacheCommand = new Command("Clear Cache", Command.SCREEN, 5);
     private final Command prefetchImagesCommand = new Command("Prefetch Images", Command.SCREEN, 2);
     private int selectedIndex = -1;
@@ -37,6 +37,12 @@ public final class IconListView extends RSSListView {
 
     public IconListView(final RSSReaderCanvas canvas) {
         super(canvas);
+        
+        try {
+            updateCommand = (Command) Class.forName("com.futurice.s40rssreader.UpdateIconCommand").newInstance();        
+        } catch (Throwable t) {
+            Log.l.log("IconCommand not supported", "Update", t);
+        }
     }
 
     public Command[] getCommands() {

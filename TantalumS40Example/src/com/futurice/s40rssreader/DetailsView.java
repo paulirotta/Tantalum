@@ -24,12 +24,12 @@ public final class DetailsView extends View {
     private final Command openLinkCommand = new Command("Open link", Command.ITEM, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
-    private volatile RSSItem currentItem;
-    private volatile RSSItem leftItem;
-    private volatile RSSItem rightItem;
-    private volatile Image leftIcon = null;
-    private volatile Image rightIcon = null;
-    private volatile Image currentIcon = null;
+    private volatile RSSItem currentItem; // Current article
+    private volatile RSSItem leftItem; // Previous article, for image prefetch
+    private volatile RSSItem rightItem; // Next article, for image prefetch
+    private volatile Image leftIcon = null; // This reference prevents WeakReference garbage collect on previous article image
+    private volatile Image rightIcon = null; // This reference prevents WeakReference garbage collect on next article image
+    private volatile Image currentIcon = null; // This reference prevents WeakReference garbage collect on current article image
     private Image image; // Most recently used image (hard link prevents WeakReference gc)
     private int x = 0;
 
