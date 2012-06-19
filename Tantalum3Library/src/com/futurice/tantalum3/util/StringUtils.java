@@ -45,7 +45,7 @@ public class StringUtils {
         while (font.stringWidth(truncated.toString()) > maxWidth) {
             truncated.deleteCharAt(truncated.length() - 1);
         }
-        truncated.delete(truncated.length() - ELIPSIS.length(), truncated.length() - 1);
+        truncated.delete(truncated.length() - ELIPSIS.length(), truncated.length());
         truncated.append(ELIPSIS);
         return truncated.toString();
     }
