@@ -59,7 +59,10 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         animator.register(0, 0, fps, pps, this);
 
         //register for gesturevents
-        final GestureInteractiveZone giz = new GestureInteractiveZone(GestureInteractiveZone.GESTURE_ALL);
+        final GestureInteractiveZone giz = new GestureInteractiveZone(
+                GestureInteractiveZone.GESTURE_DRAG | 
+                GestureInteractiveZone.GESTURE_FLICK | 
+                GestureInteractiveZone.GESTURE_TAP);
         GestureRegistrationManager.register(this, giz);
         GestureRegistrationManager.setListener(this, this);
 //#endif

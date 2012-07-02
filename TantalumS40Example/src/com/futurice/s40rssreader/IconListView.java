@@ -34,12 +34,15 @@ public final class IconListView extends RSSListView {
     private int columnWidth = 100;
     private static int[] data = null;
     private RSSItem[] modelCopy = null;
+    private boolean animationRunning = false;
+    private static boolean iconSupport = false;
 
     public IconListView(final RSSReaderCanvas canvas) {
         super(canvas);
-        
+
         try {
-            updateCommand = (Command) Class.forName("com.futurice.s40rssreader.UpdateIconCommand").newInstance();        
+            updateCommand = (Command) Class.forName("com.futurice.s40rssreader.UpdateIconCommand").newInstance();
+            iconSupport = true;
         } catch (Throwable t) {
             Log.l.log("IconCommand not supported", "Update", t);
         }
@@ -76,11 +79,17 @@ public final class IconListView extends RSSListView {
             numberOfColumns = canvas.isPortrait() ? 3 : 4;
             modelCopy = rssModel.copy(modelCopy);
             if (modelCopy.length == 0) {
+                if (iconSupport && !animationRunning){
+                    ((UpdateIconCommand) updateCommand).startAnimation();
+                }
                 g.setColor(RSSReader.COLOR_BACKGROUND);
                 g.fillRect(0, 0, width, height);
                 g.setColor(RSSReader.COLOR_FOREGROUND);
                 g.drawString("Loading...", canvas.getWidth() >> 1, canvas.getHeight() >> 1, Graphics.BASELINE | Graphics.HCENTER);
                 return;
+            } else if (iconSupport){
+             ((UpdateIconCommand) updateCommand).stopAnimation();
+             animationRunning = false;
             }
 
             final int totalHeight = modelCopy.length * ROW_HEIGHT / numberOfColumns;
