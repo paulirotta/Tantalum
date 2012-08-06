@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Tantalum3Android" default="default" basedir=".">
+    <description>Builds, tests, and runs the project Tantalum3Android.</description>
+    <import file="nbproject/build-impl.xml"/>
+    
+    <!-- Create a new .jar that includes the Tantalum3 library.
+        Duplicate="preserve" makes sure that the files in this project do not
+        get overwritten by those in the original Tantalum .jar. -->
+    <target name="-post-jar">
+        <jar jarfile="dist/Tantalum3AndroidLibraries.jar" duplicate="preserve">
+            <zipfileset src="${dist.jar}" excludes="META-INF/*" />
+            <zipfileset src="..\Tantalum3Library\dist\Release\Tantalum3.jar" excludes="META-INF/*" />
+        </jar>
+    </target>
+</project>
