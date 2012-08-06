@@ -15,7 +15,7 @@ import javax.microedition.midlet.MIDlet;
  *
  * @author pahought
  */
-public final class Worker implements Runnable {
+public class Worker implements Runnable {
 
     /*
      * Synchronize on the following object if your processing routine will
@@ -81,7 +81,7 @@ public final class Worker implements Runnable {
         return midlet;
     }
 
-    private Worker() {
+    public Worker() {
     }
 
     /**
