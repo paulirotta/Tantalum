@@ -90,7 +90,7 @@ public final class DetailsView extends View {
 
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_FOREGROUND);
-        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), StringUtils.splitToLines(item.getTitle(), RSSReaderCanvas.FONT_TITLE, width - 2 * RSSReaderCanvas.MARGIN));
+        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), StringUtils.splitToLines(new Vector(), item.getTitle(), RSSReaderCanvas.FONT_TITLE, width - 2 * RSSReaderCanvas.MARGIN));
 
         if (!canvas.isPortrait()) {
             width >>= 1;
@@ -102,7 +102,7 @@ public final class DetailsView extends View {
         curY += RSSReaderCanvas.FONT_DATE.getHeight() << 1;
 
         g.setFont(RSSReaderCanvas.FONT_DESCRIPTION);
-        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), StringUtils.splitToLines(item.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, width - 2 * RSSReaderCanvas.MARGIN));
+        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), StringUtils.splitToLines(new Vector(), item.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, width - 2 * RSSReaderCanvas.MARGIN));
 
         curY += RSSReaderCanvas.FONT_DESCRIPTION.getHeight();
 

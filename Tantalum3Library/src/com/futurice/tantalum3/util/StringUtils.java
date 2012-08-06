@@ -51,66 +51,28 @@ public class StringUtils {
     }
 
     /**
-     * Split a string in to several lines of text which will display within a
-     * maximum width.
+     * Split a string in to several lines of text which will display within a maximum width.
      *
+     * @param vector
      * @param str
      * @param font
      * @param maxWidth
      * @return
      */
-    public static Vector splitToLines(final String str, final Font font, final int maxWidth) {
-        final Vector lines = new Vector();
-
-        if (font.stringWidth(str) <= maxWidth) {
-            lines.addElement(str);
-            return lines;
-        }
-
-        StringBuffer currentLine = new StringBuffer();
-        String word = null;
-        int currentIndex = 0;
-        int wordBoundaryIndex = str.indexOf(' ', currentIndex);
-        if (wordBoundaryIndex == -1) {
-            for (int i = 0; i < str.length(); i++) {
-                if (font.stringWidth(str.substring(0, i)) > maxWidth) {
-                    wordBoundaryIndex = i;
-                    break;
-                }
+    public static Vector splitToLines(Vector vector, String text, Font font, int maxWidth) {
+        int len, lastSpace = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == ' ') {
+                lastSpace = i;
+            }
+            len = font.stringWidth(text.substring(0, i));
+            if (len > maxWidth) {
+                vector.addElement(text.substring(0, lastSpace + 1).trim());
+                return splitToLines(vector, text.substring(lastSpace), font, maxWidth);
             }
         }
-
-        while (currentIndex != -1 && currentIndex < str.length()) {
-
-            word = str.substring(currentIndex, wordBoundaryIndex + 1);
-
-            if (currentIndex == 0) {
-                currentLine.append(word);
-            } else {
-                if (font.stringWidth((currentLine.toString() + " " + word)) < maxWidth) {
-                    currentLine.append(" " + word);
-                } else {
-                    lines.addElement(currentLine.toString());
-                    currentLine.setLength(0);
-                    currentLine.append(word);
-                }
-            }
-
-            currentIndex = wordBoundaryIndex + 1;
-            wordBoundaryIndex = str.indexOf(' ', currentIndex);
-            if (wordBoundaryIndex == -1) {
-                wordBoundaryIndex = str.length() - 1;
-                for (int i = currentIndex; i < str.length(); i++) {
-                    if (font.stringWidth(str.substring(currentIndex, i)) > maxWidth) {
-                        wordBoundaryIndex = i;
-                        break;
-                    }
-                }
-            }
-        }
-        lines.addElement(currentLine.toString());
-
-        return lines;
+        vector.addElement(text.trim());
+        return vector;
     }
 
     /**
