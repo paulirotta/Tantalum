@@ -4,7 +4,7 @@ package com.futurice.tantalum3;
  *
  *
  */
-public abstract class AsyncTask implements Workable, Runnable {
+public abstract class AsyncTask {
 
     public static final int PENDING = 1;
     public static final int RUNNING = 2;
@@ -16,6 +16,12 @@ public abstract class AsyncTask implements Workable, Runnable {
         status = PENDING;
     }
 
+    /**
+     * Cancel execution if possible. 
+     * 
+     * @param mayInterruptIfRunning
+     * @return 
+     */
     public final boolean cancel(boolean mayInterruptIfRunning) {
         if (status < RUNNING) {
             status = CANCELED;
@@ -38,6 +44,7 @@ public abstract class AsyncTask implements Workable, Runnable {
     // Do the same thing for all params parallel.
     public final AsyncTask executeOnExecutor(final Object[] params) {
         status = RUNNING;
+        onPreExecute();
         Worker.queue(new AsyncParallelWorkable(params));
         return this;
     }
@@ -117,7 +124,7 @@ public abstract class AsyncTask implements Workable, Runnable {
          */
         public AsyncParallelWorkable(Object[] params) {
             this.params = params;
-            workers = 0;
+            workers = params.length;
         }
 
         /**
@@ -125,10 +132,10 @@ public abstract class AsyncTask implements Workable, Runnable {
          *
          * @return
          */
-        public boolean work() {
+        public boolean work() {            
             for (int i = 0; i < params.length; i++) {
                 final Object current = params[i];
-                workers++;
+                
                 Worker.queue(new Workable() {
 
                     public boolean work() {
@@ -138,7 +145,7 @@ public abstract class AsyncTask implements Workable, Runnable {
                     }
                 });
             }
-            return false;
+            return true;
         }
 
         /**
@@ -147,7 +154,7 @@ public abstract class AsyncTask implements Workable, Runnable {
          * @param doneWorkers
          */
         public void updateDone(int doneWorkers) {
-            if (workers <= 0) {
+            if (doneWorkers <= 0) {
                 Worker.queueEDT(this);
             }
         }
