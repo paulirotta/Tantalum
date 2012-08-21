@@ -1,12 +1,12 @@
 package com.futurice.lwuitrssreader;
 
 import com.sun.lwuit.Command;
+import com.sun.lwuit.Form;
 import com.sun.lwuit.Label;
 import com.sun.lwuit.TextArea;
-import com.sun.lwuit.Form;
 import com.sun.lwuit.animations.CommonTransitions;
-import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.events.ActionEvent;
+import com.sun.lwuit.events.ActionListener;
 
 /**
  * @author tsaa
@@ -31,6 +31,7 @@ public class SettingsForm extends Form implements ActionListener {
         this.addComponent(urlTextArea);
         this.addCommand(saveCommand);
         this.addCommand(backCommand);
+        this.setBackCommand(backCommand);
 
         setTransitionOutAnimator(
                 CommonTransitions.createSlide(

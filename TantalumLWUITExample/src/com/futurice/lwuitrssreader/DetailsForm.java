@@ -46,6 +46,7 @@ public class DetailsForm extends Form implements ActionListener {
 
         addCommand(linkCommand);
         addCommand(backCommand);
+        this.setBackCommand(backCommand);
 
         setTransitionOutAnimator(
                 CommonTransitions.createSlide(
