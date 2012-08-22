@@ -6,7 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-public class AndroidDatabase extends SQLiteOpenHelper {
+public final class AndroidDatabase extends SQLiteOpenHelper {
 
     protected static final int DB_VERSION = 1;
     protected static final String DB_NAME = "TantalumRMS";
@@ -45,13 +45,10 @@ public class AndroidDatabase extends SQLiteOpenHelper {
     }
 
     public synchronized byte[] getData(String key) {
-
-        System.out.println(key);
-        String[] fields = new String[]{COL_DATA};
-
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        Cursor cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
+        // System.out.println(key);
+        final String[] fields = new String[]{COL_DATA};
+        final SQLiteDatabase db = this.getReadableDatabase();
+        final Cursor cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
                 new String[]{String.valueOf(key)}, null, null, null, null);
 
         if (cursor == null || cursor.getCount() == 0) {
@@ -63,31 +60,29 @@ public class AndroidDatabase extends SQLiteOpenHelper {
 //			System.out.println(cursor.getColumnCount());
             byte[] data = cursor.getBlob(0);
             db.close();
+
             return data;
         }
-
     }
 
     public synchronized void putData(String key, byte[] data) {
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
+        final SQLiteDatabase db = this.getWritableDatabase();
+        final ContentValues values = new ContentValues();
+        
         values.put(COL_KEY, key);
         values.put(COL_DATA, data);
 
         db.insert(TABLE_NAME, null, values);
         db.close();
-
+        //TODO Opening and closing the database might be safe, but slow. Check options.
     }
 
     public synchronized void removeData(String key) {
-
-        SQLiteDatabase db = this.getWritableDatabase();
+        final SQLiteDatabase db = this.getWritableDatabase();
 
         String where = COL_KEY + "==\"" + key + "\"";
 
         db.delete(TABLE_NAME, where, null);
         db.close();
-
     }
 }
