@@ -100,7 +100,7 @@ public abstract class AsyncTask {
     public final Closure startExecute(final Object params) {
         status = RUNNING;
         onPreExecute();
-        final Closure wr = new Closure() {
+        final Closure closure = new Closure() {
             Object result = null;
 
             public boolean work() {
@@ -127,7 +127,7 @@ public abstract class AsyncTask {
             }
         };
         
-        return wr;
+        return closure;
     }
 
     public final int getStatus() {
