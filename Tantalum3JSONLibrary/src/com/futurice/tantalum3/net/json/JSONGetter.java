@@ -53,6 +53,7 @@ public class JSONGetter extends Result {
             }
             jsonvo.setJSON(value);
         } catch (Exception e) {
+            //#debug
             Log.l.log("JSONGetter HTTP response problem", this.httpGetter.getUrl() + " : " + value, e);
             noResult();
         }

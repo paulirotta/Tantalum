@@ -1,84 +1,133 @@
 package com.futurice.tantalum3;
 
+import com.futurice.tantalum3.log.Log;
+
 /**
  *
  *
  */
 public abstract class AsyncTask {
 
+    /*
+     * If tasks are called with execute(Params) then they will all execute in
+     * guaranteed sequence on one Worker thread. It is generally better to use
+     * executeOnExecutor(Params) instead unless
+     */
+    public static final int ASYNC_TASK_WORKER_INDEX = Worker.nextSerialWorkerIndex();
     public static final int PENDING = 1;
     public static final int RUNNING = 2;
     public static final int FINISHED = 3;
     public static final int CANCELED = 4;
     private volatile int status;
+    private Object params = ""; // For default toString debug helper
 
     public AsyncTask() {
         status = PENDING;
     }
 
     /**
-     * Cancel execution if possible. 
-     * 
+     * Cancel execution if possible.
+     *
      * @param mayInterruptIfRunning
-     * @return 
+     * @return
      */
-    public final boolean cancel(boolean mayInterruptIfRunning) {
-        if (status < RUNNING) {
-            status = CANCELED;
-            return true;
-        } else if (status == RUNNING) {
-            if (mayInterruptIfRunning) {
+    public final boolean cancel(final boolean mayInterruptIfRunning) {
+        switch (status) {
+            case PENDING:
                 status = CANCELED;
                 return true;
-            } else {
-                return false;
-            }
+            case RUNNING:
+                if (mayInterruptIfRunning) {
+                    status = CANCELED;
+                    return true;
+                } else {
+                    return false;
+                }
+            default:
         }
+
         return false;
     }
 
-    //TODO: 
-    public static void execute(Runnable runnable) {
+    /**
+     * For compatability with Android, run one Runnable task on a single background
+     * thread in queued order.
+     *
+     * NOTE: This Android use of "Runnable" is not consistent with the Tantalum
+     * standard the "Workable.work()" is performed on a background Worker thread
+     * and "Runnable.run()" is performed on the EDT.
+     *
+     * @param runnable
+     */
+    public static void execute(final Runnable runnable) {
+        Worker.queueSerial(new Workable() {
+            public boolean work() {
+                runnable.run();
+
+                return false;
+            }
+        }, ASYNC_TASK_WORKER_INDEX);
     }
 
-    // Do the same thing for all params parallel.
+    /**
+     * Do the same thing for all params parallel
+     *
+     * This method must be invoked on the UI thread
+     *
+     * @param params
+     * @return
+     */
     public final AsyncTask executeOnExecutor(final Object[] params) {
-        status = RUNNING;
-        onPreExecute();
-        Worker.queue(new AsyncParallelWorkable(params));
+        Worker.queue(startExecute(params));
+        
         return this;
     }
 
-    // Do the same thing for all params in succession
-    public final AsyncTask execute(final Object[] params) {
-        onPreExecute();
+    public final AsyncTask execute(final Object params) {
+        Worker.queueSerial(startExecute(params), ASYNC_TASK_WORKER_INDEX);
+        
+        return this;
+    }
+
+    /**
+     * Do the same thing for all params
+     *
+     * This method must be invoked on the UI thread
+     *
+     * @param params
+     * @return
+     */
+    public final Closure startExecute(final Object params) {
         status = RUNNING;
-        Worker.queue(new Workable() {
+        onPreExecute();
+        final Closure wr = new Closure() {
+            Object result = null;
 
             public boolean work() {
-                for (int i = 0; i < params.length; i++) {
-                    final Object current = params[i];
-                    if (status != CANCELED) {
-                        doInBackground(current);
-                    } else {
-                        Worker.queueEDT(new Runnable() {
-
-                            public void run() {
-                                onCancel();
-                            }
-                        });
+                try {
+                    if (status == CANCELED) {
+                        return true;
                     }
+                    result = doInBackground(params);
+                    status = FINISHED;
+                } catch (final Throwable t) {
+                    //#debug
+                    Log.l.log("Async task exception", this.toString(), t);
+                    status = CANCELED;
                 }
-                Worker.queueEDT(new Runnable() {
-
-                    public void run() {
-                        onPostExecute();
-                    }
-                });
                 return true;
             }
-        });
-        return this;
+
+            public void run() {
+                if (status == CANCELED) {
+                    onCancel();
+                } else {
+                    onPostExecute(result);
+                }
+            }
+        };
+        
+        return wr;
     }
 
     public final int getStatus() {
@@ -93,12 +142,12 @@ public abstract class AsyncTask {
     }
 
     /**
-     * This method will run in the background in parallell.
+     * This method will run in the background in parallel
      *
-     * @param param
+     * @param params
      * @return true if successful
      */
-    protected abstract boolean doInBackground(Object param);
+    protected abstract Object doInBackground(Object params);
 
     protected void publishProgress(Object progress) {
     }
@@ -106,64 +155,18 @@ public abstract class AsyncTask {
     protected void onProgressUpdate() {
     }
 
-    protected void onPostExecute() {
+    protected void onPostExecute(Object result) {
     }
 
     protected void onCancel() {
     }
 
-    private class AsyncParallelWorkable implements Workable, Runnable {
-
-        private Object[] params;
-        private volatile int workers;
-
-        /**
-         * Create the workable with the objects it will do parallel work on.
-         *
-         * @param params
-         */
-        public AsyncParallelWorkable(Object[] params) {
-            this.params = params;
-            workers = params.length;
-        }
-
-        /**
-         * Create other workables that work in paralell on the parameters
-         *
-         * @return
-         */
-        public boolean work() {            
-            for (int i = 0; i < params.length; i++) {
-                final Object current = params[i];
-                
-                Worker.queue(new Workable() {
-
-                    public boolean work() {
-                        boolean success = doInBackground(current);
-                        updateDone(--workers);
-                        return success;
-                    }
-                });
-            }
-            return true;
-        }
-
-        /**
-         * When the workers are done, queue this on EDT
-         *
-         * @param doneWorkers
-         */
-        public void updateDone(int doneWorkers) {
-            if (doneWorkers <= 0) {
-                Worker.queueEDT(this);
-            }
-        }
-
-        /**
-         * Run onPostExecute on the EDT.
-         */
-        public void run() {
-            onPostExecute();
-        }
+    /**
+     * Debug helper, override for more specific debug info if needed
+     * 
+     * @return 
+     */
+    public String toString() {
+        return this.getClass().getName() + ", AsyncTask params: " + params.toString();
     }
 }

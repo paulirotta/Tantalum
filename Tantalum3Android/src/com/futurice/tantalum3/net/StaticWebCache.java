@@ -52,7 +52,6 @@ public class StaticWebCache extends StaticCache {
              */
             @Override
             public void noResult() {
-                //#debug
                 Log.l.log("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Result() {
 
@@ -70,7 +69,6 @@ public class StaticWebCache extends StaticCache {
                                 }
                             }
                         } catch (Exception e) {
-                            //#debug
                             Log.l.log("Can not set result", url, e);
                             noResult();
                         }
@@ -109,7 +107,6 @@ public class StaticWebCache extends StaticCache {
                     remove(url);
                     get(url, result, true);
                 } catch (Exception e) {
-                    //#debug
                     Log.l.log("Can not update", url, e);
                 }
 
@@ -133,7 +130,6 @@ public class StaticWebCache extends StaticCache {
                     try {
                         get(url, null, false);
                     } catch (Exception e) {
-                        //#debug
                         Log.l.log("Can not prefetch", url, e);
                     }
 

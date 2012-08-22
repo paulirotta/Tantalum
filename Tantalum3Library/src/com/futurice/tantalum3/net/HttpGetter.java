@@ -10,6 +10,7 @@ import com.futurice.tantalum3.log.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
 
@@ -25,7 +26,9 @@ public class HttpGetter implements Workable {
 
     private final String url;
     private final Result result;
-    private int retriesRemaining;
+    protected int retriesRemaining;
+    protected byte[] postMessage = null;
+    protected String requestMethod = HttpConnection.GET;
 
     /**
      * Get the contents of a URL and return that asynchronously as a Result
@@ -52,24 +55,27 @@ public class HttpGetter implements Workable {
 
     public boolean work() {
         //#debug
-        Log.l.log("HttpGetter start", url);
+        Log.l.log(this.getClass().getName() + " start", url);
         ByteArrayOutputStream bos = null;
         HttpConnection httpConnection = null;
         InputStream inputStream = null;
+        OutputStream outputStream = null;
         byte[] bytes = null;
         boolean tryAgain = false;
         boolean success = false;
 
         try {
             httpConnection = (HttpConnection) Connector.open(url);
-            httpConnection.setRequestMethod(HttpConnection.GET);
-            // Give the underlying native C drivers and hardware settling time
-            // This improves network realiability on some phones
+            httpConnection.setRequestMethod(requestMethod);
+            if (postMessage != null) {
+                outputStream = httpConnection.openDataOutputStream();
+                outputStream.write(postMessage);
+            }
             inputStream = httpConnection.openInputStream();
             final long length = httpConnection.getLength();
             if (length > 0 && length < 1000000) {
                 //#debug
-                Log.l.log("Start fixed_length read", url + " content_length=" + length);
+                Log.l.log(this.getClass().getName() + " start fixed_length read", url + " content_length=" + length);
                 int bytesRead = 0;
                 bytes = new byte[(int) length];
                 while (bytesRead < bytes.length) {
@@ -78,13 +84,13 @@ public class HttpGetter implements Workable {
                         bytesRead += br;
                     } else {
                         //#debug
-                        Log.l.log("Recived EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
+                        Log.l.log(this.getClass().getName() + " recived EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
                         break;
                     }
                 }
             } else {
                 //#debug
-                Log.l.log("Start variable length read", url);
+                Log.l.log(this.getClass().getName() + " start variable length read", url);
                 bos = new ByteArrayOutputStream();
                 byte[] readBuffer = new byte[16384];
                 while (true) {
@@ -100,29 +106,35 @@ public class HttpGetter implements Workable {
             }
 
             //#debug
-            Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
+            Log.l.log(this.getClass().getName() + " complete", bytes.length + " bytes, " + url);
             result.setResult(bytes);
             success = true;
             bytes = null;
         } catch (IllegalArgumentException e) {
             //#debug
-            Log.l.log("HttpGetter has a problem", url, e);
+            Log.l.log(this.getClass().getName() + " has a problem", url, e);
         } catch (IOException e) {
             //#debug
-            Log.l.log("Retries remaining", url + ", retries=" + retriesRemaining, e);
+            Log.l.log(this.getClass().getName() + " retries remaining", url + ", retries=" + retriesRemaining, e);
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
             } else {
                 //#debug
-                Log.l.log("HttpGetter no more retries", url);
+                Log.l.log(this.getClass().getName() + " no more retries", url);
             }
         } catch (Exception e) {
             //#debug
-            Log.l.log("HttpGetter has a problem", url, e);
+            Log.l.log(this.getClass().getName() + " has a problem", url, e);
         } finally {
             try {
                 inputStream.close();
+            } catch (Exception e) {
+            }
+            try {
+                if (outputStream != null) {
+                    outputStream.close();
+                }
             } catch (Exception e) {
             }
             try {
@@ -136,6 +148,7 @@ public class HttpGetter implements Workable {
             } catch (Exception e) {
             }
             inputStream = null;
+            outputStream = null;
             bos = null;
             httpConnection = null;
 
@@ -150,7 +163,7 @@ public class HttpGetter implements Workable {
                 result.noResult();
             }
             //#debug
-            Log.l.log("End HttpGet", url);
+            Log.l.log("End " + this.getClass().getName(), url);
         }
 
         return success;

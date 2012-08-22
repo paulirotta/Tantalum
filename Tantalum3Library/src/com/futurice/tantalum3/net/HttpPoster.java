@@ -31,8 +31,8 @@ public class HttpPoster implements Workable {
         if (url == null || url.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpPoster was passed bad URL: " + url);
         }
-        if (result == null) {
-            throw new IllegalArgumentException("HttpPoster was null result handler- meaningless put operation: " + url);
+        if (postMessage == null) {
+            throw new IllegalArgumentException("HttpPoster was null post message- meaningless post operation: " + url);
         }
         this.url = url;
         this.retriesRemaining = retriesRemaining;

@@ -51,6 +51,7 @@ public class ListForm extends Form implements CommandListener {
 
                     return rssModel;
                 } catch (Exception e) {
+                    //#debug
                     Log.l.log("Error parsing XML", rssModel.toString());
                     return null;
                 }
@@ -105,6 +106,7 @@ public class ListForm extends Form implements CommandListener {
                 feedUrl = bytes.toString();
             }
         } catch (Exception e) {
+            //#debug
             Log.l.log("Can not read settings", "", e);
         }
         if ("".equals(feedUrl)) {

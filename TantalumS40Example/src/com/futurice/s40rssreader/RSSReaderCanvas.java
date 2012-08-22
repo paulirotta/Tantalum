@@ -80,6 +80,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         try {
             Class.forName("com.futurice.s40rssreader.Orientator").newInstance();
         } catch (Throwable t) {
+            //#debug
             Log.l.log("Orientation changes not supported", "", t);
         }
         setCurrentView(listView);

@@ -53,6 +53,7 @@ public final class Worker implements Runnable {
                         createWorker();
                     }
                 } catch (Exception e) {
+                    //#debug
                     Log.l.log("Can not create worker", "i=" + i, e);
                 }
 
@@ -241,6 +242,7 @@ public final class Worker implements Runnable {
                         Worker.queueEDT((Runnable) workable);
                     }
                 } catch (Exception e) {
+                    //#debug
                     Log.l.log("Uncaught worker error", "workers=" + workerCount, e);
                 }
                 workable = null;

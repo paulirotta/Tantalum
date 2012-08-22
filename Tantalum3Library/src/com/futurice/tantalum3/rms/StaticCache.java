@@ -56,6 +56,7 @@ public class StaticCache {
                     }
                 }
             } catch (Exception e) {
+                //#debug
                 Log.l.log("Can not write all pending", "", e);
             }
 
@@ -147,6 +148,7 @@ public class StaticCache {
      */
     public void get(final String key, final Result result, final boolean highPriority) {
         if (key == null || key.length() == 0) {
+            //#debug
             Log.l.log("Trivial get", "");
             result.noResult();
             return;
@@ -238,6 +240,7 @@ public class StaticCache {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {
+                    //#debug
                     Log.l.log("Can not synch write to RMS", key, e);
                 }
 

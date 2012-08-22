@@ -34,6 +34,7 @@ public final class VerticalListView extends RSSListView {
         try {
             updateCommand = (Command) Class.forName("com.futurice.s40rssreader.UpdateIconCommand").newInstance();        
         } catch (Throwable t) {
+            //#debug
             Log.l.log("IconCommand not supported", "Update", t);
         }
     }

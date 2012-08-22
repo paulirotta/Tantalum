@@ -40,6 +40,7 @@ public class UpdateIconCommand extends IconCommand {
         try {
             image = Image.createImage("/connect.png");
         } catch (Exception e) {
+            //#debug
             Log.l.log("Can not initialize", "Update icon image", e);
         }
     }
