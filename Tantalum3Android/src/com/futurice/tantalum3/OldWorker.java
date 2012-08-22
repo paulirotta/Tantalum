@@ -12,7 +12,7 @@ import java.util.Vector;
  *
  * @author pahought
  */
-public final class Worker implements Runnable {
+public final class OldWorker implements Runnable {
 
     /*
      * Synchronize on the following object if your processing routine will
@@ -29,7 +29,7 @@ public final class Worker implements Runnable {
     private static boolean shuttingDown = false;
 
     /**
-     * Initialize the Worker class at the start of your MIDlet.
+     * Initialize the OldWorker class at the start of your MIDlet.
      *
      * Generally numberOfWorkers=2 is suggested, but you can increase this later
      * when tuning your application's performance.
@@ -38,9 +38,9 @@ public final class Worker implements Runnable {
      * @param numberOfWorkers
      */
     public static void init(final Activity activity, final int numberOfWorkers) {
-        Worker.activity = activity;
+        OldWorker.activity = activity;
         createWorker(); // First worker
-        Worker.queue(new Workable() {
+        OldWorker.queue(new Workable() {
 
             /**
              * The first worker creates the others in the background
@@ -63,7 +63,7 @@ public final class Worker implements Runnable {
     }
 
     private static void createWorker() {
-        final Thread thread = new Thread(new Worker(), "Worker" + ++workerCount);
+        final Thread thread = new Thread(new OldWorker(), "Worker" + ++workerCount);
 
         thread.start();
     }
@@ -105,7 +105,7 @@ public final class Worker implements Runnable {
     /**
      * Add an object to be executed at low priority in the background on the
      * worker thread. Execution will only begin when there are no foreground
-     * tasks, and only if at least 1 Worker thread is left ready for immediate
+     * tasks, and only if at least 1 OldWorker thread is left ready for immediate
      * execution of normal priority Workable tasks.
      *
      * Items in the idleQueue will not be executed if shutdown() is called
@@ -144,7 +144,7 @@ public final class Worker implements Runnable {
      */
     public static void queueEDT(final Object runnable) {
 
-    	Worker.activity.runOnUiThread((Runnable)runnable);
+    	OldWorker.activity.runOnUiThread((Runnable)runnable);
     }
 
     /**
@@ -194,7 +194,7 @@ public final class Worker implements Runnable {
     }
 
     /**
-     * Main worker loop. Each Worker thread pulls tasks from the common queue.
+     * Main worker loop. Each OldWorker thread pulls tasks from the common queue.
      *
      * The worker thread exits on uncaught errors or after shutdown() has been
      * called and all pending tasks and shutdown tasks have completed.
@@ -218,7 +218,7 @@ public final class Worker implements Runnable {
                             // Nothing to do
                             ++currentlyIdleCount;
                             if (!shuttingDown || currentlyIdleCount < workerCount) {
-                                // Empty queue, or waiting for other Worker tasks to complete before shutdown tasks start
+                                // Empty queue, or waiting for other OldWorker tasks to complete before shutdown tasks start
                                 q.wait();
                             } else if (!shutdownQueue.isEmpty()) {
                                 // PHASE 1: Execute shutdown actions
@@ -239,7 +239,7 @@ public final class Worker implements Runnable {
                 }
                 try {
                     if (workable != null && workable.work() && workable instanceof Runnable) {
-                        Worker.queueEDT((Runnable) workable);
+                        OldWorker.queueEDT((Runnable) workable);
                     }
                 } catch (Exception e) {
                     //#debug

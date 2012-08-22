@@ -24,7 +24,8 @@ public abstract class TantalumMIDlet extends MIDlet {
      * 
      */
     protected TantalumMIDlet(final int numberOfThreads) {
-        Worker.init(this, numberOfThreads);
+        PlatformUtils.setProgram(this);
+        Worker.init(numberOfThreads);
     }
 
     /**

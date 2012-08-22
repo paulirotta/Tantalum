@@ -6,7 +6,6 @@
  */
 package com.futurice.tantalum3;
 
-import javax.microedition.midlet.MIDlet;
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
 
@@ -17,11 +16,12 @@ public class WorkerTest extends TestCase {
 
     public WorkerTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(4, "WorkerTest");
+        super(3, "WorkerTest");
     }
 
     public void test(int testNumber) throws Throwable {
-        Worker.init(this, 4);
+        PlatformUtils.setProgram(this);
+        Worker.init(4);
         switch (testNumber) {
             case 0:
                 testRun();
@@ -30,9 +30,6 @@ public class WorkerTest extends TestCase {
                 testQueue();
                 break;
             case 2:
-                testGetMIDlet();
-                break;
-            case 3:
                 testQueueEDT();
                 break;
             default:
@@ -100,16 +97,6 @@ public class WorkerTest extends TestCase {
     }
 
     /**
-     * Test of testGetMIDlet method, of class Worker.
-     */
-    public void testGetMIDlet() throws AssertionFailedException {
-        System.out.println("getMIDlet");
-        MIDlet expResult_1 = this;
-        MIDlet result_1 = Worker.getMIDlet();
-        assertEquals(expResult_1, result_1);
-    }
-
-    /**
      * Test of testQueueEDT method, of class Worker.
      */
     public void testQueueEDT() throws AssertionFailedException {
@@ -125,7 +112,7 @@ public class WorkerTest extends TestCase {
             }
         };
         
-        Worker.queueEDT(dgr);        
+        PlatformUtils.runOnUiThread((Runnable) dgr);        
         try {
             synchronized(mutex) {
                 mutex.wait(1000);

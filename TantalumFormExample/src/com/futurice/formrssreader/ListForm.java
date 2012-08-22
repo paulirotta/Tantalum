@@ -4,6 +4,7 @@
  */
 package com.futurice.formrssreader;
 
+import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.RunnableResult;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
@@ -193,7 +194,7 @@ public class ListForm extends Form implements CommandListener {
         for (int i = startIndex; i < len; i++) {
             final RSSItem rssItem = (RSSItem) rssModel.elementAt(i);
 
-            Worker.queueEDT(new Runnable() {
+            PlatformUtils.runOnUiThread(new Runnable() {
 
                 public void run() {
                     addItem(rssItem);
@@ -232,7 +233,7 @@ public class ListForm extends Form implements CommandListener {
 
     public void notifyListChanged() {
         loading = false;
-        Worker.queueEDT(new Runnable() {
+        PlatformUtils.runOnUiThread(new Runnable() {
 
             public void run() {
                 paint();

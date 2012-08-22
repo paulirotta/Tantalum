@@ -24,7 +24,7 @@ import java.util.LinkedList;
  */
 public class StaticCache {
 
-    protected AndroidDatabase database;
+    protected final AndroidDatabase database;
     protected static final int DATA_TYPE_IMAGE = 1;
     protected static final int DATA_TYPE_XML = 2;
     private static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {

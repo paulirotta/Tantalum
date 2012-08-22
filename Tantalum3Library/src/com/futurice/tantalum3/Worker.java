@@ -6,8 +6,6 @@ package com.futurice.tantalum3;
 
 import com.futurice.tantalum3.log.Log;
 import java.util.Vector;
-import javax.microedition.lcdui.Display;
-import javax.microedition.midlet.MIDlet;
 
 /**
  * A worker thread. Long-running and background tasks are queued and executed
@@ -42,8 +40,6 @@ public class Worker implements Runnable {
     private static int nextSerialQWorkerIndex = 0;
     private static final Vector idleQ = new Vector();
     private static final Vector shutdownQueue = new Vector();
-    private static MIDlet midlet;
-    private static Display display;
     private static volatile int workerCount = 0;
     private static int currentlyIdleCount = 0;
     private static boolean shuttingDown = false;
@@ -57,9 +53,7 @@ public class Worker implements Runnable {
      * @param midlet
      * @param numberOfWorkers
      */
-    public static void init(final MIDlet midlet, final int numberOfWorkers) {
-        Worker.midlet = midlet;
-        Worker.display = Display.getDisplay(midlet);
+    public static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
         createWorker(); // First worker
         Worker.queue(new Workable() {
@@ -86,15 +80,6 @@ public class Worker implements Runnable {
     private static void createWorker() {
         workers[workerCount] = new Worker();
         (new Thread(workers[workerCount], "Worker" + ++workerCount)).start();
-    }
-
-    /**
-     * Access the MIDlet associated with this application
-     *
-     * @return
-     */
-    public static MIDlet getMIDlet() {
-        return midlet;
     }
 
     public Worker() {
@@ -226,22 +211,6 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Add an object to be executed in the foreground on the event dispatch
-     * thread. All popular JavaME applications require UI and input events to be
-     * called serially only from this one thread.
-     *
-     * Note that if you queue too many object on the EDT you risk out of memory
-     * and (more commonly) a temporarily unresponsive user interface.
-     *
-     * @param runnable
-     */
-    public static void queueEDT(final Object runnable) {
-        if (runnable instanceof Runnable) {
-            Worker.display.callSerially((Runnable) runnable);
-        }
-    }
-
-    /**
      * Call MIDlet.notifyDestroyed() after all current queued and shutdown
      * Workable tasks are completed. Resources held by the system will be closed
      * and queued work such as writing to the RMS or file system will complete.
@@ -264,7 +233,7 @@ public class Worker implements Runnable {
                     timeRemaining = shutdownTimeout - System.currentTimeMillis();
                     if (timeRemaining <= 0) {
                         //#debug
-                        Log.l.log("Blocked shutdown timeout", "");
+                        Log.l.log("Worker blocked shutdown timeout", "");
                         break;
                     }
                     synchronized (q) {
@@ -325,7 +294,7 @@ public class Worker implements Runnable {
                                     Log.l.log("notifyDestroyed", "");
                                     Log.l.shutdown();
                                     //#enddebug
-                                    midlet.notifyDestroyed();
+                                    PlatformUtils.notifyDestroyed();
                                     break;
                                 }
                                 --currentlyIdleCount;
@@ -338,7 +307,7 @@ public class Worker implements Runnable {
                 }
                 try {
                     if (workable != null && workable.work() && workable instanceof Runnable) {
-                        Worker.queueEDT((Runnable) workable);
+                        PlatformUtils.runOnUiThread((Runnable) workable);
                     }
                 } catch (Exception e) {
                     //#debug
