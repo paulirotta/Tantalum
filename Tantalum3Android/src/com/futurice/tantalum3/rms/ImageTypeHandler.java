@@ -15,7 +15,16 @@ import com.futurice.tantalum3.log.Log;
  */
 public final class ImageTypeHandler implements DataTypeHandler {
 
-    @Override
+    private int imageSide;
+
+    public ImageTypeHandler() {
+        imageSide = -1;
+    }
+
+    public ImageTypeHandler(int side) {
+        imageSide = side;
+    }
+
     public Object convertToUseForm(final byte[] bytes) {
         try {
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
