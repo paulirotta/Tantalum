@@ -18,7 +18,7 @@ public abstract class TantalumActivity extends Activity {
         super();
         
         PlatformUtils.setProgram(this);
-        Worker.init(4);
+        Worker.init(this, 4);
     }
 
     /**
