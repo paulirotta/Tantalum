@@ -12,7 +12,7 @@ import com.futurice.tantalum3.rms.AndroidDatabase;
  * 
  * @author phou
  */
-public class PlatformUtils {
+public final class PlatformUtils {
 
     private static Activity program;
 
