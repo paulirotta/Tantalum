@@ -25,18 +25,10 @@ public final class ImageTypeHandler implements DataTypeHandler {
         imageSide = side;
     }
 
-
     public Object convertToUseForm(final byte[] bytes) {
         try {
-           // if (imageSide == -1) {
-                return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-           /* } else {
-                Bitmap temp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                return Bitmap..createBitmap(temp, 0, 0, imageSide, imageSide);
-            }*/
-
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         } catch (IllegalArgumentException e) {
-            //#debug
             Log.l.log("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
             throw e;
         }
