@@ -17,8 +17,6 @@ public class AnimatedImage {
     public final Image image;
     private float w;
     private float h;
-    private final int startW;
-    private final int startH;
     private final int endW;
     private final int endH;
     private final int numberOfAnimationFrames;
@@ -32,8 +30,6 @@ public class AnimatedImage {
         this.image = image;
         this.w = startW;
         this.h = startH;
-        this.startW = startW;
-        this.startH = startH;
         this.endW = endW;
         this.endH = endH;
         this.numberOfAnimationFrames = numberOfAnimationFrames;
