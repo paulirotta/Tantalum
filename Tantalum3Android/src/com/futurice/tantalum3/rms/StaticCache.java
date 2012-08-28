@@ -129,7 +129,7 @@ public class StaticCache {
         return o;
     }
 
-    public void get(final String key, final Result result, final boolean highPriority) {
+    public void get(final String key, final Result result, final int priority) {
         if (key == null || key.length() == 0) {
             Log.l.log("Trivial get", "");
             result.noResult();
@@ -138,7 +138,6 @@ public class StaticCache {
         final Object ho = synchronousRAMCacheGet(key);
 
         if (ho != null) {
-            //#debug
             Log.l.log("RAM cache hit", "(" + priority + ") " + key);
             result.setResult(ho);
         } else {
@@ -158,7 +157,6 @@ public class StaticCache {
                             result.noResult();
                         }
                     } catch (Exception e) {
-                        //#debug
                         Log.l.log("Can not get", key, e);
                     }
 
@@ -166,7 +164,7 @@ public class StaticCache {
                 }
             };
 
-            Worker.fork(getWorkable, Worker.HIGH_PRIORITY);
+            Worker.fork(getWorkable, priority);
         }
     }
 
