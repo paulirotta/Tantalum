@@ -51,7 +51,7 @@ public class StaticWebCache extends StaticCache {
              *
              */
             @Override
-            public void noResult() {
+            public void onCancel() {
                 Log.l.log("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Result() {
 
@@ -65,19 +65,19 @@ public class StaticWebCache extends StaticCache {
                                     //#debug
                                     Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
                                 } else {
-                                    result.noResult();
+                                    result.onCancel();
                                 }
                             }
                         } catch (Exception e) {
                             Log.l.log("Can not set result", url, e);
-                            noResult();
+                            onCancel();
                         }
                     }
 
                     @Override
-                    public void noResult() {
+                    public void onCancel() {
                         if (result != null) {
-                            result.noResult();
+                            result.onCancel();
                         }
                     }
                 });

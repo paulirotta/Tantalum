@@ -7,7 +7,7 @@ package com.futurice.tantalum3;
 
 /**
  * A convenience class for creating anonymous inner classes which first
- * perform an action on a Worker thread, then notify the user on the EDT
+ * perform an action on a Worker thread, then notify the user on the UI thread.
  * 
  * @author phou
  */

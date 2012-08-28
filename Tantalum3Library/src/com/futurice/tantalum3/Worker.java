@@ -109,9 +109,8 @@ public final class Worker implements Runnable {
     }
 
     /**
-     * Worker.HIGH_PRIORITY :
-     * Jump an object to the beginning of the forkSerial (LIFO - Last In First
-     * Out).
+     * Worker.HIGH_PRIORITY : Jump an object to the beginning of the forkSerial
+     * (LIFO - Last In First Out).
      *
      * Note that this is best used for ensuring that operations holding a lot of
      * memory are finished as soon as possible. If you are relying on this for
@@ -124,15 +123,14 @@ public final class Worker implements Runnable {
      * You may also want to decrease reliance on serialQueue() elsewhere in you
      * your program and make your application logic more parallel.
      *
-     * Worker.LOW_PRIORITY :
-     * Add an object to be executed at low priority in the background on the
-     * worker thread. Execution will only begin when there are no foreground
-     * tasks, and only if at least 1 Worker thread is left ready for immediate
-     * execution of normal priority Workable tasks.
+     * Worker.LOW_PRIORITY : Add an object to be executed at low priority in the
+     * background on the worker thread. Execution will only begin when there are
+     * no foreground tasks, and only if at least 1 Worker thread is left ready
+     * for immediate execution of normal priority Workable tasks.
      *
      * Items in the idleQueue will not be executed if shutdown() is called
      * before they begin.
-     * 
+     *
      * @param workable
      * @param priority
      */
@@ -155,6 +153,25 @@ public final class Worker implements Runnable {
                 break;
             default:
                 throw new IllegalArgumentException("Illegal priority '" + priority + "'");
+        }
+    }
+
+    /**
+     * Take an object out of the pending task queue. If the task has already
+     * been started, or has not been fork()ed, or has been forkSerial() assigned
+     * to a dedicated thread queue, then this will return false.
+     *
+     * @param workable
+     * @return
+     */
+    public static boolean tryUnfork(final Workable workable) {
+        final boolean success;
+
+        synchronized (q) {
+            success = q.removeElement(workable);
+            q.notifyAll();
+            
+            return success;
         }
     }
 
@@ -203,9 +220,10 @@ public final class Worker implements Runnable {
     }
 
     /**
-     * Call MIDlet.notifyDestroyed() after all current queued and shutdown Workable
-     * tasks are completed. Resources held by the system will be closed and
-     * queued compute such as writing to the RMS or file system will complete.
+     * Call MIDlet.notifyDestroyed() after all current queued and shutdown
+     * Workable tasks are completed. Resources held by the system will be closed
+     * and queued compute such as writing to the RMS or file system will
+     * complete.
      *
      * @param block Block the calling thread up to three seconds to allow
      * orderly shutdown. This is only needed in MIDlet.notifyDestroyed(true)
@@ -299,8 +317,11 @@ public final class Worker implements Runnable {
                     serialQ.removeElementAt(0);
                 }
                 try {
-                    if (workable != null && workable.compute() != null && workable instanceof Closure) {
-                        PlatformUtils.runOnUiThread((Runnable) workable);
+                    if (workable != null) {
+                        workable.compute();
+                        if (workable instanceof Closure) {
+                            PlatformUtils.runOnUiThread((Closure) workable);
+                        }
                     }
                 } catch (Exception e) {
                     //#debug

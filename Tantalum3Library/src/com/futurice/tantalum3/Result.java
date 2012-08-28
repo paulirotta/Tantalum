@@ -49,6 +49,6 @@ public class Result {
      * the cache, etc.
      *
      */
-    public void noResult() {
+    public void onCancel() {
     }
 }

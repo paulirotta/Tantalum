@@ -162,7 +162,7 @@ public class HttpGetter implements Workable {
 
                 return this.compute();
             } else if (!success) {
-                result.noResult();
+                result.onCancel();
             }
             //#debug
             Log.l.log("End " + this.getClass().getName(), url);

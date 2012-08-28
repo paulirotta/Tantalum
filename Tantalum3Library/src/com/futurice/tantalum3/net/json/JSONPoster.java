@@ -44,7 +44,7 @@ public abstract class JSONPoster extends RunnableResult implements Workable {
         } catch (Exception e) {
             //#debug
             Log.l.log("JSONPoster result parsing problem", this.jsonModel + " : " + value, e);
-            noResult();
+            onCancel();
         }
     }
     

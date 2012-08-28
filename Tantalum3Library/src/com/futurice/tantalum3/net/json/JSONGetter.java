@@ -55,7 +55,7 @@ public class JSONGetter extends Result {
         } catch (Exception e) {
             //#debug
             Log.l.log("JSONGetter HTTP response problem", this.httpGetter.getUrl() + " : " + value, e);
-            noResult();
+            onCancel();
         }
     }
 }

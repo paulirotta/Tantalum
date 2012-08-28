@@ -168,11 +168,11 @@ public final class IconListView extends RSSListView {
                                     } catch (Exception e) {
                                         //#debug
                                         Log.l.log("Problem with getIcon setResult", item.getThumbnail(), e);
-                                        noResult();
+                                        onCancel();
                                     }
                                 }
 
-                                public void noResult() {
+                                public void onCancel() {
                                     item.setLoadingImage(false);
                                 }
                             }, Worker.HIGH_PRIORITY);

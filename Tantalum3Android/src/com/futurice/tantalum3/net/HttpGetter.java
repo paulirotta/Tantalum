@@ -150,7 +150,7 @@ public class HttpGetter implements Workable {
 
                 return this.compute();
             } else if (!success) {
-                result.noResult();
+                result.onCancel();
             }
             Log.l.log("End HttpGet", url);
         }

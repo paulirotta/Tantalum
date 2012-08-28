@@ -75,7 +75,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
 
             final Result result = new Result() {
 
-                public void noResult() {
+                public void onCancel() {
                     isReloading = false;
                 }
 

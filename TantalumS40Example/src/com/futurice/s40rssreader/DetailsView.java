@@ -131,7 +131,7 @@ public final class DetailsView extends View {
                         canvas.queueRepaint();
                     }
 
-                    public void noResult() {
+                    public void onCancel() {
                         item.setLoadingImage(false);
                     }
                 }, Worker.HIGH_PRIORITY);

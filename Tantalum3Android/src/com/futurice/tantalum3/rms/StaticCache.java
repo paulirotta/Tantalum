@@ -132,7 +132,7 @@ public class StaticCache {
     public void get(final String key, final Result result, final int priority) {
         if (key == null || key.length() == 0) {
             Log.l.log("Trivial get", "");
-            result.noResult();
+            result.onCancel();
             return;
         }
         final Object ho = synchronousRAMCacheGet(key);
@@ -154,7 +154,7 @@ public class StaticCache {
                         } else {
                             //#debug
                             Log.l.log("RMS cache miss", key);
-                            result.noResult();
+                            result.onCancel();
                         }
                     } catch (Exception e) {
                         Log.l.log("Can not get", key, e);

@@ -122,14 +122,14 @@ public class ListForm extends Form implements CommandListener {
                     notifyListChanged();
                 }
 
-                public void noResult() {
+                public void onCancel() {
                     loading = false;
                 }
             });
         } else {
             feedCache.get(feedUrl, new RunnableResult() {
 
-                public void noResult() {
+                public void onCancel() {
                     loading = false;
                     reload(true);
                 }
