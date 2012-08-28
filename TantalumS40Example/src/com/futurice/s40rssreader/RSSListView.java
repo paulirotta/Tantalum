@@ -49,7 +49,7 @@ public abstract class RSSListView extends View {
     }
 
     protected final void clearCache() {
-        Worker.queuePriority(new Task() {
+        Worker.forkPriority(new Task() {
 
             public boolean compute() {
                 try {

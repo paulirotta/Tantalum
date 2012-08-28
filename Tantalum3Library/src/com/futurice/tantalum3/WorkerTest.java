@@ -64,7 +64,7 @@ public class WorkerTest extends TestCase {
             }
         };
         
-        Worker.queue(wr);
+        Worker.fork(wr);
         synchronized (mutex) {
             try {
                 mutex.wait(1000);
@@ -81,14 +81,14 @@ public class WorkerTest extends TestCase {
      */
     public void testQueue() throws AssertionFailedException {
         System.out.println("queue");
-        Worker.queue(null);
-        Worker.queue(new Task() {
+        Worker.fork(null);
+        Worker.fork(new Task() {
 
             public boolean compute() {
                 return false;
             }            
         });
-        Worker.queue(new Task() {
+        Worker.fork(new Task() {
 
             public boolean compute() {
                 return true;

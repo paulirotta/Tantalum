@@ -166,7 +166,7 @@ public class StaticCache {
                 }
             };
 
-            Worker.queuePriority(getWorkable);
+            Worker.forkPriority(getWorkable);
         }
     }
 
@@ -207,7 +207,7 @@ public class StaticCache {
                 return false;
             }
         });
-        Worker.queuePriority(writeAllPending);
+        Worker.forkPriority(writeAllPending);
 
         return convertAndPutToHeapCache(key, bytes);
     }
@@ -217,7 +217,7 @@ public class StaticCache {
      * complete.
      *
      * Generally you should use this method if you are on a Worker thread to
-     * avoid adding large objects in the Worker queue waiting to be stored to
+     * avoid adding large objects in the Worker fork waiting to be stored to
      * the RMS which could lead to a memory shortage. If you are on the EDT, use
      * the asynchronous put() method instead to avoid blocking the calling
      * thread.

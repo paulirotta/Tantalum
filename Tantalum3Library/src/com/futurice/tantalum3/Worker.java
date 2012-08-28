@@ -22,12 +22,12 @@ public class Worker implements Runnable {
      */
     public static final Object LARGE_MEMORY_MUTEX = new Object();
     /*
-     * Genearal queue of tasks to be done by any Worker thread
+     * Genearal fork of tasks to be done by any Worker thread
      */
     private static final Vector q = new Vector();
     private static Worker[] workers;
     /*
-     * Higher priority queue of tasks to be done only by this thread, in the
+     * Higher priority fork of tasks to be done only by this thread, in the
      * exact order they appear in the serialQ. Other threads which don't have
      * such dedicated compute to do will drop back to the more general q
      */
@@ -56,7 +56,7 @@ public class Worker implements Runnable {
     public static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
         createWorker(); // First worker
-        Worker.queue(new Task() {
+        Worker.fork(new Task() {
             /**
              * The first worker creates the others in the background
              */
@@ -89,16 +89,16 @@ public class Worker implements Runnable {
      * Add an object to be executed in the background on the worker thread. This
      * well be executed FIFO (First In First Out), but some Worker threads may
      * be occupied with their own serialQueue() tasks which they prioritize over
-     * main queue compute.
+     * main fork compute.
      *
-     * Shutdown() will be delayed indefinitely until items in the queue complete
+     * Shutdown() will be delayed indefinitely until items in the fork complete
      * execution. If the shutdown signal comes from the phone (usually because
      * the user pressed the RED button to exit the application), then shutdown
      * will be delayed by a maximum of 3 seconds before forcing exit.
      *
      * @param workable
      */
-    public static void queue(final Task workable) {
+    public static void fork(final Task workable) {
         synchronized (q) {
             q.addElement(workable);
             q.notify();
@@ -109,12 +109,12 @@ public class Worker implements Runnable {
      * Queue compute to the Worker specified by serialQIndex. This compute will be
      * done after any previously serialQueue()d compute to this Worker. This Worker
      * will do only serialQueue() tasks until they are complete, then will
-     * revert to doing general queue(), queuePriority() and queueIdleWork()
+     * revert to doing general fork(), forkPriority() and forkLowPriority()
      *
      * @param workable
      * @param serialQIndex
      */
-    public static void queueSerial(final Task workable, final int serialQIndex) {
+    public static void fork(final Task workable, final int serialQIndex) {
         if (serialQIndex >= workers.length) {
             throw new IndexOutOfBoundsException("serialQ to Worker " + serialQIndex + ", but there are only " + workers.length + " Workers");
         }
@@ -127,27 +127,6 @@ public class Worker implements Runnable {
         }
     }
 
-    /**
-     * Queue an item of compute to the next available Worker. This compute is
-     * performed at a higher priority than normal compute, and is guaranteed to
-     * execute in the sequence in which items are queued.
-     *
-     * In most cases you will store the integer returned so that you can queue
-     * more tasks using serialQueue(Task workable, int serialQIndex)
-     *
-     * @param workable The compute to be done
-     * @return serialQIndex, an integer, the index number of the Worker if you
-     * want to add tasks to this same Worker to be completed in guaranteed
-     * order.
-     */
-    public static int queueSerial(final Task workable) {
-        final int i = nextSerialWorkerIndex();
-
-        queueSerial(workable, i);
-
-        return i;
-    }
-
     public static int nextSerialWorkerIndex() {
         synchronized (q) {
             final int i = nextSerialQWorkerIndex;
@@ -158,7 +137,7 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Jump an object to the beginning of the queue (LIFO - Last In First Out).
+     * Jump an object to the beginning of the fork (LIFO - Last In First Out).
      *
      * Note that this is best used for ensuring that operations holding a lot of
      * memory are finished as soon as possible. If you are relying on this for
@@ -166,14 +145,14 @@ public class Worker implements Runnable {
      * the system down.
      *
      * Note also that under the rare circumstance that all Workers are busy with
-     * serialQueue() tasks, queuePriority() compute may be delayed. The recommended
+     * serialQueue() tasks, forkPriority() compute may be delayed. The recommended
      * solution then is to either increase the number of Workers. You may also
      * want to decrease reliance on serialQueue() elsewhere in you your program
      * and make your application logic more parallel.
      *
      * @param workable
      */
-    public static void queuePriority(final Task workable) {
+    public static void forkPriority(final Task workable) {
         synchronized (q) {
             q.insertElementAt(workable, 0);
             q.notifyAll();
@@ -191,7 +170,7 @@ public class Worker implements Runnable {
      *
      * @param workable
      */
-    public static void queueIdleWork(final Task workable) {
+    public static void forkLowPriority(final Task workable) {
         synchronized (q) {
             idleQ.addElement(workable);
             q.notify();
@@ -257,7 +236,7 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Main worker loop. Each Worker thread pulls tasks from the common queue.
+     * Main worker loop. Each Worker thread pulls tasks from the common fork.
      *
      * The worker thread exits on uncaught errors or after shutdown() has been
      * called and all pending tasks and shutdown tasks have completed.
@@ -282,7 +261,7 @@ public class Worker implements Runnable {
                                 // Nothing to do
                                 ++currentlyIdleCount;
                                 if (!shuttingDown || currentlyIdleCount < workerCount) {
-                                    // Empty queue, or waiting for other Worker tasks to complete before shutdown tasks start
+                                    // Empty fork, or waiting for other Worker tasks to complete before shutdown tasks start
                                     q.wait();
                                 } else if (!shutdownQueue.isEmpty()) {
                                     // PHASE 1: Execute shutdown actions

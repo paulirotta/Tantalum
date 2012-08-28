@@ -107,7 +107,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
         COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
         COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
         switchDisplayable(null, getCanvas());
-        Worker.queue(new Task() {
+        Worker.fork(new Task() {
 
             public boolean compute() {
                 getCanvas().getListView().reload(false);

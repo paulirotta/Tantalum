@@ -83,10 +83,10 @@ public class StaticWebCache extends StaticCache {
                 });
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
-                // This avoids possible queue delays
+                // This avoids possible fork delays
                 //httpGetter.compute();
                 
-                Worker.queue(httpGetter);
+                Worker.fork(httpGetter);
             }
         }, highPriority);
         
@@ -99,7 +99,7 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     public void update(final String url, final Result result) {
-        Worker.queuePriority(new Task() {
+        Worker.forkPriority(new Task() {
 
             @Override
             public boolean compute() {
@@ -123,7 +123,7 @@ public class StaticWebCache extends StaticCache {
      */
     public void prefetch(final String url) {
         if (synchronousRAMCacheGet(url) == null) {
-            Worker.queueIdleWork(new Task() {
+            Worker.forkLowPriority(new Task() {
 
                 @Override
                 public boolean compute() {
