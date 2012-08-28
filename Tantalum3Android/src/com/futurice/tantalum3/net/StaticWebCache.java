@@ -31,7 +31,7 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     @Override
-    public void get(final String url, final Result result, final boolean highPriority) {
+    public void get(final String url, final Result result, final int priority) {
         super.get(url, new Result() {
 
             /**
@@ -83,12 +83,12 @@ public class StaticWebCache extends StaticCache {
                 });
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
-                // This avoids possible fork delays
+                // This avoids possible forkSerial delays
                 //httpGetter.compute();
                 
                 Worker.fork(httpGetter);
             }
-        }, highPriority);
+        }, priority);
         
     }
 
@@ -99,13 +99,13 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     public void update(final String url, final Result result) {
-        Worker.forkPriority(new Task() {
+        Worker.fork(new Task() {
 
             @Override
             public boolean compute() {
                 try {
                     remove(url);
-                    get(url, result, true);
+                    get(url, result, Worker.HIGH_PRIORITY);
                 } catch (Exception e) {
                     Log.l.log("Can not update", url, e);
                 }
@@ -123,19 +123,19 @@ public class StaticWebCache extends StaticCache {
      */
     public void prefetch(final String url) {
         if (synchronousRAMCacheGet(url) == null) {
-            Worker.forkLowPriority(new Task() {
+            Worker.fork(new Task() {
 
                 @Override
                 public boolean compute() {
                     try {
-                        get(url, null, false);
+                        get(url, null, Worker.LOW_PRIORITY);
                     } catch (Exception e) {
                         Log.l.log("Can not prefetch", url, e);
                     }
 
                     return false;
                 }
-            });
+            }, Worker.LOW_PRIORITY);
         }
     }
 }

@@ -141,12 +141,13 @@ public class StaticCache {
      *
      * @param key
      * @param result
-     * @param highPriority - set true if you want the results quickly. Note that
-     * your request for priority may be denied if you have recently changed the
-     * value and the value happens to have expired from the RAM cache due to a
-     * low memory condition.
+     * @param priority - default is Work.NORMAL_PRIORITY
+     * set to Work.HIGH_PRIORITY if you want the results
+     * quickly. Note that your request for priority may be denied if you have
+     * recently changed the value and the value happens to have expired from the
+     * RAM cache due to a low memory condition.
      */
-    public void get(final String key, final Result result, final boolean highPriority) {
+    public void get(final String key, final Result result, final int priority) {
         if (key == null || key.length() == 0) {
             //#debug
             Log.l.log("Trivial get", "");
@@ -183,12 +184,7 @@ public class StaticCache {
                     return false;
                 }
             };
-
-            if (highPriority) {
-                Worker.forkPriority(getWorkable);
-            } else {
-                Worker.fork(getWorkable);
-            }
+            Worker.fork(getWorkable, priority);
         }
     }
 
@@ -247,7 +243,7 @@ public class StaticCache {
                 return false;
             }
         });
-        Worker.forkPriority(writeAllPending);
+        Worker.fork(writeAllPending, Worker.HIGH_PRIORITY);
 
         return convertAndPutToHeapCache(key, bytes);
     }
@@ -257,7 +253,7 @@ public class StaticCache {
      * complete.
      *
      * Generally you should use this method if you are on a Worker thread to
-     * avoid adding large objects in the Worker fork waiting to be stored to
+     * avoid adding large objects in the Worker forkSerial waiting to be stored to
      * the RMS which could lead to a memory shortage. If you are on the EDT, use
      * the asynchronous put() method instead to avoid blocking the calling
      * thread.

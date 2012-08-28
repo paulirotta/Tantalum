@@ -13,8 +13,11 @@ import java.util.Vector;
  *
  * @author pahought
  */
-public class Worker implements Runnable {
+public final class Worker implements Runnable {
 
+    public static final int HIGH_PRIORITY = 3;
+    public static final int NORMAL_PRIORITY = 2;
+    public static final int LOW_PRIORITY = 1;
     /*
      * Synchronize on the following object if your processing routine will
      * temporarily need a large amount of memory. Only one such activity can be
@@ -22,12 +25,12 @@ public class Worker implements Runnable {
      */
     public static final Object LARGE_MEMORY_MUTEX = new Object();
     /*
-     * Genearal fork of tasks to be done by any Worker thread
+     * Genearal forkSerial of tasks to be done by any Worker thread
      */
     private static final Vector q = new Vector();
     private static Worker[] workers;
     /*
-     * Higher priority fork of tasks to be done only by this thread, in the
+     * Higher priority forkSerial of tasks to be done only by this thread, in the
      * exact order they appear in the serialQ. Other threads which don't have
      * such dedicated compute to do will drop back to the more general q
      */
@@ -38,7 +41,7 @@ public class Worker implements Runnable {
      * to the same serialQ or manually manage this.
      */
     private static int nextSerialQWorkerIndex = 0;
-    private static final Vector idleQ = new Vector();
+    private static final Vector lowPriorityQ = new Vector();
     private static final Vector shutdownQueue = new Vector();
     private static volatile int workerCount = 0;
     private static int currentlyIdleCount = 0;
@@ -89,12 +92,12 @@ public class Worker implements Runnable {
      * Add an object to be executed in the background on the worker thread. This
      * well be executed FIFO (First In First Out), but some Worker threads may
      * be occupied with their own serialQueue() tasks which they prioritize over
-     * main fork compute.
+     * main forkSerial compute.
      *
-     * Shutdown() will be delayed indefinitely until items in the fork complete
-     * execution. If the shutdown signal comes from the phone (usually because
-     * the user pressed the RED button to exit the application), then shutdown
-     * will be delayed by a maximum of 3 seconds before forcing exit.
+     * Shutdown() will be delayed indefinitely until items in the forkSerial
+     * complete execution. If the shutdown signal comes from the phone (usually
+     * because the user pressed the RED button to exit the application), then
+     * shutdown will be delayed by a maximum of 3 seconds before forcing exit.
      *
      * @param workable
      */
@@ -106,15 +109,66 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Queue compute to the Worker specified by serialQIndex. This compute will be
-     * done after any previously serialQueue()d compute to this Worker. This Worker
-     * will do only serialQueue() tasks until they are complete, then will
-     * revert to doing general fork(), forkPriority() and forkLowPriority()
+     * Worker.HIGH_PRIORITY :
+     * Jump an object to the beginning of the forkSerial (LIFO - Last In First
+     * Out).
+     *
+     * Note that this is best used for ensuring that operations holding a lot of
+     * memory are finished as soon as possible. If you are relying on this for
+     * performance, be warned that multiple calls to this method may still bog
+     * the system down.
+     *
+     * Note also that under the rare circumstance that all Workers are busy with
+     * serialQueue() tasks, forkPriority() compute may be delayed. The
+     * recommended solution then is to either increase the number of Workers.
+     * You may also want to decrease reliance on serialQueue() elsewhere in you
+     * your program and make your application logic more parallel.
+     *
+     * Worker.LOW_PRIORITY :
+     * Add an object to be executed at low priority in the background on the
+     * worker thread. Execution will only begin when there are no foreground
+     * tasks, and only if at least 1 Worker thread is left ready for immediate
+     * execution of normal priority Task tasks.
+     *
+     * Items in the idleQueue will not be executed if shutdown() is called
+     * before they begin.
+     * 
+     * @param workable
+     * @param priority
+     */
+    public static void fork(final Task workable, final int priority) {
+        switch (priority) {
+            case Worker.NORMAL_PRIORITY:
+                fork(workable);
+                break;
+            case Worker.HIGH_PRIORITY:
+                synchronized (q) {
+                    q.insertElementAt(workable, 0);
+                    q.notifyAll();
+                }
+                break;
+            case Worker.LOW_PRIORITY:
+                synchronized (q) {
+                    lowPriorityQ.addElement(workable);
+                    q.notify();
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Illegal priority '" + priority + "'");
+        }
+    }
+
+    /**
+     * Queue compute to the Worker specified by serialQIndex. This compute will
+     * be done after any previously serialQueue()d compute to this Worker. This
+     * Worker will do only serialQueue() tasks until they are complete, then
+     * will revert to doing general forkSerial(), forkPriority() and
+     * forkLowPriority()
      *
      * @param workable
      * @param serialQIndex
      */
-    public static void fork(final Task workable, final int serialQIndex) {
+    public static void forkSerial(final Task workable, final int serialQIndex) {
         if (serialQIndex >= workers.length) {
             throw new IndexOutOfBoundsException("serialQ to Worker " + serialQIndex + ", but there are only " + workers.length + " Workers");
         }
@@ -137,47 +191,6 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Jump an object to the beginning of the fork (LIFO - Last In First Out).
-     *
-     * Note that this is best used for ensuring that operations holding a lot of
-     * memory are finished as soon as possible. If you are relying on this for
-     * performance, be warned that multiple calls to this method may still bog
-     * the system down.
-     *
-     * Note also that under the rare circumstance that all Workers are busy with
-     * serialQueue() tasks, forkPriority() compute may be delayed. The recommended
-     * solution then is to either increase the number of Workers. You may also
-     * want to decrease reliance on serialQueue() elsewhere in you your program
-     * and make your application logic more parallel.
-     *
-     * @param workable
-     */
-    public static void forkPriority(final Task workable) {
-        synchronized (q) {
-            q.insertElementAt(workable, 0);
-            q.notifyAll();
-        }
-    }
-
-    /**
-     * Add an object to be executed at low priority in the background on the
-     * worker thread. Execution will only begin when there are no foreground
-     * tasks, and only if at least 1 Worker thread is left ready for immediate
-     * execution of normal priority Task tasks.
-     *
-     * Items in the idleQueue will not be executed if shutdown() is called
-     * before they begin.
-     *
-     * @param workable
-     */
-    public static void forkLowPriority(final Task workable) {
-        synchronized (q) {
-            idleQ.addElement(workable);
-            q.notify();
-        }
-    }
-
-    /**
      * Add an object to be executed in the background on the worker thread
      *
      * @param workable
@@ -190,9 +203,9 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Call MIDlet.notifyDestroyed() after all current queued and shutdown
-     * Task tasks are completed. Resources held by the system will be closed
-     * and queued compute such as writing to the RMS or file system will complete.
+     * Call MIDlet.notifyDestroyed() after all current queued and shutdown Task
+     * tasks are completed. Resources held by the system will be closed and
+     * queued compute such as writing to the RMS or file system will complete.
      *
      * @param block Block the calling thread up to three seconds to allow
      * orderly shutdown. This is only needed in MIDlet.notifyDestroyed(true)
@@ -236,7 +249,8 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Main worker loop. Each Worker thread pulls tasks from the common fork.
+     * Main worker loop. Each Worker thread pulls tasks from the common
+     * forkSerial.
      *
      * The worker thread exits on uncaught errors or after shutdown() has been
      * called and all pending tasks and shutdown tasks have completed.
@@ -253,15 +267,15 @@ public class Worker implements Runnable {
                             workable = (Task) q.firstElement();
                             q.removeElementAt(0);
                         } else {
-                            if (idleQ.size() > 0 && !shuttingDown && currentlyIdleCount > 0) {
+                            if (lowPriorityQ.size() > 0 && !shuttingDown && currentlyIdleCount > 0) {
                                 // Idle compute, at least 1 thread is left for new normal compute
-                                workable = (Task) idleQ.firstElement();
-                                idleQ.removeElementAt(0);
+                                workable = (Task) lowPriorityQ.firstElement();
+                                lowPriorityQ.removeElementAt(0);
                             } else {
                                 // Nothing to do
                                 ++currentlyIdleCount;
                                 if (!shuttingDown || currentlyIdleCount < workerCount) {
-                                    // Empty fork, or waiting for other Worker tasks to complete before shutdown tasks start
+                                    // Empty forkSerial, or waiting for other Worker tasks to complete before shutdown tasks start
                                     q.wait();
                                 } else if (!shutdownQueue.isEmpty()) {
                                     // PHASE 1: Execute shutdown actions

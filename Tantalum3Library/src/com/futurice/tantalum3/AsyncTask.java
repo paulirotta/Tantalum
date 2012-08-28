@@ -60,7 +60,7 @@ public abstract class AsyncTask {
      * @param runnable
      */
     public static void execute(final Runnable runnable) {
-        Worker.fork(new Task() {
+        Worker.forkSerial(new Task() {
             public boolean compute() {
                 runnable.run();
 
@@ -84,7 +84,7 @@ public abstract class AsyncTask {
     }
 
     public final AsyncTask execute(final Object params) {
-        Worker.fork(startExecute(params), ASYNC_TASK_WORKER_INDEX);
+        Worker.forkSerial(startExecute(params), ASYNC_TASK_WORKER_INDEX);
         
         return this;
     }

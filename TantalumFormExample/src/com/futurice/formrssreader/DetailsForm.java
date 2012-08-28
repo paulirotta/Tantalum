@@ -5,6 +5,7 @@
 package com.futurice.formrssreader;
 
 import com.futurice.tantalum3.RunnableResult;
+import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -93,7 +94,7 @@ public class DetailsForm extends Form implements CommandListener {
                         DetailsForm.this.appendImageItem();
                         selectedItem.setLoadingImage(false);
                     }
-                }, true);
+                }, Worker.HIGH_PRIORITY);
             }
         }
     }

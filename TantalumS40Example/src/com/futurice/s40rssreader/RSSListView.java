@@ -49,7 +49,7 @@ public abstract class RSSListView extends View {
     }
 
     protected final void clearCache() {
-        Worker.forkPriority(new Task() {
+        Worker.fork(new Task() {
 
             public boolean compute() {
                 try {
@@ -61,7 +61,7 @@ public abstract class RSSListView extends View {
 
                 return false;
             }
-        });
+        }, Worker.HIGH_PRIORITY);
     }
 
     protected void doClearCache() {
@@ -81,7 +81,7 @@ public abstract class RSSListView extends View {
         if (forceNetLoad) {
             feedCache.update(feedUrl, rssResult);
         } else {
-            feedCache.get(feedUrl, rssResult, true);
+            feedCache.get(feedUrl, rssResult, Worker.HIGH_PRIORITY);
         }
     }
 

@@ -26,11 +26,12 @@ public class StaticWebCache extends StaticCache {
 
     /**
      * Retrieve the object from 1. RAM if available 2. RMS if available 3. WEB
-     *
+     * 
      * @param url
      * @param result
+     * @param priority - Default is Worker.NORMAL_PRIORITY
      */
-    public void get(final String url, final Result result, final boolean highPriority) {
+    public void get(final String url, final Result result, final int priority) {
         super.get(url, new Result() {
 
             /**
@@ -80,10 +81,10 @@ public class StaticWebCache extends StaticCache {
                 });
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
-                // This avoids possible fork delays
+                // This avoids possible forkSerial delays
                 httpGetter.compute();
             }
-        }, highPriority);
+        }, priority);
     }
 
     /**
@@ -93,12 +94,12 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     public void update(final String url, final Result result) {
-        Worker.forkPriority(new Task() {
+        Worker.fork(new Task() {
 
             public boolean compute() {
                 try {
                     remove(url);
-                    get(url, result, true);
+                    get(url, result, Worker.HIGH_PRIORITY);
                 } catch (Exception e) {
                     //#debug
                     Log.l.log("Can not update", url, e);
@@ -106,7 +107,7 @@ public class StaticWebCache extends StaticCache {
 
                 return false;
             }
-        });
+        }, Worker.HIGH_PRIORITY);
     }
 
     /**
@@ -117,11 +118,11 @@ public class StaticWebCache extends StaticCache {
      */
     public void prefetch(final String url) {
         if (synchronousRAMCacheGet(url) == null) {
-            Worker.forkLowPriority(new Task() {
+            Worker.fork(new Task() {
 
                 public boolean compute() {
                     try {
-                        get(url, null, false);
+                        get(url, null, Worker.LOW_PRIORITY);
                     } catch (Exception e) {
                         //#debug
                         Log.l.log("Can not prefetch", url, e);
@@ -129,7 +130,7 @@ public class StaticWebCache extends StaticCache {
 
                     return false;
                 }
-            });
+            }, Worker.LOW_PRIORITY);
         }
     }
 }

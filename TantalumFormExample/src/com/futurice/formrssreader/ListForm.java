@@ -138,7 +138,7 @@ public class ListForm extends Form implements CommandListener {
                     loading = false;
                     notifyListChanged();
                 }
-            }, true);
+            }, Worker.HIGH_PRIORITY);
         }
     }
 

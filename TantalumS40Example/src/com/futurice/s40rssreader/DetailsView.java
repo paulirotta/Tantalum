@@ -1,6 +1,7 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -133,7 +134,7 @@ public final class DetailsView extends View {
                     public void noResult() {
                         item.setLoadingImage(false);
                     }
-                }, true);
+                }, Worker.HIGH_PRIORITY);
             }
         }
 
@@ -181,7 +182,7 @@ public final class DetailsView extends View {
                         leftIcon = (Image) o;
                     }
                 }
-            }, true);
+            }, Worker.HIGH_PRIORITY);
         }
         if (rightItem != null) {
             imageCache.get(rightItem.getThumbnail(), new Result() {
@@ -191,7 +192,7 @@ public final class DetailsView extends View {
                         rightIcon = (Image) o;
                     }
                 }
-            }, true);
+            }, Worker.HIGH_PRIORITY);
         }
     }
 

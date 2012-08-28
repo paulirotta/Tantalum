@@ -5,6 +5,7 @@
 package com.futurice.lwuitrssreader;
 
 import com.futurice.tantalum3.RunnableResult;
+import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
 import com.sun.lwuit.Command;
@@ -87,16 +88,10 @@ public class DetailsForm extends Form implements ActionListener {
         imageCache.get(item.getThumbnail(), new RunnableResult() {
 
             public void run() {
-                Object o = getResult();
-                final Image image = (Image) getResult();
-//                if (image != null) {
-                imgLabel.setIcon(image);
-//                    if (this.contains(imgLabel)) {
+                imgLabel.setIcon((Image) getResult());
                 imgLabel.repaint();
-//                    }
-//                }
             }
-        }, true);
+        }, Worker.HIGH_PRIORITY);
 
         addLabels(linkLabels);
         setScrollY(0);
