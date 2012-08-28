@@ -1,7 +1,7 @@
 package com.futurice.tantalum3.rms;
 
 import com.futurice.tantalum3.Result;
-import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.util.LRUVector;
@@ -36,17 +36,17 @@ public class StaticCache {
         }
     });
     private static final Vector rmsWriteWorkables = new Vector();
-    private static final Workable writeAllPending = new Workable() {
+    private static final Task writeAllPending = new Task() {
 
-        public boolean work() {
+        public boolean compute() {
             try {
-                Workable work;
+                Task work;
                 while (!rmsWriteWorkables.isEmpty()) {
                     synchronized (rmsWriteWorkables) {
-                        work = (Workable) rmsWriteWorkables.firstElement();
+                        work = (Task) rmsWriteWorkables.firstElement();
                         rmsWriteWorkables.removeElementAt(0);
                     }
-                    work.work();
+                    work.compute();
                     if (!rmsWriteWorkables.isEmpty()) {
                         try {
                             // DEBUG TEST- be kind to slow phones, avoid crashes
@@ -160,9 +160,9 @@ public class StaticCache {
             Log.l.log("RAM cache hit", "(" + priority + ") " + key);
             result.setResult(ho);
         } else {
-            final Workable getWorkable = new Workable() {
+            final Task getWorkable = new Task() {
 
-                public boolean work() {
+                public boolean compute() {
                     try {
                         final Object o = synchronousGet(key);
 
@@ -234,9 +234,9 @@ public class StaticCache {
         if (bytes == null) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
-        rmsWriteWorkables.addElement(new Workable() {
+        rmsWriteWorkables.addElement(new Task() {
 
-            public boolean work() {
+            public boolean compute() {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {

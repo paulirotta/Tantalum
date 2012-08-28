@@ -6,7 +6,7 @@
 package com.futurice.tantalum3.net;
 
 import com.futurice.tantalum3.Result;
-import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,7 +19,7 @@ import javax.microedition.io.HttpConnection;
  *
  * @author combes
  */
-public class HttpPoster implements Workable {
+public class HttpPoster implements Task {
     
     private final String url;
     private final Result result;
@@ -44,7 +44,7 @@ public class HttpPoster implements Workable {
         return url;
     }           
     
-    public boolean work() {
+    public boolean compute() {
         //#debug
         Log.l.log("HttpPoster start", url);
         ByteArrayOutputStream bos = null;
@@ -150,7 +150,7 @@ public class HttpPoster implements Workable {
                 } catch (InterruptedException ex) {
                 }
 
-                return this.work();
+                return this.compute();
             } else if (!success) {
                 result.noResult();
             }

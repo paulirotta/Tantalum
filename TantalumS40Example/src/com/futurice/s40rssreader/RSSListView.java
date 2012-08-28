@@ -5,7 +5,7 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.tantalum3.Result;
-import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.StaticWebCache;
@@ -49,9 +49,9 @@ public abstract class RSSListView extends View {
     }
 
     protected final void clearCache() {
-        Worker.queuePriority(new Workable() {
+        Worker.queuePriority(new Task() {
 
-            public boolean work() {
+            public boolean compute() {
                 try {
                     doClearCache();
                 } catch (Exception e) {

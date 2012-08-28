@@ -1,7 +1,7 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.tantalum3.TantalumMIDlet;
-import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import javax.microedition.lcdui.*;
 
@@ -107,9 +107,9 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
         COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
         COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
         switchDisplayable(null, getCanvas());
-        Worker.queue(new Workable() {
+        Worker.queue(new Task() {
 
-            public boolean work() {
+            public boolean compute() {
                 getCanvas().getListView().reload(false);
                 return false;
             }

@@ -54,14 +54,14 @@ public abstract class AsyncTask {
      * thread in queued order.
      *
      * NOTE: This Android use of "Runnable" is not consistent with the Tantalum
-     * standard the "Workable.work()" is performed on a background Worker thread
+     * standard the "Task.compute()" is performed on a background Worker thread
      * and "Runnable.run()" is performed on the EDT.
      *
      * @param runnable
      */
     public static void execute(final Runnable runnable) {
-        Worker.queueSerial(new Workable() {
-            public boolean work() {
+        Worker.queueSerial(new Task() {
+            public boolean compute() {
                 runnable.run();
 
                 return false;
@@ -103,7 +103,7 @@ public abstract class AsyncTask {
         final Closure closure = new Closure() {
             Object result = null;
 
-            public boolean work() {
+            public boolean compute() {
                 try {
                     if (status == CANCELED) {
                         return true;

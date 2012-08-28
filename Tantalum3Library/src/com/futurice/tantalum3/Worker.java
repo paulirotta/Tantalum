@@ -29,7 +29,7 @@ public class Worker implements Runnable {
     /*
      * Higher priority queue of tasks to be done only by this thread, in the
      * exact order they appear in the serialQ. Other threads which don't have
-     * such dedicated work to do will drop back to the more general q
+     * such dedicated compute to do will drop back to the more general q
      */
     private final Vector serialQ = new Vector();
     /*
@@ -56,11 +56,11 @@ public class Worker implements Runnable {
     public static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
         createWorker(); // First worker
-        Worker.queue(new Workable() {
+        Worker.queue(new Task() {
             /**
              * The first worker creates the others in the background
              */
-            public boolean work() {
+            public boolean compute() {
                 int i = 1;
 
                 try {
@@ -89,7 +89,7 @@ public class Worker implements Runnable {
      * Add an object to be executed in the background on the worker thread. This
      * well be executed FIFO (First In First Out), but some Worker threads may
      * be occupied with their own serialQueue() tasks which they prioritize over
-     * main queue work.
+     * main queue compute.
      *
      * Shutdown() will be delayed indefinitely until items in the queue complete
      * execution. If the shutdown signal comes from the phone (usually because
@@ -98,7 +98,7 @@ public class Worker implements Runnable {
      *
      * @param workable
      */
-    public static void queue(final Workable workable) {
+    public static void queue(final Task workable) {
         synchronized (q) {
             q.addElement(workable);
             q.notify();
@@ -106,15 +106,15 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Queue work to the Worker specified by serialQIndex. This work will be
-     * done after any previously serialQueue()d work to this Worker. This Worker
+     * Queue compute to the Worker specified by serialQIndex. This compute will be
+     * done after any previously serialQueue()d compute to this Worker. This Worker
      * will do only serialQueue() tasks until they are complete, then will
      * revert to doing general queue(), queuePriority() and queueIdleWork()
      *
      * @param workable
      * @param serialQIndex
      */
-    public static void queueSerial(final Workable workable, final int serialQIndex) {
+    public static void queueSerial(final Task workable, final int serialQIndex) {
         if (serialQIndex >= workers.length) {
             throw new IndexOutOfBoundsException("serialQ to Worker " + serialQIndex + ", but there are only " + workers.length + " Workers");
         }
@@ -128,19 +128,19 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Queue an item of work to the next available Worker. This work is
-     * performed at a higher priority than normal work, and is guaranteed to
+     * Queue an item of compute to the next available Worker. This compute is
+     * performed at a higher priority than normal compute, and is guaranteed to
      * execute in the sequence in which items are queued.
      *
      * In most cases you will store the integer returned so that you can queue
-     * more tasks using serialQueue(Workable workable, int serialQIndex)
+     * more tasks using serialQueue(Task workable, int serialQIndex)
      *
-     * @param workable The work to be done
+     * @param workable The compute to be done
      * @return serialQIndex, an integer, the index number of the Worker if you
      * want to add tasks to this same Worker to be completed in guaranteed
      * order.
      */
-    public static int queueSerial(final Workable workable) {
+    public static int queueSerial(final Task workable) {
         final int i = nextSerialWorkerIndex();
 
         queueSerial(workable, i);
@@ -166,14 +166,14 @@ public class Worker implements Runnable {
      * the system down.
      *
      * Note also that under the rare circumstance that all Workers are busy with
-     * serialQueue() tasks, queuePriority() work may be delayed. The recommended
+     * serialQueue() tasks, queuePriority() compute may be delayed. The recommended
      * solution then is to either increase the number of Workers. You may also
      * want to decrease reliance on serialQueue() elsewhere in you your program
      * and make your application logic more parallel.
      *
      * @param workable
      */
-    public static void queuePriority(final Workable workable) {
+    public static void queuePriority(final Task workable) {
         synchronized (q) {
             q.insertElementAt(workable, 0);
             q.notifyAll();
@@ -184,14 +184,14 @@ public class Worker implements Runnable {
      * Add an object to be executed at low priority in the background on the
      * worker thread. Execution will only begin when there are no foreground
      * tasks, and only if at least 1 Worker thread is left ready for immediate
-     * execution of normal priority Workable tasks.
+     * execution of normal priority Task tasks.
      *
      * Items in the idleQueue will not be executed if shutdown() is called
      * before they begin.
      *
      * @param workable
      */
-    public static void queueIdleWork(final Workable workable) {
+    public static void queueIdleWork(final Task workable) {
         synchronized (q) {
             idleQ.addElement(workable);
             q.notify();
@@ -203,7 +203,7 @@ public class Worker implements Runnable {
      *
      * @param workable
      */
-    public static void queueShutdownTask(final Workable workable) {
+    public static void queueShutdownTask(final Task workable) {
         synchronized (q) {
             shutdownQueue.addElement(workable);
             q.notify();
@@ -212,8 +212,8 @@ public class Worker implements Runnable {
 
     /**
      * Call MIDlet.notifyDestroyed() after all current queued and shutdown
-     * Workable tasks are completed. Resources held by the system will be closed
-     * and queued work such as writing to the RMS or file system will complete.
+     * Task tasks are completed. Resources held by the system will be closed
+     * and queued compute such as writing to the RMS or file system will complete.
      *
      * @param block Block the calling thread up to three seconds to allow
      * orderly shutdown. This is only needed in MIDlet.notifyDestroyed(true)
@@ -264,19 +264,19 @@ public class Worker implements Runnable {
      */
     public void run() {
         try {
-            Workable workable = null;
+            Task workable = null;
 
             while (true) {
                 if (serialQ.isEmpty()) {
                     synchronized (q) {
                         if (q.size() > 0) {
-                            // Normal work
-                            workable = (Workable) q.firstElement();
+                            // Normal compute
+                            workable = (Task) q.firstElement();
                             q.removeElementAt(0);
                         } else {
                             if (idleQ.size() > 0 && !shuttingDown && currentlyIdleCount > 0) {
-                                // Idle work, at least 1 thread is left for new normal work
-                                workable = (Workable) idleQ.firstElement();
+                                // Idle compute, at least 1 thread is left for new normal compute
+                                workable = (Task) idleQ.firstElement();
                                 idleQ.removeElementAt(0);
                             } else {
                                 // Nothing to do
@@ -286,7 +286,7 @@ public class Worker implements Runnable {
                                     q.wait();
                                 } else if (!shutdownQueue.isEmpty()) {
                                     // PHASE 1: Execute shutdown actions
-                                    workable = (Workable) shutdownQueue.firstElement();
+                                    workable = (Task) shutdownQueue.firstElement();
                                     shutdownQueue.removeElementAt(0);
                                 } else if (currentlyIdleCount >= workerCount) {
                                     // PHASE 2: Shutdown actions are all complete
@@ -302,11 +302,11 @@ public class Worker implements Runnable {
                         }
                     }
                 } else {
-                    workable = (Workable) serialQ.firstElement();
+                    workable = (Task) serialQ.firstElement();
                     serialQ.removeElementAt(0);
                 }
                 try {
-                    if (workable != null && workable.work() && workable instanceof Runnable) {
+                    if (workable != null && workable.compute() && workable instanceof Runnable) {
                         PlatformUtils.runOnUiThread((Runnable) workable);
                     }
                 } catch (Exception e) {

@@ -5,7 +5,7 @@
 package com.futurice.tantalum3.net;
 
 import com.futurice.tantalum3.Result;
-import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.rms.DataTypeHandler;
@@ -81,7 +81,7 @@ public class StaticWebCache extends StaticCache {
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible queue delays
-                httpGetter.work();
+                httpGetter.compute();
             }
         }, highPriority);
     }
@@ -93,9 +93,9 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     public void update(final String url, final Result result) {
-        Worker.queuePriority(new Workable() {
+        Worker.queuePriority(new Task() {
 
-            public boolean work() {
+            public boolean compute() {
                 try {
                     remove(url);
                     get(url, result, true);
@@ -117,9 +117,9 @@ public class StaticWebCache extends StaticCache {
      */
     public void prefetch(final String url) {
         if (synchronousRAMCacheGet(url) == null) {
-            Worker.queueIdleWork(new Workable() {
+            Worker.queueIdleWork(new Task() {
 
-                public boolean work() {
+                public boolean compute() {
                     try {
                         get(url, null, false);
                     } catch (Exception e) {

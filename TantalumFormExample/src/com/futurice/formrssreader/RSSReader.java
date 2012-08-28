@@ -5,7 +5,7 @@
 package com.futurice.formrssreader;
 
 import com.futurice.tantalum3.TantalumMIDlet;
-import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import javax.microedition.lcdui.*;
 
@@ -51,9 +51,9 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     public void startMIDlet() {//GEN-END:|3-startMIDlet|0|3-preAction
         // write pre-action user code here
         switchDisplayable(null, getList());
-        Worker.queue(new Workable() {
+        Worker.queue(new Task() {
 
-            public boolean work() {
+            public boolean compute() {
                 getList().reload(false);
 
                 return false;
