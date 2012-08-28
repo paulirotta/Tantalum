@@ -81,7 +81,7 @@ public class StaticWebCache extends StaticCache {
                 });
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
-                // This avoids possible forkSerial delays
+                // This avoids possible fork delays
                 httpGetter.compute();
             }
         }, priority);

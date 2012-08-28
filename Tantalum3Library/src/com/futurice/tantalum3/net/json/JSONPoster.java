@@ -8,19 +8,19 @@ package com.futurice.tantalum3.net.json;
 import com.futurice.tantalum3.RunnableResult;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.Log;
-import com.futurice.tantalum3.net.NewHttpPoster;
+import com.futurice.tantalum3.net.HttpPoster;
 
 /**
  * 
  * @author combes
  */
 public abstract class JSONPoster extends RunnableResult implements Task {
-    private NewHttpPoster httpPoster;    
+    private HttpPoster httpPoster;    
     private final JSONModel jsonModel;
 
     public JSONPoster(final String url, final String postMessage, final int retriesRemaining) {
         jsonModel = new JSONModel();
-        this.httpPoster = new NewHttpPoster(url, retriesRemaining, this, postMessage.getBytes());        
+        this.httpPoster = new HttpPoster(url, retriesRemaining, this, postMessage.getBytes());        
     }
     
     public JSONModel getJSONResult() {
