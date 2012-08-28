@@ -6,7 +6,7 @@
 package com.futurice.tantalum3.net.json;
 
 import com.futurice.tantalum3.RunnableResult;
-import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.HttpPoster;
 
@@ -14,7 +14,7 @@ import com.futurice.tantalum3.net.HttpPoster;
  * 
  * @author combes
  */
-public abstract class JSONPoster extends RunnableResult implements Task {
+public abstract class JSONPoster extends RunnableResult implements Workable {
     private HttpPoster httpPoster;    
     private final JSONModel jsonModel;
 
@@ -48,7 +48,7 @@ public abstract class JSONPoster extends RunnableResult implements Task {
         }
     }
     
-    public boolean compute() {
+    public Object compute() {
         return httpPoster.compute();
     }
 }

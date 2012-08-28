@@ -54,23 +54,41 @@ public abstract class AsyncTask {
      * thread in queued order.
      *
      * NOTE: This Android use of "Runnable" is not consistent with the Tantalum
-     * standard the "Task.compute()" is performed on a background Worker thread
+     * standard the "Workable.compute()" is performed on a background Worker thread
      * and "Runnable.run()" is performed on the EDT.
      *
      * @param runnable
      */
     public static void execute(final Runnable runnable) {
-        Worker.forkSerial(new Task() {
-            public boolean compute() {
+        Worker.forkSerial(new Workable() {
+            public Object compute() {
                 runnable.run();
 
-                return false;
+                return null;
             }
         }, ASYNC_TASK_WORKER_INDEX);
     }
 
     /**
-     * Do the same thing for all params parallel
+     * Run the async task on a single background thread. Note that this may be
+     * slower than executeOnExecutor() but is preferred if you require execution
+     * in the order in which execute() is called, or if execute() is not 
+     * thread-safe such that multiple execute() calls can not run in parallel.
+     * 
+     * @param params
+     * @return 
+     */
+    public final AsyncTask execute(final Object params) {
+        Worker.forkSerial(startExecute(params), ASYNC_TASK_WORKER_INDEX);
+        
+        return this;
+    }
+
+    /**
+     * Run the async task on a background thread pool, using the next available
+     * thread. Execution order is not guaranteed, but this may return results
+     * faster than execute() due to multi-core processors and concurrence benefits
+     * during blocking IO calls.
      *
      * This method must be invoked on the UI thread
      *
@@ -79,12 +97,6 @@ public abstract class AsyncTask {
      */
     public final AsyncTask executeOnExecutor(final Object[] params) {
         Worker.fork(startExecute(params));
-        
-        return this;
-    }
-
-    public final AsyncTask execute(final Object params) {
-        Worker.forkSerial(startExecute(params), ASYNC_TASK_WORKER_INDEX);
         
         return this;
     }
@@ -103,10 +115,11 @@ public abstract class AsyncTask {
         final Closure closure = new Closure() {
             Object result = null;
 
-            public boolean compute() {
+            public Object compute() {
                 try {
                     if (status == CANCELED) {
-                        return true;
+                        return this;
+                        //TODO FIXME update this once Task is seperated from Workable and we support error error responses on the UI thread
                     }
                     result = doInBackground(params);
                     status = FINISHED;
@@ -115,10 +128,11 @@ public abstract class AsyncTask {
                     Log.l.log("Async task exception", this.toString(), t);
                     status = CANCELED;
                 }
-                return true;
+                return this;
             }
 
             public void run() {
+                //TODO FIXME update this once Task is seperated from Workable and we support error error responses on the UI thread
                 if (status == CANCELED) {
                     onCancel();
                 } else {

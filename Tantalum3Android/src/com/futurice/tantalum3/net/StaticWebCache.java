@@ -5,7 +5,7 @@
 package com.futurice.tantalum3.net;
 
 import com.futurice.tantalum3.Result;
-import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.rms.DataTypeHandler;
@@ -99,10 +99,10 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     public void update(final String url, final Result result) {
-        Worker.fork(new Task() {
+        Worker.fork(new Workable() {
 
             @Override
-            public boolean compute() {
+            public Object compute() {
                 try {
                     remove(url);
                     get(url, result, Worker.HIGH_PRIORITY);
@@ -110,7 +110,7 @@ public class StaticWebCache extends StaticCache {
                     Log.l.log("Can not update", url, e);
                 }
 
-                return false;
+                return null;
             }
         });
     }
@@ -123,17 +123,17 @@ public class StaticWebCache extends StaticCache {
      */
     public void prefetch(final String url) {
         if (synchronousRAMCacheGet(url) == null) {
-            Worker.fork(new Task() {
+            Worker.fork(new Workable() {
 
                 @Override
-                public boolean compute() {
+                public Object compute() {
                     try {
                         get(url, null, Worker.LOW_PRIORITY);
                     } catch (Exception e) {
                         Log.l.log("Can not prefetch", url, e);
                     }
 
-                    return false;
+                    return null;
                 }
             }, Worker.LOW_PRIORITY);
         }

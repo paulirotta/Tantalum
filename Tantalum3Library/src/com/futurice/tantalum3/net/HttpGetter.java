@@ -5,7 +5,7 @@
 package com.futurice.tantalum3.net;
 
 import com.futurice.tantalum3.Result;
-import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.log.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import javax.microedition.io.HttpConnection;
  *
  * @author pahought
  */
-public class HttpGetter implements Task {
+public class HttpGetter implements Workable {
 
     private final String url;
     private final Result result;
@@ -53,7 +53,7 @@ public class HttpGetter implements Task {
         return this.url;
     }
 
-    public boolean compute() {
+    public Object compute() {
         //#debug
         Log.l.log(this.getClass().getName() + " start", url);
         ByteArrayOutputStream bos = null;
@@ -109,13 +109,14 @@ public class HttpGetter implements Task {
             Log.l.log(this.getClass().getName() + " complete", bytes.length + " bytes, " + url);
             result.setResult(bytes);
             success = true;
-            bytes = null;
         } catch (IllegalArgumentException e) {
             //#debug
             Log.l.log(this.getClass().getName() + " has a problem", url, e);
+            bytes = null;
         } catch (IOException e) {
             //#debug
             Log.l.log(this.getClass().getName() + " retries remaining", url + ", retries=" + retriesRemaining, e);
+            bytes = null;
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
@@ -126,6 +127,7 @@ public class HttpGetter implements Task {
         } catch (Exception e) {
             //#debug
             Log.l.log(this.getClass().getName() + " has a problem", url, e);
+            bytes = null;
         } finally {
             try {
                 inputStream.close();
@@ -166,6 +168,6 @@ public class HttpGetter implements Task {
             Log.l.log("End " + this.getClass().getName(), url);
         }
 
-        return success;
+        return bytes;
     }
 }

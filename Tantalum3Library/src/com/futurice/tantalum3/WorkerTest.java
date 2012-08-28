@@ -37,7 +37,7 @@ public class WorkerTest extends TestCase {
         }
     }
 
-    private interface WorkableResult extends Task {
+    private interface WorkableResult extends Workable {
         Object getResult();
     }
     
@@ -50,13 +50,13 @@ public class WorkerTest extends TestCase {
         WorkableResult wr = new WorkableResult() {
             private Object o;
             
-            public boolean compute() {
+            public Object compute() {
                 synchronized (mutex) {
                     o = "yes";
                     mutex.notifyAll();
                 }
                 
-                return false;
+                return null;
             }
 
             public Object getResult() {
@@ -82,16 +82,16 @@ public class WorkerTest extends TestCase {
     public void testQueue() throws AssertionFailedException {
         System.out.println("queue");
         Worker.fork(null);
-        Worker.fork(new Task() {
+        Worker.fork(new Workable() {
 
-            public boolean compute() {
-                return false;
+            public Object compute() {
+                return null;
             }            
         });
-        Worker.fork(new Task() {
+        Worker.fork(new Workable() {
 
-            public boolean compute() {
-                return true;
+            public Object compute() {
+                return this;
             }            
         });
     }

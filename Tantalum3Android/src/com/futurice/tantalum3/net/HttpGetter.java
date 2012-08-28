@@ -1,7 +1,7 @@
 package com.futurice.tantalum3.net;
 
 import com.futurice.tantalum3.Result;
-import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.log.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -20,7 +20,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
  *
  * @author pahought
  */
-public class HttpGetter implements Task {
+public class HttpGetter implements Workable {
 
     private final String url;
     private final Result result;
@@ -54,13 +54,13 @@ public class HttpGetter implements Task {
     }
 
     @Override
-    public boolean compute() {
+    public Object compute() {
         Log.l.log("HttpGetter start", url);
         ByteArrayOutputStream bos = null;
         HttpClient httpConnection;
         HttpResponse response;
         InputStream inputStream = null;
-        byte[] bytes;
+        byte[] bytes = null;
         boolean tryAgain = false;
         boolean success = false;
 
@@ -112,9 +112,11 @@ public class HttpGetter implements Task {
             bytes = null;
         } catch (IllegalArgumentException e) {
             Log.l.log("HttpGetter has a problem", url, e);
+            bytes = null;
         } catch (IOException e) {
             Log.l.log("Retries remaining", url + ", retries="
                     + retriesRemaining, e);
+            bytes = null;
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
@@ -124,6 +126,7 @@ public class HttpGetter implements Task {
             }
         } catch (Exception e) {
             Log.l.log("HttpGetter has a problem", url, e);
+            bytes = null;
         } finally {
             try {
                 inputStream.close();
@@ -152,6 +155,6 @@ public class HttpGetter implements Task {
             Log.l.log("End HttpGet", url);
         }
 
-        return success;
+        return bytes;
     }
 }

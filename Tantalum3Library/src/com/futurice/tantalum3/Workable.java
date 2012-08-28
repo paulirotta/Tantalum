@@ -7,11 +7,11 @@ package com.futurice.tantalum3;
  * clear which objects objects are intended for Worker threads and which for
  * other threads such as the event dispatch thread.
  * 
- * An object may implement both Task and Runnable to provide automatic passage
+ * An object may implement both Workable and Runnable to provide automatic passage
  * to the EDT after completing a task on the Worker thread.
  * 
  * @author phou
  */
-public interface Task {
-    public boolean compute();
+public interface Workable {
+    public Object compute();
 }

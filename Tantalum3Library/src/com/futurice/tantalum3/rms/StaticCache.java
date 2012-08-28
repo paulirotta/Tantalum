@@ -1,7 +1,7 @@
 package com.futurice.tantalum3.rms;
 
 import com.futurice.tantalum3.Result;
-import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.util.LRUVector;
@@ -36,14 +36,14 @@ public class StaticCache {
         }
     });
     private static final Vector rmsWriteWorkables = new Vector();
-    private static final Task writeAllPending = new Task() {
+    private static final Workable writeAllPending = new Workable() {
 
-        public boolean compute() {
+        public Object compute() {
             try {
-                Task work;
+                Workable work;
                 while (!rmsWriteWorkables.isEmpty()) {
                     synchronized (rmsWriteWorkables) {
-                        work = (Task) rmsWriteWorkables.firstElement();
+                        work = (Workable) rmsWriteWorkables.firstElement();
                         rmsWriteWorkables.removeElementAt(0);
                     }
                     work.compute();
@@ -60,7 +60,7 @@ public class StaticCache {
                 Log.l.log("Can not write all pending", "", e);
             }
 
-            return false;
+            return null;
         }
     };
     protected final WeakHashCache cache = new WeakHashCache();
@@ -161,9 +161,9 @@ public class StaticCache {
             Log.l.log("RAM cache hit", "(" + priority + ") " + key);
             result.setResult(ho);
         } else {
-            final Task getWorkable = new Task() {
+            final Workable getWorkable = new Workable() {
 
-                public boolean compute() {
+                public Object compute() {
                     try {
                         final Object o = synchronousGet(key);
 
@@ -181,7 +181,7 @@ public class StaticCache {
                         Log.l.log("Can not get", key, e);
                     }
 
-                    return false;
+                    return null;
                 }
             };
             Worker.fork(getWorkable, priority);
@@ -230,9 +230,9 @@ public class StaticCache {
         if (bytes == null) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
-        rmsWriteWorkables.addElement(new Task() {
+        rmsWriteWorkables.addElement(new Workable() {
 
-            public boolean compute() {
+            public Object compute() {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {
@@ -240,7 +240,7 @@ public class StaticCache {
                     Log.l.log("Can not synch write to RMS", key, e);
                 }
 
-                return false;
+                return null;
             }
         });
         Worker.fork(writeAllPending, Worker.HIGH_PRIORITY);

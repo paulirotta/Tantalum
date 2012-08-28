@@ -59,11 +59,11 @@ public final class Worker implements Runnable {
     public static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
         createWorker(); // First worker
-        Worker.fork(new Task() {
+        Worker.fork(new Workable() {
             /**
              * The first worker creates the others in the background
              */
-            public boolean compute() {
+            public Object compute() {
                 int i = 1;
 
                 try {
@@ -75,7 +75,7 @@ public final class Worker implements Runnable {
                     Log.l.log("Can not create worker", "i=" + i, e);
                 }
 
-                return false;
+                return null;
             }
         });
     }
@@ -101,7 +101,7 @@ public final class Worker implements Runnable {
      *
      * @param workable
      */
-    public static void fork(final Task workable) {
+    public static void fork(final Workable workable) {
         synchronized (q) {
             q.addElement(workable);
             q.notify();
@@ -128,7 +128,7 @@ public final class Worker implements Runnable {
      * Add an object to be executed at low priority in the background on the
      * worker thread. Execution will only begin when there are no foreground
      * tasks, and only if at least 1 Worker thread is left ready for immediate
-     * execution of normal priority Task tasks.
+     * execution of normal priority Workable tasks.
      *
      * Items in the idleQueue will not be executed if shutdown() is called
      * before they begin.
@@ -136,7 +136,7 @@ public final class Worker implements Runnable {
      * @param workable
      * @param priority
      */
-    public static void fork(final Task workable, final int priority) {
+    public static void fork(final Workable workable, final int priority) {
         switch (priority) {
             case Worker.NORMAL_PRIORITY:
                 fork(workable);
@@ -168,7 +168,7 @@ public final class Worker implements Runnable {
      * @param workable
      * @param serialQIndex
      */
-    public static void forkSerial(final Task workable, final int serialQIndex) {
+    public static void forkSerial(final Workable workable, final int serialQIndex) {
         if (serialQIndex >= workers.length) {
             throw new IndexOutOfBoundsException("serialQ to Worker " + serialQIndex + ", but there are only " + workers.length + " Workers");
         }
@@ -195,7 +195,7 @@ public final class Worker implements Runnable {
      *
      * @param workable
      */
-    public static void queueShutdownTask(final Task workable) {
+    public static void queueShutdownTask(final Workable workable) {
         synchronized (q) {
             shutdownQueue.addElement(workable);
             q.notify();
@@ -203,7 +203,7 @@ public final class Worker implements Runnable {
     }
 
     /**
-     * Call MIDlet.notifyDestroyed() after all current queued and shutdown Task
+     * Call MIDlet.notifyDestroyed() after all current queued and shutdown Workable
      * tasks are completed. Resources held by the system will be closed and
      * queued compute such as writing to the RMS or file system will complete.
      *
@@ -257,19 +257,19 @@ public final class Worker implements Runnable {
      */
     public void run() {
         try {
-            Task workable = null;
+            Workable workable = null;
 
             while (true) {
                 if (serialQ.isEmpty()) {
                     synchronized (q) {
                         if (q.size() > 0) {
                             // Normal compute
-                            workable = (Task) q.firstElement();
+                            workable = (Workable) q.firstElement();
                             q.removeElementAt(0);
                         } else {
                             if (lowPriorityQ.size() > 0 && !shuttingDown && currentlyIdleCount > 0) {
                                 // Idle compute, at least 1 thread is left for new normal compute
-                                workable = (Task) lowPriorityQ.firstElement();
+                                workable = (Workable) lowPriorityQ.firstElement();
                                 lowPriorityQ.removeElementAt(0);
                             } else {
                                 // Nothing to do
@@ -279,7 +279,7 @@ public final class Worker implements Runnable {
                                     q.wait();
                                 } else if (!shutdownQueue.isEmpty()) {
                                     // PHASE 1: Execute shutdown actions
-                                    workable = (Task) shutdownQueue.firstElement();
+                                    workable = (Workable) shutdownQueue.firstElement();
                                     shutdownQueue.removeElementAt(0);
                                 } else if (currentlyIdleCount >= workerCount) {
                                     // PHASE 2: Shutdown actions are all complete
@@ -295,11 +295,11 @@ public final class Worker implements Runnable {
                         }
                     }
                 } else {
-                    workable = (Task) serialQ.firstElement();
+                    workable = (Workable) serialQ.firstElement();
                     serialQ.removeElementAt(0);
                 }
                 try {
-                    if (workable != null && workable.compute() && workable instanceof Runnable) {
+                    if (workable != null && workable.compute() != null && workable instanceof Closure) {
                         PlatformUtils.runOnUiThread((Runnable) workable);
                     }
                 } catch (Exception e) {

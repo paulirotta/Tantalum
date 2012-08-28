@@ -1,6 +1,6 @@
 package com.futurice.tantalum3.rms;
 
-import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.util.LengthLimitedLRUVector;
@@ -54,16 +54,16 @@ public class RMSUtils {
          * Close all open record stores during shutdown
          *
          */
-        Worker.queueShutdownTask(new Task() {
+        Worker.queueShutdownTask(new Workable() {
 
-            public boolean compute() {
+            public Object compute() {
                 //#debug
                 Log.l.log("Closing record stores during shutdown", "open=" + openRecordStores.size());
                 openRecordStores.setMaxLength(0);
                 //#debug
                 Log.l.log("Closed record stores during shutdown", "open=" + openRecordStores.size());
 
-                return false;
+                return null;
             }
         });
     }
