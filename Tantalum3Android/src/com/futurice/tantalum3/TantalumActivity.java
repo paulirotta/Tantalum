@@ -15,8 +15,6 @@ import com.futurice.tantalum3.rms.AndroidDatabase;
 public abstract class TantalumActivity extends Activity {
 
     public TantalumActivity() {
-        super();
-        
         PlatformUtils.setProgram(this);
         Worker.init(4);
     }
@@ -34,12 +32,20 @@ public abstract class TantalumActivity extends Activity {
         Worker.shutdown(unconditional);
     }
 
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
         AndroidDatabase.setContext(((Activity) this).getApplicationContext());
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        
+        Worker.shutdown(true);
+    }
+    
     /**
      * Do not call this directly. Instead, call exitMidlet(false) to avoid
      * common errors.

@@ -165,10 +165,14 @@ public final class Worker implements Runnable {
      * @return
      */
     public static boolean tryUnfork(final Workable workable) {
-        final boolean success;
+        boolean success;
 
         synchronized (q) {
             success = q.removeElement(workable);
+            int i = 0;
+            while (!success && i < workers.length) {
+                success = workers[i++].serialQ.removeElement(workable);
+            }
             q.notifyAll();
             
             return success;

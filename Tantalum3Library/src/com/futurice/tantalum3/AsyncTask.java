@@ -42,19 +42,19 @@ public abstract class AsyncTask extends Closure {
     private int status = PENDING; // Always access within a synchronized block
 
     /**
+     * Never call get() from the UI thread, it will make your UI freeze for
+     * unpredictable periods of time.
      *
-     * @return @throws InterruptedException
+     * @return
+     * @throws InterruptedException
      * @throws CancellationException
      * @throws ExecutionException
      */
     public final synchronized Object get() throws InterruptedException, CancellationException, ExecutionException {
         switch (status) {
             case PENDING:
-            /*
-             * TODO FIXME, get the task from the queue and do it on this thread to avoid
-             * deadlock when there are more join() calls than threads
-             */
-                throw new ExecutionException("Not yet implemented");
+                Worker.tryUnfork(this);
+                return compute();
             case RUNNING:
                 this.wait();
             case FINISHED:
@@ -68,6 +68,10 @@ public abstract class AsyncTask extends Closure {
     }
 
     /**
+     * Never call join() from the UI thread. You might succeed with a very short
+     * timeout, but this is still bad design and better handled with proper
+     * worker threading.
+     *
      * Similar to get(), except the total wait() time if the AsyncTask has not
      * completed is limited
      *
@@ -79,11 +83,8 @@ public abstract class AsyncTask extends Closure {
      */
     public final synchronized Object join(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (status == PENDING) {
-            /*
-             * TODO FIXME, get the task from the queue and do it on this thread to avoid
-             * deadlock when there are more join() calls than threads
-             */
-                            throw new ExecutionException("Not yet implemented");
+            Worker.tryUnfork(this);
+            return compute();
         } else if (status == RUNNING) {
             this.wait(timeout);
             if (status == RUNNING) {
