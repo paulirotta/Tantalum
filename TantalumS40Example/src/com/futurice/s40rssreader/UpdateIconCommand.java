@@ -75,12 +75,13 @@ public class UpdateIconCommand extends IconCommand {
             g.setColor(0x000000);
             g.fillRect(0, 0, WIDTH, HEIGHT);
             g.drawImage(image, (int) XC, (int) YC, Graphics.HCENTER | Graphics.VCENTER);
-            Orientation.setAppOrientation(Orientation.ORIENTATION_PORTRAIT);
+
+            // Force the screen to repaint completely, including the no-longer-animated icon
+            Orientation.setAppOrientation(Orientation.getAppOrientation());
         }
     }
 
     public void drawSpinner() {
-
         for (int i = 0; i < dots; i++) {
             int x = (int) (XC + R * Math.cos(angle));
             int y = (int) (YC + R * Math.sin(angle));
@@ -88,10 +89,10 @@ public class UpdateIconCommand extends IconCommand {
             g.fillRoundRect(x, y, 6, 6, 3, 3);
             angle = (angle - step) % circle;
         }
-
         startDot++;
         startDot = startDot % dots;
 
-        Orientation.setAppOrientation(Orientation.ORIENTATION_PORTRAIT);
+        // Force the screen to repaint completely, including the animated icon
+        Orientation.setAppOrientation(Orientation.getAppOrientation());
     }
 }
