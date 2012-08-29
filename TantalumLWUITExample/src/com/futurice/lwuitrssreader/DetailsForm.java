@@ -4,7 +4,7 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum3.RunnableResult;
+import com.futurice.tantalum3.DEPRICATED_RunnableResult;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -85,7 +85,7 @@ public class DetailsForm extends Form implements ActionListener {
         addLabels(descriptionLabels);
         addComponent(imgLabel);
 
-        imageCache.get(item.getThumbnail(), new RunnableResult() {
+        imageCache.get(item.getThumbnail(), new DEPRICATED_RunnableResult() {
 
             public void run() {
                 imgLabel.setIcon((Image) getResult());

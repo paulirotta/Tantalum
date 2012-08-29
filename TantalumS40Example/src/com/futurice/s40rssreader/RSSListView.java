@@ -4,7 +4,7 @@
  */
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.DEPRICATED_Result;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
@@ -22,7 +22,7 @@ public abstract class RSSListView extends View {
     static boolean prefetchImages = false;
     protected final RSSListView.LiveUpdateRSSModel rssModel = new RSSListView.LiveUpdateRSSModel();
     protected final StaticWebCache feedCache;
-    private final Result rssResult = new Result() {
+    private final DEPRICATED_Result rssResult = new DEPRICATED_Result() {
 
         public void setResult(final Object o) {
             canvas.queueRepaint();

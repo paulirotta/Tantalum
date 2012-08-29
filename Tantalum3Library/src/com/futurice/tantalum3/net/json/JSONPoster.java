@@ -5,7 +5,7 @@
 
 package com.futurice.tantalum3.net.json;
 
-import com.futurice.tantalum3.RunnableResult;
+import com.futurice.tantalum3.DEPRICATED_RunnableResult;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.HttpPoster;
@@ -14,7 +14,7 @@ import com.futurice.tantalum3.net.HttpPoster;
  * 
  * @author combes
  */
-public abstract class JSONPoster extends RunnableResult implements Workable {
+public abstract class JSONPoster extends DEPRICATED_RunnableResult implements Workable {
     private HttpPoster httpPoster;    
     private final JSONModel jsonModel;
 

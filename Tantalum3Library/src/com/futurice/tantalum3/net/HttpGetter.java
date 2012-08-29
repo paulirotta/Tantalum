@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.net;
 
-import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.DEPRICATED_Result;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.log.Log;
 import java.io.ByteArrayOutputStream;
@@ -25,19 +25,19 @@ import javax.microedition.io.HttpConnection;
 public class HttpGetter implements Workable {
 
     private final String url;
-    private final Result result;
+    private final DEPRICATED_Result result;
     protected int retriesRemaining;
     protected byte[] postMessage = null;
     protected String requestMethod = HttpConnection.GET;
 
     /**
-     * Get the contents of a URL and return that asynchronously as a Result
+     * Get the contents of a URL and return that asynchronously as a DEPRICATED_Result
      *
      * @param url - where on the Internet to synchronousGet the data
      * @param retriesRemaining - how many time to attempt connection
      * @param result - optional object notified on the EDT with the result
      */
-    public HttpGetter(final String url, final int retriesRemaining, final Result result) {
+    public HttpGetter(final String url, final int retriesRemaining, final DEPRICATED_Result result) {
         if (url == null || url.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }

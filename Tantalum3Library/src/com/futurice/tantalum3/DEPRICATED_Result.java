@@ -11,7 +11,7 @@ package com.futurice.tantalum3;
  * For asynchronous cache get. Non-blocking get results are returned in a
  * runnable object, often of the form:
  *
- * staticWebCache.get("myurl", new Result() { public void run() { // do
+ * staticWebCache.get("myurl", new DEPRICATED_Result() { public void run() { // do
  * something on EDT with getResult() object }
  *
  * The setResult() method will be called from a Worker thread. If actions taken
@@ -24,7 +24,7 @@ package com.futurice.tantalum3;
  * 
  * @author tsaa, paul houghton
  */
-public class Result {
+public class DEPRICATED_Result {
 
     private volatile Object o;
 

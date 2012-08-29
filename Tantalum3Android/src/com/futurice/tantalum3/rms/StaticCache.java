@@ -1,6 +1,6 @@
 package com.futurice.tantalum3.rms;
 
-import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.DEPRICATED_Result;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
@@ -129,7 +129,7 @@ public class StaticCache {
         return o;
     }
 
-    public void get(final String key, final Result result, final int priority) {
+    public void get(final String key, final DEPRICATED_Result result, final int priority) {
         if (key == null || key.length() == 0) {
             Log.l.log("Trivial get", "");
             result.onCancel();

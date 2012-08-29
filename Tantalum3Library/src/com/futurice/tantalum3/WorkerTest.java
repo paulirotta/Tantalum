@@ -102,7 +102,7 @@ public class WorkerTest extends TestCase {
     public void testQueueEDT() throws AssertionFailedException {
         System.out.println("queueEDT");
         final Object mutex = new Object();
-        Result dgr = new RunnableResult() {            
+        DEPRICATED_Result dgr = new DEPRICATED_RunnableResult() {            
 
             public void run() {
                 setResult("done");

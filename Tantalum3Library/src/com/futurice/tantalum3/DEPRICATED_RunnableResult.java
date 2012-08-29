@@ -11,7 +11,7 @@ package com.futurice.tantalum3;
  * 
  * @author phou
  */
-public abstract class RunnableResult extends Result implements Runnable {
+public abstract class DEPRICATED_RunnableResult extends DEPRICATED_Result implements Runnable {
     public void setResult(final Object o) {
         super.setResult(o);
         PlatformUtils.runOnUiThread(this);

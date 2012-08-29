@@ -5,7 +5,7 @@
 package com.futurice.formrssreader;
 
 import com.futurice.tantalum3.PlatformUtils;
-import com.futurice.tantalum3.RunnableResult;
+import com.futurice.tantalum3.DEPRICATED_RunnableResult;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.StaticWebCache;
@@ -115,7 +115,7 @@ public class ListForm extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            feedCache.update(feedUrl, new RunnableResult() {
+            feedCache.update(feedUrl, new DEPRICATED_RunnableResult() {
 
                 public void run() {
                     loading = false;
@@ -127,7 +127,7 @@ public class ListForm extends Form implements CommandListener {
                 }
             });
         } else {
-            feedCache.get(feedUrl, new RunnableResult() {
+            feedCache.get(feedUrl, new DEPRICATED_RunnableResult() {
 
                 public void onCancel() {
                     loading = false;
