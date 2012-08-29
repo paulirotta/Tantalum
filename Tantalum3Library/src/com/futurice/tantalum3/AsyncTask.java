@@ -12,13 +12,6 @@ import com.futurice.tantalum3.log.Log;
  * or basic open loop Workable patterns.
  */
 public abstract class AsyncTask extends Closure {
-
-    public static final int PENDING = 0;
-    public static final int RUNNING = 1;
-    public static final int FINISHED = 2;
-    public static final int CANCELED = 3;
-    public static final int EXCEPTION = 4;
-
     /*
      * Control if objects passed to executeOnExecutor() are thread safe to
      * allow parallel handling on the UI and a worker thread.
@@ -37,78 +30,13 @@ public abstract class AsyncTask extends Closure {
      * executeOnExecutor(Params) instead unless
      */
     public static final int ASYNC_TASK_WORKER_INDEX = Worker.nextSerialWorkerIndex();
-    private Object params = ""; // For default toString debug helper
-    protected Object result = null;
-    private int status = PENDING; // Always access within a synchronized block
-
-    /**
-     * Never call get() from the UI thread, it will make your UI freeze for
-     * unpredictable periods of time.
-     *
-     * @return
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
+    /*
+     * Note that an AsyncTask is stateful, including parameters. You can therefore
+     * not fork() an AsyncTask instance more than once at a time. It is recommended
+     * you clone a task if you want to queue it multiple times- this would also affect
+     * cancelletion logic ("which queued instance do you want to cancel?").
      */
-    public final synchronized Object get() throws InterruptedException, CancellationException, ExecutionException {
-        switch (status) {
-            case PENDING:
-                Worker.tryUnfork(this);
-                return compute();
-            case RUNNING:
-                this.wait();
-            case FINISHED:
-                return result;
-            case CANCELED:
-                throw new CancellationException();
-            case EXCEPTION:
-            default:
-                throw new ExecutionException();
-        }
-    }
-
-    /**
-     * Never call join() from the UI thread. You might succeed with a very short
-     * timeout, but this is still bad design and better handled with proper
-     * worker threading.
-     *
-     * Similar to get(), except the total wait() time if the AsyncTask has not
-     * completed is limited
-     *
-     * @param timeout
-     * @return
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
-     */
-    public final synchronized Object join(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        if (status == PENDING) {
-            Worker.tryUnfork(this);
-            return compute();
-        } else if (status == RUNNING) {
-            this.wait(timeout);
-            if (status == RUNNING) {
-                throw new TimeoutException();
-            }
-        }
-        if (status == CANCELED) {
-            throw new CancellationException();
-        }
-        if (status == EXCEPTION) {
-            throw new ExecutionException();
-        }
-
-        return result;
-    }
-
-    /**
-     * Find out the execution state of the Task
-     *
-     * @return
-     */
-    public final synchronized int getStatus() {
-        return status;
-    }
+    private volatile Object params = ""; // For default toString debug helper
 
     /**
      * Cancel execution if possible.
@@ -207,7 +135,7 @@ public abstract class AsyncTask extends Closure {
                 }
             }
         });
-        if (!agressive) {
+        if (agressive) {
             Worker.fork(AsyncTask.this);
         }
 
@@ -215,28 +143,41 @@ public abstract class AsyncTask extends Closure {
     }
 
     public final Object compute() {
+        Object r = null;
+        
         try {
             synchronized (this) {
+                r = result;
                 if (status == CANCELED || status == EXCEPTION) {
-                    return result;
+                    return r;
                 }
                 setStatus(RUNNING);
             }
-            result = doInBackground(params);
-            setStatus(FINISHED);
+
+            r = doInBackground(params);
+
+            synchronized (this) {
+                result = r;
+                setStatus(FINISHED);
+            }
         } catch (final Throwable t) {
             //#debug
             Log.l.log("Async task exception", this.toString(), t);
             setStatus(EXCEPTION);
         }
-        return result;
+
+        return r;
     }
 
     public final void run() {
         if (isCancelled()) {
             onCancel();
         } else {
-            onPostExecute(result);
+            final Object r;
+            synchronized (this) {
+                r = result;
+            }
+            onPostExecute(r);
         }
     }
 
@@ -289,18 +230,6 @@ public abstract class AsyncTask extends Closure {
      *
      */
     protected void onPostExecute(Object result) {
-    }
-
-    /**
-     * This is executed on the UI thread
-     *
-     * Override if needed
-     *
-     * Use getStatus() to distinguish between CANCELLED and EXCEPTION states if
-     * necessary.
-     *
-     */
-    protected void onCancel() {
     }
 
     /**

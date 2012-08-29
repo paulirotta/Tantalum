@@ -25,6 +25,7 @@ public abstract class RSSListView extends View {
     private final DEPRICATED_Result rssResult = new DEPRICATED_Result() {
 
         public void setResult(final Object o) {
+            super.setResult(o);
             canvas.queueRepaint();
         }
     };

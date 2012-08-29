@@ -124,6 +124,7 @@ public final class DetailsView extends View {
                 imageCache.get(item.getThumbnail(), new DEPRICATED_Result() {
 
                     public void setResult(final Object o) {
+                        super.setResult(o);
                         item.setLoadingImage(false);
                         if (currentItem == item) {
                             currentIcon = (Image) o;
@@ -178,6 +179,7 @@ public final class DetailsView extends View {
             imageCache.get(leftItem.getThumbnail(), new DEPRICATED_Result() {
 
                 public void setResult(final Object o) {
+                    super.setResult(o);
                     if (DetailsView.this.leftItem == leftItem) {
                         leftIcon = (Image) o;
                     }
@@ -188,6 +190,7 @@ public final class DetailsView extends View {
             imageCache.get(rightItem.getThumbnail(), new DEPRICATED_Result() {
 
                 public void setResult(final Object o) {
+                    super.setResult(o);
                     if (DetailsView.this.rightItem == rightItem) {
                         rightIcon = (Image) o;
                     }

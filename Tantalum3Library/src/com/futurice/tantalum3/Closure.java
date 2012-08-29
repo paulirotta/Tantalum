@@ -11,5 +11,5 @@ package com.futurice.tantalum3;
  * 
  * @author phou
  */
-public abstract class Closure implements Workable, Runnable{
+public abstract class Closure extends Result implements Runnable{
 }

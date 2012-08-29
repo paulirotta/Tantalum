@@ -143,6 +143,7 @@ public final class IconListView extends RSSListView {
                             DetailsView.imageCache.get(item.getThumbnail(), new DEPRICATED_Result() {
 
                                 public void setResult(final Object o) {
+                                    super.setResult(o);
                                     try {
                                         //#debug
                                         Log.l.log("getIcon result", "" + o);
