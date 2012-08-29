@@ -22,6 +22,7 @@ public abstract class AsyncTask extends Closure {
      * object can be queued to both the worker and UI threads simultaneously for
      * better performance.
      */
+
     public static boolean agressiveThreading = true;
 
     /*
@@ -37,36 +38,6 @@ public abstract class AsyncTask extends Closure {
      * cancelletion logic ("which queued instance do you want to cancel?").
      */
     private volatile Object params = ""; // For default toString debug helper
-
-    /**
-     * Cancel execution if possible.
-     *
-     * @param mayInterruptIfRunning
-     * @return
-     */
-    public final synchronized boolean cancel(final boolean mayInterruptIfRunning) {
-        switch (status) {
-            case PENDING:
-                setStatus(CANCELED);
-                return true;
-            case RUNNING:
-                if (mayInterruptIfRunning) {
-                    //TODO find the task on a thread, then interrupt that thread
-                    setStatus(CANCELED);
-                    return true;
-                } else {
-                    return false;
-                }
-            default:
-        }
-
-        return false;
-    }
-
-    private synchronized void setStatus(final int status) {
-        this.status = status;
-        this.notifyAll();
-    }
 
     /**
      * For compatability with Android, run one Runnable task on a single
@@ -144,7 +115,7 @@ public abstract class AsyncTask extends Closure {
 
     public final Object compute() {
         Object r = null;
-        
+
         try {
             synchronized (this) {
                 r = result;
@@ -170,15 +141,11 @@ public abstract class AsyncTask extends Closure {
     }
 
     public final void run() {
-        if (isCancelled()) {
-            onCancel();
-        } else {
-            final Object r;
-            synchronized (this) {
-                r = result;
-            }
-            onPostExecute(r);
+        final Object r;
+        synchronized (this) {
+            r = result;
         }
+        onPostExecute(r);
     }
 
     public final synchronized boolean isCancelled() {

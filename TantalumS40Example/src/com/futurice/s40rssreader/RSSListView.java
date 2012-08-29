@@ -4,7 +4,7 @@
  */
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.DEPRICATED_Result;
+import com.futurice.tantalum3.Result;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
@@ -22,10 +22,9 @@ public abstract class RSSListView extends View {
     static boolean prefetchImages = false;
     protected final RSSListView.LiveUpdateRSSModel rssModel = new RSSListView.LiveUpdateRSSModel();
     protected final StaticWebCache feedCache;
-    private final DEPRICATED_Result rssResult = new DEPRICATED_Result() {
-
-        public void setResult(final Object o) {
-            super.setResult(o);
+    private final Result rssResult = new Result() {
+        public void set(final Object o) {
+            super.set(o);
             canvas.queueRepaint();
         }
     };
@@ -34,7 +33,6 @@ public abstract class RSSListView extends View {
         super(canvas);
 
         feedCache = new StaticWebCache('5', new DataTypeHandler() {
-
             public Object convertToUseForm(byte[] bytes) {
                 try {
                     rssModel.setXML(bytes);
@@ -51,7 +49,6 @@ public abstract class RSSListView extends View {
 
     protected final void clearCache() {
         Worker.fork(new Workable() {
-
             public Object compute() {
                 try {
                     doClearCache();
@@ -122,10 +119,10 @@ public abstract class RSSListView extends View {
             }
         }
     }
-    
+
     public abstract boolean setSelectedIndex(int i);
-    
+
     public abstract void selectItem(final int x, final int y, boolean tapped);
-    
+
     public abstract void deselectItem();
 }

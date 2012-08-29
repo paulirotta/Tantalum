@@ -2,53 +2,44 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.futurice.tantalum3.net.json;
 
-import com.futurice.tantalum3.DEPRICATED_RunnableResult;
-import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Result;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.HttpPoster;
 
 /**
- * 
+ *
  * @author combes
  */
-public abstract class JSONPoster extends DEPRICATED_RunnableResult implements Workable {
-    private HttpPoster httpPoster;    
-    private final JSONModel jsonModel;
+public abstract class JSONPoster extends HttpPoster {
 
-    public JSONPoster(final String url, final String postMessage, final int retriesRemaining) {
-        jsonModel = new JSONModel();
-        this.httpPoster = new HttpPoster(url, retriesRemaining, this, postMessage.getBytes());        
-    }
-    
-    public JSONModel getJSONResult() {
-        return jsonModel;
+    private final JSONModel jsonvo;
+
+    public JSONPoster(final String url, final String postMessage, final JSONModel jsonModel, final Result result, final int retriesRemaining) {
+        super(url, retriesRemaining, result, postMessage.getBytes());
+        
+        this.jsonvo = jsonModel;
     }
 
-    public void setResult(final Object o) {
-        super.setResult(o);
-              
+    public Object compute() {
+        final byte[] bytes = (byte[]) super.compute();
         String value = "";
 
         try {
-            byte[] byteResult = (byte[])o;
-            //value = this.getResult().toString().trim();
-            value = new String(byteResult);
+            value = bytes.toString().trim();
             if (value.startsWith("[")) {
                 // Parser expects non-array base object- add one
                 value = "{\"base:\"" + value + "}";
             }
-            jsonModel.setJSON(value);
+            jsonvo.setJSON(value);
+            result.set(value);
         } catch (Exception e) {
             //#debug
-            Log.l.log("JSONPoster result parsing problem", this.jsonModel + " : " + value, e);
-            onCancel();
+            Log.l.log("JSONPoster HTTP response problem", this.getUrl() + " : " + value, e);
+            result.cancel(false);
         }
-    }
-    
-    public Object compute() {
-        return httpPoster.compute();
+        
+        return bytes;
     }
 }

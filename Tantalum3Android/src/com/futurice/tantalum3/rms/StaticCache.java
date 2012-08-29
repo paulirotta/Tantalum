@@ -1,6 +1,6 @@
 package com.futurice.tantalum3.rms;
 
-import com.futurice.tantalum3.DEPRICATED_Result;
+import com.futurice.tantalum3.Result;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
@@ -129,17 +129,17 @@ public class StaticCache {
         return o;
     }
 
-    public void get(final String key, final DEPRICATED_Result result, final int priority) {
+    public void get(final String key, final Result result, final int priority) {
         if (key == null || key.length() == 0) {
             Log.l.log("Trivial get", "");
-            result.onCancel();
+            result.cancel(false);
             return;
         }
         final Object ho = synchronousRAMCacheGet(key);
 
         if (ho != null) {
             Log.l.log("RAM cache hit", "(" + priority + ") " + key);
-            result.setResult(ho);
+            result.set(ho);
         } else {
             final Workable getWorkable = new Workable() {
                 @Override
@@ -148,13 +148,11 @@ public class StaticCache {
                         final Object o = synchronousGet(key);
 
                         if (o != null) {
-                            //#debug
                             Log.l.log("RMS cache hit", key);
-                            result.setResult(o);
+                            result.set(o);
                         } else {
-                            //#debug
                             Log.l.log("RMS cache miss", key);
-                            result.onCancel();
+                            result.cancel(false);
                         }
                     } catch (Exception e) {
                         Log.l.log("Can not get", key, e);

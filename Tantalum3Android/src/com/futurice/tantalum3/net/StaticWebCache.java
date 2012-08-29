@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.net;
 
-import com.futurice.tantalum3.DEPRICATED_Result;
+import com.futurice.tantalum3.Result;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
@@ -31,8 +31,8 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     @Override
-    public void get(final String url, final DEPRICATED_Result result, final int priority) {
-        super.get(url, new DEPRICATED_Result() {
+    public void get(final String url, final Result r, final int priority) {
+        super.get(url, new Result() {
 
             /**
              * Local Cache get returned a result, no need to get it from the
@@ -40,9 +40,9 @@ public class StaticWebCache extends StaticCache {
              *
              */
             @Override
-            public void setResult(final Object o) {
-                if (result != null) {
-                    result.setResult(o);
+            public void set(final Object o) {
+                if (r != null) {
+                    r.set(o);
                 }
             }
 
@@ -53,31 +53,31 @@ public class StaticWebCache extends StaticCache {
             @Override
             public void onCancel() {
                 Log.l.log("No result from cache get, shift to HTTP", url);
-                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new DEPRICATED_Result() {
+                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Result() {
 
                     @Override
-                    public void setResult(Object o) {
+                    public void set(Object o) {
                         try {
                             o = put(url, (byte[]) o); // Convert to use form
-                            if (result != null) {
+                            if (r != null) {
                                 if (o != null) {
-                                    result.setResult(o);
+                                    r.set(o);
                                     //#debug
                                     Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
                                 } else {
-                                    result.onCancel();
+                                    r.cancel(false);
                                 }
                             }
                         } catch (Exception e) {
                             Log.l.log("Can not set result", url, e);
-                            onCancel();
+                            cancel(false);
                         }
                     }
 
                     @Override
                     public void onCancel() {
-                        if (result != null) {
-                            result.onCancel();
+                        if (r != null) {
+                            r.cancel(false);
                         }
                     }
                 });
@@ -98,7 +98,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public void update(final String url, final DEPRICATED_Result result) {
+    public void update(final String url, final Result result) {
         Worker.fork(new Workable() {
 
             @Override

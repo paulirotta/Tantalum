@@ -1,6 +1,6 @@
 package com.futurice.tantalum3.net;
 
-import com.futurice.tantalum3.DEPRICATED_Result;
+import com.futurice.tantalum3.Result;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.log.Log;
 import java.io.ByteArrayOutputStream;
@@ -23,7 +23,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 public class HttpGetter implements Workable {
 
     private final String url;
-    private final DEPRICATED_Result result;
+    private final Result result;
     private int retriesRemaining;
 
     /**
@@ -34,7 +34,7 @@ public class HttpGetter implements Workable {
      * @param result - optional object notified on the EDT with the result
      */
     public HttpGetter(final String url, final int retriesRemaining,
-            final DEPRICATED_Result result) {
+            final Result result) {
         if (url == null || url.indexOf(':') <= 0) {
             throw new IllegalArgumentException(
                     "HttpGetter was passed bad URL: " + url);
@@ -107,7 +107,7 @@ public class HttpGetter implements Workable {
                 readBuffer = null;
             }
             Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
-            result.setResult(bytes);
+            result.set(bytes);
             success = true;
             bytes = null;
         } catch (IllegalArgumentException e) {
@@ -150,7 +150,7 @@ public class HttpGetter implements Workable {
 
                 return this.compute();
             } else if (!success) {
-                result.onCancel();
+                result.cancel(false);
             }
             Log.l.log("End HttpGet", url);
         }

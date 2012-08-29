@@ -1,6 +1,6 @@
 package com.futurice.tantalum3.rms;
 
-import com.futurice.tantalum3.DEPRICATED_Result;
+import com.futurice.tantalum3.Result;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
@@ -147,11 +147,11 @@ public class StaticCache {
      * recently changed the value and the value happens to have expired from the
      * RAM cache due to a low memory condition.
      */
-    public void get(final String key, final DEPRICATED_Result result, final int priority) {
+    public void get(final String key, final Result result, final int priority) {
         if (key == null || key.length() == 0) {
             //#debug
             Log.l.log("Trivial get", "");
-            result.onCancel();
+            result.cancel(false);
             return;
         }
         final Object ho = synchronousRAMCacheGet(key);
@@ -159,7 +159,7 @@ public class StaticCache {
         if (ho != null) {
             //#debug
             Log.l.log("RAM cache hit", "(" + priority + ") " + key);
-            result.setResult(ho);
+            result.set(ho);
         } else {
             final Workable getWorkable = new Workable() {
 
@@ -170,11 +170,11 @@ public class StaticCache {
                         if (o != null) {
                             //#debug
                             Log.l.log("RMS cache hit", key);
-                            result.setResult(o);
+                            result.set(o);
                         } else {
                             //#debug
                             Log.l.log("RMS cache miss", key);
-                            result.onCancel();
+                            result.cancel(false);
                         }
                     } catch (Exception e) {
                         //#debug

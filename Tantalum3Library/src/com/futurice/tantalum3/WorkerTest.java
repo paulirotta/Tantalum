@@ -102,10 +102,10 @@ public class WorkerTest extends TestCase {
     public void testQueueEDT() throws AssertionFailedException {
         System.out.println("queueEDT");
         final Object mutex = new Object();
-        DEPRICATED_Result dgr = new DEPRICATED_RunnableResult() {            
+        Result dgr = new Closure() {            
 
             public void run() {
-                setResult("done");
+                set("done");
                 synchronized(mutex) {
                     mutex.notifyAll();
                 }
@@ -117,8 +117,28 @@ public class WorkerTest extends TestCase {
             synchronized(mutex) {
                 mutex.wait(1000);
             }
+            assertEquals("done", (String) dgr.get());
         } catch (Exception e) {
         }
-        assertEquals("done", (String) dgr.getResult());
+    }
+
+    /**
+     * Test of testQueueEDT method, of class Worker.
+     */
+    public void testQueueEDTNoWait() throws AssertionFailedException {
+        System.out.println("queueEDT");
+        Result dgr = new Closure() {            
+
+            public void run() {
+                set("done");
+            }
+        };
+        
+        PlatformUtils.runOnUiThread((Runnable) dgr);        
+        try {
+            // Test should wait here until EDT executes
+            assertEquals("done", (String) dgr.get());
+        } catch (Exception e) {
+        }
     }
 }

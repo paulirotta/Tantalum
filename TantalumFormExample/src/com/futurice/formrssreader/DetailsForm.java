@@ -4,7 +4,7 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum3.DEPRICATED_RunnableResult;
+import com.futurice.tantalum3.Closure;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.StaticWebCache;
@@ -88,7 +88,7 @@ public class DetailsForm extends Form implements CommandListener {
             } else if (!selectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
-                imageCache.get(selectedItem.getThumbnail(), new DEPRICATED_RunnableResult() {
+                imageCache.get(selectedItem.getThumbnail(), new Closure() {
 
                     public void run() {
                         DetailsForm.this.appendImageItem();

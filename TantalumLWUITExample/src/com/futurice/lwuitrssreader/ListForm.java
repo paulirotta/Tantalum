@@ -1,6 +1,6 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum3.DEPRICATED_Result;
+import com.futurice.tantalum3.Result;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -73,16 +73,15 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 list.getModel().removeItem(i);
             }
 
-            final DEPRICATED_Result result = new DEPRICATED_Result() {
+            final Result result = new Result() {
 
                 public void onCancel() {
                     isReloading = false;
                 }
 
-                public void setResult(Object o) {
-                    super.setResult(o);
-
+                public void set(Object o) {
                     isReloading = false;
+                    super.set(o);
                 }
             };
 

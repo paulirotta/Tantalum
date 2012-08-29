@@ -1,6 +1,6 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.DEPRICATED_Result;
+import com.futurice.tantalum3.Result;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.StaticWebCache;
@@ -121,10 +121,10 @@ public final class DetailsView extends View {
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
-                imageCache.get(item.getThumbnail(), new DEPRICATED_Result() {
+                imageCache.get(item.getThumbnail(), new Result() {
 
-                    public void setResult(final Object o) {
-                        super.setResult(o);
+                    public void set(final Object o) {
+                        super.set(o);
                         item.setLoadingImage(false);
                         if (currentItem == item) {
                             currentIcon = (Image) o;
@@ -176,10 +176,10 @@ public final class DetailsView extends View {
         this.leftItem = leftItem;
         this.rightItem = rightItem;
         if (leftItem != null) {
-            imageCache.get(leftItem.getThumbnail(), new DEPRICATED_Result() {
+            imageCache.get(leftItem.getThumbnail(), new Result() {
 
-                public void setResult(final Object o) {
-                    super.setResult(o);
+                public void set(final Object o) {
+                    super.set(o);
                     if (DetailsView.this.leftItem == leftItem) {
                         leftIcon = (Image) o;
                     }
@@ -187,10 +187,10 @@ public final class DetailsView extends View {
             }, Worker.HIGH_PRIORITY);
         }
         if (rightItem != null) {
-            imageCache.get(rightItem.getThumbnail(), new DEPRICATED_Result() {
+            imageCache.get(rightItem.getThumbnail(), new Result() {
 
-                public void setResult(final Object o) {
-                    super.setResult(o);
+                public void set(final Object o) {
+                    super.set(o);
                     if (DetailsView.this.rightItem == rightItem) {
                         rightIcon = (Image) o;
                     }
