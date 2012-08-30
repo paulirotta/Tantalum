@@ -46,7 +46,6 @@ public final class ListForm extends Form implements CommandListener {
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final int MARGIN = FONT_TITLE.getHeight() / 2;
-    protected int startIndex = 0; // Next item in the model to add to the screen in paint()
     private boolean loading = false;
     private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
     private final Command reloadCommand = new Command("Reload", Command.OK, 0);
@@ -105,7 +104,7 @@ public final class ListForm extends Form implements CommandListener {
         }
 
         loading = true;
-//        paint();
+        paint();
         String feedUrl = RSSReader.INITIAL_FEED_URL;
 
         try {
@@ -126,8 +125,6 @@ public final class ListForm extends Form implements CommandListener {
             closure = new Closure() {
                 public void run() {
                     loading = false;
-                    startIndex = 0;
-                    deleteAll();
                     paint();
                 }
 
@@ -149,8 +146,6 @@ public final class ListForm extends Form implements CommandListener {
 
                 public void run() {
                     loading = false;
-                    startIndex = 0;
-                    deleteAll();
                     paint();
                 }
             };
@@ -184,48 +179,27 @@ public final class ListForm extends Form implements CommandListener {
 
     /**
      * Update the display
+     * 
+     * Only call this from the UI thread
      */
-    private void paint() {
-        if (rssModel.size() == 0) {
+    private void paint() {        
+        deleteAll();
+        if (loading) {
             renderLoading();
             return;
         }
-
-//        if (rssModel.size() == 0) {
-//            if (startIndex == 0) {
-//                deleteAll();
-//            }
-//            //no items to display
-//            StringItem noDataStringItem = new StringItem(null, "No data",
-//                    StringItem.PLAIN);
-//            noDataStringItem.setFont(FONT_TITLE);
-//            noDataStringItem.setLayout(Item.LAYOUT_CENTER | Item.LAYOUT_VCENTER);
-//            append(noDataStringItem);
-//            return;
-//        }
-
-        if (startIndex == 0) {
-            deleteAll();
-        }
-
+        
         final int len = rssModel.size();
-        for (int i = startIndex; i < len; i++) {
-            final RSSItem rssItem = (RSSItem) rssModel.elementAt(i);
-
-            PlatformUtils.runOnUiThread(new Runnable() {
-                public void run() {
-                    addItem(rssItem);
-                }
-            });
+        for (int i = 0; i < len; i++) {
+            addItem((RSSItem) rssModel.elementAt(i));
         }
-        startIndex = len;
     }
 
     public void addItem(final RSSItem rssItem) {
         final StringItem titleStringItem = new StringItem(null, rssItem.getTitle(), StringItem.PLAIN);
         titleStringItem.setFont(FONT_TITLE);
         titleStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
-        final Command cmdShow = new Command("", Command.OK, 1);
+        final Command cmdShow = new Command("", Command.ITEM, 0);
         titleStringItem.setDefaultCommand(cmdShow);
         titleStringItem.setItemCommandListener(new ItemCommandListener() {
             public void commandAction(Command c, Item item) {
@@ -246,12 +220,4 @@ public final class ListForm extends Form implements CommandListener {
     public static ListForm getInstance() {
         return instance;
     }
-//    public void notifyListChanged() {
-//        loading = false;
-//        PlatformUtils.runOnUiThread(new Runnable() {
-//            public void run() {
-//                paint();
-//            }
-//        });
-//    }
 }
