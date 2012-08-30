@@ -75,19 +75,11 @@ public class RSSItem {
         this.truncatedTitle = truncatedTitle;
     }
 
-//    public synchronized Image getThumbnailImage() {
-//        return thumbnailImage;
-//    }
-//
-//    public synchronized void setThumbnailImage(Image thumbnailImage) {
-//        this.thumbnailImage = thumbnailImage;
-//    }
-
     public boolean isLoadingImage() {
         return loadingImage;
     }
 
-    public void setLoadingImage(boolean loadingImage) {
+    public void setLoadingImage(final boolean loadingImage) {
         this.loadingImage = loadingImage;
     }
 

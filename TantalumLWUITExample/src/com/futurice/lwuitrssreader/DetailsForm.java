@@ -5,7 +5,6 @@
 package com.futurice.lwuitrssreader;
 
 import com.futurice.tantalum3.Closure;
-import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -97,7 +96,7 @@ public class DetailsForm extends Form implements ActionListener {
                     Log.l.log("Can not get image for RSSItem", item.getThumbnail(), ex);
                 }
             }
-        }, Worker.HIGH_PRIORITY);
+        });
 
         addLabels(linkLabels);
         setScrollY(0);

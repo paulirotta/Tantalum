@@ -79,7 +79,7 @@ public abstract class RSSListView extends View {
         if (forceNetLoad) {
             feedCache.update(feedUrl, rssResult);
         } else {
-            feedCache.get(feedUrl, rssResult, Worker.HIGH_PRIORITY);
+            feedCache.get(feedUrl, rssResult);
         }
     }
 

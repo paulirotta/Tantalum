@@ -14,11 +14,11 @@ import javax.microedition.rms.RecordStoreFullException;
  *
  * @author ssaa
  */
-public class SettingsForm extends TextBox implements CommandListener {
+public final class SettingsForm extends TextBox implements CommandListener {
 
     private final RSSReader midlet;
-    private Command saveCommand = new Command("Save", Command.OK, 0);
-    private Command backCommand = new Command("Back", Command.BACK, 0);
+    private final Command saveCommand = new Command("Save", Command.OK, 0);
+    private final Command backCommand = new Command("Back", Command.BACK, 0);
 
     public SettingsForm(final RSSReader midlet) {
         super("RSS Feed URL", "", 256, TextField.URL & TextField.NON_PREDICTIVE);

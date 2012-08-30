@@ -71,7 +71,7 @@ public abstract class AsyncTask extends Closure {
      */
     public final AsyncTask execute(final Object params) {
         this.params = params;
-        setStatus(PENDING);
+        setStatus(WORKER_THREAD_PENDING);
         PlatformUtils.runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
@@ -97,7 +97,7 @@ public abstract class AsyncTask extends Closure {
         final boolean agressive = AsyncTask.agressiveThreading;
 
         this.params = params;
-        setStatus(PENDING);
+        setStatus(WORKER_THREAD_PENDING);
         PlatformUtils.runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
@@ -122,14 +122,14 @@ public abstract class AsyncTask extends Closure {
                 if (status == CANCELED || status == EXCEPTION) {
                     return r;
                 }
-                setStatus(RUNNING);
+                setStatus(WORKER_THREAD_RUNNING);
             }
 
             r = doInBackground(params);
 
             synchronized (this) {
                 result = r;
-                setStatus(FINISHED);
+                setStatus(WORKER_THREAD_FINISHED);
             }
         } catch (final Throwable t) {
             //#debug

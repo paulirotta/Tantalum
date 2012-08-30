@@ -23,7 +23,8 @@ import java.util.LinkedList;
  * given StaticCache.
  */
 public class StaticCache {
-
+    
+    private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
     protected final AndroidDatabase database;
     protected static final int DATA_TYPE_IMAGE = 1;
     protected static final int DATA_TYPE_XML = 2;
@@ -129,7 +130,7 @@ public class StaticCache {
         return o;
     }
 
-    public void get(final String key, final Task result, final int priority) {
+    public void get(final String key, final Task result) {
         if (key == null || key.length() == 0) {
             Log.l.log("Trivial get", "");
             result.cancel(false);
@@ -162,7 +163,7 @@ public class StaticCache {
                 }
             };
 
-            Worker.fork(getWorkable, priority);
+            Worker.forkSerial(getWorkable, RMS_WORKER_INDEX);
         }
     }
 
@@ -203,7 +204,7 @@ public class StaticCache {
                 return null;
             }
         });
-        Worker.fork(writeAllPending, Worker.HIGH_PRIORITY);
+        Worker.forkSerial(writeAllPending, RMS_WORKER_INDEX);
 
         return convertAndPutToHeapCache(key, bytes);
     }

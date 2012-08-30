@@ -168,11 +168,15 @@ public final class Worker implements Runnable {
         boolean success;
 
         synchronized (q) {
+            //#debug
+            Log.l.log("Unfork start", workable.toString());
             success = q.removeElement(workable);
             int i = 0;
             while (!success && i < workers.length) {
                 success = workers[i++].serialQ.removeElement(workable);
             }
+            //#debug
+            Log.l.log("Unfork end", workable + " success=" + success);
             q.notifyAll();
             
             return success;

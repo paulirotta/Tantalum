@@ -4,8 +4,11 @@
  */
 package com.futurice.formrssreader;
 
+import com.futurice.tantalum3.CancellationException;
 import com.futurice.tantalum3.Closure;
+import com.futurice.tantalum3.ExecutionException;
 import com.futurice.tantalum3.PlatformUtils;
+import com.futurice.tantalum3.TimeoutException;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.StaticWebCache;
@@ -19,53 +22,58 @@ import javax.microedition.lcdui.*;
  *
  * @author vand
  */
-public class ListForm extends Form implements CommandListener {
+public final class ListForm extends Form implements CommandListener {
 
     private static ListForm instance;
     private final RSSReader rssReader;
     private final DetailsForm detailsView;
-    private StaticWebCache feedCache;
+    private final StaticWebCache feedCache = new StaticWebCache('5', new DataTypeHandler() {
+        public Object convertToUseForm(final byte[] bytes) {
+            try {
+                rssModel.removeAllElements();
+                rssModel.setXML(bytes);
+
+                return rssModel;
+            } catch (Exception e) {
+                //#debug
+                Log.l.log("Error parsing XML", rssModel.toString());
+                return null;
+            }
+        }
+    });
     private final RSSModel rssModel = new RSSModel(60);
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final int MARGIN = FONT_TITLE.getHeight() / 2;
-    protected int startIndex;
+    protected int startIndex = 0; // Next item in the model to add to the screen in paint()
     private boolean loading = false;
-    private Command exitCommand = new Command("Exit", Command.EXIT, 0);
-    private Command reloadCommand = new Command("Reload", Command.ITEM, 0);
-    private Command settingsCommand = new Command("Settings", Command.ITEM, 1);
+    private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
+    private final Command reloadCommand = new Command("Reload", Command.OK, 0);
+    private final Command settingsCommand = new Command("Settings", Command.SCREEN, 1);
 
     public ListForm(RSSReader rssReader, String title) {
         super(title);
 
         ListForm.instance = ListForm.this;
         this.rssReader = rssReader;
-        this.detailsView = new DetailsForm(rssReader, title);
-        this.feedCache = new StaticWebCache('5', new DataTypeHandler() {
-
-            public Object convertToUseForm(final byte[] bytes) {
-                try {
-                    rssModel.removeAllElements();
-                    rssModel.setXML(bytes);
-                    notifyListChanged();
-
-                    return rssModel;
-                } catch (Exception e) {
-                    //#debug
-                    Log.l.log("Error parsing XML", rssModel.toString());
-                    return null;
-                }
-            }
-        });
-
-        this.addCommand(exitCommand);
-        this.addCommand(reloadCommand);
-        this.addCommand(settingsCommand);
-        this.setCommandListener(this);
+        detailsView = new DetailsForm(rssReader, title);
+        addCommand(exitCommand);
+        addCommand(reloadCommand);
+        addCommand(settingsCommand);
+        setCommandListener(this);
+        try {
+            Log.l.log("Start start thread reload", "");
+            // Wait max 2sec for data load, parse and paint to make smooth startup UX
+            reload(false).joinUIThread(2000);
+        } catch (Exception ex) {
+            //#debug
+            Log.l.log("Initial RSS load exception", "", ex);
+        }
+        Log.l.log("End start thread reload", "");
     }
 
-    public void commandAction(Command command, Displayable d) {
+    public void commandAction(final Command command, final Displayable d) {
         if (command == exitCommand) {
             rssReader.exitMIDlet();
         } else if (command == reloadCommand) {
@@ -88,16 +96,16 @@ public class ListForm extends Form implements CommandListener {
      *
      * @param forceLoad
      */
-    public void reload(final boolean forceLoad) {
+    public Closure reload(final boolean forceLoad) {
+        final Closure closure;
+
         if (loading && !forceLoad) {
             //already loading
-            return;
+            return null;
         }
 
         loading = true;
-        this.startIndex = 0;
-        this.deleteAll();
-        paint();
+//        paint();
         String feedUrl = RSSReader.INITIAL_FEED_URL;
 
         try {
@@ -115,31 +123,41 @@ public class ListForm extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            feedCache.update(feedUrl, new Closure() {
-
+            closure = new Closure() {
                 public void run() {
                     loading = false;
-                    notifyListChanged();
+                    startIndex = 0;
+                    deleteAll();
+                    paint();
                 }
 
-                public void onCancel() {
+                public boolean cancel(final boolean mayInterruptIfNeeded) {
                     loading = false;
-                }
-            });
-        } else {
-            feedCache.get(feedUrl, new Closure() {
 
-                public void onCancel() {
+                    return super.cancel(mayInterruptIfNeeded);
+                }
+            };
+            feedCache.update(feedUrl, closure);
+        } else {
+            closure = new Closure() {
+                public boolean cancel(final boolean mayInterruptIfNeeded) {
                     loading = false;
                     reload(true);
+
+                    return super.cancel(mayInterruptIfNeeded);
                 }
 
                 public void run() {
                     loading = false;
-                    notifyListChanged();
+                    startIndex = 0;
+                    deleteAll();
+                    paint();
                 }
-            }, Worker.HIGH_PRIORITY);
+            };
+            feedCache.get(feedUrl, closure);
         }
+
+        return closure;
     }
 
     public void showDetails(final RSSItem selectedItem) {
@@ -159,7 +177,7 @@ public class ListForm extends Form implements CommandListener {
 
     private void renderLoading() {
         StringItem loadingStringItem = new StringItem(null, "Loading...", StringItem.PLAIN);
-        loadingStringItem.setFont(ListForm.FONT_TITLE);
+        loadingStringItem.setFont(FONT_TITLE);
         loadingStringItem.setLayout(Item.LAYOUT_CENTER | Item.LAYOUT_VCENTER);
         append(loadingStringItem);
     }
@@ -168,23 +186,23 @@ public class ListForm extends Form implements CommandListener {
      * Update the display
      */
     private void paint() {
-        if (loading) {
+        if (rssModel.size() == 0) {
             renderLoading();
             return;
         }
 
-        if (rssModel.size() == 0) {
-            if (startIndex == 0) {
-                deleteAll();
-            }
-            //no items to display
-            StringItem noDataStringItem = new StringItem(null, "No data",
-                    StringItem.PLAIN);
-            noDataStringItem.setFont(ListForm.FONT_TITLE);
-            noDataStringItem.setLayout(Item.LAYOUT_CENTER | Item.LAYOUT_VCENTER);
-            append(noDataStringItem);
-            return;
-        }
+//        if (rssModel.size() == 0) {
+//            if (startIndex == 0) {
+//                deleteAll();
+//            }
+//            //no items to display
+//            StringItem noDataStringItem = new StringItem(null, "No data",
+//                    StringItem.PLAIN);
+//            noDataStringItem.setFont(FONT_TITLE);
+//            noDataStringItem.setLayout(Item.LAYOUT_CENTER | Item.LAYOUT_VCENTER);
+//            append(noDataStringItem);
+//            return;
+//        }
 
         if (startIndex == 0) {
             deleteAll();
@@ -195,7 +213,6 @@ public class ListForm extends Form implements CommandListener {
             final RSSItem rssItem = (RSSItem) rssModel.elementAt(i);
 
             PlatformUtils.runOnUiThread(new Runnable() {
-
                 public void run() {
                     addItem(rssItem);
                 }
@@ -206,19 +223,18 @@ public class ListForm extends Form implements CommandListener {
 
     public void addItem(final RSSItem rssItem) {
         final StringItem titleStringItem = new StringItem(null, rssItem.getTitle(), StringItem.PLAIN);
-        titleStringItem.setFont(ListForm.FONT_TITLE);
+        titleStringItem.setFont(FONT_TITLE);
         titleStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
         final Command cmdShow = new Command("", Command.OK, 1);
         titleStringItem.setDefaultCommand(cmdShow);
         titleStringItem.setItemCommandListener(new ItemCommandListener() {
-
             public void commandAction(Command c, Item item) {
                 showDetails(rssItem);
             }
         });
 
         final StringItem dateStringItem = new StringItem(null, rssItem.getPubDate(), StringItem.PLAIN);
-        dateStringItem.setFont(ListForm.FONT_DATE);
+        dateStringItem.setFont(FONT_DATE);
         dateStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
         final Image separatorImage = Image.createImage(getWidth(), 1);
 
@@ -230,14 +246,12 @@ public class ListForm extends Form implements CommandListener {
     public static ListForm getInstance() {
         return instance;
     }
-
-    public void notifyListChanged() {
-        loading = false;
-        PlatformUtils.runOnUiThread(new Runnable() {
-
-            public void run() {
-                paint();
-            }
-        });
-    }
+//    public void notifyListChanged() {
+//        loading = false;
+//        PlatformUtils.runOnUiThread(new Runnable() {
+//            public void run() {
+//                paint();
+//            }
+//        });
+//    }
 }

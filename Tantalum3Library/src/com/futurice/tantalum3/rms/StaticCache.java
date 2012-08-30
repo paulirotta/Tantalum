@@ -27,8 +27,7 @@ import javax.microedition.rms.RecordStoreFullException;
  */
 public class StaticCache {
 
-    protected static final int DATA_TYPE_IMAGE = 1;
-    protected static final int DATA_TYPE_XML = 2;
+    private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
     private static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
 
         public boolean before(final Object o1, final Object o2) {
@@ -147,7 +146,7 @@ public class StaticCache {
      * recently changed the value and the value happens to have expired from the
      * RAM cache due to a low memory condition.
      */
-    public void get(final String key, final Task result, final int priority) {
+    public void get(final String key, final Task result) {
         if (key == null || key.length() == 0) {
             //#debug
             Log.l.log("Trivial get", "");
@@ -184,7 +183,7 @@ public class StaticCache {
                     return null;
                 }
             };
-            Worker.fork(getWorkable, priority);
+            Worker.forkSerial(getWorkable, RMS_WORKER_INDEX);
         }
     }
 
@@ -243,7 +242,7 @@ public class StaticCache {
                 return null;
             }
         });
-        Worker.fork(writeAllPending, Worker.HIGH_PRIORITY);
+        Worker.forkSerial(writeAllPending, RMS_WORKER_INDEX);
 
         return convertAndPutToHeapCache(key, bytes);
     }

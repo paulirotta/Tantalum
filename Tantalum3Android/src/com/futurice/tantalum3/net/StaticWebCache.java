@@ -31,9 +31,8 @@ public class StaticWebCache extends StaticCache {
      * @param result
      */
     @Override
-    public void get(final String url, final Task r, final int priority) {
+    public void get(final String url, final Task r) {
         super.get(url, new Task() {
-
             /**
              * Local Cache get returned a result, no need to get it from the
              * network
@@ -51,10 +50,9 @@ public class StaticWebCache extends StaticCache {
              *
              */
             @Override
-            public void onCancel() {
+            public boolean cancel(final boolean mayInterruptIfRunning) {
                 Log.l.log("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Task() {
-
                     @Override
                     public void set(Object o) {
                         try {
@@ -75,21 +73,34 @@ public class StaticWebCache extends StaticCache {
                     }
 
                     @Override
-                    public void onCancel() {
-                        if (r != null) {
-                            r.cancel(false);
-                        }
+                    public synchronized boolean cancel(boolean mayInterruptIfRunning) {
+                        return super.cancel(mayInterruptIfRunning);
                     }
+//                    @Override
+//                    public void cancel(final boolean mayInterruptIfRunning) {
+//                        if (r != null) {
+//                            r.cancel(false);
+//                        }
+//                        super.cancel(mayInterruptIfRunning);
+//                    }
+                    //TODO FIXME once HttpGetter is a Task
                 });
+                // super.cancel(mayInterruptIfRunning);
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible forkSerial delays
                 //httpGetter.compute();
+                final Object o = httpGetter.compute();
+                //Worker.fork(httpGetter, RMS_WORKER_INDEX);
+                if (o == null) {
+                    //TODO FIXME Is this correct when re-getting multiple times?
+                    return super.cancel(mayInterruptIfRunning);
+                }
                 
-                Worker.fork(httpGetter);
+                return false;
             }
-        }, priority);
-        
+        });
+
     }
 
     /**
@@ -100,12 +111,11 @@ public class StaticWebCache extends StaticCache {
      */
     public void update(final String url, final Task result) {
         Worker.fork(new Workable() {
-
             @Override
             public Object compute() {
                 try {
                     remove(url);
-                    get(url, result, Worker.HIGH_PRIORITY);
+                    get(url, result);
                 } catch (Exception e) {
                     Log.l.log("Can not update", url, e);
                 }
@@ -124,11 +134,10 @@ public class StaticWebCache extends StaticCache {
     public void prefetch(final String url) {
         if (synchronousRAMCacheGet(url) == null) {
             Worker.fork(new Workable() {
-
                 @Override
                 public Object compute() {
                     try {
-                        get(url, null, Worker.LOW_PRIORITY);
+                        get(url, null);
                     } catch (Exception e) {
                         Log.l.log("Can not prefetch", url, e);
                     }

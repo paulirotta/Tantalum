@@ -31,7 +31,7 @@ public class StaticWebCache extends StaticCache {
      * @param result
      * @param priority - Default is Worker.NORMAL_PRIORITY
      */
-    public void get(final String url, final Task r, final int priority) {
+    public void get(final String url, final Task r) {
         super.get(url, new Task() {
 
             /**
@@ -49,7 +49,7 @@ public class StaticWebCache extends StaticCache {
              * Local Cache get failed to return a result- not cached
              *
              */
-            public void onCancel() {
+            public boolean cancel(final boolean mayInterruptIfNeeded) {
                 //#debug
                 Log.l.log("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Task() {
@@ -73,18 +73,24 @@ public class StaticWebCache extends StaticCache {
                         }
                     }
 
-                    public void onCancel() {
+                    public boolean cancel(boolean mayInterruptIfNeeded) {
                         if (r != null) {
-                            r.cancel(false);
+                            return r.cancel(false);
                         }
+                        
+                        return false;
                     }
                 });
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible fork delays
                 httpGetter.compute();
+  
+                //TODO FIXME is this correct?
+                return false;
+//                return super.cancel(mayInterruptIfNeeded);
             }
-        }, priority);
+        });
     }
 
     /**
@@ -99,7 +105,7 @@ public class StaticWebCache extends StaticCache {
             public Object compute() {
                 try {
                     remove(url);
-                    get(url, result, Worker.HIGH_PRIORITY);
+                    get(url, result);
                 } catch (Exception e) {
                     //#debug
                     Log.l.log("Can not update", url, e);
@@ -122,7 +128,7 @@ public class StaticWebCache extends StaticCache {
 
                 public Object compute() {
                     try {
-                        get(url, null, Worker.LOW_PRIORITY);
+                        get(url, null);
                     } catch (Exception e) {
                         //#debug
                         Log.l.log("Can not prefetch", url, e);

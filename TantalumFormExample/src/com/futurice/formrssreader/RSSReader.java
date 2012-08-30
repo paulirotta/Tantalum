@@ -51,15 +51,6 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     public void startMIDlet() {//GEN-END:|3-startMIDlet|0|3-preAction
         // write pre-action user code here
         switchDisplayable(null, getList());
-        Worker.fork(new Workable() {
-
-            public Object compute() {
-                getList().reload(false);
-
-                return null;
-            }
-        });
-
 //GEN-LINE:|3-startMIDlet|1|3-postAction
         // write post-action user code here
     }//GEN-BEGIN:|3-startMIDlet|2|

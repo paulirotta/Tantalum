@@ -5,7 +5,6 @@
 package com.futurice.formrssreader;
 
 import com.futurice.tantalum3.Closure;
-import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -17,7 +16,7 @@ import javax.microedition.lcdui.*;
  *
  * @author vand
  */
-public class DetailsForm extends Form implements CommandListener {
+public final class DetailsForm extends Form implements CommandListener {
 
     private RSSReader rssReader;
     private RSSItem selectedItem;
@@ -65,15 +64,15 @@ public class DetailsForm extends Form implements CommandListener {
     public void paint() {
         this.deleteAll();
 
-        StringItem titleStringItem = new StringItem(null, selectedItem.getTitle(), StringItem.PLAIN);
+        final StringItem titleStringItem = new StringItem(null, selectedItem.getTitle(), StringItem.PLAIN);
         titleStringItem.setFont(ListForm.FONT_TITLE);
         titleStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
 
-        StringItem dateStringItem = new StringItem(null, selectedItem.getPubDate(), StringItem.PLAIN);
+        final StringItem dateStringItem = new StringItem(null, selectedItem.getPubDate(), StringItem.PLAIN);
         dateStringItem.setFont(ListForm.FONT_DATE);
         dateStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
 
-        StringItem descriptionStringItem = new StringItem(null, selectedItem.getDescription(), StringItem.PLAIN);
+        final StringItem descriptionStringItem = new StringItem(null, selectedItem.getDescription(), StringItem.PLAIN);
         descriptionStringItem.setFont(ListForm.FONT_DESCRIPTION);
         descriptionStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
 
@@ -94,7 +93,7 @@ public class DetailsForm extends Form implements CommandListener {
                         DetailsForm.this.appendImageItem();
                         selectedItem.setLoadingImage(false);
                     }
-                }, Worker.HIGH_PRIORITY);
+                });
             }
         }
     }

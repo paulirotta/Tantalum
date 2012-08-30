@@ -75,8 +75,10 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
 
             final Task result = new Task() {
 
-                public void onCancel() {
+                public boolean cancel(boolean mayInterruptIfNeeded) {
                     isReloading = false;
+                    
+                    return super.cancel(mayInterruptIfNeeded);
                 }
 
                 public void set(Object o) {
@@ -88,7 +90,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
             if (fromNet) {
                 feedCache.update(midlet.getUrl(), result);
             } else {
-                feedCache.get(midlet.getUrl(), result, Worker.HIGH_PRIORITY);
+                feedCache.get(midlet.getUrl(), result);
             }
         }
     }

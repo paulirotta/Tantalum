@@ -173,10 +173,12 @@ public final class IconListView extends RSSListView {
                                     }
                                 }
 
-                                public void onCancel() {
+                                public boolean cancel(boolean mayInterruptIfNeeded) {
                                     item.setLoadingImage(false);
+                                    
+                                    return super.cancel(mayInterruptIfNeeded);
                                 }
-                            }, Worker.HIGH_PRIORITY);
+                            });
                         }
                     }
                 } else {
@@ -186,12 +188,6 @@ public final class IconListView extends RSSListView {
                 if (column == numberOfColumns - 1) {
                     curY += ROW_HEIGHT;
                 }
-//            if (curY < height) {
-//                // Background fill below all items. For very short feeds
-//                g.setColor(RSSReader.COLOR_BACKGROUND);
-//                g.fillRect(0, curY, width, height);
-//            }
-
             }
             renderScrollBar(g, totalHeight);
         } catch (Exception e) {
