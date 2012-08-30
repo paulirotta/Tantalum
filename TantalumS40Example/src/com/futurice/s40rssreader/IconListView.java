@@ -4,7 +4,7 @@
  */
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -140,7 +140,7 @@ public final class IconListView extends RSSListView {
                             //#debug
                             Log.l.log("Trivial thumbnail link in RSS feed", item.getTitle());
                         } else {
-                            DetailsView.imageCache.get(item.getThumbnail(), new Result() {
+                            DetailsView.imageCache.get(item.getThumbnail(), new Task() {
 
                                 public void set(final Object o) {
                                     super.set(o);

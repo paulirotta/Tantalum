@@ -1,6 +1,6 @@
 package com.futurice.tantalum3.rms;
 
-import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
@@ -147,7 +147,7 @@ public class StaticCache {
      * recently changed the value and the value happens to have expired from the
      * RAM cache due to a low memory condition.
      */
-    public void get(final String key, final Result result, final int priority) {
+    public void get(final String key, final Task result, final int priority) {
         if (key == null || key.length() == 0) {
             //#debug
             Log.l.log("Trivial get", "");

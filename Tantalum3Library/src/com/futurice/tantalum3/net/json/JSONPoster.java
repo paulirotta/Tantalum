@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.net.json;
 
-import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.HttpPoster;
 
@@ -16,7 +16,7 @@ public abstract class JSONPoster extends HttpPoster {
 
     private final JSONModel jsonvo;
 
-    public JSONPoster(final String url, final String postMessage, final JSONModel jsonModel, final Result result, final int retriesRemaining) {
+    public JSONPoster(final String url, final String postMessage, final JSONModel jsonModel, final Task result, final int retriesRemaining) {
         super(url, retriesRemaining, result, postMessage.getBytes());
         
         this.jsonvo = jsonModel;

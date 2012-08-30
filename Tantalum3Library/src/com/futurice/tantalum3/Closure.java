@@ -15,7 +15,7 @@ package com.futurice.tantalum3;
  * 
  * @author phou
  */
-public abstract class Closure extends Result implements Runnable{
+public abstract class Closure extends Task implements Runnable{
    
     /**
      * You can call this at the end of your overriding method once you have

@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.net;
 
-import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
@@ -31,8 +31,8 @@ public class StaticWebCache extends StaticCache {
      * @param result
      * @param priority - Default is Worker.NORMAL_PRIORITY
      */
-    public void get(final String url, final Result r, final int priority) {
-        super.get(url, new Result() {
+    public void get(final String url, final Task r, final int priority) {
+        super.get(url, new Task() {
 
             /**
              * Local Cache get returned a result, no need to get it from the
@@ -52,7 +52,7 @@ public class StaticWebCache extends StaticCache {
             public void onCancel() {
                 //#debug
                 Log.l.log("No result from cache get, shift to HTTP", url);
-                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Result() {
+                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Task() {
 
                     public void set(Object o) {
                         try {
@@ -93,7 +93,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public void update(final String url, final Result result) {
+    public void update(final String url, final Task result) {
         Worker.fork(new Workable() {
 
             public Object compute() {

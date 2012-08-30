@@ -22,7 +22,7 @@
  */
 package com.futurice.tantalum3.net.json;
 
-import com.futurice.tantalum3.Result;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.Log;
 import com.futurice.tantalum3.net.HttpGetter;
 
@@ -34,7 +34,7 @@ public class JSONGetter extends HttpGetter {
 
     private final JSONModel jsonvo;
 
-    public JSONGetter(final String url, final JSONModel jsonModel, final Result result, final int retriesRemaining) {
+    public JSONGetter(final String url, final JSONModel jsonModel, final Task result, final int retriesRemaining) {
         super(url, retriesRemaining, result);
         this.jsonvo = jsonModel;
     }

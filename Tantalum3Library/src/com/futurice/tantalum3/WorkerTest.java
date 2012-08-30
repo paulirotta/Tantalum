@@ -102,7 +102,7 @@ public class WorkerTest extends TestCase {
     public void testQueueEDT() throws AssertionFailedException {
         System.out.println("queueEDT");
         final Object mutex = new Object();
-        Result dgr = new Closure() {            
+        Task dgr = new Closure() {            
 
             public void run() {
                 set("done");
@@ -127,7 +127,7 @@ public class WorkerTest extends TestCase {
      */
     public void testQueueEDTNoWait() throws AssertionFailedException {
         System.out.println("queueEDT");
-        Result dgr = new Closure() {            
+        Task dgr = new Closure() {            
 
             public void run() {
                 set("done");
