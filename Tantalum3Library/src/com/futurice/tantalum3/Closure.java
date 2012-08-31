@@ -36,11 +36,11 @@ public abstract class Closure extends Task implements Runnable {
         final long t = System.currentTimeMillis();
         super.join(timeout);
 
-        if (status < UI_THREAD_FINISHED) {
+        if (status < UI_RUN_FINISHED) {
             //#debug
             Log.l.log("Start joinUIThread wait()", this.toString());
             this.wait(timeout - (System.currentTimeMillis() - t));
-            if (status < WORKER_THREAD_RUNNING) {
+            if (status < EXEC_STARTED) {
                 throw new TimeoutException();
             }
             //#debug

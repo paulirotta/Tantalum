@@ -45,8 +45,8 @@ public abstract class AsyncTask extends Closure {
      * objects are queued.
      *
      * NOTE: This Android use of "Runnable" is not consistent with the Tantalum
-     * standard the "Workable.exec()" is performed on a background Worker
-     * thread and "Runnable.run()" is performed on the EDT.
+     * standard the "Workable.exec()" is performed on a background Worker thread
+     * and "Runnable.run()" is performed on the EDT.
      *
      * @param runnable
      */
@@ -70,8 +70,14 @@ public abstract class AsyncTask extends Closure {
      * @return
      */
     public final AsyncTask execute(final Object params) {
+        synchronized (this) {
+            if (status <= EXEC_FINISHED) {
+                throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + status);
+            }
+            setStatus(EXEC_PENDING);
+        }
+
         this.params = params;
-        setStatus(WORKER_THREAD_PENDING);
         PlatformUtils.runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
@@ -94,18 +100,25 @@ public abstract class AsyncTask extends Closure {
      * @return
      */
     public final AsyncTask executeOnExecutor(final Object[] params) {
-        final boolean agressive = AsyncTask.agressiveThreading;
-
-        this.params = params;
-        setStatus(WORKER_THREAD_PENDING);
-        PlatformUtils.runOnUiThread(new Runnable() {
-            public void run() {
-                onPreExecute();
-                if (!agressive) {
-                    Worker.fork(AsyncTask.this);
-                }
+        synchronized (this) {
+            if (status <= EXEC_FINISHED) {
+                throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + status);
             }
-        });
+            setStatus(EXEC_PENDING);
+        }
+
+        final boolean agressive = AsyncTask.agressiveThreading;
+        this.params = params;
+
+        PlatformUtils.runOnUiThread(
+                new Runnable() {
+                    public void run() {
+                        onPreExecute();
+                        if (!agressive) {
+                            Worker.fork(AsyncTask.this);
+                        }
+                    }
+                });
         if (agressive) {
             Worker.fork(AsyncTask.this);
         }
@@ -122,14 +135,14 @@ public abstract class AsyncTask extends Closure {
                 if (status == CANCELED || status == EXCEPTION) {
                     return r;
                 }
-                setStatus(WORKER_THREAD_RUNNING);
+                setStatus(EXEC_STARTED);
             }
 
             r = doInBackground(params);
 
             synchronized (this) {
                 result = r;
-                setStatus(WORKER_THREAD_FINISHED);
+                setStatus(EXEC_FINISHED);
             }
         } catch (final Throwable t) {
             //#debug

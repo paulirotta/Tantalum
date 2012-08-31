@@ -13,14 +13,15 @@ import com.futurice.tantalum3.log.Log;
 public abstract class Task implements Workable {
     // status values
 
-    public static final int WORKER_THREAD_PENDING = 0;
-    public static final int WORKER_THREAD_RUNNING = 1;
-    public static final int WORKER_THREAD_FINISHED = 2;
-    public static final int UI_THREAD_FINISHED = 3; // for Closure extension
+    public static final int EXEC_PENDING = 0;
+    public static final int EXEC_STARTED = 1;
+    public static final int EXEC_FINISHED = 2;
+    public static final int UI_RUN_FINISHED = 3; // for Closure extension
     public static final int CANCELED = 4;
     public static final int EXCEPTION = 5;
+    
     protected Object result = null; // Always access within a synchronized block
-    protected int status = WORKER_THREAD_PENDING; // Always access within a synchronized block
+    protected int status = UI_RUN_FINISHED; // Always access within a synchronized block
 
     /**
      * You can call this at the end of your overriding method once you have set
@@ -32,12 +33,12 @@ public abstract class Task implements Workable {
      */
     public synchronized void set(final Object o) {
         this.result = o;
-        setStatus(WORKER_THREAD_FINISHED);
+        setStatus(EXEC_FINISHED);
     }
 
     /**
      * Never call get() from the UI thread unless you know the state is
-     * WORKER_THREAD_FINISHED (as it is in a Closure). Otherwise it can make
+     * EXEC_FINISHED (as it is in a Closure). Otherwise it can make
      * your UI freeze for unpredictable periods of time.
      *
      * @return
@@ -47,12 +48,12 @@ public abstract class Task implements Workable {
      */
     public final synchronized Object get() throws InterruptedException, CancellationException, ExecutionException {
         switch (status) {
-            case WORKER_THREAD_PENDING:
+            case EXEC_PENDING:
                 Worker.tryUnfork(this);
                 return exec();
-            case WORKER_THREAD_RUNNING:
+            case EXEC_STARTED:
                 this.wait();
-            case WORKER_THREAD_FINISHED:
+            case EXEC_FINISHED:
                 return result;
             case CANCELED:
                 throw new CancellationException();
@@ -78,20 +79,20 @@ public abstract class Task implements Workable {
      */
     public synchronized Object join(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         switch (status) {
-            case WORKER_THREAD_PENDING:
+            case EXEC_PENDING:
                 if (Worker.tryUnfork(this)) {
                     //#debug
                     Log.l.log("Start join out-of-sequence exec() after unfork", this.toString());
                     result = exec();
                     break;
                 }
-            case WORKER_THREAD_RUNNING:
+            case EXEC_STARTED:
                 //#debug
                 Log.l.log("Start join wait()", this.toString());
                 this.wait(timeout);
                 //#debug
                 Log.l.log("End join wait()", this.toString());
-                if (status == WORKER_THREAD_RUNNING) {
+                if (status == EXEC_STARTED) {
                     throw new TimeoutException();
                 }
                 break;
@@ -144,7 +145,7 @@ public abstract class Task implements Workable {
      * @return
      */
     public synchronized Object exec() {
-        setStatus(WORKER_THREAD_FINISHED);
+        setStatus(EXEC_FINISHED);
         return this.result;
     }
 
@@ -163,10 +164,10 @@ public abstract class Task implements Workable {
      */
     public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
         switch (status) {
-            case WORKER_THREAD_PENDING:
+            case EXEC_PENDING:
                 setStatus(CANCELED);
                 return true;
-            case WORKER_THREAD_RUNNING:
+            case EXEC_STARTED:
                 if (mayInterruptIfRunning) {
                     //TODO find the task on a thread, then interrupt that thread
                     setStatus(CANCELED);
