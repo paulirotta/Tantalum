@@ -4,7 +4,6 @@
  */
 package com.futurice.tantalum3.net.xml;
 
-import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.Log;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

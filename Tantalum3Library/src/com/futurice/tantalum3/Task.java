@@ -26,7 +26,7 @@ public abstract class Task implements Workable {
      * You can call this at the end of your overriding method once you have set
      * the result.
      *
-     * If you implement set(), do not implement or use compute()
+     * If you implement set(), do not implement or use exec()
      *
      * @param o
      */
@@ -49,7 +49,7 @@ public abstract class Task implements Workable {
         switch (status) {
             case WORKER_THREAD_PENDING:
                 Worker.tryUnfork(this);
-                return compute();
+                return exec();
             case WORKER_THREAD_RUNNING:
                 this.wait();
             case WORKER_THREAD_FINISHED:
@@ -81,8 +81,8 @@ public abstract class Task implements Workable {
             case WORKER_THREAD_PENDING:
                 if (Worker.tryUnfork(this)) {
                     //#debug
-                    Log.l.log("Start join out-of-sequence compute() after unfork", this.toString());
-                    result = compute();
+                    Log.l.log("Start join out-of-sequence exec() after unfork", this.toString());
+                    result = exec();
                     break;
                 }
             case WORKER_THREAD_RUNNING:
@@ -139,11 +139,11 @@ public abstract class Task implements Workable {
      * You can call this as the return statement of your overriding method once
      * you have set the result
      *
-     * If you implement compute(), do not implement or use set()
+     * If you implement exec(), do not implement or use set()
      *
      * @return
      */
-    public synchronized Object compute() {
+    public synchronized Object exec() {
         setStatus(WORKER_THREAD_FINISHED);
         return this.result;
     }

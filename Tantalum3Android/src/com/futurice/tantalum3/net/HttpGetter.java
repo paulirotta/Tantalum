@@ -54,7 +54,7 @@ public class HttpGetter implements Workable {
     }
 
     @Override
-    public Object compute() {
+    public Object exec() {
         Log.l.log("HttpGetter start", url);
         ByteArrayOutputStream bos = null;
         HttpClient httpConnection;
@@ -148,7 +148,7 @@ public class HttpGetter implements Workable {
                 } catch (InterruptedException ex) {
                 }
 
-                return this.compute();
+                return this.exec();
             } else if (!success) {
                 result.cancel(false);
             }

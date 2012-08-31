@@ -63,7 +63,7 @@ public final class Worker implements Runnable {
             /**
              * The first worker creates the others in the background
              */
-            public Object compute() {
+            public Object exec() {
                 int i = 1;
 
                 try {
@@ -326,7 +326,7 @@ public final class Worker implements Runnable {
                 }
                 try {
                     if (workable != null) {
-                        workable.compute();
+                        workable.exec();
                         if (workable instanceof Closure) {
                             PlatformUtils.runOnUiThread((Closure) workable);
                         }

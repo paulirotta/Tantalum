@@ -53,7 +53,7 @@ public class HttpGetter implements Workable {
         return this.url;
     }
 
-    public Object compute() {
+    public Object exec() {
         //#debug
         Log.l.log(this.getClass().getName() + " start", url);
         ByteArrayOutputStream bos = null;
@@ -160,7 +160,7 @@ public class HttpGetter implements Workable {
                 } catch (InterruptedException ex) {
                 }
 
-                return this.compute();
+                return this.exec();
             } else if (!success) {
                 result.cancel(false);
             }

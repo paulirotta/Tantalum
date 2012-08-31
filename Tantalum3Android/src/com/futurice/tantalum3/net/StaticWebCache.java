@@ -89,8 +89,8 @@ public class StaticWebCache extends StaticCache {
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible forkSerial delays
-                //httpGetter.compute();
-                final Object o = httpGetter.compute();
+                //httpGetter.exec();
+                final Object o = httpGetter.exec();
                 //Worker.fork(httpGetter, RMS_WORKER_INDEX);
                 if (o == null) {
                     //TODO FIXME Is this correct when re-getting multiple times?
@@ -112,7 +112,7 @@ public class StaticWebCache extends StaticCache {
     public void update(final String url, final Task result) {
         Worker.fork(new Workable() {
             @Override
-            public Object compute() {
+            public Object exec() {
                 try {
                     remove(url);
                     get(url, result);
@@ -135,7 +135,7 @@ public class StaticWebCache extends StaticCache {
         if (synchronousRAMCacheGet(url) == null) {
             Worker.fork(new Workable() {
                 @Override
-                public Object compute() {
+                public Object exec() {
                     try {
                         get(url, null);
                     } catch (Exception e) {

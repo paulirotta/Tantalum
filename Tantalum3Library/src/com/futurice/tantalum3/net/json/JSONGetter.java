@@ -39,8 +39,8 @@ public class JSONGetter extends HttpGetter {
         this.jsonvo = jsonModel;
     }
 
-    public Object compute() {
-        final byte[] bytes = (byte[]) super.compute();
+    public Object exec() {
+        final byte[] bytes = (byte[]) super.exec();
         String value = "";
 
         try {

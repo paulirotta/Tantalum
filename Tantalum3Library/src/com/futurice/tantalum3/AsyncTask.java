@@ -45,14 +45,14 @@ public abstract class AsyncTask extends Closure {
      * objects are queued.
      *
      * NOTE: This Android use of "Runnable" is not consistent with the Tantalum
-     * standard the "Workable.compute()" is performed on a background Worker
+     * standard the "Workable.exec()" is performed on a background Worker
      * thread and "Runnable.run()" is performed on the EDT.
      *
      * @param runnable
      */
     public static void execute(final Runnable runnable) {
         Worker.forkSerial(new Workable() {
-            public Object compute() {
+            public Object exec() {
                 runnable.run();
 
                 return null;
@@ -113,7 +113,7 @@ public abstract class AsyncTask extends Closure {
         return this;
     }
 
-    public final Object compute() {
+    public final Object exec() {
         Object r = null;
 
         try {

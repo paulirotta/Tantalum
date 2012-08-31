@@ -37,14 +37,14 @@ public class StaticCache {
     private static final LinkedList rmsWriteWorkables = new LinkedList();
     private static final Workable writeAllPending = new Workable() {
         @Override
-        public Object compute() {
+        public Object exec() {
             try {
                 Workable work;
                 while (!rmsWriteWorkables.isEmpty()) {
                     synchronized (rmsWriteWorkables) {
                         work = (Workable) rmsWriteWorkables.poll();
                     }
-                    work.compute();
+                    work.exec();
                     if (!rmsWriteWorkables.isEmpty()) {
                         try {
                             // DEBUG TEST- be kind to slow phones, avoid crashes
@@ -144,7 +144,7 @@ public class StaticCache {
         } else {
             final Workable getWorkable = new Workable() {
                 @Override
-                public Object compute() {
+                public Object exec() {
                     try {
                         final Object o = synchronousGet(key);
 
@@ -194,7 +194,7 @@ public class StaticCache {
         }
         rmsWriteWorkables.addLast(new Workable() {
             @Override
-            public Object compute() {
+            public Object exec() {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {

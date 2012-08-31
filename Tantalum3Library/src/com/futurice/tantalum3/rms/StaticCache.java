@@ -37,7 +37,7 @@ public class StaticCache {
     private static final Vector rmsWriteWorkables = new Vector();
     private static final Workable writeAllPending = new Workable() {
 
-        public Object compute() {
+        public Object exec() {
             try {
                 Workable work;
                 while (!rmsWriteWorkables.isEmpty()) {
@@ -45,7 +45,7 @@ public class StaticCache {
                         work = (Workable) rmsWriteWorkables.firstElement();
                         rmsWriteWorkables.removeElementAt(0);
                     }
-                    work.compute();
+                    work.exec();
                     if (!rmsWriteWorkables.isEmpty()) {
                         try {
                             // DEBUG TEST- be kind to slow phones, avoid crashes
@@ -162,7 +162,7 @@ public class StaticCache {
         } else {
             final Workable getWorkable = new Workable() {
 
-                public Object compute() {
+                public Object exec() {
                     try {
                         final Object o = synchronousGet(key);
 
@@ -231,7 +231,7 @@ public class StaticCache {
         }
         rmsWriteWorkables.addElement(new Workable() {
 
-            public Object compute() {
+            public Object exec() {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {

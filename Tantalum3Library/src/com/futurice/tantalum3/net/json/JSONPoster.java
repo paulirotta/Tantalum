@@ -22,8 +22,8 @@ public abstract class JSONPoster extends HttpPoster {
         this.jsonvo = jsonModel;
     }
 
-    public Object compute() {
-        final byte[] bytes = (byte[]) super.compute();
+    public Object exec() {
+        final byte[] bytes = (byte[]) super.exec();
         String value = "";
 
         try {

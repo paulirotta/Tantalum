@@ -84,7 +84,7 @@ public class StaticWebCache extends StaticCache {
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible fork delays
-                httpGetter.compute();
+                httpGetter.exec();
   
                 //TODO FIXME is this correct?
                 return false;
@@ -102,7 +102,7 @@ public class StaticWebCache extends StaticCache {
     public void update(final String url, final Task result) {
         Worker.fork(new Workable() {
 
-            public Object compute() {
+            public Object exec() {
                 try {
                     remove(url);
                     get(url, result);
@@ -126,7 +126,7 @@ public class StaticWebCache extends StaticCache {
         if (synchronousRAMCacheGet(url) == null) {
             Worker.fork(new Workable() {
 
-                public Object compute() {
+                public Object exec() {
                     try {
                         get(url, null);
                     } catch (Exception e) {
