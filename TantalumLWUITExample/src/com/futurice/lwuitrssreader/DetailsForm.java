@@ -90,7 +90,7 @@ public class DetailsForm extends Form implements ActionListener {
             public void run() {
                 try {
                     imgLabel.setIcon((Image) get());
-                    imgLabel.repaint();
+                    DetailsForm.this.repaint();
                 } catch (Exception ex) {
                     //#debug
                     Log.l.log("Can not get image for RSSItem", item.getThumbnail(), ex);
@@ -100,9 +100,6 @@ public class DetailsForm extends Form implements ActionListener {
 
         addLabels(linkLabels);
         setScrollY(0);
-    }
-
-    public void repaintImg() {
     }
 
     public Vector getLabels(String str, com.sun.lwuit.Font font, int width) {

@@ -23,7 +23,6 @@ import javax.microedition.lcdui.Graphics;
 public final class RSSReaderCanvas extends Canvas implements GestureListener, FrameAnimatorListener {
 //#endif
 
-    private static RSSReaderCanvas instance;
     private final RSSReader rssReader;
 //#ifndef Profile
     private final FrameAnimator animator;
@@ -44,7 +43,6 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
      */
     public RSSReaderCanvas(RSSReader rssReader) {
         super();
-        instance = this;
         this.rssReader = rssReader;
 
         //listView = new VerticalListView(this);
@@ -84,15 +82,6 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
             Log.l.log("Orientation changes not supported", "", t);
         }
         setCurrentView(listView);
-    }
-
-    /**
-     * Returns the instance of RSSReaderCanvas
-     *
-     * @return RSSReaderCanvas
-     */
-    public static RSSReaderCanvas getInstance() {
-        return instance;
     }
 
     public RSSReader getRssReader() {

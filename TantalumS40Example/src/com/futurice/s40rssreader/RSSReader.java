@@ -1,8 +1,12 @@
 package com.futurice.s40rssreader;
 
+import com.futurice.tantalum3.CancellationException;
+import com.futurice.tantalum3.ExecutionException;
 import com.futurice.tantalum3.TantalumMIDlet;
-import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.TimeoutException;
 import com.futurice.tantalum3.Worker;
+import com.futurice.tantalum3.log.Log;
 import javax.microedition.lcdui.*;
 
 /**
@@ -24,6 +28,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     public RSSReader() {
         super(4);
     }
+
     /**
      * Switches a current displayable in a display. The
      * <code>display</code> instance is taken from
@@ -31,8 +36,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
      * design for switching displayable.
      *
      * @param alert the Alert which is temporarily set to the display; if
-     * <code>null</code>, then
-     * <code>nextDisplayable</code> is set immediately
+     * <code>null</code>, then <code>nextDisplayable</code> is set immediately
      * @param nextDisplayable the Displayable to be set
      */
     public void switchDisplayable(Alert alert, Displayable nextDisplayable) {
@@ -99,19 +103,32 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
      */
     public void startApp() {
         INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
-        final Display display = getDisplay();
-        COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
-        COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
-        COLOR_FOREGROUND = display.getColor(Display.COLOR_FOREGROUND);
-        COLOR_HIGHLIGHTED_FOREGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
-        COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
-        COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
-        switchDisplayable(null, getCanvas());
-        Worker.fork(new Workable() {
-
-            public void exec() {
-                getCanvas().getListView().reload(false);
+        try {
+            getCanvas();
+            final Task reloadTask = new Task() {
+                public void exec() {
+                    canvas.getListView().reload(false);
+                }
+            };
+            Worker.fork(reloadTask);
+            final Display display = getDisplay();
+            COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
+            COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
+            COLOR_FOREGROUND = display.getColor(Display.COLOR_FOREGROUND);
+            COLOR_HIGHLIGHTED_FOREGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
+            COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
+            COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
+            try {
+                reloadTask.join(2000);
+            } catch (TimeoutException ex) {
+                //#debug
+                Log.l.log("Startup reload timeout", "This is normal if loading from the net", ex);
             }
-        });
+            switchDisplayable(null, canvas);
+        } catch (Exception ex) {
+            //#debug
+            Log.l.log("Startup execption", "", ex);
+            Worker.shutdown(false);
+        }
     }
 }
