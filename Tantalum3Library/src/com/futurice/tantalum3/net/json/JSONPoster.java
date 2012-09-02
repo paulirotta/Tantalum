@@ -33,11 +33,11 @@ public abstract class JSONPoster extends HttpPoster {
                 value = "{\"base:\"" + value + "}";
             }
             jsonvo.setJSON(value);
-            result.set(value);
+            task.set(value);
         } catch (Exception e) {
             //#debug
             Log.l.log("JSONPoster HTTP response problem", this.getUrl() + " : " + value, e);
-            result.cancel(false);
+            task.cancel(false);
         }
         
         return bytes;

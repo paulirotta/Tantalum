@@ -23,7 +23,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 public class HttpGetter implements Workable {
 
     private final String url;
-    private final Task result;
+    private final Task task;
     private int retriesRemaining;
 
     /**
@@ -31,7 +31,7 @@ public class HttpGetter implements Workable {
      *
      * @param url - where on the Internet to synchronousGet the data
      * @param retriesRemaining - how many time to attempt connection
-     * @param result - optional object notified on the EDT with the result
+     * @param task - optional object notified on the EDT with the task
      */
     public HttpGetter(final String url, final int retriesRemaining,
             final Task result) {
@@ -46,7 +46,7 @@ public class HttpGetter implements Workable {
         }
         this.url = url;
         this.retriesRemaining = retriesRemaining;
-        this.result = result;
+        this.task = result;
     }
 
     public String getUrl() {
@@ -107,7 +107,7 @@ public class HttpGetter implements Workable {
                 readBuffer = null;
             }
             Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
-            result.set(bytes);
+            task.set(bytes);
             success = true;
             bytes = null;
         } catch (IllegalArgumentException e) {
@@ -150,7 +150,7 @@ public class HttpGetter implements Workable {
 
                 return this.exec();
             } else if (!success) {
-                result.cancel(false);
+                task.cancel(false);
             }
             Log.l.log("End HttpGet", url);
         }

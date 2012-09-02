@@ -18,7 +18,7 @@ public class HttpPoster extends HttpGetter {
      * 
      * @param url
      * @param retriesRemaining
-     * @param result
+     * @param task
      * @param postMessage 
      */
     public HttpPoster(final String url, final int retriesRemaining, final Task result, final byte[] postMessage) {

@@ -5,7 +5,6 @@
 package com.futurice.tantalum3.net;
 
 import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.log.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,10 +21,10 @@ import javax.microedition.io.HttpConnection;
  *
  * @author pahought
  */
-public class HttpGetter implements Workable {
+public class HttpGetter extends Task {
 
     private final String url;
-    protected final Task result;
+    protected final Task task;
     protected int retriesRemaining;
     protected byte[] postMessage = null;
     protected String requestMethod = HttpConnection.GET;
@@ -35,7 +34,7 @@ public class HttpGetter implements Workable {
      *
      * @param url - where on the Internet to synchronousGet the data
      * @param retriesRemaining - how many time to attempt connection
-     * @param result - optional object notified on the EDT with the result
+     * @param task - optional object notified on the EDT with the task
      */
     public HttpGetter(final String url, final int retriesRemaining, final Task result) {
         if (url == null || url.indexOf(':') <= 0) {
@@ -46,7 +45,7 @@ public class HttpGetter implements Workable {
         }
         this.url = url;
         this.retriesRemaining = retriesRemaining;
-        this.result = result;
+        this.task = result;
     }
 
     public String getUrl() {
@@ -107,7 +106,7 @@ public class HttpGetter implements Workable {
 
             //#debug
             Log.l.log(this.getClass().getName() + " complete", bytes.length + " bytes, " + url);
-            result.set(bytes);
+            task.set(bytes);
             success = true;
         } catch (IllegalArgumentException e) {
             //#debug
@@ -162,7 +161,7 @@ public class HttpGetter implements Workable {
 
                 return this.exec();
             } else if (!success) {
-                result.cancel(false);
+                task.cancel(false);
             }
             //#debug
             Log.l.log("End " + this.getClass().getName(), url);

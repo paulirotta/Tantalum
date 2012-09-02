@@ -50,11 +50,11 @@ public class JSONGetter extends HttpGetter {
                 value = "{\"base:\"" + value + "}";
             }
             jsonvo.setJSON(value);
-            result.set(value);
+            task.set(value);
         } catch (Exception e) {
             //#debug
             Log.l.log("JSONGetter HTTP response problem", this.getUrl() + " : " + value, e);
-            result.cancel(false);
+            task.cancel(false);
         }
         
         return bytes;
