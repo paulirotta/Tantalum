@@ -16,5 +16,5 @@ package com.futurice.tantalum3;
  * @author phou
  */
 public interface Workable {
-    public Object exec();
+    public void exec();
 }

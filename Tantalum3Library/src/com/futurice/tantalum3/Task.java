@@ -50,7 +50,8 @@ public abstract class Task implements Workable {
         switch (status) {
             case EXEC_PENDING:
                 Worker.tryUnfork(this);
-                return exec();
+                exec();
+                return result;
             case EXEC_STARTED:
                 this.wait();
             case EXEC_FINISHED:
@@ -83,7 +84,7 @@ public abstract class Task implements Workable {
                 if (Worker.tryUnfork(this)) {
                     //#debug
                     Log.l.log("Start join out-of-sequence exec() after unfork", this.toString());
-                    result = exec();
+                    exec();
                     break;
                 }
             case EXEC_STARTED:
@@ -144,9 +145,8 @@ public abstract class Task implements Workable {
      *
      * @return
      */
-    public synchronized Object exec() {
+    public synchronized void exec() {
         setStatus(EXEC_FINISHED);
-        return this.result;
     }
 
     /**

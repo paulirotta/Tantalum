@@ -37,7 +37,7 @@ public class StaticCache {
     private static final Vector rmsWriteWorkables = new Vector();
     private static final Workable writeAllPending = new Workable() {
 
-        public Object exec() {
+        public void exec() {
             try {
                 Workable work;
                 while (!rmsWriteWorkables.isEmpty()) {
@@ -58,8 +58,6 @@ public class StaticCache {
                 //#debug
                 Log.l.log("Can not write all pending", "", e);
             }
-
-            return null;
         }
     };
     protected final WeakHashCache cache = new WeakHashCache();
@@ -162,7 +160,7 @@ public class StaticCache {
         } else {
             final Workable getWorkable = new Workable() {
 
-                public Object exec() {
+                public void exec() {
                     try {
                         final Object o = synchronousGet(key);
 
@@ -179,8 +177,6 @@ public class StaticCache {
                         //#debug
                         Log.l.log("Can not get", key, e);
                     }
-
-                    return null;
                 }
             };
             Worker.forkSerial(getWorkable, RMS_WORKER_INDEX);
@@ -231,15 +227,13 @@ public class StaticCache {
         }
         rmsWriteWorkables.addElement(new Workable() {
 
-            public Object exec() {
+            public void exec() {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {
                     //#debug
                     Log.l.log("Can not synch write to RMS", key, e);
                 }
-
-                return null;
             }
         });
         Worker.forkSerial(writeAllPending, RMS_WORKER_INDEX);

@@ -102,7 +102,7 @@ public class StaticWebCache extends StaticCache {
     public void update(final String url, final Task result) {
         Worker.fork(new Workable() {
 
-            public Object exec() {
+            public void exec() {
                 try {
                     remove(url);
                     get(url, result);
@@ -110,8 +110,6 @@ public class StaticWebCache extends StaticCache {
                     //#debug
                     Log.l.log("Can not update", url, e);
                 }
-
-                return null;
             }
         }, Worker.HIGH_PRIORITY);
     }
@@ -126,15 +124,13 @@ public class StaticWebCache extends StaticCache {
         if (synchronousRAMCacheGet(url) == null) {
             Worker.fork(new Workable() {
 
-                public Object exec() {
+                public void exec() {
                     try {
                         get(url, null);
                     } catch (Exception e) {
                         //#debug
                         Log.l.log("Can not prefetch", url, e);
                     }
-
-                    return null;
                 }
             }, Worker.LOW_PRIORITY);
         }

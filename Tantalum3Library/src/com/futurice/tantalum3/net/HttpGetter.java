@@ -52,7 +52,7 @@ public class HttpGetter extends Task {
         return this.url;
     }
 
-    public Object exec() {
+    public void exec() {
         //#debug
         Log.l.log(this.getClass().getName() + " start", url);
         ByteArrayOutputStream bos = null;
@@ -101,6 +101,7 @@ public class HttpGetter extends Task {
                     }
                 }
                 bytes = bos.toByteArray();
+                result = bytes;
                 readBuffer = null;
             }
 
@@ -154,19 +155,18 @@ public class HttpGetter extends Task {
             httpConnection = null;
 
             if (tryAgain) {
+                result = null;
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ex) {
                 }
-
-                return this.exec();
+                exec();
             } else if (!success) {
+                cancel(false);
                 task.cancel(false);
             }
             //#debug
             Log.l.log("End " + this.getClass().getName(), url);
         }
-
-        return bytes;
     }
 }

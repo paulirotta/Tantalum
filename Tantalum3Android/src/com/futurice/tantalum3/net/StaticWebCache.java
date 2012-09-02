@@ -72,10 +72,11 @@ public class StaticWebCache extends StaticCache {
                         }
                     }
 
-                    @Override
-                    public synchronized boolean cancel(boolean mayInterruptIfRunning) {
-                        return super.cancel(mayInterruptIfRunning);
-                    }
+//                    @Override
+//                    public synchronized boolean cancel(boolean mayInterruptIfRunning) {
+//                        return super.cancel(mayInterruptIfRunning);
+//                    }
+                    
 //                    @Override
 //                    public void cancel(final boolean mayInterruptIfRunning) {
 //                        if (r != null) {
@@ -90,11 +91,15 @@ public class StaticWebCache extends StaticCache {
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible forkSerial delays
                 //httpGetter.exec();
-                final Object o = httpGetter.exec();
-                //Worker.fork(httpGetter, RMS_WORKER_INDEX);
-                if (o == null) {
-                    //TODO FIXME Is this correct when re-getting multiple times?
-                    return super.cancel(mayInterruptIfRunning);
+                httpGetter.exec();
+                try {
+                    //Worker.fork(httpGetter, RMS_WORKER_INDEX);
+                    if (httpGetter.get() == null) {
+                        //TODO FIXME Is this correct when re-getting multiple times?
+                        return super.cancel(mayInterruptIfRunning);
+                    }
+                } catch (Exception ex) {
+                    Log.l.log("Cache can not re-get from net", url, ex);
                 }
                 
                 return false;
@@ -112,15 +117,13 @@ public class StaticWebCache extends StaticCache {
     public void update(final String url, final Task result) {
         Worker.fork(new Workable() {
             @Override
-            public Object exec() {
+            public void exec() {
                 try {
                     remove(url);
                     get(url, result);
                 } catch (Exception e) {
                     Log.l.log("Can not update", url, e);
                 }
-
-                return null;
             }
         });
     }
@@ -135,14 +138,12 @@ public class StaticWebCache extends StaticCache {
         if (synchronousRAMCacheGet(url) == null) {
             Worker.fork(new Workable() {
                 @Override
-                public Object exec() {
+                public void exec() {
                     try {
                         get(url, null);
                     } catch (Exception e) {
                         Log.l.log("Can not prefetch", url, e);
                     }
-
-                    return null;
                 }
             }, Worker.LOW_PRIORITY);
         }

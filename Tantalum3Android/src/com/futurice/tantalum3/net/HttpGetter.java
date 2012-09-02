@@ -1,7 +1,6 @@
 package com.futurice.tantalum3.net;
 
 import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.log.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -20,7 +19,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
  *
  * @author pahought
  */
-public class HttpGetter implements Workable {
+public class HttpGetter extends Task {
 
     private final String url;
     private final Task task;
@@ -54,7 +53,7 @@ public class HttpGetter implements Workable {
     }
 
     @Override
-    public Object exec() {
+    public void exec() {
         Log.l.log("HttpGetter start", url);
         ByteArrayOutputStream bos = null;
         HttpClient httpConnection;
@@ -104,6 +103,7 @@ public class HttpGetter implements Workable {
                     }
                 }
                 bytes = bos.toByteArray();
+                result = bytes;
                 readBuffer = null;
             }
             Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
@@ -143,18 +143,17 @@ public class HttpGetter implements Workable {
             httpConnection = null;
 
             if (tryAgain) {
+                result = null;
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ex) {
                 }
-
-                return this.exec();
+                exec();
             } else if (!success) {
+                cancel(false);
                 task.cancel(false);
             }
             Log.l.log("End HttpGet", url);
         }
-
-        return bytes;
     }
 }

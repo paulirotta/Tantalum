@@ -39,8 +39,10 @@ public class JSONGetter extends HttpGetter {
         this.jsonvo = jsonModel;
     }
 
-    public Object exec() {
-        final byte[] bytes = (byte[]) super.exec();
+    public void exec() {
+        super.exec();
+        
+        final byte[] bytes = (byte[]) result;
         String value = "";
 
         try {
@@ -54,9 +56,8 @@ public class JSONGetter extends HttpGetter {
         } catch (Exception e) {
             //#debug
             Log.l.log("JSONGetter HTTP response problem", this.getUrl() + " : " + value, e);
+            cancel(false);
             task.cancel(false);
         }
-        
-        return bytes;
     }
 }

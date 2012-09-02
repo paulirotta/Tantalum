@@ -49,15 +49,13 @@ public abstract class RSSListView extends View {
 
     protected final void clearCache() {
         Worker.fork(new Workable() {
-            public Object exec() {
+            public void exec() {
                 try {
                     doClearCache();
                 } catch (Exception e) {
                     //#debug
                     Log.l.log("Can not clear cache", "", e);
                 }
-
-                return null;
             }
         }, Worker.HIGH_PRIORITY);
     }

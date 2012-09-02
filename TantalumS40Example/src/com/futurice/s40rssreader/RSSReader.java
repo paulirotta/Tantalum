@@ -109,9 +109,8 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
         switchDisplayable(null, getCanvas());
         Worker.fork(new Workable() {
 
-            public Object exec() {
+            public void exec() {
                 getCanvas().getListView().reload(false);
-                return null;
             }
         });
     }

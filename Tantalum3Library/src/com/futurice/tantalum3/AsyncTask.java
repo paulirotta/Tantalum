@@ -52,10 +52,8 @@ public abstract class AsyncTask extends Closure {
      */
     public static void execute(final Runnable runnable) {
         Worker.forkSerial(new Workable() {
-            public Object exec() {
+            public void exec() {
                 runnable.run();
-
-                return null;
             }
         }, ASYNC_TASK_WORKER_INDEX);
     }
@@ -126,19 +124,16 @@ public abstract class AsyncTask extends Closure {
         return this;
     }
 
-    public final Object exec() {
-        Object r = null;
-
+    public final void exec() {
         try {
             synchronized (this) {
-                r = result;
                 if (status == CANCELED || status == EXCEPTION) {
-                    return r;
+                    throw new IllegalStateException("Can not exec() AsyncTask: status=" + status);
                 }
                 setStatus(EXEC_STARTED);
             }
 
-            r = doInBackground(params);
+            final Object r = doInBackground(params);
 
             synchronized (this) {
                 result = r;
@@ -149,8 +144,6 @@ public abstract class AsyncTask extends Closure {
             Log.l.log("Async task exception", this.toString(), t);
             setStatus(EXCEPTION);
         }
-
-        return r;
     }
 
     public final void run() {

@@ -22,8 +22,10 @@ public abstract class JSONPoster extends HttpPoster {
         this.jsonvo = jsonModel;
     }
 
-    public Object exec() {
-        final byte[] bytes = (byte[]) super.exec();
+    public void exec() {
+        super.exec();
+        
+        final byte[] bytes = (byte[]) result;
         String value = "";
 
         try {
@@ -37,9 +39,8 @@ public abstract class JSONPoster extends HttpPoster {
         } catch (Exception e) {
             //#debug
             Log.l.log("JSONPoster HTTP response problem", this.getUrl() + " : " + value, e);
+            cancel(false);
             task.cancel(false);
         }
-        
-        return bytes;
     }
 }
