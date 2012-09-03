@@ -5,6 +5,10 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Worker;
+import com.futurice.tantalum3.log.Log;
 
 public final class AndroidDatabase extends SQLiteOpenHelper {
 
@@ -18,12 +22,25 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
             + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_KEY
             + " TEXT NOT NULL, " + COL_DATA + " BLOB NOT NULL)";
     private static Context context;
+    SQLiteDatabase db = this.getWritableDatabase();
+    private Task initTask = new Task() {
+        @Override
+        public void exec() {
+            db = getWritableDatabase();
+            Worker.queueShutdownTask(new Workable() {
+                @Override
+                public void exec() {
+                    db.close();
+                }
+            });
+        }
+    };
 
     /**
      * Your app must call this to set the context before the database is
      * initialized in Tantalum
-     * 
-     * @param c 
+     *
+     * @param c
      */
     public static void setContext(final Context c) {
         context = c;
@@ -31,6 +48,7 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
 
     public AndroidDatabase() {
         super(context, DB_NAME, null, DB_VERSION);
+        Worker.fork(initTask);
     }
 
     @Override
@@ -45,41 +63,62 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
     }
 
     public synchronized byte[] getData(final String key) {
-        // System.out.println(key);
-        final String[] fields = new String[]{COL_DATA};
-        final SQLiteDatabase db = this.getReadableDatabase();
-        final Cursor cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
-                new String[]{String.valueOf(key)}, null, null, null, null);
+        try {
+            final String[] fields = new String[]{COL_DATA};
+            final Cursor cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
+                    new String[]{String.valueOf(key)}, null, null, null, null);
 
-        if (cursor == null || cursor.getCount() == 0) {
-            db.close();
-            return null;
-        } else {
-            cursor.moveToFirst();
-            byte[] data = cursor.getBlob(0);
-            db.close();
+            if (cursor == null || cursor.getCount() == 0) {
+                return null;
+            } else {
+                cursor.moveToFirst();
 
-            return data;
+                return cursor.getBlob(0);
+            }
+        } catch (NullPointerException e) {
+            Log.l.log("db not initialized, join then try again", "getData", e);
+            try {
+                initTask.join(10000);
+            } catch (Exception ex) {
+                Log.l.log("db not initialized, join then try again problem", "getData", e);
+            }
+
+            return getData(key);
         }
     }
 
     public synchronized void putData(final String key, final byte[] data) {
-        final SQLiteDatabase db = this.getWritableDatabase();
         final ContentValues values = new ContentValues();
-        
+
         values.put(COL_KEY, key);
         values.put(COL_DATA, data);
 
-        db.insert(TABLE_NAME, null, values);
-        db.close();
-        //TODO Opening and closing the database might be safe, but slow. Check options.
+        try {
+            db.insert(TABLE_NAME, null, values);
+        } catch (NullPointerException e) {
+            Log.l.log("db not initialized, join then try again", "putData", e);
+            try {
+                initTask.join(10000);
+            } catch (Exception ex) {
+                Log.l.log("db not initialized, join then try again problem", "putData", e);
+            }
+            putData(key, data);
+        }
     }
 
     public synchronized void removeData(final String key) {
-        final SQLiteDatabase db = this.getWritableDatabase();
         final String where = COL_KEY + "==\"" + key + "\"";
 
-        db.delete(TABLE_NAME, where, null);
-        db.close();
+        try {
+            db.delete(TABLE_NAME, where, null);
+        } catch (NullPointerException e) {
+            Log.l.log("db not initialized, join then try again", "removeData", e);
+            try {
+                initTask.join(10000);
+            } catch (Exception ex) {
+                Log.l.log("db not initialized, join then try again problem", "removeData", e);
+            }
+            removeData(key);
+        }
     }
 }
