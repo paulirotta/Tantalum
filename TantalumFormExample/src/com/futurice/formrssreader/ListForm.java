@@ -64,7 +64,7 @@ public final class ListForm extends Form implements CommandListener {
         try {
             Log.l.log("Start start thread reload", "");
             // Wait max 2sec for data load, parse and paint to make smooth startup UX
-            reload(false).joinUIThread(2000);
+            reload(false).joinUI(2000);
         } catch (Exception ex) {
             //#debug
             Log.l.log("Initial RSS load exception", "", ex);

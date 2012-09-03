@@ -32,7 +32,7 @@ public abstract class Closure extends Task implements Runnable {
         PlatformUtils.runOnUiThread(this);
     }
 
-    public final synchronized Object joinUIThread(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    public final synchronized Object joinUI(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         final long t = System.currentTimeMillis();
         super.join(timeout);
 
