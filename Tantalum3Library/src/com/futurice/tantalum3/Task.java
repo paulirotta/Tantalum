@@ -19,7 +19,6 @@ public abstract class Task implements Workable {
     public static final int UI_RUN_FINISHED = 3; // for Closure extension
     public static final int CANCELED = 4;
     public static final int EXCEPTION = 5;
-    
     protected Object result = null; // Always access within a synchronized block
     protected int status = UI_RUN_FINISHED; // Always access within a synchronized block
 
@@ -34,12 +33,17 @@ public abstract class Task implements Workable {
     public synchronized void set(final Object o) {
         this.result = o;
         setStatus(EXEC_FINISHED);
+
+        if (this instanceof Runnable) {
+            // Continue to closure
+            PlatformUtils.runOnUiThread((Runnable) this);
+        }
     }
 
     /**
      * Never call get() from the UI thread unless you know the state is
-     * EXEC_FINISHED (as it is in a Closure). Otherwise it can make
-     * your UI freeze for unpredictable periods of time.
+     * EXEC_FINISHED (as it is in a Closure). Otherwise it can make your UI
+     * freeze for unpredictable periods of time.
      *
      * @return
      * @throws InterruptedException
@@ -103,6 +107,28 @@ public abstract class Task implements Workable {
                 throw new ExecutionException();
             default:
                 ;
+        }
+
+        return result;
+    }
+
+    public final synchronized Object joinUI(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+        if (!(this instanceof Runnable)) {
+            throw new ClassCastException("Can not joinUI() unless Task is a Closure");
+        }
+        
+        final long t = System.currentTimeMillis();
+        join(timeout);
+
+        if (status < UI_RUN_FINISHED) {
+            //#debug
+            Log.l.log("Start joinUIThread wait()", this.toString());
+            this.wait(timeout - (System.currentTimeMillis() - t));
+            if (status < EXEC_STARTED) {
+                throw new TimeoutException();
+            }
+            //#debug
+            Log.l.log("End joinUIThread wait()", this.toString());
         }
 
         return result;

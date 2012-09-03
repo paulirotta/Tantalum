@@ -5,7 +5,6 @@
 package com.futurice.tantalum3;
 
 import android.app.Activity;
-import com.futurice.tantalum3.rms.AndroidDatabase;
 
 /**
  * Android-specific support routines for Tantalum
@@ -18,7 +17,6 @@ public final class PlatformUtils {
 
     public static void setProgram(final Object program) {
         PlatformUtils.program = (Activity) program;
-//        AndroidDatabase.setContext(((Activity) program).getApplicationContext());
     }
 
     /**
@@ -43,6 +41,6 @@ public final class PlatformUtils {
      *
      */
     public static void notifyDestroyed() {
-        program.finish(); //TODO Is this the right call?
+        program.finish();
     }    
 }

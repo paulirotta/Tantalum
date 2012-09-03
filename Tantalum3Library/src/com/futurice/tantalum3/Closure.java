@@ -17,36 +17,4 @@ import com.futurice.tantalum3.log.Log;
  * @author phou
  */
 public abstract class Closure extends Task implements Runnable {
-
-    /**
-     * You can call this at the end of your overriding method once you have set
-     * the result.
-     *
-     * If you implement set(), do not implement or use compute()
-     *
-     * @param o
-     */
-    public synchronized void set(final Object o) {
-        super.set(o);
-
-        PlatformUtils.runOnUiThread(this);
-    }
-
-    public final synchronized Object joinUI(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        final long t = System.currentTimeMillis();
-        super.join(timeout);
-
-        if (status < UI_RUN_FINISHED) {
-            //#debug
-            Log.l.log("Start joinUIThread wait()", this.toString());
-            this.wait(timeout - (System.currentTimeMillis() - t));
-            if (status < EXEC_STARTED) {
-                throw new TimeoutException();
-            }
-            //#debug
-            Log.l.log("End joinUIThread wait()", this.toString());
-        }
-
-        return result;
-    }
 }

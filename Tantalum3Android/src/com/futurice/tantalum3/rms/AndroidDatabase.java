@@ -25,7 +25,7 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
      * 
      * @param c 
      */
-    public static void setContext(Context c) {
+    public static void setContext(final Context c) {
         context = c;
     }
 
@@ -44,7 +44,7 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public synchronized byte[] getData(String key) {
+    public synchronized byte[] getData(final String key) {
         // System.out.println(key);
         final String[] fields = new String[]{COL_DATA};
         final SQLiteDatabase db = this.getReadableDatabase();
@@ -56,8 +56,6 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
             return null;
         } else {
             cursor.moveToFirst();
-//			System.out.println(cursor.getColumnNames());
-//			System.out.println(cursor.getColumnCount());
             byte[] data = cursor.getBlob(0);
             db.close();
 
@@ -65,7 +63,7 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         }
     }
 
-    public synchronized void putData(String key, byte[] data) {
+    public synchronized void putData(final String key, final byte[] data) {
         final SQLiteDatabase db = this.getWritableDatabase();
         final ContentValues values = new ContentValues();
         
@@ -77,10 +75,9 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         //TODO Opening and closing the database might be safe, but slow. Check options.
     }
 
-    public synchronized void removeData(String key) {
+    public synchronized void removeData(final String key) {
         final SQLiteDatabase db = this.getWritableDatabase();
-
-        String where = COL_KEY + "==\"" + key + "\"";
+        final String where = COL_KEY + "==\"" + key + "\"";
 
         db.delete(TABLE_NAME, where, null);
         db.close();
