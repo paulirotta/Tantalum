@@ -1,6 +1,6 @@
 package com.futurice.tantalum3.net.xml;
 
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import java.util.Vector;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -47,7 +47,7 @@ public class RSSModel extends XMLModel {
             }
         } catch (Exception e) {
             //#debug
-            Log.l.log("RSS parsing error", "qname=" + qName + " - chars=" + chars, e);
+            Logg.l.log("RSS parsing error", "qname=" + qName + " - chars=" + chars, e);
         }
     }
 

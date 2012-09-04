@@ -1,7 +1,7 @@
 package com.futurice.tantalum3.net;
 
 import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,7 +54,7 @@ public class HttpGetter extends Task {
 
     @Override
     public void exec() {
-        Log.l.log("HttpGetter start", url);
+        Logg.l.log("HttpGetter start", url);
         ByteArrayOutputStream bos = null;
         HttpClient httpConnection;
         HttpResponse response;
@@ -74,7 +74,7 @@ public class HttpGetter extends Task {
             inputStream = response.getEntity().getContent();
             final long length = response.getEntity().getContentLength();
             if (length > 0 && length < 1000000) {
-                Log.l.log("Start fixed_length read", url + " content_length="
+                Logg.l.log("Start fixed_length read", url + " content_length="
                         + length);
                 int bytesRead = 0;
                 bytes = new byte[(int) length];
@@ -84,14 +84,14 @@ public class HttpGetter extends Task {
                     if (br > 0) {
                         bytesRead += br;
                     } else {
-                        Log.l.log("Recived EOF before content_length exceeded",
+                        Logg.l.log("Recived EOF before content_length exceeded",
                                 url + ", content_length=" + length
                                 + " bytes_read=" + bytesRead);
                         break;
                     }
                 }
             } else {
-                Log.l.log("Start variable length read", url);
+                Logg.l.log("Start variable length read", url);
                 bos = new ByteArrayOutputStream();
                 byte[] readBuffer = new byte[16384];
                 while (true) {
@@ -106,15 +106,15 @@ public class HttpGetter extends Task {
                 result = bytes;
                 readBuffer = null;
             }
-            Log.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
+            Logg.l.log("HttpGetter complete", bytes.length + " bytes, " + url);
             task.set(bytes);
             success = true;
             bytes = null;
         } catch (IllegalArgumentException e) {
-            Log.l.log("HttpGetter has a problem", url, e);
+            Logg.l.log("HttpGetter has a problem", url, e);
             bytes = null;
         } catch (IOException e) {
-            Log.l.log("Retries remaining", url + ", retries="
+            Logg.l.log("Retries remaining", url + ", retries="
                     + retriesRemaining, e);
             bytes = null;
             if (retriesRemaining > 0) {
@@ -122,10 +122,10 @@ public class HttpGetter extends Task {
                 tryAgain = true;
             } else {
                 //#debug
-                Log.l.log("HttpGetter no more retries", url);
+                Logg.l.log("HttpGetter no more retries", url);
             }
         } catch (Exception e) {
-            Log.l.log("HttpGetter has a problem", url, e);
+            Logg.l.log("HttpGetter has a problem", url, e);
             bytes = null;
         } finally {
             try {
@@ -153,7 +153,7 @@ public class HttpGetter extends Task {
                 cancel(false);
                 task.cancel(false);
             }
-            Log.l.log("End HttpGet", url);
+            Logg.l.log("End HttpGet", url);
         }
     }
 }

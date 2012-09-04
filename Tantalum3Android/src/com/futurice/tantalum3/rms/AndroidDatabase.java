@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 
 public final class AndroidDatabase extends SQLiteOpenHelper {
 
@@ -22,7 +22,8 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
             + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_KEY
             + " TEXT NOT NULL, " + COL_DATA + " BLOB NOT NULL)";
     private static Context context;
-    SQLiteDatabase db = this.getWritableDatabase();
+    private volatile SQLiteDatabase db = null;
+    
     private Task initTask = new Task() {
         @Override
         public void exec() {
@@ -31,6 +32,7 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
                 @Override
                 public void exec() {
                     db.close();
+                    db = null;
                 }
             });
         }
@@ -76,11 +78,11 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
                 return cursor.getBlob(0);
             }
         } catch (NullPointerException e) {
-            Log.l.log("db not initialized, join then try again", "getData", e);
+            Logg.l.log("db not initialized, join then try again", "getData", e);
             try {
                 initTask.join(10000);
             } catch (Exception ex) {
-                Log.l.log("db not initialized, join then try again problem", "getData", e);
+                Logg.l.log("db not initialized, join then try again problem", "getData", e);
             }
 
             return getData(key);
@@ -96,11 +98,11 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         try {
             db.insert(TABLE_NAME, null, values);
         } catch (NullPointerException e) {
-            Log.l.log("db not initialized, join then try again", "putData", e);
+            Logg.l.log("db not initialized, join then try again", "putData", e);
             try {
                 initTask.join(10000);
             } catch (Exception ex) {
-                Log.l.log("db not initialized, join then try again problem", "putData", e);
+                Logg.l.log("db not initialized, join then try again problem", "putData", e);
             }
             putData(key, data);
         }
@@ -112,11 +114,11 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         try {
             db.delete(TABLE_NAME, where, null);
         } catch (NullPointerException e) {
-            Log.l.log("db not initialized, join then try again", "removeData", e);
+            Logg.l.log("db not initialized, join then try again", "removeData", e);
             try {
                 initTask.join(10000);
             } catch (Exception ex) {
-                Log.l.log("db not initialized, join then try again problem", "removeData", e);
+                Logg.l.log("db not initialized, join then try again problem", "removeData", e);
             }
             removeData(key);
         }

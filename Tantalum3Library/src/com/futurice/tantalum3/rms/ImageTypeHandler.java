@@ -1,6 +1,6 @@
 package com.futurice.tantalum3.rms;
 
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.util.ImageUtils;
 import javax.microedition.lcdui.Image;
 
@@ -25,17 +25,21 @@ public final class ImageTypeHandler implements DataTypeHandler {
         try {
             if (imageSide == -1) {
                 return Image.createImage(bytes, 0, bytes.length);
-            } else {
-                
+            } else {                
                 Image temp = Image.createImage(bytes, 0, bytes.length);
-                int[] data = new int[temp.getHeight()*temp.getWidth()];
-                temp.getRGB(data, 0, temp.getWidth(), 0, 0, temp.getWidth(), temp.getHeight());
-                return ImageUtils.downscaleImage(data, temp.getWidth(), temp.getHeight(), imageSide, imageSide, true, true, true);
+                final int w = temp.getWidth();
+                final int h = temp.getHeight();
+                int[] data = new int[w*h];
+                temp.getRGB(data, 0, w, 0, 0, w, h);
+                temp = null;
+                final Image img = ImageUtils.downscaleImage(data, w, h, imageSide, imageSide, true, true, true);
+                data = null;
+                
+                return img;
             }
-
         } catch (IllegalArgumentException e) {
             //#debug
-            Log.l.log("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
+            Logg.l.log("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
             throw e;
         }
     }

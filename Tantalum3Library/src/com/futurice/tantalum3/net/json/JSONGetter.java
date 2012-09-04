@@ -23,7 +23,7 @@
 package com.futurice.tantalum3.net.json;
 
 import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.net.HttpGetter;
 
 /**
@@ -55,7 +55,7 @@ public class JSONGetter extends HttpGetter {
             task.set(value);
         } catch (Exception e) {
             //#debug
-            Log.l.log("JSONGetter HTTP response problem", this.getUrl() + " : " + value, e);
+            Logg.l.log("JSONGetter HTTP response problem", this.getUrl() + " : " + value, e);
             cancel(false);
             task.cancel(false);
         }

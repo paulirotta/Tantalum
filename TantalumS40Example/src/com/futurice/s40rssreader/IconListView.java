@@ -6,7 +6,7 @@ package com.futurice.s40rssreader;
 
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.net.xml.RSSItem;
 import com.futurice.tantalum3.util.ImageUtils;
 import java.util.Hashtable;
@@ -44,7 +44,7 @@ public final class IconListView extends RSSListView {
             updateCommand = (Command) Class.forName("com.futurice.s40rssreader.UpdateIconCommand").newInstance();
             iconSupport = true;
         } catch (Throwable t) {
-            Log.l.log("IconCommand not supported", "Update", t);
+            Logg.l.log("IconCommand not supported", "Update", t);
         }
     }
 
@@ -138,7 +138,7 @@ public final class IconListView extends RSSListView {
                         item.setLoadingImage(true);
                         if (item.getThumbnail() == null || item.getThumbnail().length() == 0) {
                             //#debug
-                            Log.l.log("Trivial thumbnail link in RSS feed", item.getTitle());
+                            Logg.l.log("Trivial thumbnail link in RSS feed", item.getTitle());
                         } else {
                             DetailsView.imageCache.get(item.getThumbnail(), new Task() {
 
@@ -146,7 +146,7 @@ public final class IconListView extends RSSListView {
                                     super.set(o);
                                     try {
                                         //#debug
-                                        Log.l.log("getIcon result", "" + o);
+                                        Logg.l.log("getIcon result", "" + o);
                                         item.setLoadingImage(false);
                                         Image icon = (Image) o;
                                         final int w = icon.getWidth();
@@ -168,7 +168,7 @@ public final class IconListView extends RSSListView {
                                         canvas.queueRepaint();
                                     } catch (Exception e) {
                                         //#debug
-                                        Log.l.log("Problem with getIcon setResult", item.getThumbnail(), e);
+                                        Logg.l.log("Problem with getIcon setResult", item.getThumbnail(), e);
                                         cancel(false);
                                     }
                                 }
@@ -192,7 +192,7 @@ public final class IconListView extends RSSListView {
             renderScrollBar(g, totalHeight);
         } catch (Exception e) {
             //#debug
-            Log.l.log("IconList Render error", modelCopy.toString(), e);
+            Logg.l.log("IconList Render error", modelCopy.toString(), e);
         }
     }
 

@@ -2,7 +2,7 @@ package com.futurice.tantalum3.rms;
 
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.util.LengthLimitedLRUVector;
 import java.util.Vector;
 import javax.microedition.rms.RecordStore;
@@ -36,14 +36,14 @@ public class RMSUtils {
                     if (rs != null) {
                         rsName = rs.getName();
                         //#debug
-                        Log.l.log("Closing LRU record store", rsName + " open=" + openRecordStores.size());
+                        Logg.l.log("Closing LRU record store", rsName + " open=" + openRecordStores.size());
                         rs.closeRecordStore();
                         //#debug
-                        Log.l.log("LRU record store closed", rsName + " open=" + openRecordStores.size());
+                        Logg.l.log("LRU record store closed", rsName + " open=" + openRecordStores.size());
                     }
                 } catch (Exception ex) {
                     //#debug
-                    Log.l.log("Can not close LRU record store", rsName, ex);
+                    Logg.l.log("Can not close LRU record store", rsName, ex);
                 }
             }
         }
@@ -58,10 +58,10 @@ public class RMSUtils {
 
             public void exec() {
                 //#debug
-                Log.l.log("Closing record stores during shutdown", "open=" + openRecordStores.size());
+                Logg.l.log("Closing record stores during shutdown", "open=" + openRecordStores.size());
                 openRecordStores.setMaxLength(0);
                 //#debug
-                Log.l.log("Closed record stores during shutdown", "open=" + openRecordStores.size());
+                Logg.l.log("Closed record stores during shutdown", "open=" + openRecordStores.size());
             }
         });
     }
@@ -135,7 +135,7 @@ public class RMSUtils {
         try {
             //delete old value
             //#debug
-            Log.l.log("Add to RMS", recordStoreName + " (" + data.length + " bytes)");
+            Logg.l.log("Add to RMS", recordStoreName + " (" + data.length + " bytes)");
             recordStoreName = truncateRecordStoreName(recordStoreName);
             rs = getRecordStore(recordStoreName, true);
 
@@ -145,10 +145,10 @@ public class RMSUtils {
                 rs.setRecord(1, data, 0, data.length);
             }
             //#debug
-            Log.l.log("Added to RMS", recordStoreName + " (" + data.length + " bytes)");
+            Logg.l.log("Added to RMS", recordStoreName + " (" + data.length + " bytes)");
         } catch (Exception e) {
             //#debug
-            Log.l.log("RMS write problem", recordStoreName, e);
+            Logg.l.log("RMS write problem", recordStoreName, e);
             if (e instanceof RecordStoreFullException) {
                 throw (RecordStoreFullException) e;
             }
@@ -179,7 +179,7 @@ public class RMSUtils {
         } finally {
             if (!success) {
                 //#debug
-                Log.l.log("Can not open record store", "Deleting " + recordStoreName);
+                Logg.l.log("Can not open record store", "Deleting " + recordStoreName);
                 delete(recordStoreName);
             }
         }
@@ -208,7 +208,7 @@ public class RMSUtils {
         } catch (RecordStoreNotFoundException ex) {
         } catch (RecordStoreException ex) {
             //#debug
-            Log.l.log("RMS delete problem", recordStoreName, ex);
+            Logg.l.log("RMS delete problem", recordStoreName, ex);
         }
     }
 
@@ -233,19 +233,19 @@ public class RMSUtils {
         try {
             recordStoreName = truncateRecordStoreName(recordStoreName);
             //#debug
-            Log.l.log("Read from RMS", recordStoreName);
+            Logg.l.log("Read from RMS", recordStoreName);
             rs = getRecordStore(recordStoreName, false);
             if (rs != null && rs.getNumRecords() > 0) {
                 data = rs.getRecord(1);
                 //#debug
-                Log.l.log("End read from RMS", recordStoreName + " (" + data.length + " bytes)");
+                Logg.l.log("End read from RMS", recordStoreName + " (" + data.length + " bytes)");
             } else {
                 //#debug
-                Log.l.log("End read from RMS", recordStoreName + " (NOTHING TO READ)");
+                Logg.l.log("End read from RMS", recordStoreName + " (NOTHING TO READ)");
             }
         } catch (Exception e) {
             //#debug
-            Log.l.log("Can not read RMS", recordStoreName, e);
+            Logg.l.log("Can not read RMS", recordStoreName, e);
         }
 
         return data;

@@ -1,7 +1,7 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
 import com.futurice.tantalum3.rms.ImageTypeHandler;
@@ -64,7 +64,7 @@ public final class DetailsView extends View {
             }
         } catch (ConnectionNotFoundException ex) {
             //#debug
-            Log.l.log("Can not open browser to URL", url, ex);
+            Logg.l.log("Can not open browser to URL", url, ex);
         }
     }
 

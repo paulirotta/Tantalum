@@ -1,6 +1,6 @@
 package com.futurice.tantalum3;
 
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 
 /**
  * An implementation of Android's AsyncTask pattern for J2ME. This can be used
@@ -141,7 +141,7 @@ public abstract class AsyncTask extends Closure {
             }
         } catch (final Throwable t) {
             //#debug
-            Log.l.log("Async task exception", this.toString(), t);
+            Logg.l.log("Async task exception", this.toString(), t);
             setStatus(EXCEPTION);
         }
     }

@@ -6,7 +6,7 @@ import com.futurice.tantalum3.TantalumMIDlet;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.TimeoutException;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import javax.microedition.lcdui.*;
 
 /**
@@ -122,12 +122,12 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
                 reloadTask.join(2000);
             } catch (TimeoutException ex) {
                 //#debug
-                Log.l.log("Startup reload timeout", "This is normal if loading from the net", ex);
+                Logg.l.log("Startup reload timeout", "This is normal if loading from the net", ex);
             }
             switchDisplayable(null, canvas);
         } catch (Exception ex) {
             //#debug
-            Log.l.log("Startup execption", "", ex);
+            Logg.l.log("Startup execption", "", ex);
             Worker.shutdown(false);
         }
     }

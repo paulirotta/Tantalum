@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.util;
 
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
@@ -84,7 +84,7 @@ public final class ImageUtils {
             if (widthIsMaxed) {
                 // No resize needed
                 //#debug
-                Log.l.log("No image downscale needed", "(" + srcW + "," + srcH + ") -> (" + maxW + "," + maxH);
+                Logg.l.log("No image downscale needed", "(" + srcW + "," + srcH + ") -> (" + maxW + "," + maxH);
                 maxH = srcH;
                 return Image.createRGBImage(data, maxW, maxH, processAlpha);
             }

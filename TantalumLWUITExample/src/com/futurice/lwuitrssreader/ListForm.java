@@ -33,7 +33,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
         addCommand(settingsCommand);
         addCommand(exitCommand);
         addCommand(reloadCommand);
-        this.setBackCommand(exitCommand);
+        setBackCommand(exitCommand);
 
         setTransitionOutAnimator(
                 CommonTransitions.createSlide(

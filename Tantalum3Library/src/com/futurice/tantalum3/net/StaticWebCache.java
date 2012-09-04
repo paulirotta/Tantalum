@@ -7,7 +7,7 @@ package com.futurice.tantalum3.net;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.rms.DataTypeHandler;
 import com.futurice.tantalum3.rms.StaticCache;
 
@@ -51,7 +51,7 @@ public class StaticWebCache extends StaticCache {
              */
             public boolean cancel(final boolean mayInterruptIfNeeded) {
                 //#debug
-                Log.l.log("No result from cache get, shift to HTTP", url);
+                Logg.l.log("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Task() {
 
                     public void set(Object o) {
@@ -61,14 +61,14 @@ public class StaticWebCache extends StaticCache {
                                 if (o != null) {
                                     r.set(o);
                                     //#debug
-                                    Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
+                                    Logg.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
                                 } else {
                                     r.cancel(false);
                                 }
                             }
                         } catch (Exception e) {
                             //#debug
-                            Log.l.log("Can not set result", url, e);
+                            Logg.l.log("Can not set result", url, e);
                             cancel(false);
                         }
                     }
@@ -108,7 +108,7 @@ public class StaticWebCache extends StaticCache {
                     get(url, result);
                 } catch (Exception e) {
                     //#debug
-                    Log.l.log("Can not update", url, e);
+                    Logg.l.log("Can not update", url, e);
                 }
             }
         }, Worker.HIGH_PRIORITY);
@@ -129,7 +129,7 @@ public class StaticWebCache extends StaticCache {
                         get(url, null);
                     } catch (Exception e) {
                         //#debug
-                        Log.l.log("Can not prefetch", url, e);
+                        Logg.l.log("Can not prefetch", url, e);
                     }
                 }
             }, Worker.LOW_PRIORITY);

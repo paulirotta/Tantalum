@@ -5,7 +5,7 @@
 package com.futurice.tantalum3.rms;
 
 import android.graphics.BitmapFactory;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 
 /**
  * This is a helper class for creating an image class. It automatically converts
@@ -25,11 +25,12 @@ public final class ImageTypeHandler implements DataTypeHandler {
         imageSide = side;
     }
 
+    @Override
     public Object convertToUseForm(final byte[] bytes) {
         try {
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         } catch (IllegalArgumentException e) {
-            Log.l.log("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
+            Logg.l.log("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
             throw e;
         }
     }

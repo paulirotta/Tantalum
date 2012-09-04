@@ -7,7 +7,7 @@ package com.futurice.tantalum3.net;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.rms.DataTypeHandler;
 import com.futurice.tantalum3.rms.StaticCache;
 
@@ -51,7 +51,7 @@ public class StaticWebCache extends StaticCache {
              */
             @Override
             public boolean cancel(final boolean mayInterruptIfRunning) {
-                Log.l.log("No result from cache get, shift to HTTP", url);
+                Logg.l.log("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Task() {
                     @Override
                     public void set(Object o) {
@@ -61,13 +61,13 @@ public class StaticWebCache extends StaticCache {
                                 if (o != null) {
                                     r.set(o);
                                     //#debug
-                                    Log.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
+                                    Logg.l.log("END SAVE: After no result from cache get, shift to HTTP", url);
                                 } else {
                                     r.cancel(false);
                                 }
                             }
                         } catch (Exception e) {
-                            Log.l.log("Can not set result", url, e);
+                            Logg.l.log("Can not set result", url, e);
                             cancel(false);
                         }
                     }
@@ -99,7 +99,7 @@ public class StaticWebCache extends StaticCache {
                         return super.cancel(mayInterruptIfRunning);
                     }
                 } catch (Exception ex) {
-                    Log.l.log("Cache can not re-get from net", url, ex);
+                    Logg.l.log("Cache can not re-get from net", url, ex);
                 }
                 
                 return false;
@@ -122,7 +122,7 @@ public class StaticWebCache extends StaticCache {
                     remove(url);
                     get(url, result);
                 } catch (Exception e) {
-                    Log.l.log("Can not update", url, e);
+                    Logg.l.log("Can not update", url, e);
                 }
             }
         });
@@ -142,7 +142,7 @@ public class StaticWebCache extends StaticCache {
                     try {
                         get(url, null);
                     } catch (Exception e) {
-                        Log.l.log("Can not prefetch", url, e);
+                        Logg.l.log("Can not prefetch", url, e);
                     }
                 }
             }, Worker.LOW_PRIORITY);

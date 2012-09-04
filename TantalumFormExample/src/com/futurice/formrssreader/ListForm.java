@@ -10,7 +10,7 @@ import com.futurice.tantalum3.ExecutionException;
 import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.TimeoutException;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
 import com.futurice.tantalum3.net.xml.RSSModel;
@@ -36,7 +36,7 @@ public final class ListForm extends Form implements CommandListener {
                 return rssModel;
             } catch (Exception e) {
                 //#debug
-                Log.l.log("Error parsing XML", rssModel.toString());
+                Logg.l.log("Error parsing XML", rssModel.toString());
                 return null;
             }
         }
@@ -62,14 +62,14 @@ public final class ListForm extends Form implements CommandListener {
         addCommand(settingsCommand);
         setCommandListener(this);
         try {
-            Log.l.log("Start start thread reload", "");
+            Logg.l.log("Start start thread reload", "");
             // Wait max 2sec for data load, parse and paint to make smooth startup UX
             reload(false).joinUI(2000);
         } catch (Exception ex) {
             //#debug
-            Log.l.log("Initial RSS load exception", "", ex);
+            Logg.l.log("Initial RSS load exception", "", ex);
         }
-        Log.l.log("End start thread reload", "");
+        Logg.l.log("End start thread reload", "");
     }
 
     public void commandAction(final Command command, final Displayable d) {
@@ -83,7 +83,7 @@ public final class ListForm extends Form implements CommandListener {
             try {
                 feedUrl = RMSUtils.read("settings").toString();
             } catch (Exception e) {
-                Log.l.log("Can not read settings", "", e);
+                Logg.l.log("Can not read settings", "", e);
             }
             rssReader.getSettingsForm().setUrlValue(feedUrl);
             rssReader.switchDisplayable(null, rssReader.getSettingsForm());
@@ -115,7 +115,7 @@ public final class ListForm extends Form implements CommandListener {
             }
         } catch (Exception e) {
             //#debug
-            Log.l.log("Can not read settings", "", e);
+            Logg.l.log("Can not read settings", "", e);
         }
         if ("".equals(feedUrl)) {
             feedUrl = RSSReader.INITIAL_FEED_URL;

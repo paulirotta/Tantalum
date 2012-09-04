@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3;
 
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import java.util.Vector;
 
 /**
@@ -72,7 +72,7 @@ public final class Worker implements Runnable {
                     }
                 } catch (Exception e) {
                     //#debug
-                    Log.l.log("Can not create worker", "i=" + i, e);
+                    Logg.l.log("Can not create worker", "i=" + i, e);
                 }
             }
         });
@@ -167,14 +167,14 @@ public final class Worker implements Runnable {
 
         synchronized (q) {
             //#debug
-            Log.l.log("Unfork start", workable.toString());
+            Logg.l.log("Unfork start", workable.toString());
             success = q.removeElement(workable);
             int i = 0;
             while (!success && i < workers.length) {
                 success = workers[i++].serialQ.removeElement(workable);
             }
             //#debug
-            Log.l.log("Unfork end", workable + " success=" + success);
+            Logg.l.log("Unfork end", workable + " success=" + success);
             q.notifyAll();
             
             return success;
@@ -249,7 +249,7 @@ public final class Worker implements Runnable {
                     timeRemaining = shutdownTimeout - System.currentTimeMillis();
                     if (timeRemaining <= 0) {
                         //#debug
-                        Log.l.log("Worker blocked shutdown timeout", "");
+                        Logg.l.log("Worker blocked shutdown timeout", "");
                         break;
                     }
                     synchronized (q) {
@@ -260,7 +260,7 @@ public final class Worker implements Runnable {
         } catch (InterruptedException ex) {
         }
         //#debug
-        Log.l.log("Shutdown exit", "workers=" + workerCount);
+        Logg.l.log("Shutdown exit", "workers=" + workerCount);
     }
 
     /**
@@ -308,8 +308,8 @@ public final class Worker implements Runnable {
                                 } else if (currentlyIdleCount >= workerCount) {
                                     // PHASE 2: Shutdown actions are all complete
                                     //#mdebug
-                                    Log.l.log("notifyDestroyed", "");
-                                    Log.l.shutdown();
+                                    Logg.l.log("notifyDestroyed", "");
+                                    Logg.l.shutdown();
                                     //#enddebug
                                     PlatformUtils.notifyDestroyed();
                                     break;
@@ -325,23 +325,23 @@ public final class Worker implements Runnable {
                 try {
                     if (workable != null) {
                         workable.exec();
-                        if (workable instanceof Closure) {
-                            PlatformUtils.runOnUiThread((Closure) workable);
+                        if (workable instanceof Runnable) {
+                            PlatformUtils.runOnUiThread((Runnable) workable);
                         }
                     }
                 } catch (Exception e) {
                     //#debug
-                    Log.l.log("Uncaught worker error", "workers=" + workerCount, e);
+                    Logg.l.log("Uncaught worker error", "workers=" + workerCount, e);
                 }
                 workable = null;
             }
         } catch (Throwable t) {
             //#debug
-            Log.l.log("Worker error", "", t);
+            Logg.l.log("Worker error", "", t);
         } finally {
             --workerCount;
             //#debug
-            Log.l.log("Worker stop", "workerCount=" + workerCount);
+            Logg.l.log("Worker stop", "workerCount=" + workerCount);
         }
     }
 }

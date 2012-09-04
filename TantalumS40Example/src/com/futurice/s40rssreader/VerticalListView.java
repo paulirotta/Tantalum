@@ -3,7 +3,7 @@ package com.futurice.s40rssreader;
 //#ifndef Profile
 import com.nokia.mid.ui.DirectUtils;
 //#endif
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.net.xml.RSSItem;
 import com.futurice.tantalum3.util.PoolingWeakImageHashCache;
 import javax.microedition.lcdui.Command;
@@ -35,7 +35,7 @@ public final class VerticalListView extends RSSListView {
             updateCommand = (Command) Class.forName("com.futurice.s40rssreader.UpdateIconCommand").newInstance();        
         } catch (Throwable t) {
             //#debug
-            Log.l.log("IconCommand not supported", "Update", t);
+            Logg.l.log("IconCommand not supported", "Update", t);
         }
     }
 
@@ -118,7 +118,7 @@ public final class VerticalListView extends RSSListView {
             renderScrollBar(g, contentHeight);
         } catch (Exception e) {
             //#debug
-            Log.l.log("VerticalList Render error", rssModel.toString(), e);
+            Logg.l.log("VerticalList Render error", rssModel.toString(), e);
         }
     }
 

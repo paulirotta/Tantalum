@@ -12,7 +12,7 @@ import javax.microedition.io.Connector;
  *
  * @author mark voit
  */
-public final class UsbLog extends Log {
+public final class UsbLogg extends Logg {
 
     private static final byte[] LFCR = "\n\r".getBytes();
     private static final Vector byteArrayQueue = new Vector();
@@ -23,7 +23,7 @@ public final class UsbLog extends Log {
     /**
      * Constructor. Initialize comm port.
      */
-    public UsbLog() {
+    public UsbLogg() {
         try {
             final String commPort = System.getProperty("microedition.commports");
             if (commPort != null) {
@@ -90,9 +90,9 @@ public final class UsbLog extends Log {
         public void run() {
             try {
                 while (!shutdownStarted || !byteArrayQueue.isEmpty()) {
-                    synchronized (UsbLog.this) {
+                    synchronized (UsbLogg.this) {
                         if (byteArrayQueue.isEmpty()) {
-                            UsbLog.this.wait(1000);
+                            UsbLogg.this.wait(1000);
                         }
                     }
                     while (!byteArrayQueue.isEmpty()) {

@@ -1,5 +1,5 @@
 /*
- * LogTest.java
+ * LoggTest.java
  * JMUnit based test
  *
  * Created on 29-Feb-2012, 15:06:24
@@ -13,9 +13,9 @@ import jmunit.framework.cldc11.TestCase;
 /**
  * @author phou
  */
-public class LogTest extends TestCase {
+public class LoggTest extends TestCase {
     
-    public LogTest() {
+    public LoggTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(2, "LogTest");
     }    
@@ -34,20 +34,20 @@ public class LogTest extends TestCase {
     }
 
     /**
-     * Test of testPrintMessage method, of class Log.
+     * Test of testPrintMessage method, of class Logg.
      */
     public void testPrintMessage() throws AssertionFailedException {
         System.out.println("printMessage");
-        Log instance = new Log();
+        Logg instance = new Logg();
         instance.printMessage("Test message");
     }
 
     /**
-     * Test of testLog method, of class Log.
+     * Test of testLog method, of class Logg.
      */
     public void testLog() throws AssertionFailedException {
         System.out.println("log");
-        Log instance = new Log();
+        Logg instance = new Logg();
         String tag_1 = "";
         String message_1 = "";
         instance.log(tag_1, message_1);

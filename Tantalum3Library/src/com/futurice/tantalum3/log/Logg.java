@@ -9,12 +9,12 @@ package com.futurice.tantalum3.log;
  *
  * @author mark voit, paul houghton
  */
-public class Log {
+public class Logg {
 
 //#if UsbDebug
-//#     public final static Log l = new UsbLog();
+//#     public final static Logg l = new UsbLogg();
 //#else
-    public final static Log l = new Log();
+    public final static Logg l = new Logg();
 //#endif
     private static long startTime = System.currentTimeMillis();
 

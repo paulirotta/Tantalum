@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3;
 
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 
 /**
  *
@@ -87,16 +87,16 @@ public abstract class Task implements Workable {
             case EXEC_PENDING:
                 if (Worker.tryUnfork(this)) {
                     //#debug
-                    Log.l.log("Start join out-of-sequence exec() after unfork", this.toString());
+                    Logg.l.log("Start join out-of-sequence exec() after unfork", this.toString());
                     exec();
                     break;
                 }
             case EXEC_STARTED:
                 //#debug
-                Log.l.log("Start join wait()", this.toString());
+                Logg.l.log("Start join wait()", this.toString());
                 this.wait(timeout);
                 //#debug
-                Log.l.log("End join wait()", this.toString());
+                Logg.l.log("End join wait()", this.toString());
                 if (status == EXEC_STARTED) {
                     throw new TimeoutException();
                 }
@@ -122,13 +122,13 @@ public abstract class Task implements Workable {
 
         if (status < UI_RUN_FINISHED) {
             //#debug
-            Log.l.log("Start joinUIThread wait()", this.toString());
+            Logg.l.log("Start joinUIThread wait()", this.toString());
             this.wait(timeout - (System.currentTimeMillis() - t));
             if (status < EXEC_STARTED) {
                 throw new TimeoutException();
             }
             //#debug
-            Log.l.log("End joinUIThread wait()", this.toString());
+            Logg.l.log("End joinUIThread wait()", this.toString());
         }
 
         return result;

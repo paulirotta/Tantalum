@@ -3,7 +3,7 @@ package com.futurice.tantalum3.rms;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.util.LRUVector;
 import com.futurice.tantalum3.util.SortedVector;
 import com.futurice.tantalum3.util.WeakHashCache;
@@ -25,9 +25,10 @@ import java.util.LinkedList;
 public class StaticCache {
     
     private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
-    protected final AndroidDatabase database;
+    private static final AndroidDatabase database;
     protected static final int DATA_TYPE_IMAGE = 1;
     protected static final int DATA_TYPE_XML = 2;
+
     private static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
         @Override
         public boolean before(final Object o1, final Object o2) {
@@ -54,7 +55,7 @@ public class StaticCache {
                     }
                 }
             } catch (Exception e) {
-                Log.l.log("Can not write all pending", "", e);
+                Logg.l.log("Can not write all pending", "", e);
             }
         }
     };
@@ -66,6 +67,10 @@ public class StaticCache {
     protected final DataTypeHandler handler;
     protected int sizeAsBytes = 0;
 
+    static {
+        database = new AndroidDatabase();        
+    }
+    
     /**
      * Create a named cache
      *
@@ -78,8 +83,6 @@ public class StaticCache {
      * @param handler
      */
     public StaticCache(final char priority, final DataTypeHandler handler) {
-        database = new AndroidDatabase();
-
         this.priority = priority;
         this.handler = handler;
 
@@ -106,12 +109,12 @@ public class StaticCache {
      */
     protected synchronized Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         //#debug
-        Log.l.log("Start to convert", key);
+        Logg.l.log("Start to convert", key);
         final Object o = handler.convertToUseForm(bytes);
         accessOrder.addElement(key);
         cache.put(key, o);
         //#debug
-        Log.l.log("End convert", key);
+        Logg.l.log("End convert", key);
 
         return o;
     }
@@ -120,7 +123,7 @@ public class StaticCache {
         Object o = null;
 
         if (containsKey(key)) {
-            // Log.l.log("StaticCache hit in RAM", key);
+            // Logg.l.log("StaticCache hit in RAM", key);
             this.accessOrder.addElement(key);
             o = cache.get(key);
         }
@@ -130,14 +133,14 @@ public class StaticCache {
 
     public void get(final String key, final Task result) {
         if (key == null || key.length() == 0) {
-            Log.l.log("Trivial get", "");
+            Logg.l.log("Trivial get", "");
             result.cancel(false);
             return;
         }
         final Object ho = synchronousRAMCacheGet(key);
 
         if (ho != null) {
-            Log.l.log("RAM cache hit", "(" + priority + ") " + key);
+            Logg.l.log("RAM cache hit", "(" + priority + ") " + key);
             result.set(ho);
         } else {
             final Workable getWorkable = new Workable() {
@@ -147,14 +150,14 @@ public class StaticCache {
                         final Object o = synchronousGet(key);
 
                         if (o != null) {
-                            Log.l.log("RMS cache hit", key);
+                            Logg.l.log("RMS cache hit", key);
                             result.set(o);
                         } else {
-                            Log.l.log("RMS cache miss", key);
+                            Logg.l.log("RMS cache miss", key);
                             result.cancel(false);
                         }
                     } catch (Exception e) {
-                        Log.l.log("Can not get", key, e);
+                        Logg.l.log("Can not get", key, e);
                     }
                 }
             };
@@ -172,7 +175,7 @@ public class StaticCache {
 
             if (bytes != null) {
                 //#debug
-                Log.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
+                Logg.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
 
                 o = convertAndPutToHeapCache(key, bytes);
             }
@@ -194,7 +197,7 @@ public class StaticCache {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {
-                    Log.l.log("Can not synch write to RMS", key, e);
+                    Logg.l.log("Can not synch write to RMS", key, e);
                 }
             }
         });
@@ -225,14 +228,14 @@ public class StaticCache {
         }
         try {
             do {
-                Log.l.log("RMS cache write start", key + " (" + bytes.length + " bytes)");
+                Logg.l.log("RMS cache write start", key + " (" + bytes.length + " bytes)");
                 this.database.putData(key, bytes);
-                Log.l.log("RMS cache write end", key + " (" + bytes.length + " bytes)");
+                Logg.l.log("RMS cache write end", key + " (" + bytes.length + " bytes)");
                 break;
 
             } while (true);
         } catch (Exception e) {
-            Log.l.log("Couldn't store object to RMS", key, e);
+            Logg.l.log("Couldn't store object to RMS", key, e);
         }
     }
 
@@ -251,7 +254,7 @@ public class StaticCache {
          * int spaceCleared = 0; final Vector rsv =
          * RMSUtils.getCachedRecordStoreNames();
          * 
-         * // #debug Log.l.log("Clearing RMS space", minSpaceToClear + "
+         * // #debug Logg.l.log("Clearing RMS space", minSpaceToClear + "
          * bytes");
          * 
          * // First: clear cached objects not currently appearing in any open
@@ -260,7 +263,7 @@ public class StaticCache {
          * getCacheContainingKey(key);
          * 
          * if (cache != null) { spaceCleared += getByteSizeByKey(key);
-         * cache.remove(key); } } // #debug Log.l.log("End phase 1: clearing RMS
+         * cache.remove(key); } } // #debug Logg.l.log("End phase 1: clearing RMS
          * space", spaceCleared + " bytes recovered");
          * 
          * // Second: remove currently cached items, first from low priority
@@ -271,7 +274,7 @@ public class StaticCache {
          * while (!cache.accessOrder.isEmpty() && spaceCleared <
          * minSpaceToClear) { final String key = (String) cache.accessOrder
          * .removeLeastRecentlyUsed(); spaceCleared += getByteSizeByKey(key);
-         * cache.remove(key); } } } // #debug Log.l.log("End phase 2: clearing
+         * cache.remove(key); } } } // #debug Logg.l.log("End phase 2: clearing
          * RMS space", spaceCleared + " bytes recovered (total)");
          * 
          * return spaceCleared >= minSpaceToClear;
@@ -283,7 +286,7 @@ public class StaticCache {
         int size = 0;
 
         // TODO: Write for android
-        Log.l.log("Can not check size of record store to clear space", key);
+        Logg.l.log("Can not check size of record store to clear space", key);
 
         return size;
     }
@@ -303,15 +306,15 @@ public class StaticCache {
                     cache.remove(key);
                 }
                 this.database.removeData(key);
-                Log.l.log("Cache remove (from RAM and RMS)", key);
+                Logg.l.log("Cache remove (from RAM and RMS)", key);
             }
         } catch (Exception e) {
-            Log.l.log("Couldn't remove object from cache", key, e);
+            Logg.l.log("Couldn't remove object from cache", key, e);
         }
     }
 
     public void clear() {
-        Log.l.log("Start Cache Clear", "ID=" + priority);
+        Logg.l.log("Start Cache Clear", "ID=" + priority);
         final String[] keys;
 
         synchronized (this) {
@@ -321,7 +324,7 @@ public class StaticCache {
         for (int i = 0; i < keys.length; i++) {
             remove(keys[i]);
         }
-        Log.l.log("Cache cleared", "ID=" + priority);
+        Logg.l.log("Cache cleared", "ID=" + priority);
     }
 
     public synchronized boolean containsKey(final String key) {

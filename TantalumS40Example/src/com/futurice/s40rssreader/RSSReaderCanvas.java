@@ -1,6 +1,6 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.log.Log;
+import com.futurice.tantalum3.log.Logg;
 import com.futurice.tantalum3.net.xml.RSSItem;
 import com.nokia.mid.ui.frameanimator.FrameAnimator;
 import com.nokia.mid.ui.frameanimator.FrameAnimatorListener;
@@ -63,7 +63,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
           tmp = new GestureInteractiveZone(
                 GestureInteractiveZone.GESTURE_ALL);
         } catch (Exception e){
-            Log.l.log("Some gesture events not supported.", "", e);
+            Logg.l.log("Some gesture events not supported.", "", e);
              tmp = new GestureInteractiveZone(
                 GestureInteractiveZone.GESTURE_DRAG | 
                 GestureInteractiveZone.GESTURE_FLICK | 
@@ -79,7 +79,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
             Class.forName("com.futurice.s40rssreader.Orientator").newInstance();
         } catch (Throwable t) {
             //#debug
-            Log.l.log("Orientation changes not supported", "", t);
+            Logg.l.log("Orientation changes not supported", "", t);
         }
         setCurrentView(listView);
     }
@@ -139,7 +139,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     public void showDetails(final RSSItem selectedItem, final int x) {
         if (selectedItem == null) {
             //#debug
-            Log.l.log("Show details on null item", "Selected item has been cleared on another thread");
+            Logg.l.log("Show details on null item", "Selected item has been cleared on another thread");
             return;
         }
 //#ifndef Profile
