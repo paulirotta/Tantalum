@@ -48,7 +48,7 @@ public final class DetailsForm extends Form implements CommandListener {
             }
         } catch (ConnectionNotFoundException connectionNotFoundException) {
             //#debug
-            L.l.log("Error opening link", ListForm.getInstance().getDetailsView().getSelectedItem().getLink(), connectionNotFoundException);
+            L.l.e("Error opening link", ListForm.getInstance().getDetailsView().getSelectedItem().getLink(), connectionNotFoundException);
             rssReader.showError("Could not open link");
         }
     }

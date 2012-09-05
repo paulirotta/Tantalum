@@ -67,7 +67,7 @@ public final class ListForm extends Form implements CommandListener {
             reload(false).joinUI(2000);
         } catch (Exception ex) {
             //#debug
-            L.l.i("Initial RSS load exception", "", ex);
+            L.l.e("Initial RSS load exception", "", ex);
         }
         L.l.i("End start thread reload", "");
     }
@@ -115,7 +115,7 @@ public final class ListForm extends Form implements CommandListener {
             }
         } catch (Exception e) {
             //#debug
-            L.l.i("Can not read settings", "", e);
+            L.l.e("Can not read settings", "", e);
         }
         if ("".equals(feedUrl)) {
             feedUrl = RSSReader.INITIAL_FEED_URL;
