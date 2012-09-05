@@ -54,7 +54,7 @@ public class HttpGetter extends Task {
 
     public void exec() {
         //#debug
-        L.l.i(this.getClass().getName() + " start", url);
+        L.i(this.getClass().getName() + " start", url);
         ByteArrayOutputStream bos = null;
         HttpConnection httpConnection = null;
         InputStream inputStream = null;
@@ -74,7 +74,7 @@ public class HttpGetter extends Task {
             final long length = httpConnection.getLength();
             if (length > 0 && length < 1000000) {
                 //#debug
-                L.l.i(this.getClass().getName() + " start fixed_length read", url + " content_length=" + length);
+                L.i(this.getClass().getName() + " start fixed_length read", url + " content_length=" + length);
                 int bytesRead = 0;
                 bytes = new byte[(int) length];
                 while (bytesRead < bytes.length) {
@@ -83,13 +83,13 @@ public class HttpGetter extends Task {
                         bytesRead += br;
                     } else {
                         //#debug
-                        L.l.i(this.getClass().getName() + " recived EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
+                        L.i(this.getClass().getName() + " recived EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
                         break;
                     }
                 }
             } else {
                 //#debug
-                L.l.i(this.getClass().getName() + " start variable length read", url);
+                L.i(this.getClass().getName() + " start variable length read", url);
                 bos = new ByteArrayOutputStream();
                 byte[] readBuffer = new byte[16384];
                 while (true) {
@@ -106,27 +106,27 @@ public class HttpGetter extends Task {
             }
 
             //#debug
-            L.l.i(this.getClass().getName() + " complete", bytes.length + " bytes, " + url);
+            L.i(this.getClass().getName() + " complete", bytes.length + " bytes, " + url);
             task.set(bytes);
             success = true;
         } catch (IllegalArgumentException e) {
             //#debug
-            L.l.e(this.getClass().getName() + " has a problem", url, e);
+            L.e(this.getClass().getName() + " has a problem", url, e);
             bytes = null;
         } catch (IOException e) {
             //#debug
-            L.l.e(this.getClass().getName() + " retries remaining", url + ", retries=" + retriesRemaining, e);
+            L.e(this.getClass().getName() + " retries remaining", url + ", retries=" + retriesRemaining, e);
             bytes = null;
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
             } else {
                 //#debug
-                L.l.i(this.getClass().getName() + " no more retries", url);
+                L.i(this.getClass().getName() + " no more retries", url);
             }
         } catch (Exception e) {
             //#debug
-            L.l.e(this.getClass().getName() + " has a problem", url, e);
+            L.e(this.getClass().getName() + " has a problem", url, e);
             bytes = null;
         } finally {
             try {
@@ -166,7 +166,7 @@ public class HttpGetter extends Task {
                 task.cancel(false);
             }
             //#debug
-            L.l.i("End " + this.getClass().getName(), url);
+            L.i("End " + this.getClass().getName(), url);
         }
     }
 }

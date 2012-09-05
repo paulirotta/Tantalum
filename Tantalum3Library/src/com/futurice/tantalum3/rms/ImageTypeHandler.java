@@ -39,7 +39,7 @@ public final class ImageTypeHandler implements DataTypeHandler {
             }
         } catch (IllegalArgumentException e) {
             //#debug
-            L.l.e("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
+            L.e("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
             throw e;
         }
     }

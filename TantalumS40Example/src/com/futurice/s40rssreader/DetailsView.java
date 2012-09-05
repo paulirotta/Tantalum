@@ -64,7 +64,7 @@ public final class DetailsView extends View {
             }
         } catch (ConnectionNotFoundException ex) {
             //#debug
-            L.l.e("Can not open browser to URL", url, ex);
+            L.e("Can not open browser to URL", url, ex);
         }
     }
 

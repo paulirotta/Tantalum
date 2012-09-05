@@ -33,7 +33,7 @@ public class PoolingWeakHashCache extends WeakHashCache {
         synchronized (hash) {
             if (key == null) {
                 //#debug
-                L.l.i("PoolingWeakHashCache", "remove() with null key");
+                L.i("PoolingWeakHashCache", "remove() with null key");
                 return;
             }
             final WeakReference wr = (WeakReference) hash.get(key);
@@ -42,7 +42,7 @@ public class PoolingWeakHashCache extends WeakHashCache {
                 hash.remove(key);
                 if (wr.get() != null) {
                     //#debug
-                    L.l.i("Adding to pool", key.toString());
+                    L.i("Adding to pool", key.toString());
                     pool.addElement(wr);
                 }
             }

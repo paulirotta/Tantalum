@@ -93,7 +93,7 @@ public class DetailsForm extends Form implements ActionListener {
                     DetailsForm.this.repaint();
                 } catch (Exception ex) {
                     //#debug
-                    L.l.e("Can not get image for RSSItem", item.getThumbnail(), ex);
+                    L.e("Can not get image for RSSItem", item.getThumbnail(), ex);
                 }
             }
         });

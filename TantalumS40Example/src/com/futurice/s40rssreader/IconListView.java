@@ -44,7 +44,7 @@ public final class IconListView extends RSSListView {
             updateCommand = (Command) Class.forName("com.futurice.s40rssreader.UpdateIconCommand").newInstance();
             iconSupport = true;
         } catch (Throwable t) {
-            L.l.e("IconCommand not supported", "Update", t);
+            L.e("IconCommand not supported", "Update", t);
         }
     }
 
@@ -138,7 +138,7 @@ public final class IconListView extends RSSListView {
                         item.setLoadingImage(true);
                         if (item.getThumbnail() == null || item.getThumbnail().length() == 0) {
                             //#debug
-                            L.l.i("Trivial thumbnail link in RSS feed", item.getTitle());
+                            L.i("Trivial thumbnail link in RSS feed", item.getTitle());
                         } else {
                             DetailsView.imageCache.get(item.getThumbnail(), new Task() {
 
@@ -146,7 +146,7 @@ public final class IconListView extends RSSListView {
                                     super.set(o);
                                     try {
                                         //#debug
-                                        L.l.i("getIcon result", "" + o);
+                                        L.i("getIcon result", "" + o);
                                         item.setLoadingImage(false);
                                         Image icon = (Image) o;
                                         final int w = icon.getWidth();
@@ -168,7 +168,7 @@ public final class IconListView extends RSSListView {
                                         canvas.queueRepaint();
                                     } catch (Exception e) {
                                         //#debug
-                                        L.l.e("Problem with getIcon setResult", item.getThumbnail(), e);
+                                        L.e("Problem with getIcon setResult", item.getThumbnail(), e);
                                         cancel(false);
                                     }
                                 }
@@ -192,7 +192,7 @@ public final class IconListView extends RSSListView {
             renderScrollBar(g, totalHeight);
         } catch (Exception e) {
             //#debug
-            L.l.e("IconList Render error", modelCopy.toString(), e);
+            L.e("IconList Render error", modelCopy.toString(), e);
         }
     }
 

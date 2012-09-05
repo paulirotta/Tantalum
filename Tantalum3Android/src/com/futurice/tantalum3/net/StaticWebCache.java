@@ -51,7 +51,7 @@ public class StaticWebCache extends StaticCache {
              */
             @Override
             public boolean cancel(final boolean mayInterruptIfRunning) {
-                L.l.i("No result from cache get, shift to HTTP", url);
+                L.i("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Task() {
                     @Override
                     public void set(Object o) {
@@ -61,13 +61,13 @@ public class StaticWebCache extends StaticCache {
                                 if (o != null) {
                                     r.set(o);
                                     //#debug
-                                    L.l.i("END SAVE: After no result from cache get, shift to HTTP", url);
+                                    L.i("END SAVE: After no result from cache get, shift to HTTP", url);
                                 } else {
                                     r.cancel(false);
                                 }
                             }
                         } catch (Exception e) {
-                            L.l.e("Can not set result", url, e);
+                            L.e("Can not set result", url, e);
                             cancel(false);
                         }
                     }
@@ -99,7 +99,7 @@ public class StaticWebCache extends StaticCache {
                         return super.cancel(mayInterruptIfRunning);
                     }
                 } catch (Exception ex) {
-                    L.l.e("Cache can not re-get from net", url, ex);
+                    L.e("Cache can not re-get from net", url, ex);
                 }
                 
                 return false;
@@ -122,7 +122,7 @@ public class StaticWebCache extends StaticCache {
                     remove(url);
                     get(url, result);
                 } catch (Exception e) {
-                    L.l.e("Can not update", url, e);
+                    L.e("Can not update", url, e);
                 }
             }
         });
@@ -142,7 +142,7 @@ public class StaticWebCache extends StaticCache {
                     try {
                         get(url, null);
                     } catch (Exception e) {
-                        L.l.e("Can not prefetch", url, e);
+                        L.e("Can not prefetch", url, e);
                     }
                 }
             }, Worker.LOW_PRIORITY);

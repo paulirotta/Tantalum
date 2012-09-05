@@ -87,16 +87,16 @@ public abstract class Task implements Workable {
             case EXEC_PENDING:
                 if (Worker.tryUnfork(this)) {
                     //#debug
-                    L.l.i("Start join out-of-sequence exec() after unfork", this.toString());
+                    L.i("Start join out-of-sequence exec() after unfork", this.toString());
                     exec();
                     break;
                 }
             case EXEC_STARTED:
                 //#debug
-                L.l.i("Start join wait()", this.toString());
+                L.i("Start join wait()", this.toString());
                 this.wait(timeout);
                 //#debug
-                L.l.i("End join wait()", this.toString());
+                L.i("End join wait()", this.toString());
                 if (status == EXEC_STARTED) {
                     throw new TimeoutException();
                 }
@@ -122,13 +122,13 @@ public abstract class Task implements Workable {
 
         if (status < UI_RUN_FINISHED) {
             //#debug
-            L.l.i("Start joinUIThread wait()", this.toString());
+            L.i("Start joinUIThread wait()", this.toString());
             this.wait(timeout - (System.currentTimeMillis() - t));
             if (status < EXEC_STARTED) {
                 throw new TimeoutException();
             }
             //#debug
-            L.l.i("End joinUIThread wait()", this.toString());
+            L.i("End joinUIThread wait()", this.toString());
         }
 
         return result;

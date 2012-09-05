@@ -35,7 +35,7 @@ public class L {
      * @param tag name of the class logging this message
      * @param message message to i
      */
-    public final void i(final String tag, final String message) {
+    public static final void i(final String tag, final String message) {
         Log.i(LOG_TANTALUM, getMessage(tag, message));
     }
 
@@ -46,7 +46,7 @@ public class L {
      * @param message message to i
      * @param th throwable to i
      */
-    public final void e(final String tag, final String message, final Throwable th) {
+    public static final void e(final String tag, final String message, final Throwable th) {
         Log.e(LOG_TANTALUM, getMessage(tag, message) + ", EXCEPTION: " + th, th);
         if (th != null) {
             th.printStackTrace();
@@ -58,7 +58,7 @@ public class L {
      *
      * @return message string
      */
-    private String getMessage(final String tag, final String message) {
+    private static String getMessage(final String tag, final String message) {
         final long t = System.currentTimeMillis() - startTime;
         final StringBuffer sb = new StringBuffer(20 + tag.length() + message.length());
         final String millis = Long.toString(t % 1000);
@@ -84,7 +84,7 @@ public class L {
      * MIDlet.notifyDestoryed(). This is used by UsbLog.
      *
      */
-    public void shutdown() {
+    public static void shutdown() {
         Log.i(LOG_TANTALUM, "Tantalum log shutdown");
     }
 }

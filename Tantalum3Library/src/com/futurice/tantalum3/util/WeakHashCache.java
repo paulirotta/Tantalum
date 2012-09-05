@@ -50,12 +50,12 @@ public class WeakHashCache {
         synchronized (hash) {
             if (key == null) {
                 //#debug
-                L.l.i("WeakHash put", "key is null");
+                L.i("WeakHash put", "key is null");
                 return;
             }
             if (value == null) {
                 //#debug
-                L.l.i("WeakHash put", "value is null, key removed");
+                L.i("WeakHash put", "value is null, key removed");
                 hash.remove(key);
                 return;
             }
@@ -68,7 +68,7 @@ public class WeakHashCache {
             hash.remove(key);
         } else {
             //#debug
-            L.l.i("WeakHashCache", "remove() with null key");
+            L.i("WeakHashCache", "remove() with null key");
         }
     }
 
@@ -77,7 +77,7 @@ public class WeakHashCache {
             return hash.containsKey(key);
         } else {
             //#debug
-            L.l.i("WeakHashCache", "containsKey() with null key");
+            L.i("WeakHashCache", "containsKey() with null key");
             return false;
         }
     }

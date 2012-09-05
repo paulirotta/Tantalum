@@ -44,7 +44,7 @@ public final class SettingsForm extends TextBox implements CommandListener {
             try {
                 RMSUtils.write("settings", getString().getBytes());
             } catch (RecordStoreFullException ex) {
-                L.l.e("Can not write settings", "", ex);
+                L.e("Can not write settings", "", ex);
             }
             midlet.switchDisplayable(null, midlet.getList());
             midlet.getList().reload(true);

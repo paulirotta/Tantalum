@@ -42,9 +42,9 @@ public class ListModel extends DefaultListModel implements DataChangedListener, 
 
             return this;
         } catch (NullPointerException e) {
-            L.l.e("Null bytes when to RSSModel", "", e);
+            L.e("Null bytes when to RSSModel", "", e);
         } catch (Exception e) {
-            L.l.e("Error converting bytes to RSSModel", "", e);
+            L.e("Error converting bytes to RSSModel", "", e);
         }
         return null;
     }

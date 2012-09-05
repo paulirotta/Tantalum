@@ -84,7 +84,7 @@ public final class ImageUtils {
             if (widthIsMaxed) {
                 // No resize needed
                 //#debug
-                L.l.i("No image downscale needed", "(" + srcW + "," + srcH + ") -> (" + maxW + "," + maxH);
+                L.i("No image downscale needed", "(" + srcW + "," + srcH + ") -> (" + maxW + "," + maxH);
                 maxH = srcH;
                 return Image.createRGBImage(data, maxW, maxH, processAlpha);
             }

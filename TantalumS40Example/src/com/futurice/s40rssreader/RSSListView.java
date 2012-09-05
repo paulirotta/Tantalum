@@ -40,7 +40,7 @@ public abstract class RSSListView extends View {
                     return rssModel;
                 } catch (Exception e) {
                     //#debug
-                    L.l.i("Error in parsing XML", rssModel.toString());
+                    L.i("Error in parsing XML", rssModel.toString());
                     return null;
                 }
             }
@@ -54,7 +54,7 @@ public abstract class RSSListView extends View {
                     doClearCache();
                 } catch (Exception e) {
                     //#debug
-                    L.l.e("Can not clear cache", "", e);
+                    L.e("Can not clear cache", "", e);
                 }
             }
         }, Worker.HIGH_PRIORITY);

@@ -78,11 +78,11 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
                 return cursor.getBlob(0);
             }
         } catch (NullPointerException e) {
-            L.l.e("db not initialized, join then try again", "getData", e);
+            L.e("db not initialized, join then try again", "getData", e);
             try {
                 initTask.join(10000);
             } catch (Exception ex) {
-                L.l.e("db not initialized, join then try again problem", "getData", e);
+                L.e("db not initialized, join then try again problem", "getData", e);
             }
 
             return getData(key);
@@ -98,11 +98,11 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         try {
             db.insert(TABLE_NAME, null, values);
         } catch (NullPointerException e) {
-            L.l.e("db not initialized, join then try again", "putData", e);
+            L.e("db not initialized, join then try again", "putData", e);
             try {
                 initTask.join(10000);
             } catch (Exception ex) {
-                L.l.e("db not initialized, join then try again problem", "putData", e);
+                L.e("db not initialized, join then try again problem", "putData", e);
             }
             putData(key, data);
         }
@@ -114,11 +114,11 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         try {
             db.delete(TABLE_NAME, where, null);
         } catch (NullPointerException e) {
-            L.l.e("db not initialized, join then try again", "removeData", e);
+            L.e("db not initialized, join then try again", "removeData", e);
             try {
                 initTask.join(10000);
             } catch (Exception ex) {
-                L.l.e("db not initialized, join then try again problem", "removeData", e);
+                L.e("db not initialized, join then try again problem", "removeData", e);
             }
             removeData(key);
         }

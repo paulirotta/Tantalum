@@ -36,7 +36,7 @@ public final class ListForm extends Form implements CommandListener {
                 return rssModel;
             } catch (Exception e) {
                 //#debug
-                L.l.i("Error parsing XML", rssModel.toString());
+                L.i("Error parsing XML", rssModel.toString());
                 return null;
             }
         }
@@ -62,14 +62,14 @@ public final class ListForm extends Form implements CommandListener {
         addCommand(settingsCommand);
         setCommandListener(this);
         try {
-            L.l.i("Start start thread reload", "");
+            L.i("Start start thread reload", "");
             // Wait max 2sec for data load, parse and paint to make smooth startup UX
             reload(false).joinUI(2000);
         } catch (Exception ex) {
             //#debug
-            L.l.e("Initial RSS load exception", "", ex);
+            L.e("Initial RSS load exception", "", ex);
         }
-        L.l.i("End start thread reload", "");
+        L.i("End start thread reload", "");
     }
 
     public void commandAction(final Command command, final Displayable d) {
@@ -83,7 +83,7 @@ public final class ListForm extends Form implements CommandListener {
             try {
                 feedUrl = RMSUtils.read("settings").toString();
             } catch (Exception e) {
-                L.l.e("Can not read settings", "", e);
+                L.e("Can not read settings", "", e);
             }
             rssReader.getSettingsForm().setUrlValue(feedUrl);
             rssReader.switchDisplayable(null, rssReader.getSettingsForm());
@@ -115,7 +115,7 @@ public final class ListForm extends Form implements CommandListener {
             }
         } catch (Exception e) {
             //#debug
-            L.l.e("Can not read settings", "", e);
+            L.e("Can not read settings", "", e);
         }
         if ("".equals(feedUrl)) {
             feedUrl = RSSReader.INITIAL_FEED_URL;

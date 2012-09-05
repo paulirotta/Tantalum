@@ -54,7 +54,7 @@ public class HttpGetter extends Task {
 
     @Override
     public void exec() {
-        L.l.i("HttpGetter start", url);
+        L.i("HttpGetter start", url);
         ByteArrayOutputStream bos = null;
         HttpClient httpConnection;
         HttpResponse response;
@@ -74,7 +74,7 @@ public class HttpGetter extends Task {
             inputStream = response.getEntity().getContent();
             final long length = response.getEntity().getContentLength();
             if (length > 0 && length < 1000000) {
-                L.l.i("Start fixed_length read", url + " content_length="
+                L.i("Start fixed_length read", url + " content_length="
                         + length);
                 int bytesRead = 0;
                 bytes = new byte[(int) length];
@@ -84,14 +84,14 @@ public class HttpGetter extends Task {
                     if (br > 0) {
                         bytesRead += br;
                     } else {
-                        L.l.i("Recived EOF before content_length exceeded",
+                        L.i("Recived EOF before content_length exceeded",
                                 url + ", content_length=" + length
                                 + " bytes_read=" + bytesRead);
                         break;
                     }
                 }
             } else {
-                L.l.i("Start variable length read", url);
+                L.i("Start variable length read", url);
                 bos = new ByteArrayOutputStream();
                 byte[] readBuffer = new byte[16384];
                 while (true) {
@@ -106,15 +106,15 @@ public class HttpGetter extends Task {
                 result = bytes;
                 readBuffer = null;
             }
-            L.l.i("HttpGetter complete", bytes.length + " bytes, " + url);
+            L.i("HttpGetter complete", bytes.length + " bytes, " + url);
             task.set(bytes);
             success = true;
             bytes = null;
         } catch (IllegalArgumentException e) {
-            L.l.e("HttpGetter has a problem", url, e);
+            L.e("HttpGetter has a problem", url, e);
             bytes = null;
         } catch (IOException e) {
-            L.l.e("Retries remaining", url + ", retries="
+            L.e("Retries remaining", url + ", retries="
                     + retriesRemaining, e);
             bytes = null;
             if (retriesRemaining > 0) {
@@ -122,10 +122,10 @@ public class HttpGetter extends Task {
                 tryAgain = true;
             } else {
                 //#debug
-                L.l.i("HttpGetter no more retries", url);
+                L.i("HttpGetter no more retries", url);
             }
         } catch (Exception e) {
-            L.l.e("HttpGetter has a problem", url, e);
+            L.e("HttpGetter has a problem", url, e);
             bytes = null;
         } finally {
             try {
@@ -153,7 +153,7 @@ public class HttpGetter extends Task {
                 cancel(false);
                 task.cancel(false);
             }
-            L.l.i("End HttpGet", url);
+            L.i("End HttpGet", url);
         }
     }
 }

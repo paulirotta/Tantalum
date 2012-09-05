@@ -30,7 +30,7 @@ public final class ImageTypeHandler implements DataTypeHandler {
         try {
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         } catch (IllegalArgumentException e) {
-            L.l.e("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
+            L.e("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
             throw e;
         }
     }

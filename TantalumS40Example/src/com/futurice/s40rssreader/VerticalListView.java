@@ -35,7 +35,7 @@ public final class VerticalListView extends RSSListView {
             updateCommand = (Command) Class.forName("com.futurice.s40rssreader.UpdateIconCommand").newInstance();        
         } catch (Throwable t) {
             //#debug
-            L.l.e("IconCommand not supported", "Update", t);
+            L.e("IconCommand not supported", "Update", t);
         }
     }
 
@@ -118,7 +118,7 @@ public final class VerticalListView extends RSSListView {
             renderScrollBar(g, contentHeight);
         } catch (Exception e) {
             //#debug
-            L.l.e("VerticalList Render error", rssModel.toString(), e);
+            L.e("VerticalList Render error", rssModel.toString(), e);
         }
     }
 

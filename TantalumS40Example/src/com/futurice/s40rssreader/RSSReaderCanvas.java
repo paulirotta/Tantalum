@@ -63,7 +63,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
           tmp = new GestureInteractiveZone(
                 GestureInteractiveZone.GESTURE_ALL);
         } catch (Exception e){
-            L.l.e("Some gesture events not supported.", "", e);
+            L.e("Some gesture events not supported.", "", e);
              tmp = new GestureInteractiveZone(
                 GestureInteractiveZone.GESTURE_DRAG | 
                 GestureInteractiveZone.GESTURE_FLICK | 
@@ -79,7 +79,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
             Class.forName("com.futurice.s40rssreader.Orientator").newInstance();
         } catch (Throwable t) {
             //#debug
-            L.l.e("Orientation changes not supported", "", t);
+            L.e("Orientation changes not supported", "", t);
         }
         setCurrentView(listView);
     }
@@ -139,7 +139,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     public void showDetails(final RSSItem selectedItem, final int x) {
         if (selectedItem == null) {
             //#debug
-            L.l.i("Show details on null item", "Selected item has been cleared on another thread");
+            L.i("Show details on null item", "Selected item has been cleared on another thread");
             return;
         }
 //#ifndef Profile

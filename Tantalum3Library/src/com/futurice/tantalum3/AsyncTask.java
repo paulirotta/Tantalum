@@ -141,7 +141,7 @@ public abstract class AsyncTask extends Closure {
             }
         } catch (final Throwable t) {
             //#debug
-            L.l.e("Async task exception", this.toString(), t);
+            L.e("Async task exception", this.toString(), t);
             setStatus(EXCEPTION);
         }
     }

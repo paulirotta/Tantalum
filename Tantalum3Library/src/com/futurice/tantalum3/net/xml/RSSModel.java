@@ -47,7 +47,7 @@ public class RSSModel extends XMLModel {
             }
         } catch (Exception e) {
             //#debug
-            L.l.e("RSS parsing error", "qname=" + qName + " - chars=" + chars, e);
+            L.e("RSS parsing error", "qname=" + qName + " - chars=" + chars, e);
         }
     }
 

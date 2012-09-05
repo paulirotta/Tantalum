@@ -51,7 +51,7 @@ public class StaticWebCache extends StaticCache {
              */
             public boolean cancel(final boolean mayInterruptIfNeeded) {
                 //#debug
-                L.l.i("No result from cache get, shift to HTTP", url);
+                L.i("No result from cache get, shift to HTTP", url);
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Task() {
 
                     public void set(Object o) {
@@ -61,14 +61,14 @@ public class StaticWebCache extends StaticCache {
                                 if (o != null) {
                                     r.set(o);
                                     //#debug
-                                    L.l.i("END SAVE: After no result from cache get, shift to HTTP", url);
+                                    L.i("END SAVE: After no result from cache get, shift to HTTP", url);
                                 } else {
                                     r.cancel(false);
                                 }
                             }
                         } catch (Exception e) {
                             //#debug
-                            L.l.e("Can not set result", url, e);
+                            L.e("Can not set result", url, e);
                             cancel(false);
                         }
                     }
@@ -108,7 +108,7 @@ public class StaticWebCache extends StaticCache {
                     get(url, result);
                 } catch (Exception e) {
                     //#debug
-                    L.l.e("Can not update", url, e);
+                    L.e("Can not update", url, e);
                 }
             }
         }, Worker.HIGH_PRIORITY);
@@ -129,7 +129,7 @@ public class StaticWebCache extends StaticCache {
                         get(url, null);
                     } catch (Exception e) {
                         //#debug
-                        L.l.e("Can not prefetch", url, e);
+                        L.e("Can not prefetch", url, e);
                     }
                 }
             }, Worker.LOW_PRIORITY);

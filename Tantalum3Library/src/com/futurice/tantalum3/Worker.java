@@ -72,7 +72,7 @@ public final class Worker implements Runnable {
                     }
                 } catch (Exception e) {
                     //#debug
-                    L.l.e("Can not create worker", "i=" + i, e);
+                    L.e("Can not create worker", "i=" + i, e);
                 }
             }
         });
@@ -167,14 +167,14 @@ public final class Worker implements Runnable {
 
         synchronized (q) {
             //#debug
-            L.l.i("Unfork start", workable.toString());
+            L.i("Unfork start", workable.toString());
             success = q.removeElement(workable);
             int i = 0;
             while (!success && i < workers.length) {
                 success = workers[i++].serialQ.removeElement(workable);
             }
             //#debug
-            L.l.i("Unfork end", workable + " success=" + success);
+            L.i("Unfork end", workable + " success=" + success);
             q.notifyAll();
             
             return success;
@@ -249,7 +249,7 @@ public final class Worker implements Runnable {
                     timeRemaining = shutdownTimeout - System.currentTimeMillis();
                     if (timeRemaining <= 0) {
                         //#debug
-                        L.l.i("Worker blocked shutdown timeout", "");
+                        L.i("Worker blocked shutdown timeout", "");
                         break;
                     }
                     synchronized (q) {
@@ -260,7 +260,7 @@ public final class Worker implements Runnable {
         } catch (InterruptedException ex) {
         }
         //#debug
-        L.l.i("Shutdown exit", "workers=" + workerCount);
+        L.i("Shutdown exit", "workers=" + workerCount);
     }
 
     /**
@@ -308,8 +308,8 @@ public final class Worker implements Runnable {
                                 } else if (currentlyIdleCount >= workerCount) {
                                     // PHASE 2: Shutdown actions are all complete
                                     //#mdebug
-                                    L.l.i("notifyDestroyed", "");
-                                    L.l.shutdown();
+                                    L.i("notifyDestroyed", "");
+                                    L.shutdown();
                                     //#enddebug
                                     PlatformUtils.notifyDestroyed();
                                     break;
@@ -331,17 +331,17 @@ public final class Worker implements Runnable {
                     }
                 } catch (Exception e) {
                     //#debug
-                    L.l.e("Uncaught worker error", "workers=" + workerCount, e);
+                    L.e("Uncaught worker error", "workers=" + workerCount, e);
                 }
                 workable = null;
             }
         } catch (Throwable t) {
             //#debug
-            L.l.e("Worker error", "", t);
+            L.e("Worker error", "", t);
         } finally {
             --workerCount;
             //#debug
-            L.l.i("Worker stop", "workerCount=" + workerCount);
+            L.i("Worker stop", "workerCount=" + workerCount);
         }
     }
 }

@@ -122,12 +122,12 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
                 reloadTask.join(2000);
             } catch (TimeoutException ex) {
                 //#debug
-                L.l.e("Startup reload timeout", "This is normal if loading from the net", ex);
+                L.e("Startup reload timeout", "This is normal if loading from the net", ex);
             }
             switchDisplayable(null, canvas);
         } catch (Exception ex) {
             //#debug
-            L.l.e("Startup execption", "", ex);
+            L.e("Startup execption", "", ex);
             Worker.shutdown(false);
         }
     }
