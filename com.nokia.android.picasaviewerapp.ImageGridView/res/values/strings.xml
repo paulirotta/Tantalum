@@ -1,0 +1,13 @@
+<resources>
+
+    <string name="app_name">PicasaViewerApp</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_featured_view">Featured</string>
+    <string name="imageTitle">Title</string>
+    <string name="authorName">Author</string>
+    <string name="description">Description</string>
+    <string name="search">Search</string>
+    <string name="featured">Featured</string>
+
+</resources>
