@@ -34,32 +34,6 @@ public class StaticCache {
             return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
         }
     });
-    private static final Vector rmsWriteWorkables = new Vector();
-    private static final Workable writeAllPending = new Workable() {
-
-        public void exec() {
-            try {
-                Workable work;
-                while (!rmsWriteWorkables.isEmpty()) {
-                    synchronized (rmsWriteWorkables) {
-                        work = (Workable) rmsWriteWorkables.firstElement();
-                        rmsWriteWorkables.removeElementAt(0);
-                    }
-                    work.exec();
-                    if (!rmsWriteWorkables.isEmpty()) {
-                        try {
-                            // DEBUG TEST- be kind to slow phones, avoid crashes
-                            Thread.sleep(50);
-                        } catch (InterruptedException ex) {
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                //#debug
-                L.e("Can not write all pending", "", e);
-            }
-        }
-    };
     protected final WeakHashCache cache = new WeakHashCache();
     protected final LRUVector accessOrder = new LRUVector();
     protected final char priority; // Must be unique, preferrably and integer, larger characters get more space when space is limited
@@ -124,7 +98,8 @@ public class StaticCache {
         Object o = null;
 
         if (containsKey(key)) {
-//            L.i("StaticCache hit in RAM", key);
+            //#debug            
+            L.i("StaticCache hit in RAM", key);
             this.accessOrder.addElement(key);
             o = cache.get(key);
         }
@@ -179,7 +154,6 @@ public class StaticCache {
                     }
                 }
             };
-//            Worker.forkSerial(getWorkable, RMS_WORKER_INDEX);
             Worker.fork(getWorkable, Worker.HIGH_PRIORITY);
         }
     }
@@ -226,18 +200,6 @@ public class StaticCache {
         if (bytes == null) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
-//        rmsWriteWorkables.addElement(new Workable() {
-//
-//            public void exec() {
-//                try {
-//                    synchronousPutToRMS(key, bytes);
-//                } catch (Exception e) {
-//                    //#debug
-//                    L.i("Can not synch write to RMS", key, e);
-//                }
-//            }
-//        });
-//        Worker.forkSerial(writeAllPending, RMS_WORKER_INDEX);
         Worker.forkSerial(new Workable() {
 
             public void exec() {
