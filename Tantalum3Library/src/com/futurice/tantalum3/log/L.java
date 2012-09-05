@@ -9,34 +9,34 @@ package com.futurice.tantalum3.log;
  *
  * @author mark voit, paul houghton
  */
-public class Logg {
+public class L {
 
 //#if UsbDebug
-//#     public final static Logg l = new UsbLogg();
+//#     public final static L l = new UsbLog();
 //#else
-    public final static Logg l = new Logg();
+    public final static L l = new L();
 //#endif
     private static long startTime = System.currentTimeMillis();
 
     /**
-     * Logs given message.
+     * Logs an "information" message.
      *
      * @param tag name of the class logging this message
-     * @param message message to log
+     * @param message message to i
      */
-    public final void log(final String tag, final String message) {
+    public final void i(final String tag, final String message) {
         //#debug
         printMessage(getMessage(tag, message));
     }
 
     /**
-     * Logs given throwable and message.
+     * Logs an error message and throwable
      *
      * @param tag name of the class logging this message
-     * @param message message to log
-     * @param th throwable to log
+     * @param message message to i
+     * @param th throwable to i
      */
-    public final void log(final String tag, final String message, final Throwable th) {
+    public final void e(final String tag, final String message, final Throwable th) {
         //#mdebug
         printMessage(getMessage(tag, message) + ", EXCEPTION: " + th);
         if (th != null) {

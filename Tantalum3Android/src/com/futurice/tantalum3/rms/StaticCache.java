@@ -3,7 +3,7 @@ package com.futurice.tantalum3.rms;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.util.LRUVector;
 import com.futurice.tantalum3.util.SortedVector;
 import com.futurice.tantalum3.util.WeakHashCache;
@@ -55,7 +55,7 @@ public class StaticCache {
                     }
                 }
             } catch (Exception e) {
-                Logg.l.log("Can not write all pending", "", e);
+                L.l.e("Can not write all pending", "", e);
             }
         }
     };
@@ -109,12 +109,12 @@ public class StaticCache {
      */
     protected synchronized Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         //#debug
-        Logg.l.log("Start to convert", key);
+        L.l.i("Start to convert", key);
         final Object o = handler.convertToUseForm(bytes);
         accessOrder.addElement(key);
         cache.put(key, o);
         //#debug
-        Logg.l.log("End convert", key);
+        L.l.i("End convert", key);
 
         return o;
     }
@@ -123,7 +123,7 @@ public class StaticCache {
         Object o = null;
 
         if (containsKey(key)) {
-            // Logg.l.log("StaticCache hit in RAM", key);
+            // L.l.i("StaticCache hit in RAM", key);
             this.accessOrder.addElement(key);
             o = cache.get(key);
         }
@@ -133,14 +133,14 @@ public class StaticCache {
 
     public void get(final String key, final Task result) {
         if (key == null || key.length() == 0) {
-            Logg.l.log("Trivial get", "");
+            L.l.i("Trivial get", "");
             result.cancel(false);
             return;
         }
         final Object ho = synchronousRAMCacheGet(key);
 
         if (ho != null) {
-            Logg.l.log("RAM cache hit", "(" + priority + ") " + key);
+            L.l.i("RAM cache hit", "(" + priority + ") " + key);
             result.set(ho);
         } else {
             final Workable getWorkable = new Workable() {
@@ -150,14 +150,14 @@ public class StaticCache {
                         final Object o = synchronousGet(key);
 
                         if (o != null) {
-                            Logg.l.log("RMS cache hit", key);
+                            L.l.i("RMS cache hit", key);
                             result.set(o);
                         } else {
-                            Logg.l.log("RMS cache miss", key);
+                            L.l.i("RMS cache miss", key);
                             result.cancel(false);
                         }
                     } catch (Exception e) {
-                        Logg.l.log("Can not get", key, e);
+                        L.l.e("Can not get", key, e);
                     }
                 }
             };
@@ -175,7 +175,7 @@ public class StaticCache {
 
             if (bytes != null) {
                 //#debug
-                Logg.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
+                L.l.i("StaticCache hit in RMS", "(" + priority + ") " + key);
 
                 o = convertAndPutToHeapCache(key, bytes);
             }
@@ -197,7 +197,7 @@ public class StaticCache {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {
-                    Logg.l.log("Can not synch write to RMS", key, e);
+                    L.l.e("Can not synch write to RMS", key, e);
                 }
             }
         });
@@ -228,14 +228,14 @@ public class StaticCache {
         }
         try {
             do {
-                Logg.l.log("RMS cache write start", key + " (" + bytes.length + " bytes)");
+                L.l.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
                 this.database.putData(key, bytes);
-                Logg.l.log("RMS cache write end", key + " (" + bytes.length + " bytes)");
+                L.l.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
                 break;
 
             } while (true);
         } catch (Exception e) {
-            Logg.l.log("Couldn't store object to RMS", key, e);
+            L.l.e("Couldn't store object to RMS", key, e);
         }
     }
 
@@ -254,7 +254,7 @@ public class StaticCache {
          * int spaceCleared = 0; final Vector rsv =
          * RMSUtils.getCachedRecordStoreNames();
          * 
-         * // #debug Logg.l.log("Clearing RMS space", minSpaceToClear + "
+         * // #debug L.l.i("Clearing RMS space", minSpaceToClear + "
          * bytes");
          * 
          * // First: clear cached objects not currently appearing in any open
@@ -263,7 +263,7 @@ public class StaticCache {
          * getCacheContainingKey(key);
          * 
          * if (cache != null) { spaceCleared += getByteSizeByKey(key);
-         * cache.remove(key); } } // #debug Logg.l.log("End phase 1: clearing RMS
+         * cache.remove(key); } } // #debug L.l.i("End phase 1: clearing RMS
          * space", spaceCleared + " bytes recovered");
          * 
          * // Second: remove currently cached items, first from low priority
@@ -274,7 +274,7 @@ public class StaticCache {
          * while (!cache.accessOrder.isEmpty() && spaceCleared <
          * minSpaceToClear) { final String key = (String) cache.accessOrder
          * .removeLeastRecentlyUsed(); spaceCleared += getByteSizeByKey(key);
-         * cache.remove(key); } } } // #debug Logg.l.log("End phase 2: clearing
+         * cache.remove(key); } } } // #debug L.l.i("End phase 2: clearing
          * RMS space", spaceCleared + " bytes recovered (total)");
          * 
          * return spaceCleared >= minSpaceToClear;
@@ -286,7 +286,7 @@ public class StaticCache {
         int size = 0;
 
         // TODO: Write for android
-        Logg.l.log("Can not check size of record store to clear space", key);
+        L.l.i("Can not check size of record store to clear space", key);
 
         return size;
     }
@@ -306,15 +306,15 @@ public class StaticCache {
                     cache.remove(key);
                 }
                 this.database.removeData(key);
-                Logg.l.log("Cache remove (from RAM and RMS)", key);
+                L.l.i("Cache remove (from RAM and RMS)", key);
             }
         } catch (Exception e) {
-            Logg.l.log("Couldn't remove object from cache", key, e);
+            L.l.e("Couldn't remove object from cache", key, e);
         }
     }
 
     public void clear() {
-        Logg.l.log("Start Cache Clear", "ID=" + priority);
+        L.l.i("Start Cache Clear", "ID=" + priority);
         final String[] keys;
 
         synchronized (this) {
@@ -324,7 +324,7 @@ public class StaticCache {
         for (int i = 0; i < keys.length; i++) {
             remove(keys[i]);
         }
-        Logg.l.log("Cache cleared", "ID=" + priority);
+        L.l.i("Cache cleared", "ID=" + priority);
     }
 
     public synchronized boolean containsKey(final String key) {

@@ -4,7 +4,7 @@
  */
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.IconCommand;
 import com.nokia.mid.ui.orientation.Orientation;
@@ -41,7 +41,7 @@ public class UpdateIconCommand extends IconCommand {
             image = Image.createImage("/connect.png");
         } catch (Exception e) {
             //#debug
-            Logg.l.log("Can not initialize", "Update icon image", e);
+            L.l.e("Can not initialize", "Update icon image", e);
         }
     }
 

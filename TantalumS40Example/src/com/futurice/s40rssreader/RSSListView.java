@@ -7,7 +7,7 @@ package com.futurice.s40rssreader;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSModel;
 import com.futurice.tantalum3.rms.DataTypeHandler;
@@ -40,7 +40,7 @@ public abstract class RSSListView extends View {
                     return rssModel;
                 } catch (Exception e) {
                     //#debug
-                    Logg.l.log("Error in parsing XML", rssModel.toString());
+                    L.l.i("Error in parsing XML", rssModel.toString());
                     return null;
                 }
             }
@@ -54,7 +54,7 @@ public abstract class RSSListView extends View {
                     doClearCache();
                 } catch (Exception e) {
                     //#debug
-                    Logg.l.log("Can not clear cache", "", e);
+                    L.l.e("Can not clear cache", "", e);
                 }
             }
         }, Worker.HIGH_PRIORITY);

@@ -1,6 +1,6 @@
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.rms.RMSUtils;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
@@ -44,7 +44,7 @@ public final class SettingsForm extends TextBox implements CommandListener {
             try {
                 RMSUtils.write("settings", getString().getBytes());
             } catch (RecordStoreFullException ex) {
-                Logg.l.log("Can not write settings", "", ex);
+                L.l.e("Can not write settings", "", ex);
             }
             midlet.switchDisplayable(null, midlet.getList());
             midlet.getList().reload(true);

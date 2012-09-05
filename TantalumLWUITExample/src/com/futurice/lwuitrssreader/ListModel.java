@@ -4,7 +4,7 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.xml.RSSModel;
 import com.futurice.tantalum3.rms.DataTypeHandler;
 import com.sun.lwuit.events.DataChangedListener;
@@ -42,9 +42,9 @@ public class ListModel extends DefaultListModel implements DataChangedListener, 
 
             return this;
         } catch (NullPointerException e) {
-            Logg.l.log("Null bytes when to RSSModel", "", e);
+            L.l.e("Null bytes when to RSSModel", "", e);
         } catch (Exception e) {
-            Logg.l.log("Error converting bytes to RSSModel", "", e);
+            L.l.e("Error converting bytes to RSSModel", "", e);
         }
         return null;
     }

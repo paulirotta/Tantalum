@@ -4,7 +4,7 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.rms.DataTypeHandler;
 import com.sun.lwuit.Image;
 
@@ -18,7 +18,7 @@ public final class LWUITImageTypeHandler implements DataTypeHandler {
         try {
             return Image.createImage(bytes, 0, bytes.length);
         } catch (Exception e) {
-            Logg.l.log("Error converting bytes to LWUIT image", bytes == null ? "" : "" + bytes.length, e);
+            L.l.e("Error converting bytes to LWUIT image", bytes == null ? "" : "" + bytes.length, e);
         }
 
         return null;

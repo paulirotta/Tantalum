@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.util;
 
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import java.lang.ref.WeakReference;
 import java.util.Vector;
 
@@ -33,7 +33,7 @@ public class PoolingWeakHashCache extends WeakHashCache {
         synchronized (hash) {
             if (key == null) {
                 //#debug
-                Logg.l.log("PoolingWeakHashCache", "remove() with null key");
+                L.l.i("PoolingWeakHashCache", "remove() with null key");
                 return;
             }
             final WeakReference wr = (WeakReference) hash.get(key);
@@ -42,7 +42,7 @@ public class PoolingWeakHashCache extends WeakHashCache {
                 hash.remove(key);
                 if (wr.get() != null) {
                     //#debug
-                    Logg.l.log("Adding to pool", key.toString());
+                    L.l.i("Adding to pool", key.toString());
                     pool.addElement(wr);
                 }
             }

@@ -3,7 +3,7 @@ package com.futurice.tantalum3.rms;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.util.LRUVector;
 import com.futurice.tantalum3.util.SortedVector;
 import com.futurice.tantalum3.util.WeakHashCache;
@@ -56,7 +56,7 @@ public class StaticCache {
                 }
             } catch (Exception e) {
                 //#debug
-                Logg.l.log("Can not write all pending", "", e);
+                L.l.e("Can not write all pending", "", e);
             }
         }
     };
@@ -104,12 +104,12 @@ public class StaticCache {
      */
     protected synchronized Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         //#debug
-        Logg.l.log("Start to convert", key);
+        L.l.i("Start to convert", key);
         final Object o = handler.convertToUseForm(bytes);
         accessOrder.addElement(key);
         cache.put(key, o);
         //#debug
-        Logg.l.log("End convert", key);
+        L.l.i("End convert", key);
 
         return o;
     }
@@ -124,7 +124,7 @@ public class StaticCache {
         Object o = null;
 
         if (containsKey(key)) {
-//            Logg.l.log("StaticCache hit in RAM", key);
+//            L.l.i("StaticCache hit in RAM", key);
             this.accessOrder.addElement(key);
             o = cache.get(key);
         }
@@ -147,7 +147,7 @@ public class StaticCache {
     public void get(final String key, final Task result) {
         if (key == null || key.length() == 0) {
             //#debug
-            Logg.l.log("Trivial get", "");
+            L.l.i("Trivial get", "");
             result.cancel(false);
             return;
         }
@@ -155,7 +155,7 @@ public class StaticCache {
 
         if (ho != null) {
             //#debug
-            Logg.l.log("RAM cache hit", "(" + priority + ") " + key);
+            L.l.i("RAM cache hit", "(" + priority + ") " + key);
             result.set(ho);
         } else {
             final Workable getWorkable = new Workable() {
@@ -166,16 +166,16 @@ public class StaticCache {
 
                         if (o != null) {
                             //#debug
-                            Logg.l.log("RMS cache hit", key);
+                            L.l.i("RMS cache hit", key);
                             result.set(o);
                         } else {
                             //#debug
-                            Logg.l.log("RMS cache miss", key);
+                            L.l.i("RMS cache miss", key);
                             result.cancel(false);
                         }
                     } catch (Exception e) {
                         //#debug
-                        Logg.l.log("Can not get", key, e);
+                        L.l.e("Can not get", key, e);
                     }
                 }
             };
@@ -193,7 +193,7 @@ public class StaticCache {
 
             if (bytes != null) {
                 //#debug
-                Logg.l.log("StaticCache hit in RMS", "(" + priority + ") " + key);
+                L.l.i("StaticCache hit in RMS", "(" + priority + ") " + key);
 
                 o = convertAndPutToHeapCache(key, bytes);
             }
@@ -233,7 +233,7 @@ public class StaticCache {
 //                    synchronousPutToRMS(key, bytes);
 //                } catch (Exception e) {
 //                    //#debug
-//                    Logg.l.log("Can not synch write to RMS", key, e);
+//                    L.l.i("Can not synch write to RMS", key, e);
 //                }
 //            }
 //        });
@@ -245,7 +245,7 @@ public class StaticCache {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {
                     //#debug
-                    Logg.l.log("Can not synch write to RMS", key, e);
+                    L.l.e("Can not synch write to RMS", key, e);
                 }
             }
         }, RMS_WORKER_INDEX);
@@ -277,23 +277,23 @@ public class StaticCache {
             do {
                 try {
                     //#debug
-                    Logg.l.log("RMS cache write start", key + " (" + bytes.length + " bytes)");
+                    L.l.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
                     RMSUtils.cacheWrite(key, bytes);
                     //#debug
-                    Logg.l.log("RMS cache write end", key + " (" + bytes.length + " bytes)");
+                    L.l.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
                     break;
                 } catch (RecordStoreFullException ex) {
                     //#debug
-                    Logg.l.log("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
+                    L.l.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
                     if (!clearSpace(bytes.length)) {
                         //#debug
-                        Logg.l.log("Can not clear enough space for data, ABORTING", key);
+                        L.l.i("Can not clear enough space for data, ABORTING", key);
                     }
                 }
             } while (true);
         } catch (Exception e) {
             //#debug
-            Logg.l.log("Couldn't store object to RMS", key, e);
+            L.l.e("Couldn't store object to RMS", key, e);
         }
     }
 
@@ -309,7 +309,7 @@ public class StaticCache {
         final Vector rsv = RMSUtils.getCachedRecordStoreNames();
 
         //#debug
-        Logg.l.log("Clearing RMS space", minSpaceToClear + " bytes");
+        L.l.i("Clearing RMS space", minSpaceToClear + " bytes");
 
         // First: clear cached objects not currently appearing in any open cache
         for (int i = rsv.size() - 1; i >= 0; i--) {
@@ -322,7 +322,7 @@ public class StaticCache {
             }
         }
         //#debug
-        Logg.l.log("End phase 1: clearing RMS space", spaceCleared + " bytes recovered");
+        L.l.i("End phase 1: clearing RMS space", spaceCleared + " bytes recovered");
 
         // Second: remove currently cached items, first from low priority caches
         while (spaceCleared < minSpaceToClear && rsv.size() > 0) {
@@ -337,7 +337,7 @@ public class StaticCache {
             }
         }
         //#debug
-        Logg.l.log("End phase 2: clearing RMS space", spaceCleared + " bytes recovered (total)");
+        L.l.i("End phase 2: clearing RMS space", spaceCleared + " bytes recovered (total)");
 
         return spaceCleared >= minSpaceToClear;
     }
@@ -350,7 +350,7 @@ public class StaticCache {
             size = rs.getSize();
         } catch (RecordStoreException ex) {
             //#debug
-            Logg.l.log("Can not check size of record store to clear space", key, ex);
+            L.l.e("Can not check size of record store to clear space", key, ex);
         }
 
         return size;
@@ -388,11 +388,11 @@ public class StaticCache {
                 }
                 RMSUtils.cacheDelete(key);
                 //#debug
-                Logg.l.log("Cache remove (from RAM and RMS)", key);
+                L.l.i("Cache remove (from RAM and RMS)", key);
             }
         } catch (Exception e) {
             //#debug
-            Logg.l.log("Couldn't remove object from cache", key, e);
+            L.l.e("Couldn't remove object from cache", key, e);
         }
     }
 
@@ -402,7 +402,7 @@ public class StaticCache {
      */
     public void clear() {
         //#debug
-        Logg.l.log("Start Cache Clear", "ID=" + priority);
+        L.l.i("Start Cache Clear", "ID=" + priority);
         final String[] keys;
         
         synchronized (this) {
@@ -413,7 +413,7 @@ public class StaticCache {
             remove(keys[i]);
         }
         //#debug
-        Logg.l.log("Cache cleared", "ID=" + priority);
+        L.l.i("Cache cleared", "ID=" + priority);
     }
 
     /**

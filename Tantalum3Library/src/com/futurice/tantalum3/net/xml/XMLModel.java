@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.net.xml;
 
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import javax.xml.parsers.SAXParserFactory;
@@ -40,17 +40,17 @@ public abstract class XMLModel extends DefaultHandler {
 
         try {
             //#debug
-            Logg.l.log("Start parse", "length=" + xml.length);
+            L.l.i("Start parse", "length=" + xml.length);
             SAXParserFactory.newInstance().newSAXParser().parse(in, this);
             //#debug
-            Logg.l.log("End parse", "length=" + xml.length);
+            L.l.i("End parse", "length=" + xml.length);
         } catch (SAXException t) {
             //#debug
-            Logg.l.log("SAX Parse error", new String(xml), t);
+            L.l.e("SAX Parse error", new String(xml), t);
             throw t;
         } catch (Throwable t) {
             //#debug
-            Logg.l.log("Parse error", "", t);
+            L.l.e("Parse error", "", t);
         } finally {
             try {
                 in.close();

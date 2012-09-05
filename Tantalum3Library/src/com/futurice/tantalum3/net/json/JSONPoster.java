@@ -5,7 +5,7 @@
 package com.futurice.tantalum3.net.json;
 
 import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpPoster;
 
 /**
@@ -38,7 +38,7 @@ public abstract class JSONPoster extends HttpPoster {
             task.set(value);
         } catch (Exception e) {
             //#debug
-            Logg.l.log("JSONPoster HTTP response problem", this.getUrl() + " : " + value, e);
+            L.l.e("JSONPoster HTTP response problem", this.getUrl() + " : " + value, e);
             cancel(false);
             task.cancel(false);
         }

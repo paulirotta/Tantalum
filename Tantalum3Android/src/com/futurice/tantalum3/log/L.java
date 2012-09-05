@@ -7,32 +7,46 @@ package com.futurice.tantalum3.log;
 import android.util.Log;
 
 /**
- *
+ * Log utilities
+ * 
+ * On J2ME, System.out to the console is written on a dedicated
+ * thread to minimize performance impact of logging in critical
+ * code sections.
+ * 
+ * If the project profile is "UsbLog", output is to the phone's
+ * com port and can be viewed with a terminal emulator such as
+ * puttytel. Check the serial port details with the phone connected
+ * in Control Panel - System - Device Manager - Serial Ports and
+ * copy those settings (128000 baud 8N1 hardware flow control) to
+ * your puttytel session.
+ * 
+ * On Android, the standard i is used under tag "Tantalum"
+ * 
  * @author phou
  */
-public class Logg {
-    public static final String LOG_TANTALUM = "Tantalum"; // Android debug log key
+public class L {
+    public static final String LOG_TANTALUM = "Tantalum"; // Android debug i key
     private static long startTime = System.currentTimeMillis();
-    public final static Logg l = new Logg();
+    public final static L l = new L();
 
     /**
-     * Logs given message.
+     * Logs an "information" message.
      *
      * @param tag name of the class logging this message
-     * @param message message to log
+     * @param message message to i
      */
-    public final void log(final String tag, final String message) {
+    public final void i(final String tag, final String message) {
         Log.i(LOG_TANTALUM, getMessage(tag, message));
     }
 
     /**
-     * Logs given throwable and message.
+     * Logs an error message and throwable.
      *
      * @param tag name of the class logging this message
-     * @param message message to log
-     * @param th throwable to log
+     * @param message message to i
+     * @param th throwable to i
      */
-    public final void log(final String tag, final String message, final Throwable th) {
+    public final void e(final String tag, final String message, final Throwable th) {
         Log.e(LOG_TANTALUM, getMessage(tag, message) + ", EXCEPTION: " + th, th);
         if (th != null) {
             th.printStackTrace();

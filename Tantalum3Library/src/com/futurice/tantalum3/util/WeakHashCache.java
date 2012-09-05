@@ -5,7 +5,7 @@
  */
 package com.futurice.tantalum3.util;
 
-import com.futurice.tantalum3.log.Logg;
+import com.futurice.tantalum3.log.L;
 import java.lang.ref.WeakReference;
 import java.util.Hashtable;
 
@@ -50,12 +50,12 @@ public class WeakHashCache {
         synchronized (hash) {
             if (key == null) {
                 //#debug
-                Logg.l.log("WeakHash put", "key is null");
+                L.l.i("WeakHash put", "key is null");
                 return;
             }
             if (value == null) {
                 //#debug
-                Logg.l.log("WeakHash put", "value is null, key removed");
+                L.l.i("WeakHash put", "value is null, key removed");
                 hash.remove(key);
                 return;
             }
@@ -68,7 +68,7 @@ public class WeakHashCache {
             hash.remove(key);
         } else {
             //#debug
-            Logg.l.log("WeakHashCache", "remove() with null key");
+            L.l.i("WeakHashCache", "remove() with null key");
         }
     }
 
@@ -77,7 +77,7 @@ public class WeakHashCache {
             return hash.containsKey(key);
         } else {
             //#debug
-            Logg.l.log("WeakHashCache", "containsKey() with null key");
+            L.l.i("WeakHashCache", "containsKey() with null key");
             return false;
         }
     }
