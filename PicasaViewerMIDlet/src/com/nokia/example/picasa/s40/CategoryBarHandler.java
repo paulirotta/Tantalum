@@ -5,6 +5,7 @@
 package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.Worker;
+import com.futurice.tantalum3.log.L;
 import com.nokia.mid.ui.CategoryBar;
 import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.ElementListener;
@@ -19,7 +20,7 @@ import javax.microedition.lcdui.Image;
  */
 public final class CategoryBarHandler implements ElementListener {
 
-    private PicasaViewer midlet;
+    private static PicasaViewer midlet;
     private int previousCategoryIndex = 0;
     private CategoryBar categoryBar;
     private IconCommand featured;
@@ -30,12 +31,16 @@ public final class CategoryBarHandler implements ElementListener {
             Image homeImg = Image.createImage("/home.png");
             featured = new IconCommand("Home", "Home View", homeImg, drawMaskedImage(homeImg), IconCommand.SCREEN, 1);
         } catch (IOException e) {
+            //#debug
+            L.e("category bar handler init", "Can not create home icon", e);
             featured = new IconCommand("Home", "Home View", IconCommand.SCREEN, 1, IconCommand.ICON_OK);
         }
         try {
             Image searchImg = Image.createImage("/search.png");
             search = new IconCommand("Search", "Search View", searchImg, drawMaskedImage(searchImg), IconCommand.SCREEN, 1);
         } catch (IOException e) {
+            //#debug
+            L.e("category bar handler init", "Can not create search icon", e);
             search = new IconCommand("Search", "Search View", IconCommand.SCREEN, 1, IconCommand.ICON_OK);
         }
         final IconCommand[] iconCommands = {featured, search};
@@ -44,8 +49,8 @@ public final class CategoryBarHandler implements ElementListener {
         categoryBar.setElementListener(this);
     }
     
-    public void setMidlet(final PicasaViewer midlet) {
-        this.midlet = midlet;
+    public static void setMidlet(final PicasaViewer midlet) {
+        CategoryBarHandler.midlet = midlet;
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.nokia.example.picasa.s40;
 
+import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.TantalumMIDlet;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
@@ -32,14 +33,6 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
 
     public PicasaViewer() {
         super(4);
-
-        try {
-            categoryBarHandler = (CategoryBarHandler) Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler").newInstance();
-            categoryBarHandler.setMidlet(this);
-        } catch (Throwable e) {
-            //#debug
-            L.i("Can not set category bar handler", "normal before SDK 2.0");
-        }
     }
 
     public void startApp() {
@@ -55,23 +48,36 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
             featuredView.setCommandListener(this);
         }
         Display.getDisplay(this).setCurrent(featuredView);
-        if (categoryBarHandler == null) {
-            try {
-                /*
-                 * Fallback when there is no category bar (Nokia SDK 1.1 and earlier)
-                 */
-                otherViewInitTask.join(5000); // Wait up to 5 seconds for views to initialize
-                detailedView.addCommand(backCommand);
-                detailedView.setCommandListener(this);
-                searchView.addCommand(featuredCommand);
-                searchView.setCommandListener(this);
-                searchView.addCommand(backCommand2);
-                searchView.setCommandListener(this);
-            } catch (Exception ex) {
-                //#debug
-                L.e("Can not fallback to command init on other views", "", ex);
+        PlatformUtils.runOnUiThread(new Runnable() {
+            public void run() {
+                try {
+                    final Class cbc = Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler");
+                    CategoryBarHandler.setMidlet(PicasaViewer.this);
+//                    categoryBarHandler = new CategoryBarHandler();
+                    categoryBarHandler = (CategoryBarHandler) cbc.newInstance();
+                } catch (Throwable e) {
+                    //#debug
+                    L.e("Can not set category bar handler", "normal before SDK 2.0", e);
+                }
+                if (categoryBarHandler == null) {
+                    try {
+                        /*
+                         * Fallback when there is no category bar (Nokia SDK 1.1 and earlier)
+                         */
+                        otherViewInitTask.join(5000); // Wait up to 5 seconds for views to initialize
+                        detailedView.addCommand(backCommand);
+                        detailedView.setCommandListener(PicasaViewer.this);
+                        searchView.addCommand(featuredCommand);
+                        searchView.setCommandListener(PicasaViewer.this);
+                        searchView.addCommand(backCommand2);
+                        searchView.setCommandListener(PicasaViewer.this);
+                    } catch (Exception ex) {
+                        //#debug
+                        L.e("Can not fallback to command init on other views", "", ex);
+                    }
+                }
             }
-        }
+        });
     }
 
     public void setDetailed() {
