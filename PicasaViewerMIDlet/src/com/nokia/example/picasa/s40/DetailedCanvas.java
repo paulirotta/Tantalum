@@ -21,7 +21,6 @@ public final class DetailedCanvas extends GestureCanvas {
     private static final int SPIN_SPEED = 100; // ms per animation frame
     private long spinAnimationStartTime = System.currentTimeMillis();
     private volatile Image image;
-    private Image backIcon;
     private static final int iconSide = 43;
     private int startDot;
     private double angle;
@@ -36,21 +35,13 @@ public final class DetailedCanvas extends GestureCanvas {
     private final int width;
     private Vector titleLines;
     private int textY = 0;
-//    private final int height;
     private int bottom = 0;
 
     public DetailedCanvas(final PicasaViewer midlet) {
         super(midlet);
 
         width = getWidth();
-//        height = getHeight();
-
-        try {
-            backIcon = Image.createImage("/back.png");
-        } catch (IOException e) {
-            //#debug
-            L.e("Can not create back icon", null, e);
-        }
+        this.setFullScreenMode(true);
     }
 
     public void paint(final Graphics g) {
@@ -100,15 +91,12 @@ public final class DetailedCanvas extends GestureCanvas {
 
             g.drawString(Storage.selectedImage.getAuthor(), PADDING, textY, Graphics.LEFT | Graphics.TOP);
         }
-        if (backIcon != null) {
-            g.drawImage(backIcon, getWidth(), getHeight(), Graphics.BOTTOM | Graphics.RIGHT);
-        }
+        drawBackIcon(g);
     }
 
     public void showNotify() {
         XC = getWidth() / 2;
-        this.setFullScreenMode(true);
-
+ 
         // Show statusbar
         try {
             LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", Boolean.TRUE);
@@ -148,7 +136,6 @@ public final class DetailedCanvas extends GestureCanvas {
         startDot++;
         startDot = startDot % dots;
     }
-
 //    public void gestureFlick(int startX, int startY, float flickDirection, int flickSpeed, int flickSpeedX, int flickSpeedY) {
 //        gestureHandler.kineticScroll(flickSpeed, GestureHandler.FRAME_ANIMATOR_VERTICAL, friction, flickDirection);
 //    }

@@ -59,7 +59,9 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public void showNotify() {
-        this.setFullScreenMode(true);
+        if (midlet.phoneSupportsCategoryBar()) {
+            this.setFullScreenMode(true);
+        }
 
         // Show statusbar
         try {
@@ -120,11 +122,15 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             int centerChangeX,
             int centerChangeY) {
         // Pinch to reload
+        refresh();
+    }
+    
+    public void refresh() {
         imageObjects.removeAllElements();
         scrollY = 0;
         top = getHeight();
         loadFeed(this instanceof SearchCanvas, true);
-        repaint();
+        repaint();        
     }
 
     public void gestureTap(int startX, int startY) {

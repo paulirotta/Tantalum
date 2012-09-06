@@ -5,9 +5,12 @@
 package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.log.L;
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.Image;
 
 /**
  * A helper for creating gesture-based UIs that also work on older S40 phones
@@ -16,14 +19,24 @@ import javax.microedition.lcdui.Canvas;
  */
 public abstract class GestureCanvas extends Canvas {
 
-    private final Timer spinTimer = new Timer();
-    private TimerTask spinTimerTask = null; // Access within synchronized blocks only
+    protected static Image backIcon;
+    private static final Timer spinTimer = new Timer();
+    private static TimerTask spinTimerTask = null; // Access within synchronized blocks only
     private long spinTimerDelay;
     protected int friction = GestureHandler.FRAME_ANIMATOR_FRICTION_LOW;
     protected final PicasaViewer midlet;
     protected GestureHandler gestureHandler = null;
     protected int scrollY = 0;
     protected int top = getHeight();
+
+    static {
+        try {
+            backIcon = Image.createImage("/back.png");
+        } catch (IOException e) {
+            //#debug
+            L.e("Can not create back icon", null, e);
+        }
+    }
 
     public GestureCanvas(final PicasaViewer midlet) {
         this.midlet = midlet;
@@ -210,8 +223,12 @@ public abstract class GestureCanvas extends Canvas {
 //            scrollY = 0;
 ////            gestureHandler.stopAnimation();
 //        } else {
-            scrollY = -y;
+        scrollY = -y;
 //        }
         repaint();
+    }
+
+    protected void drawBackIcon(final Graphics g) {
+        g.drawImage(backIcon, getWidth(), getHeight(), Graphics.BOTTOM | Graphics.RIGHT);
     }
 }
