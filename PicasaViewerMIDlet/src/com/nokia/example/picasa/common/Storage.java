@@ -42,7 +42,7 @@ public class Storage {
      * used to determine how large thumbnails should be.
      *
      */
-    public static void init(int width) {
+    public static synchronized void init(final int width) {
         if (feedCache == null) {
             screenWidth = width;
             if (screenWidth < 256) {
@@ -58,7 +58,6 @@ public class Storage {
 
             feedCache = new StaticWebCache('5', new ImageObjectTypeHandler());
 
-
             thumbSize = imageSide + "c"; // c is for cropped, ensures image proportions
 
             urlOptions = "?alt=json&kind=photo&max-results=" + NR_OF_FEATURED + "&thumbsize=" + thumbSize
@@ -69,9 +68,9 @@ public class Storage {
     }
 
     //If we do not know the width of the screen, use a sensible default.
-    public static void init() {
-        init(256);
-    }
+//    public static void init() {
+//        init(256);
+//    }
 
     public static int getWidth() {
         return screenWidth;
@@ -79,9 +78,9 @@ public class Storage {
 
     /**
      * Tell Tantalum to fetch the ImageObjects
-     * 
+     *
      * @param closure - RunnableResult to be ran in the UI thread
-     * @param fromWeb -  True to force fetch from web
+     * @param fromWeb - True to force fetch from web
      */
     public static void getImageObjects(final Closure closure, final boolean search, final boolean fromWeb) {
         final String url = search ? searchURL : featURL;
@@ -94,37 +93,38 @@ public class Storage {
     }
 
     /**
-     * Class for converting the JSON response in to a Vector of ImageObject-objects.
-     * The vector is saved by Tantalum.
+     * Class for converting the JSON response in to a Vector of
+     * ImageObject-objects. The vector is saved by Tantalum.
      */
     private static class ImageObjectTypeHandler implements DataTypeHandler {
 
         public Object convertToUseForm(byte[] bytes) {
             JSONObject o;
-            Vector vector = new Vector();
+            final Vector vector = new Vector();
+            
             try {
                 o = new JSONObject(new String(bytes));
             } catch (JSONException ex) {
                 //#debug
-                ex.printStackTrace();
+                L.e("bytes are not a JSON object", featURL, ex);
                 return null;
             }
 
             if (o != null) {
                 JSONArray entries = new JSONArray();
                 try {
-                    JSONObject feed = ((JSONObject) o).getJSONObject("feed");
+                    final JSONObject feed = ((JSONObject) o).getJSONObject("feed");
                     entries = feed.getJSONArray("entry");
                 } catch (JSONException e) {
                     vector.addElement(new ImageObject("No Results", "", "", ""));
-                    
+
                     //#debug
-                    e.printStackTrace();
+                    L.e("JSON no result", featURL, e);
                 }
 
                 for (int i = 0; i < entries.length(); i++) {
                     try {
-                        JSONObject m = entries.getJSONObject(i);
+                        final JSONObject m = entries.getJSONObject(i);
                         String title = m.getJSONObject("title").getString("$t");
                         String author = m.getJSONArray("author").getJSONObject(0).getJSONObject("name").getString("$t");
                         String thumbUrl = m.getJSONObject("media$group").getJSONArray("media$thumbnail").getJSONObject(0).getString("url");
@@ -138,7 +138,7 @@ public class Storage {
                         vector.addElement(new ImageObject(title, author, thumbUrl, imageUrl));
                     } catch (JSONException e) {
                         //#debug
-                        e.printStackTrace();
+                        L.e("JSON item parse error", featURL, e);
                     }
                 }
                 if (entries.length() == 0) {

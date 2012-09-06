@@ -93,7 +93,7 @@ public final class SearchCanvas extends ImageGridCanvas {
 
                 imageObjects.removeAllElements();
                 disableKeyboard();
-                canvasY = 0;
+                scrollY = 0;
                 loadFeed(true, true);
                 repaint();
                 //Text Input

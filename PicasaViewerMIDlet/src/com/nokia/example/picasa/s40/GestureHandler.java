@@ -68,7 +68,7 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
                 break;
 
             case GestureInteractiveZone.GESTURE_DRAG:
-                canvas.gestureDrag(ge.getStartX(), ge.getStartY(), ge.getDragDistanceX(), ge.getDragDistanceY());
+                canvas.gestureDrag(ge.getStartX(), canvas.getScrollY(), ge.getDragDistanceX(), ge.getDragDistanceY());
                 break;
 
             case GestureInteractiveZone.GESTURE_DROP:
@@ -76,7 +76,7 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
                 break;
 
             case GestureInteractiveZone.GESTURE_FLICK:
-                canvas.gestureFlick(ge.getStartX(), ge.getStartY(), ge.getFlickDirection(), ge.getFlickSpeed(), ge.getFlickSpeedX(), ge.getFlickSpeedY());
+                canvas.gestureFlick(ge.getStartX(), canvas.getScrollY(), ge.getFlickDirection(), ge.getFlickSpeed(), ge.getFlickSpeedX(), ge.getFlickSpeedY());
                 break;
 
             default:
@@ -93,7 +93,7 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
     public void animateDrag(final int x, final int y) {
         //#debug
         L.i(L.class.getName(), "animate drag, y=" + y);
-        animator.drag(x, y);
+        animator.drag(x, -y);
     }
 
     public void kineticScroll(final int startSpeed, final int direction, final int friction, final float angle) {

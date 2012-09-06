@@ -19,7 +19,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
     protected final Hashtable images = new Hashtable();
     protected Vector imageObjects = new Vector(); // Access only from UI thread
-    protected int canvasY = 0;
     protected final int imageSide;
     protected int headerHeight;
     private int startDot;
@@ -41,8 +40,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         XC = imageSide;
         YC = getHeight() / 2;
         angle = 0;
-
-        Storage.init(getWidth()); // Initialize storage with display width.
     }
 
     public void loadFeed(final boolean search, final boolean fromWeb) {
@@ -50,6 +47,8 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             public void run() {
                 try {
                     imageObjects = (Vector) get();
+                    top = -((imageObjects.size() * imageSide) / 2 - getHeight() / 2);
+
                     repaint();
                 } catch (Exception ex) {
                     //#debug
@@ -83,7 +82,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         } else {
             for (int i = 0; i < imageObjects.size(); i++) {
                 int xPosition = i % 2 * (getWidth() / 2);
-                int yPosition = startY + canvasY + ((i - i % 2) / 2) * imageSide;
+                int yPosition = startY + scrollY + ((i - i % 2) / 2) * imageSide;
 
                 if (yPosition > getHeight()) {
                     break;
@@ -118,7 +117,8 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             int centerChangeY) {
         // Pinch to reload
         imageObjects.removeAllElements();
-        canvasY = 0;
+        scrollY = 0;
+        top = getHeight();
         loadFeed(this instanceof SearchCanvas, true);
         repaint();
     }
@@ -137,29 +137,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     /**
-     * Set the canvasY offset according to the given deltaY
-     *
-     * @param x
-     * @param y
-     * @param delta
-     * @param deltaX
-     * @param deltaY
-     * @param lastFrame
-     */
-    public void animate(int x, int y, short delta, short deltaX, short deltaY, boolean lastFrame) {
-        final int top = -((imageObjects.size() * imageSide) / 2 - getHeight() / 2);
-
-        if (canvasY + deltaY < top) {
-            canvasY = top;
-        } else if (canvasY + deltaY > 0) {
-            canvasY = 0;
-        } else {
-            canvasY = canvasY + deltaY;
-        }
-        repaint();
-    }
-
-    /**
      * Return the image index based on the X and Y coordinates.
      *
      * @param x
@@ -168,7 +145,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
      */
     protected int getItemIndex(int x, int y) {
         if (y > headerHeight) {
-            int row = (-canvasY + y - headerHeight) / imageSide;
+            int row = (-scrollY + y - headerHeight) / imageSide;
             int column = x < getWidth() / 2 ? 0 : 1;
             return (row * 2 + column);
         }
@@ -188,6 +165,12 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         }
         startDot++;
         startDot = startDot % dots;
+    }
+
+    public void sizeChanged(final int w, final int h) {
+        YC = getHeight() / 2;
+
+        super.sizeChanged(w, h);
     }
 
     /**
