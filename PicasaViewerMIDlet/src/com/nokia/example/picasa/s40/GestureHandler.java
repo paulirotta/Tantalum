@@ -24,12 +24,11 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
     public static final int FRAME_ANIMATOR_FRICTION_LOW = FrameAnimator.FRAME_ANIMATOR_FRICTION_LOW;
     public static final int FRAME_ANIMATOR_FRICTION_MEDIUM = FrameAnimator.FRAME_ANIMATOR_FRICTION_MEDIUM;
     public static final int FRAME_ANIMATOR_FRICTION_HIGH = FrameAnimator.FRAME_ANIMATOR_FRICTION_HIGH;
-    private final GestureCanvas canvas;
+    private GestureCanvas canvas;
     private final FrameAnimator animator = new FrameAnimator();
     private GestureInteractiveZone giz;
 
-    public GestureHandler(final GestureCanvas canvas) {
-        this.canvas = canvas;
+    public GestureHandler() {
         try {
             giz = new GestureInteractiveZone(GestureInteractiveZone.GESTURE_ALL);
         } catch (Exception e) {
@@ -37,6 +36,10 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
             L.e(L.class.getName(), "Can not register GESTURE_ALL, backwards compatibility fallback", e);
             giz = new GestureInteractiveZone(63); // GESTURE_ALL had a different value in SDK 1.1 and 1.0
         }
+    }
+    
+    public void setCanvas(final GestureCanvas canvas) {
+        this.canvas = canvas;
     }
 
     public void gestureAction(final Object container, final GestureInteractiveZone gestureInteractiveZone, final GestureEvent ge) {

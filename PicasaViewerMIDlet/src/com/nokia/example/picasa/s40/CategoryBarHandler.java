@@ -10,12 +10,7 @@ import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.ElementListener;
 import com.nokia.mid.ui.IconCommand;
 import java.io.IOException;
-import javax.microedition.lcdui.Alert;
-import javax.microedition.lcdui.AlertType;
-import javax.microedition.lcdui.Command;
-import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
-import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Image;
 
 /**
@@ -24,14 +19,13 @@ import javax.microedition.lcdui.Image;
  */
 public final class CategoryBarHandler implements ElementListener {
 
-    private final PicasaViewer midlet;
+    private PicasaViewer midlet;
     private int previousCategoryIndex = 0;
     private CategoryBar categoryBar;
     private IconCommand featured;
     private IconCommand search;
 
-    public CategoryBarHandler(final PicasaViewer midlet) {
-        this.midlet = midlet;
+    public CategoryBarHandler() {
         try {
             Image homeImg = Image.createImage("/home.png");
             featured = new IconCommand("Home", "Home View", homeImg, drawMaskedImage(homeImg), IconCommand.SCREEN, 1);
@@ -48,6 +42,10 @@ public final class CategoryBarHandler implements ElementListener {
         categoryBar = new CategoryBar(iconCommands, true);
         categoryBar.setVisibility(true);
         categoryBar.setElementListener(this);
+    }
+    
+    public void setMidlet(final PicasaViewer midlet) {
+        this.midlet = midlet;
     }
 
     /**

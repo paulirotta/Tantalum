@@ -21,12 +21,19 @@ public abstract class GestureCanvas extends Canvas {
     private long spinTimerDelay;
     protected int friction = GestureHandler.FRAME_ANIMATOR_FRICTION_LOW;
     protected final PicasaViewer midlet;
-    protected final GestureHandler gestureHandler = new GestureHandler(this);
+    protected GestureHandler gestureHandler = null;
     protected int scrollY = 0;
     protected int top = getHeight();
 
     public GestureCanvas(final PicasaViewer midlet) {
         this.midlet = midlet;
+        try {
+            gestureHandler = (GestureHandler) Class.forName("com.nokia.example.picasa.s40.GestureHandler").newInstance();
+            gestureHandler.setCanvas(this);
+        } catch (Throwable ex) {
+            //#debug
+            L.e("GestureHandler", "can not instantiate", ex);
+        }
         this.setTitle("GestureCanvas");
     }
 
@@ -152,6 +159,7 @@ public abstract class GestureCanvas extends Canvas {
             // Spin speed has changed
             stopSpin();
         }
+        spinTimerDelay = delay;
         spinTimerTask = new TimerTask() {
             public void run() {
                 repaint();

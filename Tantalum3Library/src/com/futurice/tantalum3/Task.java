@@ -83,6 +83,9 @@ public abstract class Task implements Workable {
      * @throws ExecutionException
      */
     public synchronized Object join(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+        if (timeout < 0) {
+            throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
+        }
         switch (status) {
             case EXEC_PENDING:
                 if (Worker.tryUnfork(this)) {
@@ -93,7 +96,7 @@ public abstract class Task implements Workable {
                 }
             case EXEC_STARTED:
                 //#debug
-                L.i("Start join wait()", this.toString());
+                L.i("Start join wait()", "timeout=" + timeout + " " + this.toString());
                 this.wait(timeout);
                 //#debug
                 L.i("End join wait()", this.toString());
@@ -116,15 +119,18 @@ public abstract class Task implements Workable {
         if (!(this instanceof Runnable)) {
             throw new ClassCastException("Can not joinUI() unless Task is a Closure");
         }
-        
-        final long t = System.currentTimeMillis();
+
+        long t = System.currentTimeMillis();
         join(timeout);
 
         if (status < UI_RUN_FINISHED) {
+            t = timeout - (System.currentTimeMillis() - t);
             //#debug
-            L.i("Start joinUIThread wait()", this.toString());
-            this.wait(timeout - (System.currentTimeMillis() - t));
-            if (status < EXEC_STARTED) {
+            L.i("Start joinUI wait()", "timeout remaining=" + t + " " + this.toString());
+            if (t > 0) {
+                this.wait(t);
+            }
+            if (status < UI_RUN_FINISHED) {
                 throw new TimeoutException();
             }
             //#debug

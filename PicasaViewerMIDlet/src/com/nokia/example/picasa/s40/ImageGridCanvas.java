@@ -62,7 +62,11 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         this.setFullScreenMode(true);
 
         // Show statusbar
-        LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", Boolean.TRUE);
+        try {
+            LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", Boolean.TRUE);
+        } catch (Exception e) {
+            L.i("showNotify LCDUIUtil", "trait not supported, normal before SDK 2.0");
+        }
 
         super.showNotify();
     }
