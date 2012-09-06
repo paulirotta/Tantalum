@@ -93,7 +93,7 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
     public void animateDrag(final int x, final int y) {
         //#debug
         L.i(L.class.getName(), "animate drag, y=" + y);
-        animator.drag(x, -y);
+        animator.drag(x, y);
     }
 
     public void kineticScroll(final int startSpeed, final int direction, final int friction, final float angle) {
