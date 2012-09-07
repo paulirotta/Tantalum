@@ -1,10 +1,12 @@
 package com.nokia.example.picasa.s40;
 
+import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.log.L;
 import com.nokia.example.picasa.common.ImageObject;
 import com.nokia.example.picasa.common.Storage;
 import com.nokia.mid.ui.TextEditor;
 import com.nokia.mid.ui.TextEditorListener;
+import com.nokia.mid.ui.gestures.GestureInteractiveZone;
 import java.io.IOException;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Graphics;
@@ -45,13 +47,17 @@ public final class SearchCanvas extends ImageGridCanvas {
 
     public void showNotify() {
         // Status bar doesn't work well with on-screen keyboard, so leave it out.
-        if (!midlet.phoneSupportsCategoryBar()) {
+//        if (!midlet.phoneSupportsCategoryBar()) {
             /*
              * SDK 1.0 and 1.1 phones don't use an onscreen keyboard, so enter
              * edit mode right away so the user can just start typing
              */
-            enableKeyboard();
-        }
+                PlatformUtils.runOnUiThread(new Runnable() {
+                    public void run() {
+                        enableKeyboard();
+                    }
+                });
+//        }
 
         super.showNotify();
     }
@@ -94,7 +100,11 @@ public final class SearchCanvas extends ImageGridCanvas {
                     midlet.setDetailed();
                 }
             } else {
-                disableKeyboard();
+                PlatformUtils.runOnUiThread(new Runnable() {
+                    public void run() {
+                        disableKeyboard();
+                    }
+                });
             }
             //Search bar
         } else {
@@ -103,8 +113,11 @@ public final class SearchCanvas extends ImageGridCanvas {
                     && startY < HEADER_BAR_HEIGHT) {
                 startSearch();
             } else {
-                //Text Input
-                enableKeyboard();
+                PlatformUtils.runOnUiThread(new Runnable() {
+                    public void run() {
+                        enableKeyboard();
+                    }
+                });
             }
         }
     }
@@ -118,6 +131,9 @@ public final class SearchCanvas extends ImageGridCanvas {
     }
 
     private void enableKeyboard() {
+        if (searchField != null) {
+            return;
+        }
         if (searchText.equals("Search")) {
             searchText = "";
         }
@@ -127,8 +143,13 @@ public final class SearchCanvas extends ImageGridCanvas {
         searchField.setParent(this); // Canvas to draw on
         searchField.setPosition(SEARCH_PADDING, SEARCH_PADDING);
         searchField.setCaret(searchText.length());
-//FIXME
-//        searchField.setIndicatorVisibility(true);
+        if (GestureInteractiveZone.GESTURE_ALL > 63) {
+            try {
+                ((TextEditorHelper) Class.forName("com.nokia.example.picasa.s40.TextEditorHelper").getClass().newInstance()).setIndicatorVisibility(searchField, true);
+            } catch (Throwable ex) {
+                L.e("Indicator visibility", "Can not invoke", ex);
+            }
+        }
         searchField.setTextEditorListener(new TextEditorListener() {
             public void inputAction(TextEditor textEditor, int actions) {
                 repaint();
@@ -138,6 +159,7 @@ public final class SearchCanvas extends ImageGridCanvas {
         addCommand(deleteCommand);
         searchField.setVisible(true);
         searchField.setFocus(true);
+        repaint();
     }
 
     private void disableKeyboard() {

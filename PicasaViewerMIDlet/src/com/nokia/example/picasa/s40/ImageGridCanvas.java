@@ -48,7 +48,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                 try {
                     imageObjects = (Vector) get();
                     top = -((imageObjects.size() * imageSide) / 2 - getHeight() / 2);
-
                     repaint();
                 } catch (Exception ex) {
                     //#debug

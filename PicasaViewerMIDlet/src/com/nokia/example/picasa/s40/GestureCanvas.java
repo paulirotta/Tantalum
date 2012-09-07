@@ -231,4 +231,37 @@ public abstract class GestureCanvas extends Canvas {
     protected void drawBackIcon(final Graphics g) {
         g.drawImage(backIcon, getWidth(), getHeight(), Graphics.BOTTOM | Graphics.RIGHT);
     }
+
+    /**
+     * Adding this method, even if it does nothing, tells some Series40 phones to
+     * not display a button in the top right corner. This button is not needed in
+     * this application, but it would allow the user to
+     * manually display the virtual keyboard. It is always better to automatically
+     * display the virtual keyboard when the user presses an area of the screen,
+     * or even better- when the user would need to enter input as the next logical
+     * action, even if they have not pressed the screen.
+     * 
+     * @param x
+     * @param y 
+     */
+    protected void pointerPressed(int x, int y) {
+    }
+
+    /**
+     * See the comments for pointerPressed()
+     * 
+     * @param x
+     * @param y 
+     */
+    protected void pointerReleased(int x, int y) {
+    }
+
+    /**
+     * See the comments for pointerPressed()
+     * 
+     * @param x
+     * @param y 
+     */
+    protected void pointerDragged(int x, int y) {
+    }
 }

@@ -53,7 +53,6 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
                 try {
                     final Class cbc = Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler");
                     CategoryBarHandler.setMidlet(PicasaViewer.this);
-//                    categoryBarHandler = new CategoryBarHandler();
                     categoryBarHandler = (CategoryBarHandler) cbc.newInstance();
                 } catch (Throwable e) {
                     //#debug
