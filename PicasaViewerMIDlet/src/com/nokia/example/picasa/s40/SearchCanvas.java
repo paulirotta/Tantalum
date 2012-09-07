@@ -71,6 +71,7 @@ public final class SearchCanvas extends ImageGridCanvas {
     }
 
     public void paint(final Graphics g) {
+        checkScroll();
         if (searchField != null && !searchField.isVisible()) {
             disableKeyboard();
         }
@@ -97,8 +98,8 @@ public final class SearchCanvas extends ImageGridCanvas {
         if (index >= 0) {
             // Keyboard is not active
             if (searchField == null) {
-                if (imageObjects.size() > index) {
-                    PicasaStorage.selectedImage = (PicasaImageObject) imageObjects.elementAt(index);
+                if (imageObjectModel.size() > index) {
+                    PicasaStorage.selectedImage = (PicasaImageObject) imageObjectModel.elementAt(index);
                     midlet.setDetailed();
                 }
             } else {
@@ -125,7 +126,7 @@ public final class SearchCanvas extends ImageGridCanvas {
     }
 
     private void startSearch() {
-        imageObjects.removeAllElements();
+        imageObjectModel.removeAllElements();
         disableKeyboard();
         scrollY = 0;
         loadFeed(true, true);

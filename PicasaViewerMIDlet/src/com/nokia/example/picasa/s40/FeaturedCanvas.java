@@ -15,6 +15,7 @@ public final class FeaturedCanvas extends ImageGridCanvas {
     }
 
     public void paint(final Graphics g) {
+        checkScroll();        
         drawGrid(g, 0);
     }
 }

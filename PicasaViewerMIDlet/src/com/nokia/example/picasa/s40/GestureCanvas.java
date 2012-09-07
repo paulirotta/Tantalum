@@ -54,6 +54,20 @@ public abstract class GestureCanvas extends Canvas {
         return scrollY;
     }
 
+    protected void checkScroll() {
+        if (scrollY < top) {
+            //#debug
+            L.i("checkScroll", "bang top scrollY=" + scrollY + " top=" + top);
+            scrollY = top;
+//            gestureHandler.stopAnimation();
+        } else if (scrollY > 0) {
+            //#debug
+            L.i("checkScroll", "bang bottom scrollY=" + scrollY);
+            scrollY = 0;
+//            gestureHandler.stopAnimation();
+        }        
+    }
+    
     /**
      * Two fingers, moving in or out
      *
@@ -111,6 +125,7 @@ public abstract class GestureCanvas extends Canvas {
      * @param dragDistanceY
      */
     public void gestureDrag(int startX, int startY, int dragDistanceX, int dragDistanceY) {
+        scrollY += dragDistanceY;
         gestureHandler.animateDrag(startX + dragDistanceX, startY + dragDistanceY);
     }
 
@@ -124,7 +139,7 @@ public abstract class GestureCanvas extends Canvas {
      * @param dragDistanceY
      */
     public void gestureDrop(int startX, int startY, int dragDistanceX, int dragDistanceY) {
-        gestureHandler.animateDrag(dragDistanceX, dragDistanceY);
+//        gestureHandler.animateDrag(dragDistanceX, dragDistanceY);
     }
 
     /**
@@ -143,12 +158,11 @@ public abstract class GestureCanvas extends Canvas {
      * @param flickSpeedY
      */
     public void gestureFlick(int startX, int startY, float flickDirection, int flickSpeed, int flickSpeedX, int flickSpeedY) {
-        gestureHandler.kineticScroll(flickSpeed, GestureHandler.FRAME_ANIMATOR_FREE_ANGLE, friction, flickDirection);
+//        gestureHandler.kineticScroll(flickSpeed, GestureHandler.FRAME_ANIMATOR_FREE_ANGLE, friction, flickDirection);
     }
 
     public void showNotify() {
         gestureHandler.register();
-        resumeSpin();
 
         super.showNotify();
     }
@@ -156,7 +170,6 @@ public abstract class GestureCanvas extends Canvas {
     public void hideNotify() {
         gestureHandler.stopAnimation();
         gestureHandler.unregister();
-        pauseSpin();
 
         super.hideNotify();
     }
@@ -188,18 +201,6 @@ public abstract class GestureCanvas extends Canvas {
         }
     }
 
-    private synchronized void pauseSpin() {
-        if (spinTimerTask != null) {
-            spinTimerTask.cancel();
-        }
-    }
-
-    private synchronized void resumeSpin() {
-        if (spinTimerTask != null) {
-            startSpin(spinTimerDelay);
-        }
-    }
-
     /**
      * Update by painting at the new scroll position
      *
@@ -211,19 +212,18 @@ public abstract class GestureCanvas extends Canvas {
      * @param lastFrame
      */
     public void animate(int x, int y, short delta, short deltaX, short deltaY, boolean lastFrame) {
-        L.i("animate", "top y=" + y + " top=" + top + " scrollY=" + scrollY + " screenHeight=" + getHeight());
-//        if (y > top) {
+        L.i("animate", "y=" + y + " deltaY=" + deltaY + " top=" + top + " scrollY=" + scrollY + " screenHeight=" + getHeight());
+//        scrollY = y;
+//        if (scrollY > top) {
 //            //#debug
 //            L.i("animate", "bang top y=" + y + " top=" + top + " scrollY=" + scrollY + " screenHeight=" + getHeight());
-//            scrollY = top;
+////            scrollY = top;
 ////            gestureHandler.stopAnimation();
-//        } else if (y < 0) {
+//        } else if (scrollY < 0) {
 //            //#debug
 //            L.i("animate", "bang bottom y=" + y + " top=" + top + " scrollY=" + scrollY + " screenHeight=" + getHeight());
 //            scrollY = 0;
 ////            gestureHandler.stopAnimation();
-//        } else {
-        scrollY = y + deltaY;
 //        }
         repaint();
     }
@@ -244,24 +244,24 @@ public abstract class GestureCanvas extends Canvas {
      * @param x
      * @param y 
      */
-    protected void pointerPressed(int x, int y) {
-    }
-
-    /**
-     * See the comments for pointerPressed()
-     * 
-     * @param x
-     * @param y 
-     */
-    protected void pointerReleased(int x, int y) {
-    }
-
-    /**
-     * See the comments for pointerPressed()
-     * 
-     * @param x
-     * @param y 
-     */
-    protected void pointerDragged(int x, int y) {
-    }
+//    protected void pointerPressed(int x, int y) {
+//    }
+//
+//    /**
+//     * See the comments for pointerPressed()
+//     * 
+//     * @param x
+//     * @param y 
+//     */
+//    protected void pointerReleased(int x, int y) {
+//    }
+//
+//    /**
+//     * See the comments for pointerPressed()
+//     * 
+//     * @param x
+//     * @param y 
+//     */
+//    protected void pointerDragged(int x, int y) {
+//    }
 }

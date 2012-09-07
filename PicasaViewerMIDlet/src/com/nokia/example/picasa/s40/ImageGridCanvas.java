@@ -18,7 +18,7 @@ import javax.microedition.lcdui.Image;
 public abstract class ImageGridCanvas extends GestureCanvas {
 
     protected final Hashtable images = new Hashtable();
-    protected Vector imageObjects = new Vector(); // Access only from UI thread
+    protected Vector imageObjectModel = new Vector(); // Access only from UI thread
     protected final int imageSide;
     protected int headerHeight;
     private int startDot;
@@ -46,8 +46,8 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         PicasaStorage.getImageObjects(new Closure() {
             public void run() {
                 try {
-                    imageObjects = (Vector) get();
-                    top = -((imageObjects.size() * imageSide) / 2 - getHeight() / 2);
+                    imageObjectModel = (Vector) get();
+                    top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2);
                     repaint();
                 } catch (Exception ex) {
                     //#debug
@@ -81,11 +81,11 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         g.setColor(0x000000);
         g.fillRect(0, 0, getWidth(), getHeight());
 
-        if (imageObjects.isEmpty()) {
+        if (imageObjectModel.isEmpty()) {
             // Loading...
             this.drawSpinner(g);
         } else {
-            for (int i = 0; i < imageObjects.size(); i++) {
+            for (int i = 0; i < imageObjectModel.size(); i++) {
                 int xPosition = i % 2 * (getWidth() / 2);
                 int yPosition = startY + scrollY + ((i - i % 2) / 2) * imageSide;
 
@@ -93,17 +93,17 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                     break;
                 }
                 // If image is in RAM
-                if (images.containsKey(imageObjects.elementAt(i))) {
-                    g.drawImage((Image) (images.get(imageObjects.elementAt(i))), xPosition, yPosition, Graphics.LEFT | Graphics.TOP);
+                if (images.containsKey(imageObjectModel.elementAt(i))) {
+                    g.drawImage((Image) (images.get(imageObjectModel.elementAt(i))), xPosition, yPosition, Graphics.LEFT | Graphics.TOP);
                 } else {
                     // If there were no results
-                    if (((PicasaImageObject) imageObjects.elementAt(i)).thumbUrl.length() == 0) {
+                    if (((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl.length() == 0) {
                         g.setColor(0xFFFFFF);
                         g.drawString("No Result.", 0, headerHeight, Graphics.TOP | Graphics.LEFT);
                     } else {
                         // Start loading the image, draw a placeholder
-                        PicasaStorage.imageCache.get(((PicasaImageObject) imageObjects.elementAt(i)).thumbUrl,
-                                new ImageResult(imageObjects.elementAt(i)));
+                        PicasaStorage.imageCache.get(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl,
+                                new ImageResult(imageObjectModel.elementAt(i)));
                         g.setColor(0x111111);
                         g.fillRect(xPosition, yPosition, imageSide, imageSide);
                     }
@@ -125,7 +125,8 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
     
     public void refresh() {
-        imageObjects.removeAllElements();
+        imageObjectModel.removeAllElements();
+        images.clear();
         scrollY = 0;
         top = getHeight();
         loadFeed(this instanceof SearchCanvas, true);
@@ -135,14 +136,10 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     public void gestureTap(int startX, int startY) {
         final int index = getItemIndex(startX, startY);
 
-        if (index >= 0 && index < imageObjects.size()) {
-            PicasaStorage.selectedImage = (PicasaImageObject) imageObjects.elementAt(index);
+        if (index >= 0 && index < imageObjectModel.size()) {
+            PicasaStorage.selectedImage = (PicasaImageObject) imageObjectModel.elementAt(index);
             midlet.setDetailed();
         }
-    }
-
-    public void gestureFlick(int startX, int startY, float flickDirection, int flickSpeed, int flickSpeedX, int flickSpeedY) {
-        gestureHandler.kineticScroll(flickSpeed, GestureHandler.FRAME_ANIMATOR_VERTICAL, friction, flickDirection);
     }
 
     /**

@@ -44,6 +44,7 @@ public final class DetailedCanvas extends GestureCanvas {
     }
 
     public void paint(final Graphics g) {
+        checkScroll();
         g.setColor(0x000000);
         g.fillRect(0, 0, getWidth(), getHeight());
         g.setColor(0xffffff);
@@ -135,20 +136,4 @@ public final class DetailedCanvas extends GestureCanvas {
         startDot++;
         startDot = startDot % dots;
     }
-//    public void gestureFlick(int startX, int startY, float flickDirection, int flickSpeed, int flickSpeedX, int flickSpeedY) {
-//        gestureHandler.kineticScroll(flickSpeed, GestureHandler.FRAME_ANIMATOR_VERTICAL, friction, flickDirection);
-//    }
-//
-//    public void animate(int x, int y, short delta, short deltaX, short deltaY, boolean lastFrame) {
-//        if (-bottom > height) {
-//            if (scrollY + deltaY > 0) {
-//                scrollY = 0;
-//            } else if (scrollY + deltaY < bottom >> 1) {
-//                scrollY = bottom >> 1;
-//            } else {
-//                scrollY += deltaY;
-//            }
-//        }
-//        repaint();
-//    }
 }

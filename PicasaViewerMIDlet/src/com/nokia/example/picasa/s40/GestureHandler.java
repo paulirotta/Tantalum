@@ -43,8 +43,6 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
     }
 
     public void gestureAction(final Object container, final GestureInteractiveZone gestureInteractiveZone, final GestureEvent ge) {
-        //#debug
-        L.i(L.class.getName(), "GestureHandler.gestureAction " + ge);
         switch (ge.getType()) {
             // Pinch to force reload
             case GestureInteractiveZone.GESTURE_PINCH:
@@ -89,7 +87,7 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
 
     public void animate(final FrameAnimator animator, final int x, final int y, final short delta, final short deltaX, final short deltaY, final boolean lastFrame) {
         //#debug
-        L.i(L.class.getName(), "animate, deltaY=" + deltaY);
+        L.i(L.class.getName(), "animate, y=" + y + " deltaY=" + deltaY);
         canvas.animate(x, y, delta, deltaX, deltaY, lastFrame);
     }
 
