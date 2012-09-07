@@ -41,12 +41,6 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
         PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
         featuredView.loadFeed(false, false);
         lastView = featuredView;
-        if (categoryBarHandler == null) {
-            featuredView.addCommand(refreshCommand);
-            featuredView.addCommand(searchCommand);
-            featuredView.addCommand(exitCommand);
-            featuredView.setCommandListener(this);
-        }
         Display.getDisplay(this).setCurrent(featuredView);
         PlatformUtils.runOnUiThread(new Runnable() {
             public void run() {
@@ -63,6 +57,10 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
                         /*
                          * Fallback when there is no category bar (Nokia SDK 1.1 and earlier)
                          */
+                        featuredView.addCommand(refreshCommand);
+                        featuredView.addCommand(searchCommand);
+                        featuredView.addCommand(exitCommand);
+                        featuredView.setCommandListener(PicasaViewer.this);
                         otherViewInitTask.join(5000); // Wait up to 5 seconds for views to initialize
                         detailedView.addCommand(backCommand);
                         detailedView.setCommandListener(PicasaViewer.this);
@@ -80,7 +78,7 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
     }
 
     public void setDetailed() {
-        if (categoryBarHandler != null) {
+        if (phoneSupportsCategoryBar()) {
             categoryBarHandler.setVisibility(false);
         }
         lastView = Display.getDisplay(this).getCurrent();
@@ -89,7 +87,7 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
     }
 
     public void goBack() {
-        if (categoryBarHandler != null) {
+        if (phoneSupportsCategoryBar()) {
             categoryBarHandler.goBack();
         }
         Display.getDisplay(this).setCurrent(lastView);

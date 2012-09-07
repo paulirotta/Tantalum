@@ -177,6 +177,7 @@ public abstract class GestureCanvas extends Canvas {
     }
 
     public void hideNotify() {
+        animating = false;
         gestureHandler.stopAnimation();
         gestureHandler.unregister();
 
