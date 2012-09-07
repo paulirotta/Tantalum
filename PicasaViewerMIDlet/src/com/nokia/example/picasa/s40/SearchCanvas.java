@@ -54,11 +54,11 @@ public final class SearchCanvas extends ImageGridCanvas {
              * SDK 1.0 and 1.1 phones don't use an onscreen keyboard, so enter
              * edit mode right away so the user can just start typing
              */
-                PlatformUtils.runOnUiThread(new Runnable() {
-                    public void run() {
-                        enableKeyboard();
-                    }
-                });
+            PlatformUtils.runOnUiThread(new Runnable() {
+                public void run() {
+                    enableKeyboard();
+                }
+            });
         }
 
         super.showNotify();
@@ -91,38 +91,44 @@ public final class SearchCanvas extends ImageGridCanvas {
         g.drawImage(searchImg, getWidth() - SEARCH_PADDING, HEADER_BAR_HEIGHT / 2, Graphics.VCENTER | Graphics.RIGHT);
     }
 
-    public void gestureTap(int startX, int startY) {
-        final int index = getItemIndex(startX, startY);
+    public boolean gestureTap(int startX, int startY) {
+        if (!super.gestureTap(startX, startY)) {
+            final int index = getItemIndex(startX, startY);
 
-        // Not search bar
-        if (index >= 0) {
-            // Keyboard is not active
-            if (searchField == null) {
-                if (imageObjectModel.size() > index) {
-                    PicasaStorage.selectedImage = (PicasaImageObject) imageObjectModel.elementAt(index);
-                    midlet.setDetailed();
+            // Not search bar
+            if (index >= 0) {
+                // Keyboard is not active
+                if (searchField == null) {
+                    if (imageObjectModel.size() > index) {
+                        PicasaStorage.selectedImage = (PicasaImageObject) imageObjectModel.elementAt(index);
+                        midlet.setDetailed();
+                    }
+                } else {
+                    PlatformUtils.runOnUiThread(new Runnable() {
+                        public void run() {
+                            disableKeyboard();
+                        }
+                    });
                 }
+                //Search bar
             } else {
-                PlatformUtils.runOnUiThread(new Runnable() {
-                    public void run() {
-                        disableKeyboard();
-                    }
-                });
+                //Search button
+                if (startX > getWidth() - SEARCH_BUTTON_WIDTH
+                        && startY < HEADER_BAR_HEIGHT) {
+                    startSearch();
+                } else {
+                    PlatformUtils.runOnUiThread(new Runnable() {
+                        public void run() {
+                            enableKeyboard();
+                        }
+                    });
+                }
             }
-            //Search bar
-        } else {
-            //Search button
-            if (startX > getWidth() - SEARCH_BUTTON_WIDTH
-                    && startY < HEADER_BAR_HEIGHT) {
-                startSearch();
-            } else {
-                PlatformUtils.runOnUiThread(new Runnable() {
-                    public void run() {
-                        enableKeyboard();
-                    }
-                });
-            }
+            
+            return true;
         }
+        
+        return false;
     }
 
     private void startSearch() {

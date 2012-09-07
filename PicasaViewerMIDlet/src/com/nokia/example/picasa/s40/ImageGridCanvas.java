@@ -123,23 +123,28 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         // Pinch to reload
         refresh();
     }
-    
+
     public void refresh() {
         imageObjectModel.removeAllElements();
         images.clear();
         scrollY = 0;
         top = getHeight();
         loadFeed(this instanceof SearchCanvas, true);
-        repaint();        
+        repaint();
     }
 
-    public void gestureTap(int startX, int startY) {
-        final int index = getItemIndex(startX, startY);
+    public boolean gestureTap(int startX, int startY) {
+        if (!super.gestureTap(startX, startY)) {
+            final int index = getItemIndex(startX, startY);
 
-        if (index >= 0 && index < imageObjectModel.size()) {
-            PicasaStorage.selectedImage = (PicasaImageObject) imageObjectModel.elementAt(index);
-            midlet.setDetailed();
+            if (index >= 0 && index < imageObjectModel.size()) {
+                PicasaStorage.selectedImage = (PicasaImageObject) imageObjectModel.elementAt(index);
+                midlet.setDetailed();
+                return true;
+            }
         }
+
+        return false;
     }
 
     /**

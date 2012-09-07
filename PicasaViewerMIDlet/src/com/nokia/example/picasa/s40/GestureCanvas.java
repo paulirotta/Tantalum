@@ -28,6 +28,7 @@ public abstract class GestureCanvas extends Canvas {
     protected GestureHandler gestureHandler = null;
     protected int scrollY = 0;
     protected int top = getHeight();
+    protected boolean animating = false;
 
     static {
         try {
@@ -59,12 +60,10 @@ public abstract class GestureCanvas extends Canvas {
             //#debug
             L.i("checkScroll", "bang top scrollY=" + scrollY + " top=" + top);
             scrollY = top;
-//            gestureHandler.stopAnimation();
         } else if (scrollY > 0) {
             //#debug
             L.i("checkScroll", "bang bottom scrollY=" + scrollY);
             scrollY = 0;
-//            gestureHandler.stopAnimation();
         }        
     }
     
@@ -91,11 +90,22 @@ public abstract class GestureCanvas extends Canvas {
 
     /**
      * Short press
-     *
+     * 
+     * Always call the super.gestureTap() in the hierarchy and accept if the
+     * parent class has caught and consumed the tap event
+     * 
      * @param startX
      * @param startY
+     * @return true of the tap was caught, handled and consumed
      */
-    public void gestureTap(int startX, int startY) {
+    public boolean gestureTap(int startX, int startY) {
+        if (animating) {
+            animating = false;
+            gestureHandler.stopAnimation();
+            return true;
+        }
+        
+        return false;
     }
 
     /**
@@ -125,8 +135,7 @@ public abstract class GestureCanvas extends Canvas {
      * @param dragDistanceY
      */
     public void gestureDrag(int startX, int startY, int dragDistanceX, int dragDistanceY) {
-        scrollY += dragDistanceY;
-        gestureHandler.animateDrag(startX + dragDistanceX, startY + dragDistanceY);
+        gestureHandler.animateDrag(startX + dragDistanceX, scrollY + dragDistanceY);
     }
 
     /**
@@ -139,7 +148,6 @@ public abstract class GestureCanvas extends Canvas {
      * @param dragDistanceY
      */
     public void gestureDrop(int startX, int startY, int dragDistanceX, int dragDistanceY) {
-//        gestureHandler.animateDrag(dragDistanceX, dragDistanceY);
     }
 
     /**
@@ -158,11 +166,12 @@ public abstract class GestureCanvas extends Canvas {
      * @param flickSpeedY
      */
     public void gestureFlick(int startX, int startY, float flickDirection, int flickSpeed, int flickSpeedX, int flickSpeedY) {
-//        gestureHandler.kineticScroll(flickSpeed, GestureHandler.FRAME_ANIMATOR_FREE_ANGLE, friction, flickDirection);
+        animating = true;
+        gestureHandler.kineticScroll(flickSpeed, GestureHandler.FRAME_ANIMATOR_FREE_ANGLE, friction, flickDirection);
     }
 
     public void showNotify() {
-        gestureHandler.register();
+        gestureHandler.register(0, scrollY);
 
         super.showNotify();
     }
@@ -212,19 +221,10 @@ public abstract class GestureCanvas extends Canvas {
      * @param lastFrame
      */
     public void animate(int x, int y, short delta, short deltaX, short deltaY, boolean lastFrame) {
+        //#debug
         L.i("animate", "y=" + y + " deltaY=" + deltaY + " top=" + top + " scrollY=" + scrollY + " screenHeight=" + getHeight());
-//        scrollY = y;
-//        if (scrollY > top) {
-//            //#debug
-//            L.i("animate", "bang top y=" + y + " top=" + top + " scrollY=" + scrollY + " screenHeight=" + getHeight());
-////            scrollY = top;
-////            gestureHandler.stopAnimation();
-//        } else if (scrollY < 0) {
-//            //#debug
-//            L.i("animate", "bang bottom y=" + y + " top=" + top + " scrollY=" + scrollY + " screenHeight=" + getHeight());
-//            scrollY = 0;
-////            gestureHandler.stopAnimation();
-//        }
+        scrollY = y;
+        animating = !lastFrame;
         repaint();
     }
 

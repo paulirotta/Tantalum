@@ -133,12 +133,12 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
      * Register for gesture and animation events when the parent becomes visible
      *
      */
-    public void register() {
+    public void register(final int x, final int y) {
         //#debug
         L.i("Canvas " + canvas.getTitle(), "register");
         GestureRegistrationManager.register(canvas, giz);
         updateCanvasSize();
         GestureRegistrationManager.setListener(canvas, this);
-        animator.register(0, 0, (short) 0, (short) 0, this);
+        animator.register(x, y, (short) 0, (short) 0, this);
     }
 }
