@@ -15,7 +15,6 @@ import javax.microedition.rms.RecordStoreFullException;
  * @author ssaa
  */
 public final class SettingsForm extends TextBox implements CommandListener {
-
     private final RSSReader midlet;
     private final Command saveCommand = new Command("Save", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);

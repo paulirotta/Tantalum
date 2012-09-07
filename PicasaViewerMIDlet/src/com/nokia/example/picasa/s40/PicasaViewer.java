@@ -5,7 +5,7 @@ import com.futurice.tantalum3.TantalumMIDlet;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
-import com.nokia.example.picasa.common.Storage;
+import com.nokia.example.picasa.common.PicasaStorage;
 import javax.microedition.lcdui.*;
 
 public final class PicasaViewer extends TantalumMIDlet implements CommandListener {
@@ -38,7 +38,7 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
     public void startApp() {
         featuredView = new FeaturedCanvas(this);
         Worker.fork(otherViewInitTask);
-        Storage.init(featuredView.getWidth()); // Initialize storage with display width.
+        PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
         featuredView.loadFeed(false, false);
         lastView = featuredView;
         if (categoryBarHandler == null) {

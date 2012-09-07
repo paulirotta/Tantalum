@@ -11,19 +11,36 @@ import javax.microedition.lcdui.Image;
  * @author tsaa
  */
 public final class ImageTypeHandler implements DataTypeHandler {
-    private int imageSide;
+    private final int imageWidth;
+    private final boolean processAlpha;
+    private final boolean bestQuality;
 
+    /**
+     * Create a non-scaling image cache
+     * 
+     */
     public ImageTypeHandler() {
-        imageSide = -1;
+        imageWidth = -1;
+        this.processAlpha = false;
+        this.bestQuality = false;
     }
 
-    public ImageTypeHandler(int side) {
-        imageSide = side;
+    /**
+     * Create an image cache which scales images on load into memory
+     * 
+     * @param processAlpha
+     * @param bestQuality
+     * @param width 
+     */
+    public ImageTypeHandler(final boolean processAlpha, final boolean bestQuality, final int width) {
+        imageWidth = width;
+        this.processAlpha = processAlpha;
+        this.bestQuality = bestQuality;
     }
 
     public Object convertToUseForm(final byte[] bytes) {
         try {
-            if (imageSide == -1) {
+            if (imageWidth == -1) {
                 return Image.createImage(bytes, 0, bytes.length);
             } else {                
                 Image temp = Image.createImage(bytes, 0, bytes.length);
@@ -32,7 +49,7 @@ public final class ImageTypeHandler implements DataTypeHandler {
                 int[] data = new int[w*h];
                 temp.getRGB(data, 0, w, 0, 0, w, h);
                 temp = null;
-                final Image img = ImageUtils.downscaleImage(data, w, h, imageSide, imageSide, true, true, true);
+                final Image img = ImageUtils.downscaleImage(data, w, h, imageWidth, imageWidth, true, processAlpha, bestQuality);
                 data = null;
                 
                 return img;

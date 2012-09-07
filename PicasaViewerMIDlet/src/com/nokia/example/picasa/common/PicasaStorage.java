@@ -18,28 +18,27 @@ import org.json.me.JSONObject;
  * @author oehn
  *
  */
-public class Storage {
+public class PicasaStorage {
 
     /*
      * Picasa reference:
      * https://developers.google.com/picasa-web/docs/2.0/reference
      */
     public static final int NR_OF_FEATURED = 20;
-    public static int imageSide = 256; // Must be supported thumb size in picasa
-    private static int screenWidth = 200;
+    public static int imageSide;
+    private static int screenWidth;
     private static String thumbSize;
     private static int imageSize; //Must be valid picasa size
     private static String urlOptions;
     private static String featURL;
     private static String searchURL;
-    public static ImageObject selectedImage = null;
+    public static PicasaImageObject selectedImage = null;
     public static StaticWebCache feedCache;
-//    public static StaticWebCache thumbCache;
     public static StaticWebCache imageCache;
 
     /**
      * Initialize the storage. The width is the width of the screen. This is
-     * used to determine how large thumbnails should be.
+     * used to determine how large images should be.
      *
      */
     public static synchronized void init(final int width) {
@@ -47,12 +46,11 @@ public class Storage {
             screenWidth = width;
             if (screenWidth < 256) {
                 imageSide = 128; //Must be supported picasa thumb size
-                imageCache = new StaticWebCache('4', new ImageTypeHandler(screenWidth));
-//                thumbCache = new StaticWebCache('3', new ImageTypeHandler(screenWidth / 2));
+                imageCache = new StaticWebCache('4', new ImageTypeHandler(false, false, width));
                 imageSize = 288; //Image max size to get suitable sized images from picasa
             } else {
+                imageSide = 256; // Must be supported thumb size in picasa
                 imageCache = new StaticWebCache('4', new ImageTypeHandler());
-//                thumbCache = new StaticWebCache('3', new ImageTypeHandler());
                 imageSize = 720; //Picasa size for "fullsize" images
             }
 
@@ -65,15 +63,6 @@ public class Storage {
             featURL = "http://picasaweb.google.com/data/feed/base/featured" + urlOptions;
             searchURL = "http://picasaweb.google.com/data/feed/base/all" + urlOptions + "&q=";
         }
-    }
-
-    //If we do not know the width of the screen, use a sensible default.
-//    public static void init() {
-//        init(256);
-//    }
-
-    public static int getWidth() {
-        return screenWidth;
     }
 
     /**
@@ -94,14 +83,14 @@ public class Storage {
 
     /**
      * Class for converting the JSON response in to a Vector of
-     * ImageObject-objects. The vector is saved by Tantalum.
+     * PicasaImageObject-objects. The vector is saved by Tantalum.
      */
     private static class ImageObjectTypeHandler implements DataTypeHandler {
 
         public Object convertToUseForm(byte[] bytes) {
             JSONObject o;
             final Vector vector = new Vector();
-            
+
             try {
                 o = new JSONObject(new String(bytes));
             } catch (JSONException ex) {
@@ -116,7 +105,7 @@ public class Storage {
                     final JSONObject feed = ((JSONObject) o).getJSONObject("feed");
                     entries = feed.getJSONArray("entry");
                 } catch (JSONException e) {
-                    vector.addElement(new ImageObject("No Results", "", "", ""));
+                    vector.addElement(new PicasaImageObject("No Results", "", "", ""));
 
                     //#debug
                     L.e("JSON no result", featURL, e);
@@ -125,24 +114,26 @@ public class Storage {
                 for (int i = 0; i < entries.length(); i++) {
                     try {
                         final JSONObject m = entries.getJSONObject(i);
-                        String title = m.getJSONObject("title").getString("$t");
-                        String author = m.getJSONArray("author").getJSONObject(0).getJSONObject("name").getString("$t");
-                        String thumbUrl = m.getJSONObject("media$group").getJSONArray("media$thumbnail").getJSONObject(0).getString("url");
-                        String imageUrl = m.getJSONObject("media$group").getJSONArray("media$content").getJSONObject(0).getString("url");
+                        final String title = m.getJSONObject("title").getString("$t");
+                        final String author = m.getJSONArray("author").getJSONObject(0).getJSONObject("name").getString("$t");
+                        final String thumbUrl = m.getJSONObject("media$group").getJSONArray("media$thumbnail").getJSONObject(0).getString("url");
+                        final String imageUrl = m.getJSONObject("media$group").getJSONArray("media$content").getJSONObject(0).getString("url");
 
+                        //#mdebug
                         L.i("JSON parsed title: ", title);
                         L.i("JSON parsed author: ", author);
                         L.i("JSON parsed thumb url: ", thumbUrl);
                         L.i("JSON parsed image url: ", imageUrl);
+                        //#enddebug
 
-                        vector.addElement(new ImageObject(title, author, thumbUrl, imageUrl));
+                        vector.addElement(new PicasaImageObject(title, author, thumbUrl, imageUrl));
                     } catch (JSONException e) {
                         //#debug
                         L.e("JSON item parse error", featURL, e);
                     }
                 }
                 if (entries.length() == 0) {
-                    vector.addElement(new ImageObject("No Results", "", "", ""));
+                    vector.addElement(new PicasaImageObject("No Results", "", "", ""));
                 }
             }
             return vector;

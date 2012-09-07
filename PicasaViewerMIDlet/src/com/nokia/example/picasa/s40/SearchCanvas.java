@@ -2,8 +2,8 @@ package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.log.L;
-import com.nokia.example.picasa.common.ImageObject;
-import com.nokia.example.picasa.common.Storage;
+import com.nokia.example.picasa.common.PicasaImageObject;
+import com.nokia.example.picasa.common.PicasaStorage;
 import com.nokia.mid.ui.TextEditor;
 import com.nokia.mid.ui.TextEditorListener;
 import com.nokia.mid.ui.gestures.GestureInteractiveZone;
@@ -47,8 +47,10 @@ public final class SearchCanvas extends ImageGridCanvas {
 
     public void showNotify() {
         // Status bar doesn't work well with on-screen keyboard, so leave it out.
-//        if (!midlet.phoneSupportsCategoryBar()) {
+        if (!midlet.phoneSupportsCategoryBar()) {
             /*
+             * Throw an event forward on the UI thread
+             * 
              * SDK 1.0 and 1.1 phones don't use an onscreen keyboard, so enter
              * edit mode right away so the user can just start typing
              */
@@ -57,7 +59,7 @@ public final class SearchCanvas extends ImageGridCanvas {
                         enableKeyboard();
                     }
                 });
-//        }
+        }
 
         super.showNotify();
     }
@@ -96,7 +98,7 @@ public final class SearchCanvas extends ImageGridCanvas {
             // Keyboard is not active
             if (searchField == null) {
                 if (imageObjects.size() > index) {
-                    Storage.selectedImage = (ImageObject) imageObjects.elementAt(index);
+                    PicasaStorage.selectedImage = (PicasaImageObject) imageObjects.elementAt(index);
                     midlet.setDetailed();
                 }
             } else {

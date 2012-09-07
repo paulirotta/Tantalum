@@ -71,7 +71,7 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
                 break;
 
             case GestureInteractiveZone.GESTURE_DRAG:
-                canvas.gestureDrag(ge.getStartX(), canvas.getScrollY(), ge.getDragDistanceX(), ge.getDragDistanceY());
+                canvas.gestureDrag(ge.getStartX(), ge.getStartY(), ge.getDragDistanceX(), ge.getDragDistanceY());
                 break;
 
             case GestureInteractiveZone.GESTURE_DROP:

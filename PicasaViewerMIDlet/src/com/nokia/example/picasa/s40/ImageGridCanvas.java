@@ -3,8 +3,8 @@ package com.nokia.example.picasa.s40;
 import com.futurice.tantalum3.Closure;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
-import com.nokia.example.picasa.common.ImageObject;
-import com.nokia.example.picasa.common.Storage;
+import com.nokia.example.picasa.common.PicasaImageObject;
+import com.nokia.example.picasa.common.PicasaStorage;
 import com.nokia.mid.ui.LCDUIUtil;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -43,7 +43,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public void loadFeed(final boolean search, final boolean fromWeb) {
-        Storage.getImageObjects(new Closure() {
+        PicasaStorage.getImageObjects(new Closure() {
             public void run() {
                 try {
                     imageObjects = (Vector) get();
@@ -97,12 +97,12 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                     g.drawImage((Image) (images.get(imageObjects.elementAt(i))), xPosition, yPosition, Graphics.LEFT | Graphics.TOP);
                 } else {
                     // If there were no results
-                    if (((ImageObject) imageObjects.elementAt(i)).getThumbUrl().length() == 0) {
+                    if (((PicasaImageObject) imageObjects.elementAt(i)).thumbUrl.length() == 0) {
                         g.setColor(0xFFFFFF);
                         g.drawString("No Result.", 0, headerHeight, Graphics.TOP | Graphics.LEFT);
                     } else {
                         // Start loading the image, draw a placeholder
-                        Storage.imageCache.get(((ImageObject) imageObjects.elementAt(i)).getThumbUrl(),
+                        PicasaStorage.imageCache.get(((PicasaImageObject) imageObjects.elementAt(i)).thumbUrl,
                                 new ImageResult(imageObjects.elementAt(i)));
                         g.setColor(0x111111);
                         g.fillRect(xPosition, yPosition, imageSide, imageSide);
@@ -136,7 +136,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         final int index = getItemIndex(startX, startY);
 
         if (index >= 0 && index < imageObjects.size()) {
-            Storage.selectedImage = (ImageObject) imageObjects.elementAt(index);
+            PicasaStorage.selectedImage = (PicasaImageObject) imageObjects.elementAt(index);
             midlet.setDetailed();
         }
     }

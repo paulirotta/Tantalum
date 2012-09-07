@@ -111,7 +111,7 @@ public abstract class GestureCanvas extends Canvas {
      * @param dragDistanceY
      */
     public void gestureDrag(int startX, int startY, int dragDistanceX, int dragDistanceY) {
-        gestureHandler.animateDrag(startX, startY);
+        gestureHandler.animateDrag(startX + dragDistanceX, startY + dragDistanceY);
     }
 
     /**
@@ -223,7 +223,7 @@ public abstract class GestureCanvas extends Canvas {
 //            scrollY = 0;
 ////            gestureHandler.stopAnimation();
 //        } else {
-        scrollY = -y;
+        scrollY = y + deltaY;
 //        }
         repaint();
     }
