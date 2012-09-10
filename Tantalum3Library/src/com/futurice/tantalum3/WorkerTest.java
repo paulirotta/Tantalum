@@ -98,7 +98,7 @@ public class WorkerTest extends TestCase {
     public void testQueueEDT() throws AssertionFailedException {
         System.out.println("queueEDT");
         final Object mutex = new Object();
-        Task dgr = new UITask() {            
+        AsyncCallbackResult callbackResult = new AsyncCallbackResult() {            
 
             public void run() {
                 set("done");
@@ -108,12 +108,12 @@ public class WorkerTest extends TestCase {
             }
         };
         
-        PlatformUtils.runOnUiThread((Runnable) dgr);        
+        PlatformUtils.runOnUiThread((Runnable) callbackResult);        
         try {
             synchronized(mutex) {
                 mutex.wait(1000);
             }
-            assertEquals("done", (String) dgr.get());
+            assertEquals("done", (String) callbackResult.get());
         } catch (Exception e) {
         }
     }
@@ -123,17 +123,17 @@ public class WorkerTest extends TestCase {
      */
     public void testQueueEDTNoWait() throws AssertionFailedException {
         System.out.println("queueEDT");
-        Task dgr = new UITask() {            
+        AsyncCallbackResult callbackResult = new AsyncCallbackResult() {            
 
             public void run() {
                 set("done");
             }
         };
         
-        PlatformUtils.runOnUiThread((Runnable) dgr);        
+        PlatformUtils.runOnUiThread((Runnable) callbackResult);        
         try {
             // Test should wait here until EDT executes
-            assertEquals("done", (String) dgr.get());
+            assertEquals("done", (String) callbackResult.get());
         } catch (Exception e) {
         }
     }

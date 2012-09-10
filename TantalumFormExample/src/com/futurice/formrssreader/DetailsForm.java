@@ -4,7 +4,7 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum3.UITask;
+import com.futurice.tantalum3.AsyncCallbackResult;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -87,7 +87,7 @@ public final class DetailsForm extends Form implements CommandListener {
             } else if (!selectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
-                imageCache.get(selectedItem.getThumbnail(), new UITask() {
+                imageCache.get(selectedItem.getThumbnail(), new AsyncCallbackResult() {
 
                     public void run() {
                         DetailsForm.this.appendImageItem();

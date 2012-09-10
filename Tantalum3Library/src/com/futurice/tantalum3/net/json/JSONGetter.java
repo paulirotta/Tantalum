@@ -55,7 +55,7 @@ public class JSONGetter extends HttpGetter {
             //#debug
             L.e("JSONGetter HTTP response problem", this.getUrl() + " : " + value, e);
             cancel(false);
-            task.cancel(false);
+            task.cancel();
         }        
     }    
 }

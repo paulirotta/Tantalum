@@ -134,7 +134,7 @@ public final class DetailsView extends View {
                     public boolean cancel(boolean mayInterruptIfNeeded) {
                         item.setLoadingImage(false);
                         
-                        return super.cancel(mayInterruptIfNeeded);
+                        return false;
                     }
                 });
             }

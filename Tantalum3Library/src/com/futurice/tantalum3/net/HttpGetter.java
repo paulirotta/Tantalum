@@ -166,7 +166,6 @@ public class HttpGetter extends Task {
                 onResult((byte[]) result);
             } else {
                 cancel(false);
-                task.cancel(false);                
             }
             //#debug
             L.i("End " + this.getClass().getName(), url);

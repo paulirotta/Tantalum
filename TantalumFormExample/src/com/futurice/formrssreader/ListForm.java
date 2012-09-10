@@ -4,12 +4,8 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum3.CancellationException;
-import com.futurice.tantalum3.UITask;
-import com.futurice.tantalum3.ExecutionException;
-import com.futurice.tantalum3.PlatformUtils;
-import com.futurice.tantalum3.TimeoutException;
-import com.futurice.tantalum3.Worker;
+import com.futurice.tantalum3.AsyncCallbackResult;
+import com.futurice.tantalum3.UICallbackTask;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -64,7 +60,7 @@ public final class ListForm extends Form implements CommandListener {
         try {
             L.i("Start start thread reload", "");
             // Wait max 2sec for data load, parse and paint to make smooth startup UX
-            reload(false).joinUI(2000);
+            reload(false);
         } catch (Exception ex) {
             //#debug
             L.e("Initial RSS load exception", "", ex);
@@ -95,8 +91,8 @@ public final class ListForm extends Form implements CommandListener {
      *
      * @param forceLoad
      */
-    public UITask reload(final boolean forceLoad) {
-        final UITask closure;
+    public AsyncCallbackResult reload(final boolean forceLoad) {
+        final AsyncCallbackResult uiTask;
 
         if (loading && !forceLoad) {
             //already loading
@@ -122,7 +118,7 @@ public final class ListForm extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            closure = new UITask() {
+            uiTask = new AsyncCallbackResult() {
                 public void run() {
                     loading = false;
                     paint();
@@ -131,17 +127,21 @@ public final class ListForm extends Form implements CommandListener {
                 public boolean cancel(final boolean mayInterruptIfNeeded) {
                     loading = false;
 
-                    return super.cancel(mayInterruptIfNeeded);
+                    super.cancel();
+                    
+                    return false;
                 }
             };
-            feedCache.update(feedUrl, closure);
+            feedCache.update(feedUrl, uiTask);
         } else {
-            closure = new UITask() {
+            uiTask = new AsyncCallbackResult() {
                 public boolean cancel(final boolean mayInterruptIfNeeded) {
                     loading = false;
                     reload(true);
 
-                    return super.cancel(mayInterruptIfNeeded);
+                    super.cancel();
+                    
+                    return false;
                 }
 
                 public void run() {
@@ -149,10 +149,10 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
             };
-            feedCache.get(feedUrl, closure);
+            feedCache.get(feedUrl, uiTask);
         }
 
-        return closure;
+        return uiTask;
     }
 
     public void showDetails(final RSSItem selectedItem) {

@@ -78,7 +78,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 public boolean cancel(boolean mayInterruptIfNeeded) {
                     isReloading = false;
                     
-                    return super.cancel(mayInterruptIfNeeded);
+                    return false;
                 }
 
                 public void set(Object o) {

@@ -112,18 +112,18 @@ public class StaticCache {
      *
      *
      * @param key
-     * @param result
+     * @param asyncResult
      * @param priority - default is Work.NORMAL_PRIORITY
      * set to Work.HIGH_PRIORITY if you want the results
      * quickly. Note that your request for priority may be denied if you have
      * recently changed the value and the value happens to have expired from the
      * RAM cache due to a low memory condition.
      */
-    public void get(final String key, final AsyncResult result) {
+    public void get(final String key, final AsyncResult asyncResult) {
         if (key == null || key.length() == 0) {
             //#debug
             L.i("Trivial get", "");
-            result.cancel(false);
+            asyncResult.cancel();
             return;
         }
         final Object ho = synchronousRAMCacheGet(key);
@@ -131,7 +131,7 @@ public class StaticCache {
         if (ho != null) {
             //#debug
             L.i("RAM cache hit", "(" + priority + ") " + key);
-            result.set(ho);
+            asyncResult.set(ho);
         } else {
             final Workable getWorkable = new Workable() {
 
@@ -142,11 +142,11 @@ public class StaticCache {
                         if (o != null) {
                             //#debug
                             L.i("RMS cache hit", key);
-                            result.set(o);
+                            asyncResult.set(o);
                         } else {
                             //#debug
                             L.i("RMS cache miss", key);
-                            result.cancel(false);
+                            asyncResult.cancel();
                         }
                     } catch (Exception e) {
                         //#debug

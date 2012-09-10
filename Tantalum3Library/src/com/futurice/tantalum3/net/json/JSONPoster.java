@@ -36,7 +36,7 @@ public abstract class JSONPoster extends HttpPoster {
             //#debug
             L.e("JSONPoster HTTP response problem", this.getUrl() + " : " + value, e);
             cancel(false);
-            task.cancel(false);
+            task.cancel();
         }
         task.set(result);
     }

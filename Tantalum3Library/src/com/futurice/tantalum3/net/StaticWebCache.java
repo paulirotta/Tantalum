@@ -31,7 +31,7 @@ public class StaticWebCache extends StaticCache {
      * @param result
      * @param priority - Default is Worker.NORMAL_PRIORITY
      */
-    public void get(final String url, final AsyncResult r) {
+    public void get(final String url, final AsyncResult asyncResult) {
         super.get(url, new AsyncResult() {
 
             /**
@@ -40,8 +40,8 @@ public class StaticWebCache extends StaticCache {
              *
              */
             public void set(final Object o) {
-                if (r != null) {
-                    r.set(o);
+                if (asyncResult != null) {
+                    asyncResult.set(o);
                 }
             }
 
@@ -57,13 +57,11 @@ public class StaticWebCache extends StaticCache {
                     public void set(Object o) {
                         try {
                             o = put(url, (byte[]) o); // Convert to use form
-                            if (r != null) {
+                            if (asyncResult != null) {
                                 if (o != null) {
-                                    r.set(o);
+                                    asyncResult.set(o);
                                     //#debug
                                     L.i("END SAVE: After no result from cache get, shift to HTTP", url);
-                                } else {
-                                    r.cancel(false);
                                 }
                             }
                         } catch (Exception e) {
@@ -74,8 +72,8 @@ public class StaticWebCache extends StaticCache {
                     }
 
                     public boolean cancel(boolean mayInterruptIfNeeded) {
-                        if (r != null) {
-                            return r.cancel(false);
+                        if (asyncResult != null) {
+                            asyncResult.cancel();
                         }
                         
                         return false;

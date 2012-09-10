@@ -1,6 +1,6 @@
 package com.nokia.example.picasa.s40;
 
-import com.futurice.tantalum3.UITask;
+import com.futurice.tantalum3.AsyncCallbackResult;
 import com.futurice.tantalum3.AsyncResult;
 import com.futurice.tantalum3.log.L;
 import com.nokia.example.picasa.common.PicasaImageObject;
@@ -43,7 +43,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public void loadFeed(final boolean search, final boolean fromWeb) {
-        PicasaStorage.getImageObjects(new UITask() {
+        PicasaStorage.getImageObjects(new AsyncCallbackResult() {
             public void run() {
                 try {
                     imageObjectModel = (Vector) get();
