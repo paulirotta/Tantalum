@@ -102,6 +102,14 @@ public final class Worker implements Runnable {
     public static void fork(final Workable workable) {
         synchronized (q) {
             q.addElement(workable);
+            try {
+                if (workable instanceof Task) {
+                    ((Task) workable).notifyTaskQueued();
+                }
+            } catch (IllegalStateException e) {
+                q.removeElement(workable);
+                throw e;
+            }
             q.notify();
         }
     }
@@ -140,12 +148,28 @@ public final class Worker implements Runnable {
             case Worker.HIGH_PRIORITY:
                 synchronized (q) {
                     q.insertElementAt(workable, 0);
-                    q.notifyAll();
+                    try {
+                        if (workable instanceof Task) {
+                            ((Task) workable).notifyTaskQueued();
+                        }
+                    } catch (IllegalStateException e) {
+                        q.removeElement(workable);
+                        throw e;
+                    }
+                    q.notify();
                 }
                 break;
             case Worker.LOW_PRIORITY:
                 synchronized (q) {
                     lowPriorityQ.addElement(workable);
+                    try {
+                        if (workable instanceof Task) {
+                            ((Task) workable).notifyTaskQueued();
+                        }
+                    } catch (IllegalStateException e) {
+                        lowPriorityQ.removeElement(workable);
+                        throw e;
+                    }
                     q.notify();
                 }
                 break;
@@ -175,8 +199,7 @@ public final class Worker implements Runnable {
             }
             //#debug
             L.i("Unfork end", workable + " success=" + success);
-            q.notifyAll();
-            
+
             return success;
         }
     }
@@ -196,9 +219,17 @@ public final class Worker implements Runnable {
             throw new IndexOutOfBoundsException("serialQ to Worker " + serialQIndex + ", but there are only " + workers.length + " Workers");
         }
         workers[serialQIndex].serialQ.addElement(workable);
+        try {
+            if (workable instanceof Task) {
+                ((Task) workable).notifyTaskQueued();
+            }
+        } catch (IllegalStateException e) {
+            workers[serialQIndex].serialQ.removeElement(workable);
+            throw e;
+        }
         synchronized (q) {
             /*
-             * We must notifyAll to ensure the specified worker is notified. Low cost.
+             * We must notifyAll to ensure the specified Worker is notified
              */
             q.notifyAll();
         }
@@ -325,9 +356,6 @@ public final class Worker implements Runnable {
                 try {
                     if (workable != null) {
                         workable.exec(null);
-                        if (workable instanceof Runnable) {
-                            PlatformUtils.runOnUiThread((Runnable) workable);
-                        }
                     }
                 } catch (Exception e) {
                     //#debug

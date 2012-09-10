@@ -23,6 +23,19 @@ public abstract class Task implements Workable {
     protected int status = UI_RUN_FINISHED; // Always access within a synchronized block
 
     /**
+     * Check status of the object to ensure it can be queued at this time (it
+     * is not already queued and running)
+     * 
+     * @throws IllegalStateException if the task is currently queued or currently running
+     */
+    public synchronized void notifyTaskQueued() throws IllegalStateException {
+        if (status < EXEC_FINISHED || (this instanceof Runnable && status < UI_RUN_FINISHED)) {
+            throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + status);
+        }
+        setStatus(EXEC_PENDING);
+    }
+
+    /**
      * Never call get() from the UI thread unless you know the state is
      * EXEC_FINISHED (as it is in a Closure). Otherwise it can make your UI
      * freeze for unpredictable periods of time.
@@ -36,7 +49,7 @@ public abstract class Task implements Workable {
         switch (status) {
             case EXEC_PENDING:
                 Worker.tryUnfork(this);
-                exec();
+                exec(null);
                 return result;
             case EXEC_STARTED:
                 this.wait();
@@ -73,7 +86,7 @@ public abstract class Task implements Workable {
                 if (Worker.tryUnfork(this)) {
                     //#debug
                     L.i("Start join out-of-sequence exec() after unfork", this.toString());
-                    exec();
+                    exec(null);
                     break;
                 }
             case EXEC_STARTED:
@@ -145,7 +158,7 @@ public abstract class Task implements Workable {
         if (status == CANCELED || status == EXCEPTION) {
             PlatformUtils.runOnUiThread(new Runnable() {
                 public void run() {
-                    onCancel();
+                    onCancelled();
                 }
             });
         }
@@ -155,19 +168,49 @@ public abstract class Task implements Workable {
      * You can call this as the return statement of your overriding method once
      * you have set the result
      *
-     * If you implement exec(), do not implement or use set()
-     *
      * @return
      */
-    public synchronized void exec() {
-        setStatus(EXEC_FINISHED);
+    public final void exec(final Object params) {
+        try {
+            synchronized (this) {
+                if (status == CANCELED || status == EXCEPTION) {
+                    throw new IllegalStateException("Can not exec() AsyncTask: status=" + status);
+                }
+                setStatus(EXEC_STARTED);
+            }
+            final Object r = doInBackground(params);
+            synchronized (this) {
+                result = r;
+                setStatus(EXEC_FINISHED);
+            }
+            setStatus(EXEC_FINISHED);
+            if (this instanceof Runnable) {
+                PlatformUtils.runOnUiThread(new Runnable() {
+                    public void run() {
+                        ((Runnable) this).run();
+                        setStatus(UI_RUN_FINISHED);
+                    }
+                });
+            }
+        } catch (final Throwable t) {
+            //#debug
+            L.e("Async task exception", this.toString(), t);
+            setStatus(EXCEPTION);
+        }
     }
+
+    /**
+     * Override to implement Worker thread code
+     *
+     * @param params
+     */
+    protected abstract Object doInBackground(final Object params);
 
     /**
      * Cancel execution if possible.
      *
      * You may override this if for example you want to complete at task on the
-     * current thread rather than the onCancel() call which will be on the UI
+     * current thread rather than the onCancelled() call which will be on the UI
      * thread. In this case, be sure that you know which thread cancel() will be
      * called from. In Tantalum itself, cancel() is only called from a Worker
      * thread, so you can trust that such activity is done in the background
@@ -204,7 +247,7 @@ public abstract class Task implements Workable {
      * necessary.
      *
      */
-    public void onCancel() {
+    public void onCancelled() {
     }
 
     public String toString() {

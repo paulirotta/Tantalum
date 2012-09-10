@@ -52,7 +52,7 @@ public abstract class AsyncTask extends Task {
      */
     public static void execute(final Runnable runnable) {
         Worker.forkSerial(new Workable() {
-            public void exec(final Object args) {
+            public void exec(final Object params) {
                 runnable.run();
             }
         }, ASYNC_TASK_WORKER_INDEX);
@@ -68,14 +68,13 @@ public abstract class AsyncTask extends Task {
      * @return
      */
     public final AsyncTask execute(final Object params) {
+        this.params = params;
         synchronized (this) {
             if (status <= EXEC_FINISHED) {
                 throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + status);
             }
             setStatus(EXEC_PENDING);
         }
-
-        this.params = params;
         PlatformUtils.runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
@@ -97,7 +96,7 @@ public abstract class AsyncTask extends Task {
      * @param params
      * @return
      */
-    public final AsyncTask executeOnExecutor(final Object[] params) {
+    public final AsyncTask executeOnExecutor(final Object params) {
         synchronized (this) {
             if (status <= EXEC_FINISHED) {
                 throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + status);
@@ -122,28 +121,6 @@ public abstract class AsyncTask extends Task {
         }
 
         return this;
-    }
-
-    public final void exec() {
-        try {
-            synchronized (this) {
-                if (status == CANCELED || status == EXCEPTION) {
-                    throw new IllegalStateException("Can not exec() AsyncTask: status=" + status);
-                }
-                setStatus(EXEC_STARTED);
-            }
-
-            final Object r = doInBackground(params);
-
-            synchronized (this) {
-                result = r;
-                setStatus(EXEC_FINISHED);
-            }
-        } catch (final Throwable t) {
-            //#debug
-            L.e("Async task exception", this.toString(), t);
-            setStatus(EXCEPTION);
-        }
     }
 
     public final void run() {

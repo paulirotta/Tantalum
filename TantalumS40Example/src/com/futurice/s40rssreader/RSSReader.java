@@ -1,7 +1,5 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.CancellationException;
-import com.futurice.tantalum3.ExecutionException;
 import com.futurice.tantalum3.TantalumMIDlet;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.TimeoutException;
@@ -106,8 +104,10 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
         try {
             getCanvas();
             final Task reloadTask = new Task() {
-                public void exec() {
+                public Object doInBackground(final Object params) {
                     canvas.getListView().reload(false);
+                    
+                    return null;
                 }
             };
             Worker.fork(reloadTask);

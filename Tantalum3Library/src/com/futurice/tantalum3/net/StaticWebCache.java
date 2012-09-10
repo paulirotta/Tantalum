@@ -82,7 +82,7 @@ public class StaticWebCache extends StaticCache {
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible fork delays
-                httpGetter.exec();
+                httpGetter.doInBackground(url);
   
                 //TODO FIXME is this correct?
                 return false;
