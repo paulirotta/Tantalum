@@ -63,7 +63,7 @@ public final class Worker implements Runnable {
             /**
              * The first worker creates the others in the background
              */
-            public void exec() {
+            public void exec(final Object args) {
                 int i = 1;
 
                 try {
@@ -324,7 +324,7 @@ public final class Worker implements Runnable {
                 }
                 try {
                     if (workable != null) {
-                        workable.exec();
+                        workable.exec(null);
                         if (workable instanceof Runnable) {
                             PlatformUtils.runOnUiThread((Runnable) workable);
                         }

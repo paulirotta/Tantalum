@@ -52,7 +52,7 @@ public abstract class AsyncTask extends Task {
      */
     public static void execute(final Runnable runnable) {
         Worker.forkSerial(new Workable() {
-            public void exec() {
+            public void exec(final Object args) {
                 runnable.run();
             }
         }, ASYNC_TASK_WORKER_INDEX);

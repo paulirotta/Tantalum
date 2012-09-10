@@ -50,7 +50,7 @@ public class WorkerTest extends TestCase {
         WorkableResult wr = new WorkableResult() {
             private Object o;
             
-            public void exec() {
+            public void exec(final Object args) {
                 synchronized (mutex) {
                     o = "yes";
                     mutex.notifyAll();
@@ -82,12 +82,12 @@ public class WorkerTest extends TestCase {
         Worker.fork(null);
         Worker.fork(new Workable() {
 
-            public void exec() {
+            public void exec(final Object args) {
             }            
         });
         Worker.fork(new Workable() {
 
-            public void exec() {
+            public void exec(final Object args) {
             }
         });
     }

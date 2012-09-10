@@ -135,7 +135,7 @@ public class StaticCache {
         } else {
             final Workable getWorkable = new Workable() {
 
-                public void exec() {
+                public void exec(final Object args) {
                     try {
                         final Object o = synchronousGet(key);
 
@@ -202,7 +202,7 @@ public class StaticCache {
         }
         Worker.forkSerial(new Workable() {
 
-            public void exec() {
+            public void exec(final Object args) {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {

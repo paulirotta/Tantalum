@@ -100,7 +100,7 @@ public class StaticWebCache extends StaticCache {
     public void update(final String url, final AsyncResult result) {
         Worker.fork(new Workable() {
 
-            public void exec() {
+            public void exec(final Object args) {
                 try {
                     remove(url);
                     get(url, result);
@@ -122,7 +122,7 @@ public class StaticWebCache extends StaticCache {
         if (synchronousRAMCacheGet(url) == null) {
             Worker.fork(new Workable() {
 
-                public void exec() {
+                public void exec(final Object args) {
                     try {
                         get(url, null);
                     } catch (Exception e) {

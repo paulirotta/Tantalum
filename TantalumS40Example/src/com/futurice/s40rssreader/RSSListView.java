@@ -49,7 +49,7 @@ public abstract class RSSListView extends View {
 
     protected final void clearCache() {
         Worker.fork(new Workable() {
-            public void exec() {
+            public void exec(final Object args) {
                 try {
                     doClearCache();
                 } catch (Exception e) {

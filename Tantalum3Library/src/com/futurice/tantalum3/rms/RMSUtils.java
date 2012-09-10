@@ -56,7 +56,7 @@ public class RMSUtils {
          */
         Worker.queueShutdownTask(new Workable() {
 
-            public void exec() {
+            public void exec(final Object args) {
                 //#debug
                 L.i("Closing record stores during shutdown", "open=" + openRecordStores.size());
                 openRecordStores.setMaxLength(0);
