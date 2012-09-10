@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.net.json;
 
-import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.DelegateTask;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpPoster;
 
@@ -16,16 +16,13 @@ public abstract class JSONPoster extends HttpPoster {
 
     private final JSONModel jsonvo;
 
-    public JSONPoster(final String url, final String postMessage, final JSONModel jsonModel, final Task result, final int retriesRemaining) {
-        super(url, retriesRemaining, result, postMessage.getBytes());
+    public JSONPoster(final String url, final String postMessage, final JSONModel jsonModel, final DelegateTask asyncTask, final int retriesRemaining) {
+        super(url, retriesRemaining, asyncTask, postMessage.getBytes());
         
         this.jsonvo = jsonModel;
     }
-
-    public void exec() {
-        super.exec();
-        
-        final byte[] bytes = (byte[]) result;
+    
+    protected void onResult(final byte[] bytes) {
         String value = "";
 
         try {
@@ -35,12 +32,12 @@ public abstract class JSONPoster extends HttpPoster {
                 value = "{\"base:\"" + value + "}";
             }
             jsonvo.setJSON(value);
-            task.set(value);
         } catch (Exception e) {
             //#debug
             L.e("JSONPoster HTTP response problem", this.getUrl() + " : " + value, e);
             cancel(false);
             task.cancel(false);
         }
+        task.set(result);
     }
 }

@@ -23,24 +23,6 @@ public abstract class Task implements Workable {
     protected int status = UI_RUN_FINISHED; // Always access within a synchronized block
 
     /**
-     * You can call this at the end of your overriding method once you have set
-     * the result.
-     *
-     * If you implement set(), do not implement or use exec()
-     *
-     * @param o
-     */
-    public synchronized void set(final Object o) {
-        this.result = o;
-        setStatus(EXEC_FINISHED);
-
-        if (this instanceof Runnable) {
-            // Continue to closure
-            PlatformUtils.runOnUiThread((Runnable) this);
-        }
-    }
-
-    /**
      * Never call get() from the UI thread unless you know the state is
      * EXEC_FINISHED (as it is in a Closure). Otherwise it can make your UI
      * freeze for unpredictable periods of time.

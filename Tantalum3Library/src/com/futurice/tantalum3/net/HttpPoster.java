@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.net;
 
-import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.DelegateTask;
 import javax.microedition.io.HttpConnection;
 
 /**
@@ -21,7 +21,7 @@ public class HttpPoster extends HttpGetter {
      * @param task
      * @param postMessage 
      */
-    public HttpPoster(final String url, final int retriesRemaining, final Task result, final byte[] postMessage) {
+    public HttpPoster(final String url, final int retriesRemaining, final DelegateTask result, final byte[] postMessage) {
         super(url, retriesRemaining, result);
         
         if (postMessage == null) {

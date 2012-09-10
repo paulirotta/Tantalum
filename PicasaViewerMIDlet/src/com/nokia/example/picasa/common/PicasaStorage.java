@@ -1,6 +1,6 @@
 package com.nokia.example.picasa.common;
 
-import com.futurice.tantalum3.Closure;
+import com.futurice.tantalum3.Callback;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.rms.DataTypeHandler;
@@ -71,7 +71,7 @@ public class PicasaStorage {
      * @param closure - RunnableResult to be ran in the UI thread
      * @param fromWeb - True to force fetch from web
      */
-    public static void getImageObjects(final Closure closure, final boolean search, final boolean fromWeb) {
+    public static void getImageObjects(final Callback closure, final boolean search, final boolean fromWeb) {
         final String url = search ? searchURL : featURL;
 
         if (fromWeb) {

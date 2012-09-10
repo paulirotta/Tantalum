@@ -5,7 +5,7 @@
 package com.futurice.formrssreader;
 
 import com.futurice.tantalum3.CancellationException;
-import com.futurice.tantalum3.Closure;
+import com.futurice.tantalum3.Callback;
 import com.futurice.tantalum3.ExecutionException;
 import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.TimeoutException;
@@ -95,8 +95,8 @@ public final class ListForm extends Form implements CommandListener {
      *
      * @param forceLoad
      */
-    public Closure reload(final boolean forceLoad) {
-        final Closure closure;
+    public Callback reload(final boolean forceLoad) {
+        final Callback closure;
 
         if (loading && !forceLoad) {
             //already loading
@@ -122,7 +122,7 @@ public final class ListForm extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            closure = new Closure() {
+            closure = new Callback() {
                 public void run() {
                     loading = false;
                     paint();
@@ -136,7 +136,7 @@ public final class ListForm extends Form implements CommandListener {
             };
             feedCache.update(feedUrl, closure);
         } else {
-            closure = new Closure() {
+            closure = new Callback() {
                 public boolean cancel(final boolean mayInterruptIfNeeded) {
                     loading = false;
                     reload(true);

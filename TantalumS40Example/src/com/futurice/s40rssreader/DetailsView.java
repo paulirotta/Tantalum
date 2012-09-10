@@ -1,6 +1,6 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.DelegateTask;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -120,7 +120,7 @@ public final class DetailsView extends View {
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
-                imageCache.get(item.getThumbnail(), new Task() {
+                imageCache.get(item.getThumbnail(), new DelegateTask() {
 
                     public void set(final Object o) {
                         super.set(o);
@@ -177,7 +177,7 @@ public final class DetailsView extends View {
         this.leftItem = leftItem;
         this.rightItem = rightItem;
         if (leftItem != null) {
-            imageCache.get(leftItem.getThumbnail(), new Task() {
+            imageCache.get(leftItem.getThumbnail(), new DelegateTask() {
 
                 public void set(final Object o) {
                     super.set(o);
@@ -188,7 +188,7 @@ public final class DetailsView extends View {
             });
         }
         if (rightItem != null) {
-            imageCache.get(rightItem.getThumbnail(), new Task() {
+            imageCache.get(rightItem.getThumbnail(), new DelegateTask() {
 
                 public void set(final Object o) {
                     super.set(o);

@@ -4,6 +4,7 @@
  */
 package com.futurice.tantalum3.net;
 
+import com.futurice.tantalum3.DelegateTask;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
 import java.io.ByteArrayOutputStream;
@@ -24,28 +25,28 @@ import javax.microedition.io.HttpConnection;
 public class HttpGetter extends Task {
 
     private final String url;
-    protected final Task task;
+    protected final DelegateTask task;
     protected int retriesRemaining;
     protected byte[] postMessage = null;
     protected String requestMethod = HttpConnection.GET;
 
     /**
-     * Get the contents of a URL and return that asynchronously as a DEPRICATED_Result
+     * Get the contents of a URL and return that asynchronously as a DelegateTask
      *
      * @param url - where on the Internet to synchronousGet the data
      * @param retriesRemaining - how many time to attempt connection
      * @param task - optional object notified on the EDT with the task
      */
-    public HttpGetter(final String url, final int retriesRemaining, final Task result) {
+    public HttpGetter(final String url, final int retriesRemaining, final DelegateTask task) {
         if (url == null || url.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }
-        if (result == null) {
+        if (task == null) {
             throw new IllegalArgumentException("HttpGetter was null result handler- meaningless get operation: " + url);
         }
         this.url = url;
         this.retriesRemaining = retriesRemaining;
-        this.task = result;
+        this.task = task;
     }
 
     public String getUrl() {
@@ -161,12 +162,18 @@ public class HttpGetter extends Task {
                 } catch (InterruptedException ex) {
                 }
                 exec();
-            } else if (!success) {
+            } else if (success) {
+                onResult((byte[]) result);
+            } else {
                 cancel(false);
-                task.cancel(false);
+                task.cancel(false);                
             }
             //#debug
             L.i("End " + this.getClass().getName(), url);
         }
+    }
+    
+    protected void onResult(final byte[] bytes) {
+        task.set(result);
     }
 }
