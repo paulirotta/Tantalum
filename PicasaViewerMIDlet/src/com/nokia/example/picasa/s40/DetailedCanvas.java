@@ -1,6 +1,6 @@
 package com.nokia.example.picasa.s40;
 
-import com.futurice.tantalum3.DelegateTask;
+import com.futurice.tantalum3.AsyncResult;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.util.StringUtils;
 import com.nokia.example.picasa.common.PicasaStorage;
@@ -54,7 +54,7 @@ public final class DetailedCanvas extends GestureCanvas {
             // If we do not have the image and we are not loading it, start loading it.
             if (image == null && !loading) {
                 loading = true;
-                PicasaStorage.imageCache.get(PicasaStorage.selectedImage.imageUrl, new DelegateTask() {
+                PicasaStorage.imageCache.get(PicasaStorage.selectedImage.imageUrl, new AsyncResult() {
                     public void set(Object o) {
                         if (o != null) {
                             image = (Image) o;

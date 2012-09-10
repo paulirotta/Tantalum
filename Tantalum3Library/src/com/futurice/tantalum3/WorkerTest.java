@@ -98,7 +98,7 @@ public class WorkerTest extends TestCase {
     public void testQueueEDT() throws AssertionFailedException {
         System.out.println("queueEDT");
         final Object mutex = new Object();
-        Task dgr = new Callback() {            
+        Task dgr = new UITask() {            
 
             public void run() {
                 set("done");
@@ -123,7 +123,7 @@ public class WorkerTest extends TestCase {
      */
     public void testQueueEDTNoWait() throws AssertionFailedException {
         System.out.println("queueEDT");
-        Task dgr = new Callback() {            
+        Task dgr = new UITask() {            
 
             public void run() {
                 set("done");

@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.net;
 
-import com.futurice.tantalum3.DelegateTask;
+import com.futurice.tantalum3.AsyncResult;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
 import java.io.ByteArrayOutputStream;
@@ -25,19 +25,19 @@ import javax.microedition.io.HttpConnection;
 public class HttpGetter extends Task {
 
     private final String url;
-    protected final DelegateTask task;
+    protected final AsyncResult task;
     protected int retriesRemaining;
     protected byte[] postMessage = null;
     protected String requestMethod = HttpConnection.GET;
 
     /**
-     * Get the contents of a URL and return that asynchronously as a DelegateTask
+     * Get the contents of a URL and return that asynchronously as a AsyncResult
      *
      * @param url - where on the Internet to synchronousGet the data
      * @param retriesRemaining - how many time to attempt connection
      * @param task - optional object notified on the EDT with the task
      */
-    public HttpGetter(final String url, final int retriesRemaining, final DelegateTask task) {
+    public HttpGetter(final String url, final int retriesRemaining, final AsyncResult task) {
         if (url == null || url.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }

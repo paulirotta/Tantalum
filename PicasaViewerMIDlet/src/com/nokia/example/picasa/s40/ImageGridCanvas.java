@@ -1,7 +1,7 @@
 package com.nokia.example.picasa.s40;
 
-import com.futurice.tantalum3.Callback;
-import com.futurice.tantalum3.DelegateTask;
+import com.futurice.tantalum3.UITask;
+import com.futurice.tantalum3.AsyncResult;
 import com.futurice.tantalum3.log.L;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
@@ -43,7 +43,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public void loadFeed(final boolean search, final boolean fromWeb) {
-        PicasaStorage.getImageObjects(new Callback() {
+        PicasaStorage.getImageObjects(new UITask() {
             public void run() {
                 try {
                     imageObjectModel = (Vector) get();
@@ -187,7 +187,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     /**
      * Object for adding images to hashmap when they're loaded.
      */
-    protected final class ImageResult extends DelegateTask {
+    protected final class ImageResult extends AsyncResult {
 
         private Object key;
 

@@ -22,7 +22,7 @@
  */
 package com.futurice.tantalum3.net.json;
 
-import com.futurice.tantalum3.DelegateTask;
+import com.futurice.tantalum3.AsyncResult;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpGetter;
 
@@ -31,10 +31,10 @@ import com.futurice.tantalum3.net.HttpGetter;
  * @author Paul Houghton
  */
 public class JSONGetter extends HttpGetter {
-    protected final DelegateTask asyncResult;
+    protected final AsyncResult asyncResult;
     private final JSONModel jsonvo;
 
-    public JSONGetter(final String url, final JSONModel jsonModel, final DelegateTask asyncResult, final int retriesRemaining) {
+    public JSONGetter(final String url, final JSONModel jsonModel, final AsyncResult asyncResult, final int retriesRemaining) {
         super(url, retriesRemaining, asyncResult);
         this.jsonvo = jsonModel;
         this.asyncResult = asyncResult;

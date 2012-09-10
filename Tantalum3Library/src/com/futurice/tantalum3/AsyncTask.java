@@ -8,10 +8,10 @@ import com.futurice.tantalum3.log.L;
  * replacement to provide cross platform functionality.
  *
  * Note that if you are not set on using the Android pattern, you may prefer the
- * simpler Task (Java7-like fork-join), Callback (Task with UI thread completion)
+ * simpler Task (Java7-like fork-join), UITask (Task with UI thread completion)
  * or basic open loop Workable patterns.
  */
-public abstract class AsyncTask extends Callback {
+public abstract class AsyncTask extends UITask {
     /*
      * Control if objects passed to executeOnExecutor() are thread safe to
      * allow parallel handling on the UI and a worker thread.
