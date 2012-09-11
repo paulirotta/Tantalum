@@ -80,7 +80,8 @@ public final class Worker implements Runnable {
 
     private static void createWorker() {
         workers[workerCount] = new Worker();
-        (new Thread(workers[workerCount], "Worker" + ++workerCount)).start();
+        (new Thread(workers[workerCount], "Worker" + workerCount)).start();
+        ++workerCount;
     }
 
     public Worker() {

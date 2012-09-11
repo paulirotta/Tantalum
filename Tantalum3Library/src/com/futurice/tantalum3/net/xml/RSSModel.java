@@ -12,7 +12,7 @@ import org.xml.sax.SAXException;
  */
 public class RSSModel extends XMLModel {
 
-    protected final Vector items = new Vector(50);
+    protected final Vector items = new Vector(40);
     protected RSSItem currentItem;
     protected final int maxLength;
 

@@ -26,7 +26,7 @@ public abstract class RSSListView extends View {
         public Object doInBackground(final Object params) {
             canvas.repaint();
             
-            return result;
+            return null;
         }
     };
 

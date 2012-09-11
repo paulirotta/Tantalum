@@ -5,7 +5,6 @@
 package com.futurice.formrssreader;
 
 import com.futurice.tantalum3.TantalumMIDlet;
-import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import javax.microedition.lcdui.*;
 

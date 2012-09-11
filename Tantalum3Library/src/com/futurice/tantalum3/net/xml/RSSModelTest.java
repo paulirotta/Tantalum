@@ -48,7 +48,7 @@ public class RSSModelTest extends TestCase {
         } catch (Exception ex) {
             fail("Can not parse RSS: " + ex);
         }
-        assertEquals("rss size", 78, instance.size());
+        assertEquals("rss size", 86, instance.size());
         try {
             instance.setXML(null);
             fail("Should not attempt to parse null RSS");

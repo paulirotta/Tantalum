@@ -42,10 +42,10 @@ public class StaticWebCache extends StaticCache {
 
             public Object doInBackground(final Object params) {
                 if (task != null) {
-                    return setResult(task.doInBackground(params));
+                    task.doInBackground(params);
                 }
                 
-                return getResult();
+                return params;
             }
 
             /**

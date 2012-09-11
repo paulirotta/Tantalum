@@ -25,9 +25,11 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
         /**
          * Finish other view initialization on other threads
          */
-        public void exec() {
+        public Object doInBackground(final Object args) {
             detailedView = new DetailedCanvas(PicasaViewer.this);
             searchView = new SearchCanvas(PicasaViewer.this);
+            
+            return args;
         }
     };
 

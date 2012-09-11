@@ -171,7 +171,7 @@ public final class IconListView extends RSSListView {
                                         cancel(false);
                                     }
                                     
-                                    return getResult();
+                                    return o;
                                 }
 
                                 public boolean cancel(boolean mayInterruptIfNeeded) {

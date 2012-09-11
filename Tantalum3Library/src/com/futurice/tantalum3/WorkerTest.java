@@ -17,11 +17,11 @@ public class WorkerTest extends TestCase {
     public WorkerTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(2, "WorkerTest");
+        Worker.init(4);
     }
 
     public void test(int testNumber) throws Throwable {
         PlatformUtils.setProgram(this);
-        Worker.init(4);
         switch (testNumber) {
             case 0:
                 testRun();

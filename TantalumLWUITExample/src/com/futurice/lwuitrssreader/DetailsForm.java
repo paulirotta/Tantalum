@@ -5,6 +5,7 @@
 package com.futurice.lwuitrssreader;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
 import com.sun.lwuit.Command;

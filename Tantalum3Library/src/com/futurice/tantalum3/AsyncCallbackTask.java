@@ -8,7 +8,7 @@ package com.futurice.tantalum3;
  *
  * @author phou
  */
-public abstract class AsyncCallbackTask extends Task {
+public abstract class AsyncCallbackTask extends Task implements Runnable {
 
     public final void run() {
         onPostExecute(getResult());

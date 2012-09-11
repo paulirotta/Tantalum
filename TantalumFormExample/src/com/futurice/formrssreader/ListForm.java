@@ -5,6 +5,7 @@
 package com.futurice.formrssreader;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
+import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -36,7 +37,7 @@ public final class ListForm extends Form implements CommandListener {
             }
         }
     });
-    private final RSSModel rssModel = new RSSModel(60);
+    private final RSSModel rssModel = new RSSModel(40);
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
@@ -58,7 +59,6 @@ public final class ListForm extends Form implements CommandListener {
         setCommandListener(this);
         try {
             L.i("Start start thread reload", "");
-            // Wait max 2sec for data load, parse and paint to make smooth startup UX
             reload(false);
         } catch (Exception ex) {
             //#debug
@@ -146,6 +146,7 @@ public final class ListForm extends Form implements CommandListener {
             };
             feedCache.get(feedUrl, uiTask);
         }
+        Worker.fork(uiTask);
 
         return uiTask;
     }

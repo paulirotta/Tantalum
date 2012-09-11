@@ -120,7 +120,7 @@ public abstract class Task implements Workable {
 
     public final synchronized Object joinUI(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (!(this instanceof Runnable)) {
-            throw new ClassCastException("Can not joinUI() unless Task is a Closure");
+            throw new ClassCastException("Can not joinUI() unless Task is a Runnable such as AsyncCallbackTask");
         }
 
         long t = System.currentTimeMillis();

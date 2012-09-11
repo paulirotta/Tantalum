@@ -29,7 +29,6 @@ public class StaticCache {
 
     private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
     private static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
-
         public boolean before(final Object o1, final Object o2) {
             return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
         }
@@ -113,11 +112,11 @@ public class StaticCache {
      *
      * @param key
      * @param task
-     * @param priority - default is Work.NORMAL_PRIORITY
-     * set to Work.HIGH_PRIORITY if you want the results
-     * quickly. Note that your request for priority may be denied if you have
-     * recently changed the value and the value happens to have expired from the
-     * RAM cache due to a low memory condition.
+     * @param priority - default is Work.NORMAL_PRIORITY set to
+     * Work.HIGH_PRIORITY if you want the results quickly. Note that your
+     * request for priority may be denied if you have recently changed the value
+     * and the value happens to have expired from the RAM cache due to a low
+     * memory condition.
      */
     public void get(final String key, final Task task) {
         if (key == null || key.length() == 0) {
@@ -134,8 +133,9 @@ public class StaticCache {
             task.doInBackground(ho);
         } else {
             final Workable getWorkable = new Workable() {
-
                 public void exec(final Object args) {
+                    //#debug
+                    L.i("RMS get", key);
                     try {
                         final Object o = synchronousGet(key);
 
@@ -201,7 +201,6 @@ public class StaticCache {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
         Worker.forkSerial(new Workable() {
-
             public void exec(final Object args) {
                 try {
                     synchronousPutToRMS(key, bytes);
@@ -220,9 +219,9 @@ public class StaticCache {
      * complete.
      *
      * Generally you should use this method if you are on a Worker thread to
-     * avoid adding large objects in the Worker forkSerial waiting to be stored to
-     * the RMS which could lead to a memory shortage. If you are on the EDT, use
-     * the asynchronous put() method instead to avoid blocking the calling
+     * avoid adding large objects in the Worker forkSerial waiting to be stored
+     * to the RMS which could lead to a memory shortage. If you are on the EDT,
+     * use the asynchronous put() method instead to avoid blocking the calling
      * thread.
      *
      * @param key
@@ -366,11 +365,11 @@ public class StaticCache {
         //#debug
         L.i("Start Cache Clear", "ID=" + priority);
         final String[] keys;
-        
+
         synchronized (this) {
             keys = new String[accessOrder.size()];
             accessOrder.copyInto(keys);
-        }        
+        }
         for (int i = 0; i < keys.length; i++) {
             remove(keys[i]);
         }
