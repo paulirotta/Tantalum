@@ -4,8 +4,7 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum3.AsyncCallbackResult;
-import com.futurice.tantalum3.UICallbackTask;
+import com.futurice.tantalum3.AsyncCallbackTask;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -91,8 +90,8 @@ public final class ListForm extends Form implements CommandListener {
      *
      * @param forceLoad
      */
-    public AsyncCallbackResult reload(final boolean forceLoad) {
-        final AsyncCallbackResult uiTask;
+    public AsyncCallbackTask reload(final boolean forceLoad) {
+        final AsyncCallbackTask uiTask;
 
         if (loading && !forceLoad) {
             //already loading
@@ -118,8 +117,8 @@ public final class ListForm extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            uiTask = new AsyncCallbackResult() {
-                public void run() {
+            uiTask = new AsyncCallbackTask() {
+                public void onPostExecute(final Object result) {
                     loading = false;
                     paint();
                 }
@@ -127,26 +126,22 @@ public final class ListForm extends Form implements CommandListener {
                 public boolean cancel(final boolean mayInterruptIfNeeded) {
                     loading = false;
 
-                    super.cancel();
-                    
-                    return false;
+                    return super.cancel(mayInterruptIfNeeded);
                 }
             };
             feedCache.update(feedUrl, uiTask);
         } else {
-            uiTask = new AsyncCallbackResult() {
+            uiTask = new AsyncCallbackTask() {
+                public void onPostExecute(final Object result) {
+                    loading = false;
+                    paint();
+                }
+
                 public boolean cancel(final boolean mayInterruptIfNeeded) {
                     loading = false;
                     reload(true);
 
-                    super.cancel();
-                    
-                    return false;
-                }
-
-                public void run() {
-                    loading = false;
-                    paint();
+                    return super.cancel(mayInterruptIfNeeded);
                 }
             };
             feedCache.get(feedUrl, uiTask);
@@ -179,16 +174,16 @@ public final class ListForm extends Form implements CommandListener {
 
     /**
      * Update the display
-     * 
+     *
      * Only call this from the UI thread
      */
-    private void paint() {        
+    private void paint() {
         deleteAll();
         if (loading) {
             renderLoading();
             return;
         }
-        
+
         final int len = rssModel.size();
         for (int i = 0; i < len; i++) {
             addItem((RSSItem) rssModel.elementAt(i));

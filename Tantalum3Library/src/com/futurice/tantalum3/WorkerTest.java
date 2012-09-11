@@ -16,7 +16,7 @@ public class WorkerTest extends TestCase {
 
     public WorkerTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(3, "WorkerTest");
+        super(2, "WorkerTest");
     }
 
     public void test(int testNumber) throws Throwable {
@@ -28,9 +28,6 @@ public class WorkerTest extends TestCase {
                 break;
             case 1:
                 testQueue();
-                break;
-            case 2:
-                testQueueEDT();
                 break;
             default:
                 break;
@@ -90,51 +87,5 @@ public class WorkerTest extends TestCase {
             public void exec(final Object args) {
             }
         });
-    }
-
-    /**
-     * Test of testQueueEDT method, of class Worker.
-     */
-    public void testQueueEDT() throws AssertionFailedException {
-        System.out.println("queueEDT");
-        final Object mutex = new Object();
-        AsyncCallbackResult callbackResult = new AsyncCallbackResult() {            
-
-            public void run() {
-                set("done");
-                synchronized(mutex) {
-                    mutex.notifyAll();
-                }
-            }
-        };
-        
-        PlatformUtils.runOnUiThread((Runnable) callbackResult);        
-        try {
-            synchronized(mutex) {
-                mutex.wait(1000);
-            }
-            assertEquals("done", (String) callbackResult.get());
-        } catch (Exception e) {
-        }
-    }
-
-    /**
-     * Test of testQueueEDT method, of class Worker.
-     */
-    public void testQueueEDTNoWait() throws AssertionFailedException {
-        System.out.println("queueEDT");
-        AsyncCallbackResult callbackResult = new AsyncCallbackResult() {            
-
-            public void run() {
-                set("done");
-            }
-        };
-        
-        PlatformUtils.runOnUiThread((Runnable) callbackResult);        
-        try {
-            // Test should wait here until EDT executes
-            assertEquals("done", (String) callbackResult.get());
-        } catch (Exception e) {
-        }
     }
 }

@@ -205,14 +205,14 @@ public final class VerticalListView extends RSSListView {
             if (tapped) {
                 canvas.showDetails((RSSItem) rssModel.elementAt(this.selectedIndex), 0);
             } else {
-                canvas.queueRepaint();
+                canvas.repaint();
             }
         }
     }
 
     public void deselectItem() {
         if (setSelectedIndex(-1)) {
-            canvas.queueRepaint();
+            canvas.repaint();
         }
     }
 

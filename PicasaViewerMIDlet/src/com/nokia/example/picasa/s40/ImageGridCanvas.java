@@ -1,7 +1,7 @@
 package com.nokia.example.picasa.s40;
 
-import com.futurice.tantalum3.AsyncCallbackResult;
-import com.futurice.tantalum3.AsyncResult;
+import com.futurice.tantalum3.AsyncCallbackTask;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
@@ -43,10 +43,10 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public void loadFeed(final boolean search, final boolean fromWeb) {
-        PicasaStorage.getImageObjects(new AsyncCallbackResult() {
-            public void run() {
+        PicasaStorage.getImageObjects(new AsyncCallbackTask() {
+            protected void onPostExecute(final Object result) {
                 try {
-                    imageObjectModel = (Vector) get();
+                    imageObjectModel = (Vector) result;
                     top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2);
                     repaint();
                 } catch (Exception ex) {
@@ -187,20 +187,20 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     /**
      * Object for adding images to hashmap when they're loaded.
      */
-    protected final class ImageResult extends AsyncResult {
+    protected final class ImageResult extends Task {
+        private final Object key;
 
-        private Object key;
-
-        public ImageResult(Object o) {
-            key = o;
+        public ImageResult(Object key) {
+            this.key = key;
         }
 
-        public void set(Object o) {
+        public Object doInBackground(final Object o) {
             if (o != null) {
                 images.put(key, o);
                 repaint();
             }
-            super.set(o);
+            
+            return o;
         }
     }
 }

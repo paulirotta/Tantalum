@@ -4,7 +4,6 @@
  */
 package com.futurice.tantalum3.net;
 
-import com.futurice.tantalum3.AsyncResult;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
 import java.io.ByteArrayOutputStream;
@@ -25,7 +24,6 @@ import javax.microedition.io.HttpConnection;
 public class HttpGetter extends Task {
 
     private final String url;
-    protected final AsyncResult task;
     protected int retriesRemaining;
     protected byte[] postMessage = null;
     protected String requestMethod = HttpConnection.GET;
@@ -37,16 +35,12 @@ public class HttpGetter extends Task {
      * @param retriesRemaining - how many time to attempt connection
      * @param task - optional object notified on the EDT with the task
      */
-    public HttpGetter(final String url, final int retriesRemaining, final AsyncResult task) {
+    public HttpGetter(final String url, final int retriesRemaining) {
         if (url == null || url.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }
-        if (task == null) {
-            throw new IllegalArgumentException("HttpGetter was null result handler- meaningless get operation: " + url);
-        }
         this.url = url;
         this.retriesRemaining = retriesRemaining;
-        this.task = task;
     }
 
     public String getUrl() {
@@ -60,7 +54,6 @@ public class HttpGetter extends Task {
         HttpConnection httpConnection = null;
         InputStream inputStream = null;
         OutputStream outputStream = null;
-        byte[] bytes = null;
         boolean tryAgain = false;
         boolean success = false;
 
@@ -77,17 +70,19 @@ public class HttpGetter extends Task {
                 //#debug
                 L.i(this.getClass().getName() + " start fixed_length read", url + " content_length=" + length);
                 int bytesRead = 0;
-                bytes = new byte[(int) length];
+                byte[] bytes = new byte[(int) length];
                 while (bytesRead < bytes.length) {
                     final int br = inputStream.read(bytes, bytesRead, bytes.length - bytesRead);
                     if (br > 0) {
                         bytesRead += br;
                     } else {
                         //#debug
-                        L.i(this.getClass().getName() + " recived EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
+                        L.i(this.getClass().getName() + " recieved EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
                         break;
                     }
                 }
+                setResult(bytes);
+                bytes = null;
             } else {
                 //#debug
                 L.i(this.getClass().getName() + " start variable length read", url);
@@ -101,23 +96,19 @@ public class HttpGetter extends Task {
                         break;
                     }
                 }
-                bytes = bos.toByteArray();
-                result = bytes;
+                setResult(bos.toByteArray());
                 readBuffer = null;
             }
 
             //#debug
-            L.i(this.getClass().getName() + " complete", bytes.length + " bytes, " + url);
-            task.set(bytes);
+            L.i(this.getClass().getName() + " complete", ((byte[]) getResult()).length + " bytes, " + url);
             success = true;
         } catch (IllegalArgumentException e) {
             //#debug
             L.e(this.getClass().getName() + " has a problem", url, e);
-            bytes = null;
         } catch (IOException e) {
             //#debug
             L.e(this.getClass().getName() + " retries remaining", url + ", retries=" + retriesRemaining, e);
-            bytes = null;
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
@@ -128,7 +119,6 @@ public class HttpGetter extends Task {
         } catch (Exception e) {
             //#debug
             L.e(this.getClass().getName() + " has a problem", url, e);
-            bytes = null;
         } finally {
             try {
                 inputStream.close();
@@ -156,25 +146,18 @@ public class HttpGetter extends Task {
             httpConnection = null;
 
             if (tryAgain) {
-                result = null;
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ex) {
                 }
                 doInBackground(params);
-            } else if (success) {
-                onResult((byte[]) result);
-            } else {
+            } else if (!success) {
                 cancel(false);
             }
             //#debug
             L.i("End " + this.getClass().getName(), url);
             
-            return result;
+            return getResult();
         }
-    }
-    
-    protected void onResult(final byte[] bytes) {
-        task.set(result);
     }
 }

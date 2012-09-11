@@ -1,6 +1,6 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.AsyncResult;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -120,15 +120,18 @@ public final class DetailsView extends View {
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
-                imageCache.get(item.getThumbnail(), new AsyncResult() {
+                imageCache.get(item.getThumbnail(), new Task() {
 
-                    public void set(final Object o) {
-                        super.set(o);
+                    public Object doInBackground(final Object params) {
+                        final Object r = getResult();
+                        
                         item.setLoadingImage(false);
                         if (currentItem == item) {
-                            currentIcon = (Image) o;
+                            currentIcon = (Image) r;
                         }
-                        canvas.queueRepaint();
+                        canvas.repaint();
+                        
+                        return r;
                     }
 
                     public boolean cancel(boolean mayInterruptIfNeeded) {
@@ -145,7 +148,7 @@ public final class DetailsView extends View {
         if (x == 0) {
             renderScrollBar(g, contentHeight);
         } else {
-            canvas.queueRepaint();
+            canvas.repaint();
         }
     }
 
@@ -177,24 +180,30 @@ public final class DetailsView extends View {
         this.leftItem = leftItem;
         this.rightItem = rightItem;
         if (leftItem != null) {
-            imageCache.get(leftItem.getThumbnail(), new AsyncResult() {
+            imageCache.get(leftItem.getThumbnail(), new Task() {
 
-                public void set(final Object o) {
-                    super.set(o);
+                public Object doInBackground(final Object params) {
+                    final Object r = getResult();
+                    
                     if (DetailsView.this.leftItem == leftItem) {
-                        leftIcon = (Image) o;
+                        leftIcon = (Image) r;
                     }
+                    
+                    return r;
                 }
             });
         }
         if (rightItem != null) {
-            imageCache.get(rightItem.getThumbnail(), new AsyncResult() {
+            imageCache.get(rightItem.getThumbnail(), new Task() {
 
-                public void set(final Object o) {
-                    super.set(o);
+                public Object doInBackground(final Object params) {
+                    final Object r = getResult();
+                    
                     if (DetailsView.this.rightItem == rightItem) {
-                        rightIcon = (Image) o;
+                        rightIcon = (Image) r;
                     }
+                    
+                    return r;
                 }
             });
         }

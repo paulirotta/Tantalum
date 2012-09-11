@@ -4,7 +4,7 @@
  */
 package com.futurice.tantalum3.net;
 
-import com.futurice.tantalum3.AsyncResult;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
@@ -31,18 +31,21 @@ public class StaticWebCache extends StaticCache {
      * @param result
      * @param priority - Default is Worker.NORMAL_PRIORITY
      */
-    public void get(final String url, final AsyncResult asyncResult) {
-        super.get(url, new AsyncResult() {
+    public void get(final String url, final Task task) {
+        super.get(url, new Task() {
 
             /**
              * Local Cache get returned a result, no need to get it from the
              * network
              *
              */
-            public void set(final Object o) {
-                if (asyncResult != null) {
-                    asyncResult.set(o);
+
+            public Object doInBackground(final Object params) {
+                if (task != null) {
+                    return setResult(task.doInBackground(params));
                 }
+                
+                return getResult();
             }
 
             /**
@@ -52,41 +55,37 @@ public class StaticWebCache extends StaticCache {
             public boolean cancel(final boolean mayInterruptIfNeeded) {
                 //#debug
                 L.i("No result from cache get, shift to HTTP", url);
-                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new AsyncResult() {
+                if (mayInterruptIfNeeded) {
+                    return super.cancel(mayInterruptIfNeeded);
+                }
+                
+                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES) {
 
-                    public void set(Object o) {
+                    public Object doInBackground(final Object o) {
+                        super.doInBackground(o);
+                        
                         try {
-                            o = put(url, (byte[]) o); // Convert to use form
-                            if (asyncResult != null) {
-                                if (o != null) {
-                                    asyncResult.set(o);
-                                    //#debug
-                                    L.i("END SAVE: After no result from cache get, shift to HTTP", url);
-                                }
-                            }
+                            return setResult(put(url, (byte[]) getResult())); // Convert to use form
                         } catch (Exception e) {
                             //#debug
                             L.e("Can not set result", url, e);
-                            cancel(false);
+                            super.cancel(false);
                         }
-                    }
 
-                    public boolean cancel(boolean mayInterruptIfNeeded) {
-                        if (asyncResult != null) {
-                            asyncResult.cancel();
-                        }
-                        
-                        return false;
+                        return null;
                     }
-                });
+                };
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible fork delays
                 httpGetter.doInBackground(url);
+                if (httpGetter.getStatus() == EXEC_FINISHED) {
+                    setStatus(EXEC_FINISHED);
+                } else {
+                    super.cancel(mayInterruptIfNeeded);
+                }
   
-                //TODO FIXME is this correct?
                 return false;
-//                return super.cancel(mayInterruptIfNeeded);
             }
         });
     }
@@ -97,7 +96,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public void update(final String url, final AsyncResult result) {
+    public void update(final String url, final Task result) {
         Worker.fork(new Workable() {
 
             public void exec(final Object args) {

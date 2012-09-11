@@ -1,6 +1,6 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum3.AsyncResult;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -73,17 +73,17 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 list.getModel().removeItem(i);
             }
 
-            final AsyncResult result = new AsyncResult() {
-
+            final Task result = new Task() {
+                public Object doInBackground(Object params) {
+                    isReloading = false;
+                    
+                    return params;
+                }
+                
                 public boolean cancel(boolean mayInterruptIfNeeded) {
                     isReloading = false;
                     
-                    return false;
-                }
-
-                public void set(Object o) {
-                    isReloading = false;
-                    super.set(o);
+                    return super.cancel(mayInterruptIfNeeded);
                 }
             };
 

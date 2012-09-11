@@ -19,7 +19,7 @@ public abstract class Task implements Workable {
     public static final int UI_RUN_FINISHED = 3; // for Closure extension
     public static final int CANCELED = 4;
     public static final int EXCEPTION = 5;
-    protected Object result = null; // Always access within a synchronized block
+    private Object result = null; // Always access within a synchronized block
     protected int status = UI_RUN_FINISHED; // Always access within a synchronized block
 
     /**
@@ -61,6 +61,14 @@ public abstract class Task implements Workable {
             default:
                 throw new ExecutionException();
         }
+    }
+    
+    protected final synchronized Object getResult() {
+        return result;
+    }
+
+    protected final synchronized Object setResult(final Object result) {
+        return this.result = result;
     }
 
     /**
@@ -204,7 +212,7 @@ public abstract class Task implements Workable {
      *
      * @param params
      */
-    protected abstract Object doInBackground(final Object params);
+    public abstract Object doInBackground(final Object params);
 
     /**
      * Cancel execution if possible.

@@ -34,7 +34,6 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final int MARGIN = FONT_TITLE.getHeight() / 2;
-    private static volatile boolean repaintIsCurrentlyQueued = false;
 
     /**
      * Constructor for RSSReaderCanvas
@@ -102,20 +101,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
      * @param g
      */
     public void paint(final Graphics g) {
-        repaintIsCurrentlyQueued = false;
         currentView.render(g, getWidth() - View.SCROLL_BAR_WIDTH, getHeight());
-    }
-
-    /**
-     * Call this instead of repaint() to ensure that only one repaint()
-     * operation at a time is queued up on the EDT.
-     *
-     */
-    public void queueRepaint() {
-        if (!repaintIsCurrentlyQueued) {
-            repaintIsCurrentlyQueued = true;
-            repaint();
-        }
     }
 
     /**
@@ -219,7 +205,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
      */
     public void animate(FrameAnimator fa, int x, int y, short delta, short deltaX, short deltaY, boolean lastFrame) {
         currentView.setRenderY(y);
-        queueRepaint();
+        repaint();
     }
 //#endif
 
@@ -234,7 +220,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
             addCommand(currentView.getCommands()[i]);
         }
         setCommandListener(currentView);
-        queueRepaint();
+        repaint();
     }
 
     public boolean isPortrait() {

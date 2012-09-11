@@ -4,7 +4,7 @@
  */
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.AsyncResult;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -130,7 +130,7 @@ public final class IconListView extends RSSListView {
                                     // End animation
                                     icons.put(item, ((AnimatedImage) icon).image);
                                 }
-                                canvas.queueRepaint();
+                                canvas.repaint();
                             }
                         }
                     } else if (!item.isLoadingImage()) {
@@ -140,10 +140,9 @@ public final class IconListView extends RSSListView {
                             //#debug
                             L.i("Trivial thumbnail link in RSS feed", item.getTitle());
                         } else {
-                            DetailsView.imageCache.get(item.getThumbnail(), new AsyncResult() {
+                            DetailsView.imageCache.get(item.getThumbnail(), new Task() {
 
-                                public void set(final Object o) {
-                                    super.set(o);
+                                public Object doInBackground(final Object o) {
                                     try {
                                         //#debug
                                         L.i("getIcon result", "" + o);
@@ -165,18 +164,20 @@ public final class IconListView extends RSSListView {
                                         } else {
                                             icons.put(item, icon);
                                         }
-                                        canvas.queueRepaint();
+                                        canvas.repaint();
                                     } catch (Exception e) {
                                         //#debug
                                         L.e("Problem with getIcon setResult", item.getThumbnail(), e);
                                         cancel(false);
                                     }
+                                    
+                                    return getResult();
                                 }
 
                                 public boolean cancel(boolean mayInterruptIfNeeded) {
                                     item.setLoadingImage(false);
                                     
-                                    return false;
+                                    return super.cancel(mayInterruptIfNeeded);
                                 }
                             });
                         }
@@ -204,7 +205,7 @@ public final class IconListView extends RSSListView {
 
     public void deselectItem() {
         if (setSelectedIndex(-1)) {
-            canvas.queueRepaint();
+            canvas.repaint();
         }
     }
 
@@ -234,7 +235,7 @@ public final class IconListView extends RSSListView {
             if (tapped) {
                 canvas.showDetails((RSSItem) rssModel.elementAt(this.selectedIndex), 0);
             } else {
-                canvas.queueRepaint();
+                canvas.repaint();
             }
         }
     }

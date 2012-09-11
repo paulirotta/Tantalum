@@ -1,7 +1,5 @@
 package com.futurice.tantalum3;
 
-import com.futurice.tantalum3.log.L;
-
 /**
  * An implementation of Android's AsyncTask pattern for J2ME. This can be used
  * on both J2ME and Android, and on Android it is intended as a drop-in
@@ -123,14 +121,6 @@ public abstract class AsyncTask extends Task {
         return this;
     }
 
-    public final void run() {
-        final Object r;
-        synchronized (this) {
-            r = result;
-        }
-        onPostExecute(r);
-    }
-
     public final synchronized boolean isCancelled() {
         return status == AsyncTask.CANCELED || status == EXCEPTION;
     }
@@ -148,7 +138,7 @@ public abstract class AsyncTask extends Task {
      * @param params
      * @return true if successful
      */
-    protected abstract Object doInBackground(Object params);
+    public abstract Object doInBackground(Object params);
 
     /**
      * Call this from any thread to initiate a call toe onProgressUpdate() on

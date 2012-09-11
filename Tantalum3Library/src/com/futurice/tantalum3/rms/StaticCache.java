@@ -1,6 +1,6 @@
 package com.futurice.tantalum3.rms;
 
-import com.futurice.tantalum3.AsyncResult;
+import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
@@ -112,18 +112,18 @@ public class StaticCache {
      *
      *
      * @param key
-     * @param asyncResult
+     * @param task
      * @param priority - default is Work.NORMAL_PRIORITY
      * set to Work.HIGH_PRIORITY if you want the results
      * quickly. Note that your request for priority may be denied if you have
      * recently changed the value and the value happens to have expired from the
      * RAM cache due to a low memory condition.
      */
-    public void get(final String key, final AsyncResult asyncResult) {
+    public void get(final String key, final Task task) {
         if (key == null || key.length() == 0) {
             //#debug
             L.i("Trivial get", "");
-            asyncResult.cancel();
+            task.cancel(false);
             return;
         }
         final Object ho = synchronousRAMCacheGet(key);
@@ -131,7 +131,7 @@ public class StaticCache {
         if (ho != null) {
             //#debug
             L.i("RAM cache hit", "(" + priority + ") " + key);
-            asyncResult.set(ho);
+            task.doInBackground(ho);
         } else {
             final Workable getWorkable = new Workable() {
 
@@ -142,11 +142,11 @@ public class StaticCache {
                         if (o != null) {
                             //#debug
                             L.i("RMS cache hit", key);
-                            asyncResult.set(o);
+                            task.doInBackground(o);
                         } else {
                             //#debug
                             L.i("RMS cache miss", key);
-                            asyncResult.cancel();
+                            task.cancel(false);
                         }
                     } catch (Exception e) {
                         //#debug

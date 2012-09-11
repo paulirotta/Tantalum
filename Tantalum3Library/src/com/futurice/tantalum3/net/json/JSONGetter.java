@@ -22,7 +22,6 @@
  */
 package com.futurice.tantalum3.net.json;
 
-import com.futurice.tantalum3.AsyncResult;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpGetter;
 
@@ -31,31 +30,29 @@ import com.futurice.tantalum3.net.HttpGetter;
  * @author Paul Houghton
  */
 public class JSONGetter extends HttpGetter {
-    protected final AsyncResult asyncResult;
-    private final JSONModel jsonvo;
 
-    public JSONGetter(final String url, final JSONModel jsonModel, final AsyncResult asyncResult, final int retriesRemaining) {
-        super(url, retriesRemaining, asyncResult);
-        this.jsonvo = jsonModel;
-        this.asyncResult = asyncResult;
+    private final JSONModel jsonModel;
+
+    public JSONGetter(final String url, final JSONModel jsonModel, final int retriesRemaining) {
+        super(url, retriesRemaining);
+        this.jsonModel = jsonModel;
     }
 
-    protected void onResult(final byte[] bytes) {
-        String value = "";
+    public Object doInBackground(final Object params) {
+        String value = ((byte[]) super.doInBackground(params)).toString().trim();
 
         try {
-            value = bytes.toString().trim();
             if (value.startsWith("[")) {
                 // Parser expects non-array base object- add one
                 value = "{\"base:\"" + value + "}";
             }
-            jsonvo.setJSON(value);
-            asyncResult.set(value);
+            jsonModel.setJSON(value);
         } catch (Exception e) {
             //#debug
             L.e("JSONGetter HTTP response problem", this.getUrl() + " : " + value, e);
             cancel(false);
-            task.cancel();
-        }        
-    }    
+        }
+        
+        return value;
+    }
 }
