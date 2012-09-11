@@ -56,7 +56,6 @@ public final class DetailedCanvas extends GestureCanvas {
                 loading = true;
                 PicasaStorage.imageCache.get(PicasaStorage.selectedImage.imageUrl, new Task() {
                     public Object doInBackground(final Object in) {
-                        setResult(in);
                         if (in != null) {
                             image = (Image) in;
                             stopSpin();

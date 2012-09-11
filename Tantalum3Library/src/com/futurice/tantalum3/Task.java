@@ -224,7 +224,7 @@ public abstract class Task implements Workable {
      *
      * @param params
      */
-    public abstract Object doInBackground(Object in);
+    protected abstract Object doInBackground(Object in);
 
     /**
      * Cancel execution if possible.

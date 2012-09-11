@@ -123,8 +123,6 @@ public final class DetailsView extends View {
                 imageCache.get(item.getThumbnail(), new Task() {
 
                     public Object doInBackground(final Object in) {
-                        setResult(in);
-                        
                         item.setLoadingImage(false);
                         if (currentItem == item) {
                             currentIcon = (Image) in;

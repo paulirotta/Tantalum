@@ -130,7 +130,7 @@ public class StaticCache {
         if (fromRamCache != null) {
             //#debug
             L.i("RAM cache hit", "(" + priority + ") " + key);
-            task.doInBackground(fromRamCache);
+            task.exec(fromRamCache);
         } else {
             final Workable getWorkable = new Workable() {
                 public Object exec(final Object in) {
@@ -142,7 +142,7 @@ public class StaticCache {
                         if (o != null) {
                             //#debug
                             L.i("RMS cache hit", key);
-                            task.doInBackground(o);
+                            task.exec(o);
                         } else {
                             //#debug
                             L.i("RMS cache miss", key);

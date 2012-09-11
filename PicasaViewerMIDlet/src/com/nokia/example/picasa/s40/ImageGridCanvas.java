@@ -195,7 +195,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         }
 
         public Object doInBackground(final Object in) {
-            setResult(in);
             if (in != null) {
                 images.put(key, in);
                 repaint();
