@@ -16,5 +16,11 @@ package com.futurice.tantalum3;
  * @author phou
  */
 public interface Workable {
-    public void exec(Object args);
+    
+    /**
+     * Do a task on a background thread
+     * 
+     * @param in 
+     */
+    public Object exec(Object in);
 }

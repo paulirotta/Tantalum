@@ -14,8 +14,8 @@ public abstract class AsyncCallbackTask extends Task implements Runnable {
         onPostExecute(getResult());
     }
 
-    public Object doInBackground(final Object params) {
-        return setResult(params);
+    public Object doInBackground(final Object in) {
+        return setResult(in);
     }
 
     protected abstract void onPostExecute(Object result);

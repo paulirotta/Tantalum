@@ -47,11 +47,13 @@ public class WorkerTest extends TestCase {
         WorkableResult wr = new WorkableResult() {
             private Object o;
             
-            public void exec(final Object args) {
+            public Object exec(final Object in) {
                 synchronized (mutex) {
                     o = "yes";
                     mutex.notifyAll();
                 }
+                
+                return in;
             }
 
             public Object getResult() {
@@ -79,13 +81,15 @@ public class WorkerTest extends TestCase {
         Worker.fork(null);
         Worker.fork(new Workable() {
 
-            public void exec(final Object args) {
+            public Object exec(final Object in) {
+                return in;
             }            
         });
         Worker.fork(new Workable() {
 
-            public void exec(final Object args) {
-            }
+            public Object exec(final Object in) {
+                return in;
+            }            
         });
     }
 }

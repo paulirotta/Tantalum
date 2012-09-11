@@ -38,8 +38,8 @@ public class JSONGetter extends HttpGetter {
         this.jsonModel = jsonModel;
     }
 
-    public Object doInBackground(final Object params) {
-        String value = ((byte[]) super.doInBackground(params)).toString().trim();
+    public Object doInBackground(final Object in) {
+        String value = ((byte[]) super.doInBackground(in)).toString().trim();
 
         try {
             if (value.startsWith("[")) {
@@ -47,12 +47,13 @@ public class JSONGetter extends HttpGetter {
                 value = "{\"base:\"" + value + "}";
             }
             jsonModel.setJSON(value);
+            setResult(jsonModel);
         } catch (Exception e) {
             //#debug
             L.e("JSONGetter HTTP response problem", this.getUrl() + " : " + value, e);
             cancel(false);
         }
         
-        return value;
+        return jsonModel;
     }
 }

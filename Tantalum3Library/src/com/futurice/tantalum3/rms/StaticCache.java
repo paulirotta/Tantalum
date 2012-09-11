@@ -125,15 +125,15 @@ public class StaticCache {
             task.cancel(false);
             return;
         }
-        final Object ho = synchronousRAMCacheGet(key);
+        final Object fromRamCache = synchronousRAMCacheGet(key);
 
-        if (ho != null) {
+        if (fromRamCache != null) {
             //#debug
             L.i("RAM cache hit", "(" + priority + ") " + key);
-            task.doInBackground(ho);
+            task.doInBackground(fromRamCache);
         } else {
             final Workable getWorkable = new Workable() {
-                public void exec(final Object args) {
+                public Object exec(final Object in) {
                     //#debug
                     L.i("RMS get", key);
                     try {
@@ -148,10 +148,14 @@ public class StaticCache {
                             L.i("RMS cache miss", key);
                             task.cancel(false);
                         }
+                        
+                        return o;
                     } catch (Exception e) {
                         //#debug
                         L.e("Can not get", key, e);
                     }
+                    
+                    return in;
                 }
             };
             Worker.fork(getWorkable, Worker.HIGH_PRIORITY);
@@ -201,13 +205,15 @@ public class StaticCache {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
         Worker.forkSerial(new Workable() {
-            public void exec(final Object args) {
+            public Object exec(final Object in) {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {
                     //#debug
                     L.e("Can not synch write to RMS", key, e);
                 }
+                
+                return in;
             }
         }, RMS_WORKER_INDEX);
 

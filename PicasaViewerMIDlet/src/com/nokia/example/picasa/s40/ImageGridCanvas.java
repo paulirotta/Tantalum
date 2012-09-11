@@ -194,13 +194,14 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             this.key = key;
         }
 
-        public Object doInBackground(final Object o) {
-            if (o != null) {
-                images.put(key, o);
+        public Object doInBackground(final Object in) {
+            setResult(in);
+            if (in != null) {
+                images.put(key, in);
                 repaint();
             }
             
-            return o;
+            return in;
         }
     }
 }

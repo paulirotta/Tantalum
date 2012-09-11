@@ -37,7 +37,6 @@ public class ListModel extends DefaultListModel implements DataChangedListener, 
         try {
             if (bytes.length > 0) {
                 rssModel.setXML(bytes);
-//                model.repaint();
             }
 
             return this;

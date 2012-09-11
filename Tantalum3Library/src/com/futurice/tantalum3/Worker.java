@@ -63,7 +63,7 @@ public final class Worker implements Runnable {
             /**
              * The first worker creates the others in the background
              */
-            public void exec(final Object args) {
+            public Object exec(final Object in) {
                 int i = 1;
 
                 try {
@@ -74,6 +74,8 @@ public final class Worker implements Runnable {
                     //#debug
                     L.e("Can not create worker", "i=" + i, e);
                 }
+                
+                return in;
             }
         });
     }

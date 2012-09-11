@@ -122,16 +122,16 @@ public final class DetailsView extends View {
                 item.setLoadingImage(true);
                 imageCache.get(item.getThumbnail(), new Task() {
 
-                    public Object doInBackground(final Object params) {
-                        final Object r = getResult();
+                    public Object doInBackground(final Object in) {
+                        setResult(in);
                         
                         item.setLoadingImage(false);
                         if (currentItem == item) {
-                            currentIcon = (Image) r;
+                            currentIcon = (Image) in;
                         }
                         canvas.repaint();
                         
-                        return r;
+                        return in;
                     }
 
                     public boolean cancel(boolean mayInterruptIfNeeded) {

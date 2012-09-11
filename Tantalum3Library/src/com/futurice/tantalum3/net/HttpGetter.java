@@ -47,7 +47,7 @@ public class HttpGetter extends Task {
         return this.url;
     }
 
-    public Object doInBackground(final Object params) {
+    public Object doInBackground(final Object in) {
         //#debug
         L.i(this.getClass().getName() + " start", url);
         ByteArrayOutputStream bos = null;
@@ -150,7 +150,7 @@ public class HttpGetter extends Task {
                     Thread.sleep(5000);
                 } catch (InterruptedException ex) {
                 }
-                doInBackground(params);
+                doInBackground(in);
             } else if (!success) {
                 cancel(false);
             }

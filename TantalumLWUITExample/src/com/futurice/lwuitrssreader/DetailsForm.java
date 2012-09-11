@@ -86,9 +86,9 @@ public class DetailsForm extends Form implements ActionListener {
         addComponent(imgLabel);
 
         imageCache.get(item.getThumbnail(), new AsyncCallbackTask() {
-            protected void onPostExecute(Object result) {
+            protected void onPostExecute(final Object result) {
                 try {
-                    imgLabel.setIcon((Image) get());
+                    imgLabel.setIcon((Image) result);
                     DetailsForm.this.repaint();
                 } catch (Exception ex) {
                     //#debug

@@ -50,8 +50,10 @@ public abstract class AsyncTask extends Task {
      */
     public static void execute(final Runnable runnable) {
         Worker.forkSerial(new Workable() {
-            public void exec(final Object params) {
+            public Object exec(final Object in) {
                 runnable.run();
+                
+                return in;
             }
         }, ASYNC_TASK_WORKER_INDEX);
     }
@@ -131,14 +133,6 @@ public abstract class AsyncTask extends Task {
      */
     protected void onPreExecute() {
     }
-
-    /**
-     * This method will run in the background in parallel
-     *
-     * @param params
-     * @return true if successful
-     */
-    public abstract Object doInBackground(Object params);
 
     /**
      * Call this from any thread to initiate a call toe onProgressUpdate() on

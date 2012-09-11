@@ -13,15 +13,22 @@ import com.futurice.tantalum3.log.L;
 public abstract class Task implements Workable {
     // status values
 
-    public static final int EXEC_PENDING = 0;
-    public static final int EXEC_STARTED = 1;
-    public static final int EXEC_FINISHED = 2;
-    public static final int UI_RUN_FINISHED = 3; // for Closure extension
-    public static final int CANCELED = 4;
-    public static final int EXCEPTION = 5;
+    public static final int EXEC_PENDING = 1;
+    public static final int EXEC_STARTED = 2;
+    public static final int EXEC_FINISHED = 4;
+    public static final int UI_RUN_FINISHED = 8; // for Closure extension
+    public static final int CANCELED = 16;
+    public static final int EXCEPTION = 32;
     private Object result = null; // Always access within a synchronized block
     protected int status = UI_RUN_FINISHED; // Always access within a synchronized block
 
+    public Task() {
+    }
+    
+    public Task(final Object in) {
+        this.result = in;
+    }
+    
     /**
      * Check status of the object to ensure it can be queued at this time (it
      * is not already queued and running)
@@ -49,7 +56,7 @@ public abstract class Task implements Workable {
         switch (status) {
             case EXEC_PENDING:
                 Worker.tryUnfork(this);
-                exec(null);
+                exec(result);
                 return result;
             case EXEC_STARTED:
                 this.wait();
@@ -178,15 +185,16 @@ public abstract class Task implements Workable {
      *
      * @return
      */
-    public final void exec(final Object params) {
+    public final Object exec(final Object in) {
         try {
             synchronized (this) {
-                if (status == CANCELED || status == EXCEPTION) {
+                if (status == CANCELED || status == EXCEPTION || status == EXEC_STARTED) {
                     throw new IllegalStateException("Can not exec() AsyncTask: status=" + status);
                 }
+                result = in;
                 setStatus(EXEC_STARTED);
             }
-            final Object r = doInBackground(params);
+            final Object r = doInBackground(in);
             synchronized (this) {
                 result = r;
                 setStatus(EXEC_FINISHED);
@@ -200,11 +208,15 @@ public abstract class Task implements Workable {
                     }
                 });
             }
+            
+            return r;
         } catch (final Throwable t) {
             //#debug
             L.e("Async task exception", this.toString(), t);
             setStatus(EXCEPTION);
         }
+        
+        return in;
     }
 
     /**
@@ -212,7 +224,7 @@ public abstract class Task implements Workable {
      *
      * @param params
      */
-    public abstract Object doInBackground(final Object params);
+    public abstract Object doInBackground(Object in);
 
     /**
      * Cancel execution if possible.

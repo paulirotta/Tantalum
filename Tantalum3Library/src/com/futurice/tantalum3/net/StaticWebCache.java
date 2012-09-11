@@ -40,12 +40,13 @@ public class StaticWebCache extends StaticCache {
              *
              */
 
-            public Object doInBackground(final Object params) {
+            public Object doInBackground(final Object in) {
+                setResult(in);
                 if (task != null) {
-                    task.doInBackground(params);
+                    task.doInBackground(in);
                 }
                 
-                return params;
+                return in;
             }
 
             /**
@@ -61,18 +62,18 @@ public class StaticWebCache extends StaticCache {
                 
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES) {
 
-                    public Object doInBackground(final Object o) {
-                        super.doInBackground(o);
-                        
+                    public Object doInBackground(final Object in) {
+                        final byte[] bytes = (byte[]) super.doInBackground(in);
                         try {
-                            return setResult(put(url, (byte[]) getResult())); // Convert to use form
+                            final Object useForm = put(url, bytes);
+                            return setResult(useForm); // Convert to use form
                         } catch (Exception e) {
                             //#debug
                             L.e("Can not set result", url, e);
                             super.cancel(false);
                         }
 
-                        return null;
+                        return bytes;
                     }
                 };
 
@@ -99,7 +100,7 @@ public class StaticWebCache extends StaticCache {
     public void update(final String url, final Task result) {
         Worker.fork(new Workable() {
 
-            public void exec(final Object args) {
+            public Object exec(final Object in) {
                 try {
                     remove(url);
                     get(url, result);
@@ -107,6 +108,8 @@ public class StaticWebCache extends StaticCache {
                     //#debug
                     L.e("Can not update", url, e);
                 }
+                
+                return in;
             }
         }, Worker.HIGH_PRIORITY);
     }
@@ -121,13 +124,15 @@ public class StaticWebCache extends StaticCache {
         if (synchronousRAMCacheGet(url) == null) {
             Worker.fork(new Workable() {
 
-                public void exec(final Object args) {
+                public Object exec(final Object in) {
                     try {
                         get(url, null);
                     } catch (Exception e) {
                         //#debug
                         L.e("Can not prefetch", url, e);
                     }
+                    
+                    return in;
                 }
             }, Worker.LOW_PRIORITY);
         }
