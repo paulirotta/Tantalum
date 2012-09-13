@@ -65,7 +65,8 @@ public class RSSItem {
 
     public synchronized String getTruncatedTitle(final Font font, final int width) {
         if (truncatedTitle == null || truncatedFont != font || truncatedTitleWidth != width) {
-            this.truncatedTitle = StringUtils.truncate(title, font, width);            
+            this.truncatedTitle = StringUtils.truncate(title, font, width);
+            truncatedFont = font;
         }
         
         return truncatedTitle;
@@ -73,6 +74,7 @@ public class RSSItem {
 
     public synchronized void setTruncatedTitle(String truncatedTitle) {
         this.truncatedTitle = truncatedTitle;
+        truncatedFont = null;
     }
 
     public boolean isLoadingImage() {

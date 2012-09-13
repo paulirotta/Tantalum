@@ -192,6 +192,8 @@ public abstract class Task implements Workable {
         if (status == CANCELED || status == EXCEPTION) {
             PlatformUtils.runOnUiThread(new Runnable() {
                 public void run() {
+                    //#debug
+                    L.i("Cancelled task", this.toString());
                     onCancelled();
                 }
             });
@@ -222,7 +224,7 @@ public abstract class Task implements Workable {
             if (this instanceof Runnable) {
                 PlatformUtils.runOnUiThread(new Runnable() {
                     public void run() {
-                        ((Runnable) this).run();
+                        ((Runnable) Task.this).run();
                         setStatus(UI_RUN_FINISHED);
                     }
                 });

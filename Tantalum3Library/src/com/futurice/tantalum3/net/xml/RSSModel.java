@@ -28,33 +28,33 @@ public class RSSModel extends XMLModel {
         }
     }
 
-    protected synchronized void parseElement(final String qName, final String chars, final XMLAttributes attributes) {
+    protected synchronized void parseElement(final String qname, final String chars, final XMLAttributes attributes) {
         try {
             if (currentItem != null) {
                 synchronized (currentItem) {
-                    if (qName.equals("title")) {
+                    if (qname.equals("title")) {
                         currentItem.setTitle(chars);
-                    } else if (qName.equals("description")) {
+                    } else if (qname.equals("description")) {
                         currentItem.setDescription(chars);
-                    } else if (qName.equals("link")) {
+                    } else if (qname.equals("link")) {
                         currentItem.setLink(chars);
-                    } else if (qName.equals("pubDate")) {
+                    } else if (qname.equals("pubDate")) {
                         currentItem.setPubDate(chars);
-                    } else if (qName.equals("media:thumbnail")) {
+                    } else if (qname.equals("media:thumbnail")) {
                         currentItem.setThumbnail((String) attributes.getValue("url"));
                     }
                 }
             }
         } catch (Exception e) {
             //#debug
-            L.e("RSS parsing error", "qname=" + qName + " - chars=" + chars, e);
+            L.e("RSS parsing error", "qname=" + qname + " - chars=" + chars, e);
         }
     }
 
-    public synchronized void endElement(final String uri, final String localName, final String qName) throws SAXException {
-        super.endElement(uri, localName, qName);
+    public void endElement(final String uri, final String localName, final String qname) throws SAXException {
+        super.endElement(uri, localName, qname);
 
-        if (qName.equals("item")) {
+        if (qname.equals("item")) {
             if (items.size() < maxLength) {
                 items.addElement(currentItem);
             }

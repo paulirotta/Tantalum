@@ -91,7 +91,13 @@ public class L {
      *
      * @return message string
      */
-    private static String getMessage(final String tag, final String message) {
+    private static String getMessage(String tag, String message) {
+        if (tag == null) {
+            tag = "<null>";
+        }
+        if (message == null) {
+            message = "<null>";
+        }
         final long t = System.currentTimeMillis() - startTime;
         final StringBuffer sb = new StringBuffer(20 + tag.length() + message.length());
         final String millis = Long.toString(t % 1000);

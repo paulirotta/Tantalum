@@ -27,8 +27,9 @@ public final class ListForm extends Form implements CommandListener {
         public Object convertToUseForm(final byte[] bytes) {
             try {
                 rssModel.removeAllElements();
-                rssModel.setXML(bytes);
-
+                synchronized (Worker.LARGE_MEMORY_MUTEX) {
+                    rssModel.setXML(bytes);
+                }
                 return rssModel;
             } catch (Exception e) {
                 //#debug
@@ -58,6 +59,7 @@ public final class ListForm extends Form implements CommandListener {
         addCommand(settingsCommand);
         setCommandListener(this);
         try {
+            //#debug
             L.i("Start start thread reload", "");
             reload(false);
         } catch (Exception ex) {
@@ -119,11 +121,15 @@ public final class ListForm extends Form implements CommandListener {
         if (forceLoad) {
             uiTask = new AsyncCallbackTask() {
                 public void onPostExecute(final Object result) {
+                    //#debug
+                    L.i("start postExecute on force reload", "model length=" + rssModel.size());
                     loading = false;
                     paint();
                 }
 
                 public boolean cancel(final boolean mayInterruptIfNeeded) {
+                    //#debug
+                    L.i("force reload cancelled", "model length=" + rssModel.size());
                     loading = false;
 
                     return super.cancel(mayInterruptIfNeeded);
@@ -133,15 +139,19 @@ public final class ListForm extends Form implements CommandListener {
         } else {
             uiTask = new AsyncCallbackTask() {
                 public void onPostExecute(final Object result) {
+                    //#debug
+                    L.i("start postExecute on reload", "model length=" + rssModel.size());
                     loading = false;
                     paint();
                 }
 
                 public boolean cancel(final boolean mayInterruptIfNeeded) {
+                    //#debug
+                    L.i("reload cancelled, not found locally, try again to get from net", "model length=" + rssModel.size());
                     loading = false;
                     reload(true);
 
-                    return super.cancel(mayInterruptIfNeeded);
+                    return false;
                 }
             };
             feedCache.get(feedUrl, uiTask);
