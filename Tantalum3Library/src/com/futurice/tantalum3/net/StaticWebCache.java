@@ -64,8 +64,11 @@ public class StaticWebCache extends StaticCache {
                     public Object doInBackground(final Object in) {
                         final byte[] bytes = (byte[]) super.doInBackground(in);
                         try {
-                            final Object useForm = put(url, bytes);
-                            return setResult(useForm); // Convert to use form
+                            final Object useForm = put(url, bytes); // Convert to use form
+                            setResult(useForm);
+                            task.exec(useForm);
+                            
+                            return useForm;
                         } catch (Exception e) {
                             //#debug
                             L.e("Can not set result", url, e);
@@ -78,7 +81,7 @@ public class StaticWebCache extends StaticCache {
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible fork delays
-                httpGetter.doInBackground(url);
+                setResult(httpGetter.doInBackground(url));
                 if (httpGetter.getStatus() == EXEC_FINISHED) {
                     setStatus(EXEC_FINISHED);
                 } else {
