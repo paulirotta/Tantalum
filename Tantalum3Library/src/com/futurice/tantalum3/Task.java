@@ -140,8 +140,10 @@ public abstract class Task implements Workable {
         return r;
     }
 
-    public final void fork() {
+    public final Task fork() {
         Worker.fork(this);
+        
+        return this;
     }
 
     public final synchronized Object joinUI(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
