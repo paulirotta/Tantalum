@@ -22,13 +22,6 @@ public abstract class RSSListView extends View {
     static boolean prefetchImages = false;
     protected final RSSListView.LiveUpdateRSSModel rssModel = new RSSListView.LiveUpdateRSSModel();
     protected final StaticWebCache feedCache;
-    private final Task rssResult = new Task() {
-        public Object doInBackground(final Object params) {
-            canvas.repaint();
-            
-            return null;
-        }
-    };
 
     public RSSListView(final RSSReaderCanvas canvas) {
         super(canvas);
@@ -57,7 +50,7 @@ public abstract class RSSListView extends View {
                     //#debug
                     L.e("Can not clear cache", "", e);
                 }
-                
+
                 return in;
             }
         }, Worker.HIGH_PRIORITY);
@@ -72,9 +65,16 @@ public abstract class RSSListView extends View {
     /**
      * Reloads the feed
      */
-    public void reload(final boolean forceNetLoad) {
+    public Task reload(final boolean forceNetLoad) {
         this.renderY = 0;
         rssModel.removeAllElements();
+        final Task rssResult = new Task() {
+            public Object doInBackground(final Object params) {
+                canvas.repaint();
+
+                return null;
+            }
+        };
 
         String feedUrl = RSSReader.INITIAL_FEED_URL;
         if (forceNetLoad) {
@@ -82,6 +82,8 @@ public abstract class RSSListView extends View {
         } else {
             feedCache.get(feedUrl, rssResult);
         }
+
+        return rssResult;
     }
 
     /**

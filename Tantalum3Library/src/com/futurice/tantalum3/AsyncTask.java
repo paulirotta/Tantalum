@@ -112,12 +112,17 @@ public abstract class AsyncTask extends Task {
                     public void run() {
                         onPreExecute();
                         if (!agressive) {
-                            Worker.fork(AsyncTask.this);
+                            /*
+                             * This is the sequence Android uses, but it is slow
+                             * so by default agressive = true and the task is
+                             * queued to both worker and UI thread simultaneously
+                             */
+                            AsyncTask.this.fork();
                         }
                     }
                 });
         if (agressive) {
-            Worker.fork(AsyncTask.this);
+            AsyncTask.this.fork();
         }
 
         return this;

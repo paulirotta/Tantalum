@@ -102,15 +102,15 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     public void startApp() {
         INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
         try {
-            getCanvas();
+//            getCanvas();
             final Task reloadTask = new Task() {
                 public Object doInBackground(final Object params) {
-                    canvas.getListView().reload(false);
+                    getCanvas().getListView().reload(false);
                     
                     return null;
                 }
             };
-            Worker.fork(reloadTask);
+            reloadTask.fork();
             final Display display = getDisplay();
             COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
             COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);

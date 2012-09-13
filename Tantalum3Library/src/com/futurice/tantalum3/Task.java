@@ -24,16 +24,17 @@ public abstract class Task implements Workable {
 
     public Task() {
     }
-    
+
     public Task(final Object in) {
         this.result = in;
     }
-    
+
     /**
-     * Check status of the object to ensure it can be queued at this time (it
-     * is not already queued and running)
-     * 
-     * @throws IllegalStateException if the task is currently queued or currently running
+     * Check status of the object to ensure it can be queued at this time (it is
+     * not already queued and running)
+     *
+     * @throws IllegalStateException if the task is currently queued or
+     * currently running
      */
     public synchronized void notifyTaskQueued() throws IllegalStateException {
         if (status < EXEC_FINISHED || (this instanceof Runnable && status < UI_RUN_FINISHED)) {
@@ -52,24 +53,29 @@ public abstract class Task implements Workable {
      * @throws CancellationException
      * @throws ExecutionException
      */
-    public final synchronized Object get() throws InterruptedException, CancellationException, ExecutionException {
-        switch (status) {
-            case EXEC_PENDING:
-                Worker.tryUnfork(this);
-                exec(result);
-                return result;
-            case EXEC_STARTED:
-                this.wait();
-            case EXEC_FINISHED:
-                return result;
-            case CANCELED:
-                throw new CancellationException();
-            case EXCEPTION:
-            default:
-                throw new ExecutionException();
+    public final Object get() throws InterruptedException, CancellationException, ExecutionException {
+        final Object r;
+        synchronized (this) {
+            switch (status) {
+                case EXEC_PENDING:
+                    Worker.tryUnfork(this);
+                    break;
+                case EXEC_STARTED:
+                    this.wait();
+                case EXEC_FINISHED:
+                    return result;
+                case CANCELED:
+                    throw new CancellationException();
+                case EXCEPTION:
+                default:
+                    throw new ExecutionException();
+            }
+            r = result;
         }
+
+        return exec(r);
     }
-    
+
     protected final synchronized Object getResult() {
         return result;
     }
@@ -92,37 +98,50 @@ public abstract class Task implements Workable {
      * @throws CancellationException
      * @throws ExecutionException
      */
-    public synchronized Object join(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    public final Object join(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (timeout < 0) {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
-        switch (status) {
-            case EXEC_PENDING:
-                if (Worker.tryUnfork(this)) {
+        boolean doExec = false;
+        final Object r;
+
+        synchronized (this) {
+            switch (status) {
+                case EXEC_PENDING:
+                    if (Worker.tryUnfork(this)) {
+                        doExec = true;
+                        break;
+                    }
+                case EXEC_STARTED:
                     //#debug
-                    L.i("Start join out-of-sequence exec() after unfork", this.toString());
-                    exec(null);
+                    L.i("Start join wait()", "timeout=" + timeout + " " + this.toString());
+                    this.wait(timeout);
+                    //#debug
+                    L.i("End join wait()", this.toString());
+                    if (status == EXEC_STARTED) {
+                        throw new TimeoutException();
+                    }
                     break;
-                }
-            case EXEC_STARTED:
-                //#debug
-                L.i("Start join wait()", "timeout=" + timeout + " " + this.toString());
-                this.wait(timeout);
-                //#debug
-                L.i("End join wait()", this.toString());
-                if (status == EXEC_STARTED) {
-                    throw new TimeoutException();
-                }
-                break;
-            case CANCELED:
-                throw new CancellationException();
-            case EXCEPTION:
-                throw new ExecutionException();
-            default:
-                ;
+                case CANCELED:
+                    throw new CancellationException();
+                case EXCEPTION:
+                    throw new ExecutionException();
+                default:
+                    ;
+            }
+            r = result;
+        }
+        if (doExec) {
+            //#debug
+            L.i("start out-of-sequence exec() after join() triggered unfork", this.toString());
+            return exec(null);
         }
 
-        return result;
+        return r;
+    }
+
+    public final void fork() {
+        Worker.fork(this);
     }
 
     public final synchronized Object joinUI(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
@@ -164,7 +183,7 @@ public abstract class Task implements Workable {
      *
      * @param status
      */
-    protected void setStatus(final int status) {
+    protected final void setStatus(final int status) {
         synchronized (this) {
             this.status = status;
             this.notifyAll();
@@ -208,14 +227,14 @@ public abstract class Task implements Workable {
                     }
                 });
             }
-            
+
             return r;
         } catch (final Throwable t) {
             //#debug
             L.e("Async task exception", this.toString(), t);
             setStatus(EXCEPTION);
         }
-        
+
         return in;
     }
 
@@ -229,12 +248,17 @@ public abstract class Task implements Workable {
     /**
      * Cancel execution if possible.
      *
+     * Generally you do not want to override this. onCancelled() is the normal
+     * notification location, and is called from the UI thread.
+     *
      * You may override this if for example you want to complete at task on the
-     * current thread rather than the onCancelled() call which will be on the UI
-     * thread. In this case, be sure that you know which thread cancel() will be
-     * called from. In Tantalum itself, cancel() is only called from a Worker
-     * thread, so you can trust that such activity is done in the background
-     * unless your code calls cancel() from the UI thread.
+     * worker thread, or if you need to prevent the state change because the
+     * Task can still recover automatically from the situation.
+     *
+     * In this case, be sure that you know which thread cancel() will be called
+     * from. In Tantalum itself, cancel() is only called from a Worker thread,
+     * so you can trust that such activity is done in the background unless your
+     * code accidentally calls cancel() from the UI thread.
      *
      * @param mayInterruptIfRunning
      * @return

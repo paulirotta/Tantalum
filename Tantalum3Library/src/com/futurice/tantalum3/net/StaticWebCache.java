@@ -31,8 +31,8 @@ public class StaticWebCache extends StaticCache {
      * @param result
      * @param priority - Default is Worker.NORMAL_PRIORITY
      */
-    public void get(final String url, final Task task) {
-        super.get(url, new Task() {
+    public Task get(final String url, final Task task) {
+        final Task onNotFoundInCacheTask = new Task() {
 
             /**
              * Local Cache get returned a result, no need to get it from the
@@ -42,7 +42,7 @@ public class StaticWebCache extends StaticCache {
 
             public Object doInBackground(final Object in) {
                 if (task != null) {
-                    task.exec(in);
+                    return task.exec(in);
                 }
                 
                 return in;
@@ -87,7 +87,11 @@ public class StaticWebCache extends StaticCache {
   
                 return false;
             }
-        });
+        };
+        
+        super.get(url, onNotFoundInCacheTask);
+        
+        return onNotFoundInCacheTask;
     }
 
     /**
@@ -96,13 +100,13 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public void update(final String url, final Task result) {
-        Worker.fork(new Workable() {
+    public Task update(final String url, final Task result) {
+        final Task task = new Task() {
 
-            public Object exec(final Object in) {
+            public Object doInBackground(final Object in) {
                 try {
                     remove(url);
-                    get(url, result);
+                    StaticWebCache.this.get(url, result);
                 } catch (Exception e) {
                     //#debug
                     L.e("Can not update", url, e);
@@ -110,7 +114,10 @@ public class StaticWebCache extends StaticCache {
                 
                 return in;
             }
-        }, Worker.HIGH_PRIORITY);
+        };
+        Worker.fork(task, Worker.HIGH_PRIORITY);
+        
+        return task;
     }
 
     /**

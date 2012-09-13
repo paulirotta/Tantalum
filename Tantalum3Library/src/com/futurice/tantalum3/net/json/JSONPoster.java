@@ -20,7 +20,7 @@ public abstract class JSONPoster extends HttpPoster {
         
         this.jsonModel = jsonModel;
     }
-    
+
     public Object doInBackground(final Object in) {
         String value = ((byte[]) super.doInBackground(in)).toString().trim();
 

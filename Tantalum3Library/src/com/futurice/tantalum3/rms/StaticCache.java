@@ -118,12 +118,13 @@ public class StaticCache {
      * and the value happens to have expired from the RAM cache due to a low
      * memory condition.
      */
-    public void get(final String key, final Task task) {
+    public Task get(final String key, final Task task) {
         if (key == null || key.length() == 0) {
             //#debug
             L.i("Trivial get", "");
             task.cancel(false);
-            return;
+            
+            return task;
         }
         final Object fromRamCache = synchronousRAMCacheGet(key);
 
@@ -160,6 +161,8 @@ public class StaticCache {
             };
             Worker.fork(getWorkable, Worker.HIGH_PRIORITY);
         }
+        
+        return task;
     }
 
     private Object synchronousGet(final String key) {
