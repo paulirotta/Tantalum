@@ -5,6 +5,11 @@
 package com.futurice.formrssreader;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
+import com.futurice.tantalum3.CancellationException;
+import com.futurice.tantalum3.ExecutionException;
+import com.futurice.tantalum3.PlatformUtils;
+import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
@@ -51,6 +56,9 @@ public final class ListForm extends Form implements CommandListener {
     public ListForm(RSSReader rssReader, String title) {
         super(title);
 
+        //#debug
+        L.i("Start start thread reload", "");
+        final Task reloadTask = reload(false);
         ListForm.instance = ListForm.this;
         this.rssReader = rssReader;
         detailsView = new DetailsForm(rssReader, title);
@@ -59,12 +67,12 @@ public final class ListForm extends Form implements CommandListener {
         addCommand(settingsCommand);
         setCommandListener(this);
         try {
-            //#debug
-            L.i("Start start thread reload", "");
-            reload(false);
+            /*
+             * Pause here up to 2 seconds while waiting for the feed to load from RMS
+             */
+            reloadTask.join(2000);
         } catch (Exception ex) {
-            //#debug
-            L.e("Initial RSS load exception", "", ex);
+            L.e("Did not complete initial reload", "This may be a normal 2sec timeout, waiting for network", ex);
         }
         L.i("End start thread reload", "");
     }
@@ -73,7 +81,31 @@ public final class ListForm extends Form implements CommandListener {
         if (command == exitCommand) {
             rssReader.exitMIDlet();
         } else if (command == reloadCommand) {
-            reload(true);
+            final Alert alert = new Alert("Reloading", "Reloading..", null, AlertType.INFO);
+            alert.setTimeout(10000);
+            //#debug
+            L.i("Alert timeout set", "10000");
+            Worker.fork(new Workable() {
+                public Object exec(final Object in) {
+                    try {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (Exception e) {
+                        }
+                        //#debug
+                        L.i("start reload", ".join(10000)");
+                        reload(true).join(10000);
+                        alert.setTimeout(1);
+                        //#debug
+                        L.i("Alert timeout set", "1");
+                    } catch (Exception ex) {
+                        L.e("Can not remove alert", null, ex);
+                    }
+
+                    return in;
+                }
+            });
+            rssReader.switchDisplayable(alert, this);
         } else if (command == settingsCommand) {
             String feedUrl = RSSReader.INITIAL_FEED_URL;
 
@@ -101,7 +133,6 @@ public final class ListForm extends Form implements CommandListener {
         }
 
         loading = true;
-        paint();
         String feedUrl = RSSReader.INITIAL_FEED_URL;
 
         try {
@@ -131,6 +162,7 @@ public final class ListForm extends Form implements CommandListener {
                     //#debug
                     L.i("force reload cancelled", "model length=" + rssModel.size());
                     loading = false;
+                    paint();
 
                     return super.cancel(mayInterruptIfNeeded);
                 }
@@ -150,6 +182,7 @@ public final class ListForm extends Form implements CommandListener {
                     L.i("reload cancelled, not found locally, try again to get from net", "model length=" + rssModel.size());
                     loading = false;
                     reload(true);
+                    paint();
 
                     return false;
                 }

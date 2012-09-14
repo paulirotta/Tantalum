@@ -108,6 +108,8 @@ public abstract class Task implements Workable {
         synchronized (this) {
             switch (status) {
                 case EXEC_PENDING:
+                    //#debug
+                    L.i("Start join of EXEC_PENDING task", "timeout=" + timeout + " " + this.toString());
                     if (Worker.tryUnfork(this)) {
                         doExec = true;
                         break;
@@ -133,7 +135,7 @@ public abstract class Task implements Workable {
         }
         if (doExec) {
             //#debug
-            L.i("start out-of-sequence exec() after join() triggered unfork", this.toString());
+            L.i("Start exec() out-of-sequence exec() after join() and successful unfork()", this.toString());
             return exec(null);
         }
 

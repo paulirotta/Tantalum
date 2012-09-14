@@ -20,9 +20,18 @@ public class PlatformUtils {
     private static MIDlet program;
     private static Display display;
 
-    public static void setProgram(final Object program) {
-        PlatformUtils.program = (MIDlet) program;
-        PlatformUtils.display = Display.getDisplay((MIDlet) program);
+    /**
+     * During initialization, the main program is set
+     * 
+     * @param program 
+     */
+    public static void setProgram(final MIDlet program) {
+        PlatformUtils.program = program;
+        PlatformUtils.display = Display.getDisplay(program);
+    }
+    
+    public static MIDlet getProgram() {
+        return PlatformUtils.program;
     }
 
     /**

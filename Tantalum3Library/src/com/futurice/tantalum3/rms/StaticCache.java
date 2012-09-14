@@ -75,12 +75,15 @@ public class StaticCache {
      * @param key
      * @param o
      */
-    protected synchronized Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
+    protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         //#debug
         L.i("Start to convert", key);
         final Object o = handler.convertToUseForm(bytes);
-        accessOrder.addElement(key);
-        cache.put(key, o);
+
+        synchronized (this) {
+            accessOrder.addElement(key);
+            cache.put(key, o);
+        }
         //#debug
         L.i("End convert", key);
 
@@ -200,7 +203,7 @@ public class StaticCache {
      * @param bytes
      * @return the byte[] converted to use form by the cache's Handler
      */
-    public synchronized Object put(final String key, final byte[] bytes) {
+    public Object put(final String key, final byte[] bytes) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }

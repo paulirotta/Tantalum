@@ -65,7 +65,6 @@ public class StaticWebCache extends StaticCache {
                         final byte[] bytes = (byte[]) super.doInBackground(in);
                         try {
                             final Object useForm = put(url, bytes); // Convert to use form
-                            setResult(useForm);
                             task.exec(useForm);
                             
                             return useForm;

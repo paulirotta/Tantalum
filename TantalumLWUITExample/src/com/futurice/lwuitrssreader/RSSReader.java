@@ -35,7 +35,7 @@ public class RSSReader extends TantalumMIDlet {
         plainFont = Font.createSystemFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         italicFont = Font.createSystemFont(Font.FACE_PROPORTIONAL, Font.STYLE_ITALIC, Font.SIZE_SMALL);
         underlinedFont = Font.createSystemFont(Font.FACE_PROPORTIONAL, Font.STYLE_UNDERLINED, Font.SIZE_SMALL);
-        url = "http://feeds.bbci.co.uk/news/rss.xml";
+        url = getAppProperty("RSS-Feed-Url");
         listForm = new ListForm("LWUIT RSS Reader", this);
 
         SCREEN_WIDTH = listForm.getWidth();
