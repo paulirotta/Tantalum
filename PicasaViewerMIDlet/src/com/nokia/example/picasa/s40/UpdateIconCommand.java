@@ -4,12 +4,12 @@
  */
 package com.nokia.example.picasa.s40;
 
-import com.futurice.tantalum3.log.L;
 import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.IconCommand;
 import com.nokia.mid.ui.orientation.Orientation;
 import java.util.Timer;
 import java.util.TimerTask;
+import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -20,11 +20,6 @@ import javax.microedition.lcdui.Image;
  */
 public class UpdateIconCommand extends IconCommand {
 
-    static Image image = null;
-    private Graphics g;
-    private Timer animationTimer;
-    private double angle;
-    private int startDot;
     private static final int WIDTH = 36;
     private static final int HEIGHT = 36;
     private static final double XC = WIDTH / 2.0;
@@ -34,7 +29,13 @@ public class UpdateIconCommand extends IconCommand {
     private static final int dots = shades.length;
     private static final double step = (2 * Math.PI) / dots;
     private static final double circle = (2 * Math.PI);
-    private static Image iconImage = DirectUtils.createImage(WIDTH, HEIGHT, 0xffffff);
+    private static Image iconImage = DirectUtils.createImage(WIDTH, HEIGHT, 0xFF000000);
+    static Image image = null;
+    private Graphics g;
+    private TimerTask timerTask = null;
+    private double angle;
+    private int startDot;
+//    private Canvas canvas = null;
 
     static {
         try {
@@ -54,31 +55,24 @@ public class UpdateIconCommand extends IconCommand {
         g.drawImage(image, (int) XC, (int) YC, Graphics.HCENTER | Graphics.VCENTER);
     }
 
-    public void startAnimation() {
-        if (animationTimer == null) {
-            g.setColor(0xff000000);
-            g.fillRect(0, 0, WIDTH, HEIGHT);
-            animationTimer = new Timer();
-            animationTimer.schedule(new TimerTask() {
-
-                public void run() {
-                    drawSpinner();
-                }
-            }, 0, 100);
-        }
+//    public void setCanvas(final Canvas canvas) {
+//        this.canvas = canvas;
+//    }
+    public void startAnimation(final Timer animationTimer) {
+        g.setColor(0xff000000);
+        g.fillRect(0, 0, WIDTH, HEIGHT);
+        animationTimer.schedule(timerTask, 0, 100);
     }
 
-    public void stopAnimation() {
-        if (animationTimer != null) {
-            animationTimer.cancel();
-            animationTimer = null;
-            g.setColor(0x000000);
-            g.fillRect(0, 0, WIDTH, HEIGHT);
-            g.drawImage(image, (int) XC, (int) YC, Graphics.HCENTER | Graphics.VCENTER);
+    public void stopAnimation(final Timer animationTimer) {
+        timerTask.cancel();
+        timerTask = null;
+        g.setColor(0x000000);
+        g.fillRect(0, 0, WIDTH, HEIGHT);
+        g.drawImage(image, (int) XC, (int) YC, Graphics.HCENTER | Graphics.VCENTER);
 
-            // Force the screen to repaint completely, including the no-longer-animated icon
-            Orientation.setAppOrientation(Orientation.getAppOrientation());
-        }
+        // Force the screen to repaint completely, including the no-longer-animated icon
+        Orientation.setAppOrientation(Orientation.getAppOrientation());
     }
 
     public void drawSpinner() {
@@ -93,6 +87,9 @@ public class UpdateIconCommand extends IconCommand {
         startDot = startDot % dots;
 
         // Force the screen to repaint completely, including the animated icon
+//        if (canvas != null) {
+//            canvas.repaint();
+//        }
         Orientation.setAppOrientation(Orientation.getAppOrientation());
-    }    
+    }
 }

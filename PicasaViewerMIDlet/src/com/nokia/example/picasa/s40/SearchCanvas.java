@@ -70,7 +70,7 @@ public final class SearchCanvas extends ImageGridCanvas {
     }
 
     public void hideNotify() {
-        disableKeyboard();
+        disableKeyboard(true);
 
         super.hideNotify();
     }
@@ -78,7 +78,7 @@ public final class SearchCanvas extends ImageGridCanvas {
     public void paint(final Graphics g) {
         checkScroll();
         if (searchField != null && !searchField.isVisible()) {
-            disableKeyboard();
+            disableKeyboard(false);
         }
         drawGrid(g, HEADER_BAR_HEIGHT);
 
@@ -96,6 +96,14 @@ public final class SearchCanvas extends ImageGridCanvas {
         g.drawImage(searchImg, getWidth() - SEARCH_PADDING, HEADER_BAR_HEIGHT / 2, Graphics.VCENTER | Graphics.RIGHT);
     }
 
+    public void deleteChar() {
+        if (searchField != null && searchField.getContent().length() != 0) {
+            searchField.delete(searchField.getContent().length() - 1, 1);
+            searchText = searchField.getContent().trim().toLowerCase();
+            refresh(searchField.getContent().trim().toLowerCase(), StaticWebCache.GET_LOCAL);
+        }
+    }
+
     public boolean gestureTap(int startX, int startY) {
         if (!super.gestureTap(startX, startY)) {
             final int index = getItemIndex(startX, startY);
@@ -111,7 +119,7 @@ public final class SearchCanvas extends ImageGridCanvas {
                 } else {
                     PlatformUtils.runOnUiThread(new Runnable() {
                         public void run() {
-                            disableKeyboard();
+                            disableKeyboard(false);
                         }
                     });
                 }
@@ -142,7 +150,7 @@ public final class SearchCanvas extends ImageGridCanvas {
         if (searchField != null) {
             searchText = searchField.getContent().trim().toLowerCase();
         }
-        disableKeyboard();
+        disableKeyboard(false);
         scrollY = 0;
         repaint();
 
@@ -154,12 +162,13 @@ public final class SearchCanvas extends ImageGridCanvas {
             searchField.setCaret(searchField.getContent().length());
             return;
         }
-        searchField = TextEditor.createTextEditor(searchText, 20, TextField.ANY, SEARCH_WIDTH, SEARCH_HEIGHT);
+        searchField = TextEditor.createTextEditor("", 20, TextField.ANY, SEARCH_WIDTH, SEARCH_HEIGHT);
+        searchField.insert(searchText, 0);
         searchField.setForegroundColor(0xFF000000);
         searchField.setBackgroundColor(0x00000000);
         searchField.setParent(this); // Canvas to draw on
         searchField.setPosition(SEARCH_PADDING, SEARCH_PADDING);
-        searchField.setCaret(searchText.length());
+//        searchField.setCaret(searchText.length());
         if (this.hasPointerEvents()) {
             searchField.setTouchEnabled(true);
         }
@@ -174,15 +183,18 @@ public final class SearchCanvas extends ImageGridCanvas {
                 }
             }
         });
-        if (midlet.phoneSupportsCategoryBar()) {
-            deleteCommand = new Command("Delete", Command.CANCEL, 0);
-            addCommand(deleteCommand);
-        }
+//        if (midlet.phoneSupportsCategoryBar()) {
+        deleteCommand = new Command("Delete", Command.CANCEL, 0);
+        addCommand(deleteCommand);
+//        }
         searchField.setVisible(true);
         searchField.setFocus(true);
     }
 
-    private void disableKeyboard() {
+    private void disableKeyboard(final boolean force) {
+        if (!force && !midlet.phoneSupportsCategoryBar()) {
+            return;
+        }
         if (searchField != null) {
             searchText = searchField.getContent().trim().toLowerCase();
             searchField.setParent(null);

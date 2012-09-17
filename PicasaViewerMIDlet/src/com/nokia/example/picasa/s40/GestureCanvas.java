@@ -20,9 +20,8 @@ import javax.microedition.lcdui.Image;
 public abstract class GestureCanvas extends Canvas {
 
     protected static Image backIcon;
-    private static final Timer spinTimer = new Timer();
+    public static final Timer spinTimer = new Timer();
     private static TimerTask spinTimerTask = null; // Access within synchronized blocks only
-    private long spinTimerDelay;
     protected int friction = GestureHandler.FRAME_ANIMATOR_FRICTION_LOW;
     protected final PicasaViewer midlet;
     protected GestureHandler gestureHandler = null;
@@ -191,11 +190,10 @@ public abstract class GestureCanvas extends Canvas {
     }
 
     public synchronized void startSpin(final long delay) {
-        if (spinTimerTask != null || delay != spinTimerDelay) {
+        if (spinTimerTask != null) {
             // Spin speed has changed
             stopSpin();
         }
-        spinTimerDelay = delay;
         spinTimerTask = new TimerTask() {
             public void run() {
                 repaint();

@@ -64,6 +64,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
             public void onCancelled() {
                 midlet.stopReloadAnimation();
+                repaint();
             }
         };
 
