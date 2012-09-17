@@ -53,10 +53,6 @@ public final class CategoryBarHandler implements ElementListener {
     public static void setMidlet(final PicasaViewer midlet) {
         CategoryBarHandler.midlet = midlet;
     }
-
-    public Command getUpdateIconCommand() {
-        return new UpdateIconCommand();
-    }
     
     /**
      * This method takes an image and overlays all the visible pixels with the

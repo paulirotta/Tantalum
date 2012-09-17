@@ -48,7 +48,11 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         final AsyncCallbackTask task = new AsyncCallbackTask() {
             protected void onPostExecute(final Object result) {
                 try {
-                    imageObjectModel = (Vector) result;
+                    if (result == null) {
+                        imageObjectModel.removeAllElements();
+                    } else {
+                        imageObjectModel = (Vector) result;
+                    }
                     top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2);
                     midlet.stopReloadAnimation();
                     repaint();
@@ -62,9 +66,9 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                 midlet.stopReloadAnimation();
             }
         };
-        
+
         PicasaStorage.getImageObjects(task, search, getType);
-        
+
         return task;
     }
 
@@ -134,18 +138,18 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             int centerChangeX,
             int centerChangeY) {
         // Pinch to reload
-        refresh();
+        refresh(null, StaticWebCache.GET_WEB);
     }
 
-    public Task refresh() {
+    public Task refresh(final String url, final int getType) {
         midlet.startReloadAnimation();
         imageObjectModel.removeAllElements();
         images.clear();
         scrollY = 0;
         top = getHeight();
         repaint();
-        
-        return loadFeed(null, StaticWebCache.GET_WEB);
+
+        return loadFeed(url, getType);
     }
 
     public boolean gestureTap(int startX, int startY) {

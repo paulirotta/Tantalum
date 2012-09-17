@@ -2,6 +2,8 @@ package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
 import com.futurice.tantalum3.PlatformUtils;
+import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.example.picasa.common.PicasaImageObject;
@@ -28,7 +30,7 @@ public final class SearchCanvas extends ImageGridCanvas {
     private static final int ROUNDED = 10;
     private Image searchImg;
     private TextEditor searchField;
-    private String searchText = "Search";
+    private String searchText = "";
     private Command deleteCommand;
 
     public SearchCanvas(PicasaViewer midlet) {
@@ -50,19 +52,19 @@ public final class SearchCanvas extends ImageGridCanvas {
 
     public void showNotify() {
         // Status bar doesn't work well with on-screen keyboard, so leave it out.
-        if ((searchText.equals("Search") || searchText.length() == 0) && midlet.phoneSupportsCategoryBar()) {
+//        if ((searchText.equals("Search") || searchText.length() == 0) && midlet.phoneSupportsCategoryBar()) {
             /*
-             * Throw an event forward on the UI thread
-             * 
-             * SDK 1.0 and 1.1 phones don't use an onscreen keyboard, so enter
-             * edit mode right away so the user can just start typing
-             */
-            PlatformUtils.runOnUiThread(new Runnable() {
-                public void run() {
-                    enableKeyboard();
-                }
-            });
-        }
+         * Throw an event forward on the UI thread
+         * 
+         * SDK 1.0 and 1.1 phones don't use an onscreen keyboard, so enter
+         * edit mode right away so the user can just start typing
+         */
+        PlatformUtils.runOnUiThread(new Runnable() {
+            public void run() {
+                enableKeyboard();
+            }
+        });
+//        }
 
         super.showNotify();
     }
@@ -138,7 +140,7 @@ public final class SearchCanvas extends ImageGridCanvas {
     private AsyncCallbackTask startSearch() {
         imageObjectModel.removeAllElements();
         if (searchField != null) {
-            searchText = searchField.getContent();
+            searchText = searchField.getContent().trim().toLowerCase();
         }
         disableKeyboard();
         scrollY = 0;
@@ -149,10 +151,8 @@ public final class SearchCanvas extends ImageGridCanvas {
 
     private void enableKeyboard() {
         if (searchField != null) {
+            searchField.setCaret(searchField.getContent().length());
             return;
-        }
-        if (searchText.equals("Search")) {
-            searchText = "";
         }
         searchField = TextEditor.createTextEditor(searchText, 20, TextField.ANY, SEARCH_WIDTH, SEARCH_HEIGHT);
         searchField.setForegroundColor(0xFF000000);
@@ -160,9 +160,18 @@ public final class SearchCanvas extends ImageGridCanvas {
         searchField.setParent(this); // Canvas to draw on
         searchField.setPosition(SEARCH_PADDING, SEARCH_PADDING);
         searchField.setCaret(searchText.length());
+        if (this.hasPointerEvents()) {
+            searchField.setTouchEnabled(true);
+        }
         searchField.setTextEditorListener(new TextEditorListener() {
-            public void inputAction(TextEditor textEditor, int actions) {
-                repaint();
+            public void inputAction(final TextEditor textEditor, final int action) {
+                //#debug
+                L.i("TextEditor inputAction", "" + action);
+                if ((action & TextEditorListener.ACTION_CONTENT_CHANGE) != 0) {
+                    refresh(textEditor.getContent().trim().toLowerCase(), StaticWebCache.GET_LOCAL);
+                } else {
+                    repaint();
+                }
             }
         });
         if (midlet.phoneSupportsCategoryBar()) {
@@ -175,14 +184,24 @@ public final class SearchCanvas extends ImageGridCanvas {
 
     private void disableKeyboard() {
         if (searchField != null) {
-            searchText = searchField.getContent();
+            searchText = searchField.getContent().trim().toLowerCase();
             searchField.setParent(null);
             searchField = null;
-            if (searchText.equalsIgnoreCase("")) {
-                searchText = "Search";
-            }
             removeCommand(deleteCommand);
             deleteCommand = null;
         }
+    }
+
+    public void gesturePinch(
+            int pinchDistanceStarting,
+            int pinchDistanceCurrent,
+            int pinchDistanceChange,
+            int centerX,
+            int centerY,
+            int centerChangeX,
+            int centerChangeY) {
+
+        // Pinch to reload
+        startSearch();
     }
 }
