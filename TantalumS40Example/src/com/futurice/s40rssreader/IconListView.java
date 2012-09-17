@@ -79,7 +79,7 @@ public final class IconListView extends RSSListView {
             numberOfColumns = canvas.isPortrait() ? 3 : 4;
             modelCopy = rssModel.copy(modelCopy);
             if (modelCopy.length == 0) {
-                if (iconSupport && !animationRunning){
+                if (iconSupport && !animationRunning) {
                     ((UpdateIconCommand) updateCommand).startAnimation();
                 }
                 g.setColor(RSSReader.COLOR_BACKGROUND);
@@ -87,9 +87,9 @@ public final class IconListView extends RSSListView {
                 g.setColor(RSSReader.COLOR_FOREGROUND);
                 g.drawString("Loading...", canvas.getWidth() >> 1, canvas.getHeight() >> 1, Graphics.BASELINE | Graphics.HCENTER);
                 return;
-            } else if (iconSupport){
-             ((UpdateIconCommand) updateCommand).stopAnimation();
-             animationRunning = false;
+            } else if (iconSupport) {
+                ((UpdateIconCommand) updateCommand).stopAnimation();
+                animationRunning = false;
             }
 
             final int totalHeight = modelCopy.length * ROW_HEIGHT / numberOfColumns;
@@ -141,7 +141,6 @@ public final class IconListView extends RSSListView {
                             L.i("Trivial thumbnail link in RSS feed", item.getTitle());
                         } else {
                             DetailsView.imageCache.get(item.getThumbnail(), new Task() {
-
                                 public Object doInBackground(final Object o) {
                                     try {
                                         //#debug
@@ -170,13 +169,13 @@ public final class IconListView extends RSSListView {
                                         L.e("Problem with getIcon setResult", item.getThumbnail(), e);
                                         cancel(false);
                                     }
-                                    
+
                                     return o;
                                 }
 
                                 public boolean cancel(boolean mayInterruptIfNeeded) {
                                     item.setLoadingImage(false);
-                                    
+
                                     return super.cancel(mayInterruptIfNeeded);
                                 }
                             });

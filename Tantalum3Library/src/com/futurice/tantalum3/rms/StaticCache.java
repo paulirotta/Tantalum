@@ -207,7 +207,6 @@ public class StaticCache {
             if (bytes != null) {
                 //#debug
                 L.i("StaticCache hit in RMS", "(" + priority + ") " + key);
-
                 o = convertAndPutToHeapCache(key, bytes);
             }
         }

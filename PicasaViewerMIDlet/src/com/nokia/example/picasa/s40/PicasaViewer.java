@@ -46,6 +46,7 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
             L.i("Can not set category bar handler", "normal before SDK 2.0");
         }
         featuredView.addCommand(refreshCommand);
+        featuredView.setCommandListener(PicasaViewer.this);
         Display.getDisplay(this).setCurrent(featuredView);
 
         // Continue init tasks
@@ -60,12 +61,13 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
                  */
                 featuredView.addCommand(searchCommand);
                 featuredView.addCommand(exitCommand);
-                featuredView.setCommandListener(PicasaViewer.this);
                 detailedView.addCommand(backCommand);
                 detailedView.setCommandListener(PicasaViewer.this);
                 searchView.addCommand(featuredCommand);
+                if (phoneSupportsCategoryBar()) {
+                    searchView.addCommand(exitCommand2);
+                }
                 searchView.setCommandListener(PicasaViewer.this);
-                searchView.addCommand(exitCommand2);
             } catch (Exception ex) {
                 //#debug
                 L.e("Can not fallback to command init on other views", "", ex);

@@ -52,19 +52,19 @@ public final class SearchCanvas extends ImageGridCanvas {
 
     public void showNotify() {
         // Status bar doesn't work well with on-screen keyboard, so leave it out.
-//        if ((searchText.equals("Search") || searchText.length() == 0) && midlet.phoneSupportsCategoryBar()) {
+        if (!midlet.phoneSupportsCategoryBar() || imageObjectModel.size() == 0) {
             /*
-         * Throw an event forward on the UI thread
-         * 
-         * SDK 1.0 and 1.1 phones don't use an onscreen keyboard, so enter
-         * edit mode right away so the user can just start typing
-         */
-        PlatformUtils.runOnUiThread(new Runnable() {
-            public void run() {
-                enableKeyboard();
-            }
-        });
-//        }
+             * Throw an event forward on the UI thread
+             * 
+             * SDK 1.0 and 1.1 phones don't use an onscreen keyboard, so enter
+             * edit mode right away so the user can just start typing
+             */
+            PlatformUtils.runOnUiThread(new Runnable() {
+                public void run() {
+                    enableKeyboard();
+                }
+            });
+        }
 
         super.showNotify();
     }
@@ -100,7 +100,7 @@ public final class SearchCanvas extends ImageGridCanvas {
         if (searchField != null && searchField.getContent().length() != 0) {
             searchField.delete(searchField.getContent().length() - 1, 1);
             searchText = searchField.getContent().trim().toLowerCase();
-            refresh(searchField.getContent().trim().toLowerCase(), StaticWebCache.GET_LOCAL);
+            refresh(searchText, StaticWebCache.GET_LOCAL);
         }
     }
 
@@ -183,10 +183,11 @@ public final class SearchCanvas extends ImageGridCanvas {
                 }
             }
         });
-//        if (midlet.phoneSupportsCategoryBar()) {
-        deleteCommand = new Command("Delete", Command.CANCEL, 0);
-        addCommand(deleteCommand);
-//        }
+        final String keyboard = System.getProperty("com.nokia.keyboard.type");
+        if ("PhoneKeypad".equals(keyboard)) {
+            deleteCommand = new Command("Delete", Command.CANCEL, 0);
+            addCommand(deleteCommand);
+        }
         searchField.setVisible(true);
         searchField.setFocus(true);
     }
