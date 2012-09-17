@@ -28,7 +28,7 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
         public Object doInBackground(final Object in) {
             detailedView = new DetailedCanvas(PicasaViewer.this);
             searchView = new SearchCanvas(PicasaViewer.this);
-            
+
             return in;
         }
     };
@@ -50,16 +50,18 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
                     final Class cbc = Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler");
                     CategoryBarHandler.setMidlet(PicasaViewer.this);
                     categoryBarHandler = (CategoryBarHandler) cbc.newInstance();
-                } catch (Throwable e) {
+                    refreshCommand = categoryBarHandler.getUpdateIconCommand();
+                } catch (Throwable t) {
                     //#debug
-                    L.e("Can not set category bar handler", "normal before SDK 2.0", e);
+                    L.e("Can not set category bar handler", "normal before SDK 2.0", t);
                 }
+                featuredView.addCommand(refreshCommand);
+                searchView.setCommandListener(PicasaViewer.this);
                 if (categoryBarHandler == null) {
                     try {
                         /*
                          * Fallback when there is no category bar (Nokia SDK 1.1 and earlier)
                          */
-                        featuredView.addCommand(refreshCommand);
                         featuredView.addCommand(searchCommand);
                         featuredView.addCommand(exitCommand);
                         featuredView.setCommandListener(PicasaViewer.this);
@@ -69,7 +71,6 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
                         searchView.addCommand(featuredCommand);
                         searchView.setCommandListener(PicasaViewer.this);
                         searchView.addCommand(backCommand2);
-                        searchView.setCommandListener(PicasaViewer.this);
                     } catch (Exception ex) {
                         //#debug
                         L.e("Can not fallback to command init on other views", "", ex);
@@ -95,7 +96,23 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
         Display.getDisplay(this).setCurrent(lastView);
     }
 
+    public void stopReloadAnimation() {
+        try {
+            ((UpdateIconCommand) refreshCommand).stopAnimation();
+        } catch (Throwable t) {
+        }
+    }
+
+    public void startReloadAnimation() {
+        try {
+            ((UpdateIconCommand) refreshCommand).startAnimation();
+        } catch (Throwable t) {
+        }
+    }
+
     public void commandAction(Command c, Displayable d) {
+        //#debug
+        L.i("Command action", "Command " + c);
         if (c.getCommandType() == Command.BACK) {
             goBack();
         } else if (c == refreshCommand) {

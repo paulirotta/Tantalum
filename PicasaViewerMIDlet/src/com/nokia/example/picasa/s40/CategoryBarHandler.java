@@ -11,6 +11,7 @@ import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.ElementListener;
 import com.nokia.mid.ui.IconCommand;
 import java.io.IOException;
+import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Image;
 
@@ -53,6 +54,10 @@ public final class CategoryBarHandler implements ElementListener {
         CategoryBarHandler.midlet = midlet;
     }
 
+    public Command getUpdateIconCommand() {
+        return new UpdateIconCommand();
+    }
+    
     /**
      * This method takes an image and overlays all the visible pixels with the
      * specified color. This is useful for single color icons that should be

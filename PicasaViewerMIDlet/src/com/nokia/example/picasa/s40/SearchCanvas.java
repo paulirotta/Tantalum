@@ -34,6 +34,8 @@ public final class SearchCanvas extends ImageGridCanvas {
         super(midlet);
 
         headerHeight = HEADER_BAR_HEIGHT;
+        statusBarVisible = Boolean.FALSE;
+        setTitle("Search");
         if (midlet.phoneSupportsCategoryBar()) {
             this.setFullScreenMode(true);
         }
@@ -120,6 +122,7 @@ public final class SearchCanvas extends ImageGridCanvas {
                     PlatformUtils.runOnUiThread(new Runnable() {
                         public void run() {
                             enableKeyboard();
+                            repaint();
                         }
                     });
                 }
@@ -152,13 +155,14 @@ public final class SearchCanvas extends ImageGridCanvas {
         searchField.setParent(this); // Canvas to draw on
         searchField.setPosition(SEARCH_PADDING, SEARCH_PADDING);
         searchField.setCaret(searchText.length());
-        if (GestureInteractiveZone.GESTURE_ALL > 63) {
-            try {
-                ((TextEditorHelper) Class.forName("com.nokia.example.picasa.s40.TextEditorHelper").getClass().newInstance()).setIndicatorVisibility(searchField, true);
-            } catch (Throwable ex) {
-                L.e("Indicator visibility", "Can not invoke", ex);
-            }
-        }
+//        if (GestureInteractiveZone.GESTURE_ALL > 63) {
+//            try {
+//                ((TextEditorHelper) Class.forName("com.nokia.example.picasa.s40.TextEditorHelper").getClass().newInstance()).setIndicatorVisibility(searchField, true);
+//            } catch (Throwable ex) {
+//                //#debug
+//                L.e("Indicator visibility", "Can not invoke", ex);
+//            }
+//        }
         searchField.setTextEditorListener(new TextEditorListener() {
             public void inputAction(TextEditor textEditor, int actions) {
                 repaint();
@@ -168,7 +172,6 @@ public final class SearchCanvas extends ImageGridCanvas {
         addCommand(deleteCommand);
         searchField.setVisible(true);
         searchField.setFocus(true);
-        repaint();
     }
 
     private void disableKeyboard() {
@@ -181,6 +184,7 @@ public final class SearchCanvas extends ImageGridCanvas {
             }
             removeCommand(deleteCommand);
             deleteCommand = null;
+            repaint();
         }
     }
 }

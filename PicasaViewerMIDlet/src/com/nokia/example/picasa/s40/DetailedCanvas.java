@@ -40,7 +40,6 @@ public final class DetailedCanvas extends GestureCanvas {
         super(midlet);
 
         width = getWidth();
-        this.setFullScreenMode(true);
     }
 
     public void paint(final Graphics g) {
@@ -97,11 +96,12 @@ public final class DetailedCanvas extends GestureCanvas {
 
     public void showNotify() {
         XC = getWidth() / 2;
+        this.setFullScreenMode(true);
  
         // Show statusbar
         try {
             LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", Boolean.TRUE);
-        } catch (Exception e) {
+        } catch (Throwable t) {
             L.i("showNotify LCDUIUtil", "trait not supported, normal before SDK 2.0");
         }
 

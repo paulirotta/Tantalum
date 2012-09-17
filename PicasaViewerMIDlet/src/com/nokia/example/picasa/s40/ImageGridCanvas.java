@@ -21,6 +21,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     protected Vector imageObjectModel = new Vector(); // Access only from UI thread
     protected final int imageSide;
     protected int headerHeight;
+    protected Boolean statusBarVisible = Boolean.TRUE;
     private int startDot;
     private double angle;
     private static final double R = 12;
@@ -34,7 +35,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     public ImageGridCanvas(final PicasaViewer midlet) {
         super(midlet);
 
-        this.setTitle("ImageGridCanvas");
+        setTitle("ImageGridCanvas");
         imageSide = getWidth() / 2;
         headerHeight = 0;
         XC = imageSide;
@@ -48,23 +49,30 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                 try {
                     imageObjectModel = (Vector) result;
                     top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2);
+                    midlet.stopReloadAnimation();
                     repaint();
                 } catch (Exception ex) {
                     //#debug
                     L.e("Can not get images to grid", "", ex);
                 }
             }
+
+            public void onCancelled() {
+                midlet.stopReloadAnimation();
+            }
         }, search, fromWeb);
     }
 
     public void showNotify() {
-        if (midlet.phoneSupportsCategoryBar()) {
-            this.setFullScreenMode(true);
+        if (statusBarVisible == Boolean.FALSE) {
+            if (midlet.phoneSupportsCategoryBar()) {
+                this.setFullScreenMode(true);
+            }
         }
 
         // Show statusbar
         try {
-            LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", Boolean.TRUE);
+            LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", statusBarVisible);
         } catch (Exception e) {
             L.i("showNotify LCDUIUtil", "trait not supported, normal before SDK 2.0");
         }
@@ -125,6 +133,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public void refresh() {
+        midlet.startReloadAnimation();
         imageObjectModel.removeAllElements();
         images.clear();
         scrollY = 0;
@@ -188,6 +197,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
      * Object for adding images to hashmap when they're loaded.
      */
     protected final class ImageResult extends Task {
+
         private final Object key;
 
         public ImageResult(Object key) {
@@ -199,7 +209,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                 images.put(key, in);
                 repaint();
             }
-            
+
             return in;
         }
     }

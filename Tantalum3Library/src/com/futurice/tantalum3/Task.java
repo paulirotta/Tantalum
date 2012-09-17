@@ -144,7 +144,7 @@ public abstract class Task implements Workable {
 
     public final Task fork() {
         Worker.fork(this);
-        
+
         return this;
     }
 

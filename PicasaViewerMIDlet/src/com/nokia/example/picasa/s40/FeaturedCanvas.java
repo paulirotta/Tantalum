@@ -11,7 +11,7 @@ public final class FeaturedCanvas extends ImageGridCanvas {
     public FeaturedCanvas(PicasaViewer midlet) {
         super(midlet);
 
-        this.setTitle("FeaturedCanvas");
+        this.setTitle("Picasa Featured");
     }
 
     public void paint(final Graphics g) {
