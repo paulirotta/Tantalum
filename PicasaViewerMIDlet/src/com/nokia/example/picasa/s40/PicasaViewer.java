@@ -1,13 +1,9 @@
 package com.nokia.example.picasa.s40;
 
-import com.futurice.tantalum3.CancellationException;
-import com.futurice.tantalum3.ExecutionException;
-import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.TantalumMIDlet;
-import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.TimeoutException;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
+import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.example.picasa.common.PicasaStorage;
 import javax.microedition.lcdui.*;
 
@@ -21,8 +17,8 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
     private Command featuredCommand = new Command("Home", Command.SCREEN, 0);
     private Command searchCommand = new Command("Search", Command.SCREEN, 1);
     private Command backCommand = new Command("Back", Command.BACK, 0);
-    private Command backCommand2 = new Command("Back", Command.BACK, 0);
     private Command exitCommand = new Command("Exit", Command.EXIT, 0);
+    private Command exitCommand2 = new Command("Exit", Command.EXIT, 0);
     private Command refreshCommand = new Command("Refresh", Command.OK, 0);
 
     public PicasaViewer() {
@@ -33,7 +29,7 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
         featuredView = new FeaturedCanvas(this);
         PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
         try {
-            featuredView.loadFeed(null, false).join(2000);
+            featuredView.loadFeed(null, StaticWebCache.GET_ANYWHERE).join(2000);
         } catch (Exception ex) {
             //#debug
             L.e("Slow initial feed load", null, ex);
@@ -68,7 +64,7 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
                 detailedView.setCommandListener(PicasaViewer.this);
                 searchView.addCommand(featuredCommand);
                 searchView.setCommandListener(PicasaViewer.this);
-                searchView.addCommand(backCommand2);
+                searchView.addCommand(exitCommand2);
             } catch (Exception ex) {
                 //#debug
                 L.e("Can not fallback to command init on other views", "", ex);

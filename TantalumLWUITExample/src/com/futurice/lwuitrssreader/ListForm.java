@@ -88,7 +88,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
             };
 
             if (fromNet) {
-                feedCache.update(midlet.getUrl(), result);
+                feedCache.netGet(midlet.getUrl(), result);
             } else {
                 feedCache.get(midlet.getUrl(), result);
             }

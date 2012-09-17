@@ -174,7 +174,7 @@ public class StaticCache {
      * @param key
      * @return task
      */
-    public Task cacheGet(final String key) {
+    public Task localGet(final String key, final Task callback) {
         if (key == null || key.length() == 0) {
             //#debug
             L.i("Trivial cacheGet", "");
@@ -184,7 +184,13 @@ public class StaticCache {
         
         final Task task = new Task() {
             protected Object doInBackground(Object in) {
-                return synchronousGet(key);
+                final Object r = synchronousGet(key);
+
+                if (callback != null) {
+                    return callback.exec(r);
+                }
+
+                return r;
             }
         };
 

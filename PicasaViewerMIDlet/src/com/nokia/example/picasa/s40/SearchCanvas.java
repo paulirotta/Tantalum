@@ -3,6 +3,7 @@ package com.nokia.example.picasa.s40;
 import com.futurice.tantalum3.AsyncCallbackTask;
 import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.log.L;
+import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
 import com.nokia.mid.ui.TextEditor;
@@ -49,7 +50,7 @@ public final class SearchCanvas extends ImageGridCanvas {
 
     public void showNotify() {
         // Status bar doesn't work well with on-screen keyboard, so leave it out.
-        if (!midlet.phoneSupportsCategoryBar()) {
+        if ((searchText.equals("Search") || searchText.length() == 0) && midlet.phoneSupportsCategoryBar()) {
             /*
              * Throw an event forward on the UI thread
              * 
@@ -143,7 +144,7 @@ public final class SearchCanvas extends ImageGridCanvas {
         scrollY = 0;
         repaint();
 
-        return loadFeed(searchText, true);
+        return loadFeed(searchText, StaticWebCache.GET_WEB);
     }
 
     private void enableKeyboard() {

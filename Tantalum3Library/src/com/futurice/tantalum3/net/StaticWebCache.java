@@ -18,33 +18,49 @@ import com.futurice.tantalum3.rms.StaticCache;
  */
 public class StaticWebCache extends StaticCache {
 
+    public static final int GET_LOCAL = 0;
+    public static final int GET_ANYWHERE = 1;
+    public static final int GET_WEB = 2;
     private static final int HTTP_GET_RETRIES = 3;
 
     public StaticWebCache(final char priority, final DataTypeHandler handler) {
         super(priority, handler);
     }
 
+    public Task get(final String url, final Task callback, final int getType) {
+        switch (getType) {
+            case GET_LOCAL:
+                return localGet(url, callback);
+                
+            case GET_ANYWHERE:
+                return get(url, callback);
+                
+            case GET_WEB:
+            default:
+                return netGet(url, callback);
+        }
+
+    }
+
     /**
      * Retrieve the object from 1. RAM if available 2. RMS if available 3. WEB
-     * 
+     *
      * @param url
      * @param result
      * @param priority - Default is Worker.NORMAL_PRIORITY
      */
     public Task get(final String url, final Task task) {
         final Task onNotFoundInCacheTask = new Task() {
-
             /**
              * Local Cache get returned a result, no need to get it from the
              * network
              *
              */
-
             public Object doInBackground(final Object in) {
                 if (task != null) {
                     return task.exec(in);
                 }
-                
+
                 return in;
             }
 
@@ -58,15 +74,14 @@ public class StaticWebCache extends StaticCache {
                 if (mayInterruptIfNeeded) {
                     return super.cancel(mayInterruptIfNeeded);
                 }
-                
-                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES) {
 
+                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES) {
                     public Object doInBackground(final Object in) {
                         final byte[] bytes = (byte[]) super.doInBackground(in);
                         try {
                             final Object useForm = put(url, bytes); // Convert to use form
                             task.exec(useForm);
-                            
+
                             return useForm;
                         } catch (Exception e) {
                             //#debug
@@ -86,13 +101,13 @@ public class StaticWebCache extends StaticCache {
                 } else {
                     super.cancel(mayInterruptIfNeeded);
                 }
-  
+
                 return false;
             }
         };
-        
+
         super.get(url, onNotFoundInCacheTask);
-        
+
         return onNotFoundInCacheTask;
     }
 
@@ -102,9 +117,8 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public Task update(final String url, final Task result) {
+    public Task netGet(final String url, final Task result) {
         final Task task = new Task() {
-
             public Object doInBackground(final Object in) {
                 try {
                     remove(url);
@@ -113,12 +127,12 @@ public class StaticWebCache extends StaticCache {
                     //#debug
                     L.e("Can not update", url, e);
                 }
-                
+
                 return in;
             }
         };
         Worker.fork(task, Worker.HIGH_PRIORITY);
-        
+
         return task;
     }
 
@@ -131,7 +145,6 @@ public class StaticWebCache extends StaticCache {
     public void prefetch(final String url) {
         if (synchronousRAMCacheGet(url) == null) {
             Worker.fork(new Workable() {
-
                 public Object exec(final Object in) {
                     try {
                         get(url, null);
@@ -139,7 +152,7 @@ public class StaticWebCache extends StaticCache {
                         //#debug
                         L.e("Can not prefetch", url, e);
                     }
-                    
+
                     return in;
                 }
             }, Worker.LOW_PRIORITY);

@@ -71,14 +71,10 @@ public class PicasaStorage {
      * @param callback - RunnableResult to be ran in the UI thread
      * @param fromWeb - True to force fetch from web
      */
-    public static void getImageObjects(final Task callback, final String search, final boolean fromWeb) {
+    public static Task getImageObjects(final Task callback, final String search, final int getType) {
         final String url = search != null ? searchURL + search : featURL;
 
-        if (fromWeb) {
-            feedCache.update(url, callback);
-        } else {
-            feedCache.get(url, callback);
-        }
+        return feedCache.get(url, callback, getType);
     }
 
     /**

@@ -167,7 +167,7 @@ public final class ListForm extends Form implements CommandListener {
                     return super.cancel(mayInterruptIfNeeded);
                 }
             };
-            feedCache.update(feedUrl, uiTask);
+            feedCache.netGet(feedUrl, uiTask);
         } else {
             uiTask = new AsyncCallbackTask() {
                 public void onPostExecute(final Object result) {

@@ -3,6 +3,7 @@ package com.nokia.example.picasa.s40;
 import com.futurice.tantalum3.AsyncCallbackTask;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
+import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
 import com.nokia.mid.ui.LCDUIUtil;
@@ -43,7 +44,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         angle = 0;
     }
 
-    public AsyncCallbackTask loadFeed(final String search, final boolean fromWeb) {
+    public AsyncCallbackTask loadFeed(final String search, final int getType) {
         final AsyncCallbackTask task = new AsyncCallbackTask() {
             protected void onPostExecute(final Object result) {
                 try {
@@ -62,7 +63,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             }
         };
         
-        PicasaStorage.getImageObjects(task, search, fromWeb);
+        PicasaStorage.getImageObjects(task, search, getType);
         
         return task;
     }
@@ -144,7 +145,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         top = getHeight();
         repaint();
         
-        return loadFeed(null, true);
+        return loadFeed(null, StaticWebCache.GET_WEB);
     }
 
     public boolean gestureTap(int startX, int startY) {
