@@ -167,6 +167,29 @@ public class StaticCache {
         
         return task;
     }
+    
+    /**
+     * Get a value from the local cache, value return async in the Task
+     * 
+     * @param key
+     * @return task
+     */
+    public Task cacheGet(final String key) {
+        if (key == null || key.length() == 0) {
+            //#debug
+            L.i("Trivial cacheGet", "");
+            
+            return null;
+        }
+        
+        final Task task = new Task() {
+            protected Object doInBackground(Object in) {
+                return synchronousGet(key);
+            }
+        };
+
+        return task.fork();
+    }
 
     private Object synchronousGet(final String key) {
         Object o = synchronousRAMCacheGet(key);

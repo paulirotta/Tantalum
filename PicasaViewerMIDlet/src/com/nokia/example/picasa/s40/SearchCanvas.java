@@ -1,12 +1,12 @@
 package com.nokia.example.picasa.s40;
 
+import com.futurice.tantalum3.AsyncCallbackTask;
 import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.log.L;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
 import com.nokia.mid.ui.TextEditor;
 import com.nokia.mid.ui.TextEditorListener;
-import com.nokia.mid.ui.gestures.GestureInteractiveZone;
 import java.io.IOException;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Graphics;
@@ -127,19 +127,23 @@ public final class SearchCanvas extends ImageGridCanvas {
                     });
                 }
             }
-            
+
             return true;
         }
-        
+
         return false;
     }
 
-    private void startSearch() {
+    private AsyncCallbackTask startSearch() {
         imageObjectModel.removeAllElements();
+        if (searchField != null) {
+            searchText = searchField.getContent();
+        }
         disableKeyboard();
         scrollY = 0;
-        loadFeed(true, true);
         repaint();
+
+        return loadFeed(searchText, true);
     }
 
     private void enableKeyboard() {
@@ -155,21 +159,15 @@ public final class SearchCanvas extends ImageGridCanvas {
         searchField.setParent(this); // Canvas to draw on
         searchField.setPosition(SEARCH_PADDING, SEARCH_PADDING);
         searchField.setCaret(searchText.length());
-//        if (GestureInteractiveZone.GESTURE_ALL > 63) {
-//            try {
-//                ((TextEditorHelper) Class.forName("com.nokia.example.picasa.s40.TextEditorHelper").getClass().newInstance()).setIndicatorVisibility(searchField, true);
-//            } catch (Throwable ex) {
-//                //#debug
-//                L.e("Indicator visibility", "Can not invoke", ex);
-//            }
-//        }
         searchField.setTextEditorListener(new TextEditorListener() {
             public void inputAction(TextEditor textEditor, int actions) {
                 repaint();
             }
         });
-        deleteCommand = new Command("Delete", Command.CANCEL, 0);
-        addCommand(deleteCommand);
+        if (midlet.phoneSupportsCategoryBar()) {
+            deleteCommand = new Command("Delete", Command.CANCEL, 0);
+            addCommand(deleteCommand);
+        }
         searchField.setVisible(true);
         searchField.setFocus(true);
     }
@@ -184,7 +182,6 @@ public final class SearchCanvas extends ImageGridCanvas {
             }
             removeCommand(deleteCommand);
             deleteCommand = null;
-            repaint();
         }
     }
 }
