@@ -28,13 +28,15 @@ public class StaticWebCache extends StaticCache {
     }
 
     public Task get(final String url, final Task callback, final int getType) {
+        //#debug
+        L.i("StaticWebCache get type " + getType, url);
         switch (getType) {
             case GET_LOCAL:
                 return localGet(url, callback);
-                
+
             case GET_ANYWHERE:
                 return get(url, callback);
-                
+
             case GET_WEB:
             default:
                 return netGet(url, callback);
@@ -50,6 +52,10 @@ public class StaticWebCache extends StaticCache {
      * @param priority - Default is Worker.NORMAL_PRIORITY
      */
     public Task get(final String url, final Task task) {
+        if (url == null || url.length() == 0) {
+            throw new IllegalArgumentException("Trivial StaticWebCache get");
+        }
+
         final Task onNotFoundInCacheTask = new Task() {
             /**
              * Local Cache get returned a result, no need to get it from the
@@ -117,12 +123,17 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public Task netGet(final String url, final Task result) {
-        final Task task = new Task() {
-            public Object doInBackground(final Object in) {
+    public Task netGet(final String url, final Task task) {
+        if (url == null || url.length() == 0) {
+            throw new IllegalArgumentException("Trivial StaticWebCache netGet");
+        }
+
+        final Task callback = getCallback(task);
+        Worker.fork(new Workable() {
+            public Object exec(final Object in) {
                 try {
                     remove(url);
-                    StaticWebCache.this.get(url, result);
+                    StaticWebCache.this.get(url, callback);
                 } catch (Exception e) {
                     //#debug
                     L.e("Can not update", url, e);
@@ -130,8 +141,7 @@ public class StaticWebCache extends StaticCache {
 
                 return in;
             }
-        };
-        Worker.fork(task, Worker.HIGH_PRIORITY);
+        }, Worker.HIGH_PRIORITY);
 
         return task;
     }

@@ -19,7 +19,7 @@ import javax.microedition.lcdui.Image;
 public abstract class ImageGridCanvas extends GestureCanvas {
 
     protected final Hashtable images = new Hashtable();
-    protected Vector imageObjectModel = new Vector(); // Access only from UI thread
+    protected final Vector imageObjectModel = new Vector(); // Access only from UI thread
     protected final int imageSide;
     protected int headerHeight;
     protected Boolean statusBarVisible = Boolean.TRUE;
@@ -48,10 +48,12 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         final AsyncCallbackTask task = new AsyncCallbackTask() {
             protected void onPostExecute(final Object result) {
                 try {
-                    if (result == null) {
-                        imageObjectModel.removeAllElements();
-                    } else {
-                        imageObjectModel = (Vector) result;
+                    imageObjectModel.removeAllElements();
+                    if (result != null) {
+                        final Vector newModel = (Vector) result;
+                        for (int i = 0; i < newModel.size(); i++) {
+                            imageObjectModel.addElement(newModel.elementAt(i));
+                        }
                     }
                     top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2);
                     midlet.stopReloadAnimation();
@@ -68,6 +70,8 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             }
         };
 
+        //#debug
+        L.i("loadFeed", search);
         PicasaStorage.getImageObjects(task, search, getType);
 
         return task;

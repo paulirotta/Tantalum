@@ -47,12 +47,10 @@ public class WeakHashCache {
     }
 
     public void put(final Object key, final Object value) {
+        if (key == null) {
+            throw new IllegalArgumentException("null key put to WeakHashCache");
+        }
         synchronized (hash) {
-            if (key == null) {
-                //#debug
-                L.i("WeakHash put", "key is null");
-                return;
-            }
             if (value == null) {
                 //#debug
                 L.i("WeakHash put", "value is null, key removed");

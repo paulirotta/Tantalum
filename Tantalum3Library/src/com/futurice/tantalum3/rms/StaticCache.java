@@ -77,8 +77,12 @@ public class StaticCache {
      */
     protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         //#debug
-        L.i("Start to convert", key);
+        L.i("Start to convert", key + " bytes length=" + bytes.length);
         final Object o = handler.convertToUseForm(bytes);
+        if (key.endsWith("dog")) {
+            //#debug
+            L.i("********************", key + " bytes length=" + bytes.length + " converted=" + o);
+        }
 
         synchronized (this) {
             accessOrder.addElement(key);
@@ -101,12 +105,36 @@ public class StaticCache {
 
         if (containsKey(key)) {
             //#debug            
-            L.i("StaticCache hit in RAM", key);
+            L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
             this.accessOrder.addElement(key);
             o = cache.get(key);
+            if (key.endsWith("dog")) {
+                //#debug
+                L.i("get*****************", key + " converted=" + o);
+            }
         }
 
         return o;
+    }
+
+    /**
+     * Create a generate result carrier Task for cases where the callback
+     * provided by the developer is null. This allows the developer to receive,
+     * and be event notified when the result is ready.
+     *
+     * @param task
+     * @return
+     */
+    protected final Task getCallback(final Task task) {
+        if (task != null) {
+            return task;
+        }
+
+        return new Task() {
+            protected Object doInBackground(Object in) {
+                return in;
+            }
+        };
     }
 
     /**
@@ -114,7 +142,7 @@ public class StaticCache {
      *
      *
      * @param key
-     * @param task
+     * @param callback
      * @param priority - default is Work.NORMAL_PRIORITY set to
      * Work.HIGH_PRIORITY if you want the results quickly. Note that your
      * request for priority may be denied if you have recently changed the value
@@ -123,19 +151,19 @@ public class StaticCache {
      */
     public Task get(final String key, final Task task) {
         if (key == null || key.length() == 0) {
-            //#debug
-            L.i("Trivial get", "");
-            task.cancel(false);
-            
-            return task;
+            throw new IllegalArgumentException("Trivial StaticCache get");
         }
+
+        final Task callback = getCallback(task);
         final Object fromRamCache = synchronousRAMCacheGet(key);
 
         if (fromRamCache != null) {
             //#debug
             L.i("RAM cache hit", "(" + priority + ") " + key);
-            task.exec(fromRamCache);
+            callback.exec(fromRamCache);
         } else {
+            //#debug
+            L.i("RAM cache miss", "(" + priority + ") " + key);
             final Workable getWorkable = new Workable() {
                 public Object exec(final Object in) {
                     //#debug
@@ -146,68 +174,83 @@ public class StaticCache {
                         if (o != null) {
                             //#debug
                             L.i("RMS cache hit", key);
-                            task.exec(o);
+                            callback.exec(o);
                         } else {
                             //#debug
                             L.i("RMS cache miss", key);
-                            task.cancel(false);
+                            callback.cancel(false);
                         }
-                        
+
                         return o;
                     } catch (Exception e) {
                         //#debug
                         L.e("Can not get", key, e);
                     }
-                    
+
                     return in;
                 }
             };
             Worker.fork(getWorkable, Worker.HIGH_PRIORITY);
         }
-        
-        return task;
+
+        return callback;
     }
-    
+
     /**
      * Get a value from the local cache, value return async in the Task
-     * 
+     *
      * @param key
      * @return task
      */
-    public Task localGet(final String key, final Task callback) {
+    public Task localGet(final String key, final Task task) {
         if (key == null || key.length() == 0) {
-            //#debug
-            L.i("Trivial cacheGet", "");
-            
-            return null;
+            throw new IllegalArgumentException("Trivial StaticCache localGet");
         }
-        
-        final Task task = new Task() {
-            protected Object doInBackground(Object in) {
-                final Object r = synchronousGet(key);
 
+        final Task callback = getCallback(task);
+
+        Worker.fork(new Workable() {
+            public Object exec(Object in) {
+                //#debug
+                L.i("local get", key);
+                final Object r = synchronousGet(key);
+                //#debug
+                L.i("local get result", r == null ? "(null)" : r.toString());
                 if (callback != null) {
-                    return callback.exec(r);
+                    if (r == null) {
+                        callback.cancel(false);
+                    } else {
+                        //#debug
+                        L.i("local get callback", key);
+                        callback.exec(r);
+                    }
                 }
 
                 return r;
             }
-        };
+        }, Worker.HIGH_PRIORITY);
 
-        return task.fork();
+        return callback;
     }
 
     private Object synchronousGet(final String key) {
         Object o = synchronousRAMCacheGet(key);
 
+        //#debug
+        L.i("StaticCache RAM result", "(" + priority + ") " + key + " : " + o);
         if (o == null) {
             // Load from flash memory
-            final byte[] bytes = RMSUtils.cacheRead(key);
+            byte[] bytes = RMSUtils.cacheRead(key);
 
+            //#debug
+            L.i("StaticCache RMS intermediate result", "(" + priority + ") " + key + " : " + bytes);
             if (bytes != null) {
                 //#debug
                 L.i("StaticCache hit in RMS", "(" + priority + ") " + key);
                 o = convertAndPutToHeapCache(key, bytes);
+                bytes = null;
+                //#debug
+                L.i("StaticCache RMS result", "(" + priority + ") " + key + " : " + o);
             }
         }
 
@@ -235,7 +278,7 @@ public class StaticCache {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }
-        if (bytes == null) {
+        if (bytes == null || bytes.length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
         Worker.forkSerial(new Workable() {
@@ -246,7 +289,7 @@ public class StaticCache {
                     //#debug
                     L.e("Can not synch write to RMS", key, e);
                 }
-                
+
                 return in;
             }
         }, RMS_WORKER_INDEX);

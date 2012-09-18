@@ -2,8 +2,6 @@ package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
 import com.futurice.tantalum3.PlatformUtils;
-import com.futurice.tantalum3.Workable;
-import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.example.picasa.common.PicasaImageObject;
@@ -11,6 +9,7 @@ import com.nokia.example.picasa.common.PicasaStorage;
 import com.nokia.mid.ui.TextEditor;
 import com.nokia.mid.ui.TextEditorListener;
 import java.io.IOException;
+import java.util.Vector;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -177,7 +176,10 @@ public final class SearchCanvas extends ImageGridCanvas {
                 //#debug
                 L.i("TextEditor inputAction", "" + action);
                 if ((action & TextEditorListener.ACTION_CONTENT_CHANGE) != 0) {
-                    refresh(textEditor.getContent().trim().toLowerCase(), StaticWebCache.GET_LOCAL);
+                    searchText = textEditor.getContent().trim().toLowerCase();
+                    //#debug
+                    L.i("TextEditorListener, content changed refresh", searchText);
+                    refresh(searchText, StaticWebCache.GET_LOCAL);
                 } else {
                     repaint();
                 }
@@ -198,6 +200,8 @@ public final class SearchCanvas extends ImageGridCanvas {
         }
         if (searchField != null) {
             searchText = searchField.getContent().trim().toLowerCase();
+            //#debug
+            L.i("TextEditor disabled", searchText);
             searchField.setParent(null);
             searchField = null;
             removeCommand(deleteCommand);

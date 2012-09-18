@@ -220,12 +220,15 @@ public abstract class Task implements Workable {
                 setStatus(EXEC_STARTED);
             }
             final Object r = doInBackground(in);
+            final boolean doRun;
             synchronized (this) {
                 result = r;
-                setStatus(EXEC_FINISHED);
+                doRun = status == EXEC_STARTED;
+                if (doRun) {
+                    setStatus(EXEC_FINISHED);
+                }
             }
-            setStatus(EXEC_FINISHED);
-            if (this instanceof Runnable) {
+            if (this instanceof Runnable && doRun) {
                 PlatformUtils.runOnUiThread(new Runnable() {
                     public void run() {
                         ((Runnable) Task.this).run();
@@ -297,7 +300,7 @@ public abstract class Task implements Workable {
      * necessary.
      *
      */
-    public void onCancelled() {
+    protected void onCancelled() {
     }
 
     public String toString() {
