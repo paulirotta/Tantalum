@@ -151,7 +151,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         imageObjectModel.removeAllElements();
         images.clear();
         scrollY = 0;
-        top = getHeight();
+        top = -getHeight();
         repaint();
 
         return loadFeed(url, getType);

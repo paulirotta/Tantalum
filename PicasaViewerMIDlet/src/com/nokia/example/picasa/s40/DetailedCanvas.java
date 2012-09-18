@@ -94,7 +94,7 @@ public final class DetailedCanvas extends GestureCanvas {
 
     public void showNotify() {
         XC = getWidth() / 2;
-        top = getHeight();
+        top = -getHeight();
 
         // Show statusbar
 //        try {

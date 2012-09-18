@@ -26,7 +26,7 @@ public abstract class GestureCanvas extends Canvas {
     protected final PicasaViewer midlet;
     protected GestureHandler gestureHandler = null;
     protected int scrollY = 0;
-    protected int top = getHeight();
+    protected int top = -getHeight();
     protected boolean animating = false;
 
     static {
