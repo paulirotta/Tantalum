@@ -1,5 +1,5 @@
 /*
- * LengthLimitedLRUVectorTest.java
+ * LengthLimitedVectorTest.java
  * JMUnit based test
  *
  * Created on 22-Mar-2012, 15:11:25
@@ -12,9 +12,9 @@ import jmunit.framework.cldc11.TestCase;
 /**
  * @author phou
  */
-public class LengthLimitedLRUVectorTest extends TestCase {
+public class LengthLimitedVectorTest extends TestCase {
     public boolean tooLong = false;
-    public LengthLimitedLRUVectorTest() {
+    public LengthLimitedVectorTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(2, "LengthLimitedLRUVectorTest");
     }
@@ -33,15 +33,14 @@ public class LengthLimitedLRUVectorTest extends TestCase {
     }
 
     /**
-     * Test of testAddElement method, of class LengthLimitedLRUVector.
+     * Test of testAddElement method, of class LengthLimitedVector.
      */
     public void testAddElement() throws AssertionFailedException {
         System.out.println("addElement");
-        LengthLimitedLRUVector instance = new LengthLimitedLRUVector(3) {
+        LengthLimitedVector instance = new LengthLimitedVector(3) {
 
-            protected void lengthExceeded() {
+            protected void lengthExceeded(Object extra) {
                tooLong = true;
-               removeLeastRecentlyUsed();
             }
         };
         instance.addElement("a");
@@ -52,14 +51,13 @@ public class LengthLimitedLRUVectorTest extends TestCase {
     }
 
     /**
-     * Test of testLengthExceeded method, of class LengthLimitedLRUVector.
+     * Test of testLengthExceeded method, of class LengthLimitedVector.
      */
     public void testLengthExceeded() throws AssertionFailedException {
         System.out.println("lengthExceeded");
-        LengthLimitedLRUVector instance = new LengthLimitedLRUVector(3) {
+        LengthLimitedVector instance = new LengthLimitedVector(3) {
 
-            protected void lengthExceeded() {
-               removeLeastRecentlyUsed();
+            protected void lengthExceeded(Object o) {
             }
         };
         instance.addElement("a");
@@ -68,6 +66,6 @@ public class LengthLimitedLRUVectorTest extends TestCase {
         assertEquals("Full length", 3, instance.size());
         instance.addElement("d");
         assertEquals("Max length", 3, instance.size());
-        assertEquals("LRU after length exceeded", "b", instance.removeLeastRecentlyUsed());
+        assertEquals("LRU after length exceeded", "b", instance.firstElement());
     }
 }

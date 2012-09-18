@@ -3,7 +3,7 @@ package com.futurice.tantalum3.rms;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.util.LengthLimitedLRUVector;
+import com.futurice.tantalum3.util.LengthLimitedVector;
 import java.util.Vector;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
@@ -20,31 +20,21 @@ public class RMSUtils {
     private static final int MAX_RECORD_NAME_LENGTH = 32;
     private static final int MAX_OPEN_RECORD_STORES = 10;
     private static final String RECORD_HASH_PREFIX = "@";
-    private static final LengthLimitedLRUVector openRecordStores = new LengthLimitedLRUVector(MAX_OPEN_RECORD_STORES) {
+    private static final LengthLimitedVector openRecordStores = new LengthLimitedVector(MAX_OPEN_RECORD_STORES) {
+        protected void lengthExceeded(final Object extra) {
+            final RecordStore rs = (RecordStore) extra;
+            String rsName = "";
 
-        protected void lengthExceeded() {
-            while (openRecordStores.isLengthExceeded()) {
-                RecordStore rs = null;
-                String rsName = "";
-                
-                try {
-                    synchronized (openRecordStores) {
-                        if (openRecordStores.isLengthExceeded()) {
-                            rs = (RecordStore) openRecordStores.removeLeastRecentlyUsed();
-                        }
-                    }
-                    if (rs != null) {
-                        rsName = rs.getName();
-                        //#debug
-                        L.i("Closing LRU record store", rsName + " open=" + openRecordStores.size());
-                        rs.closeRecordStore();
-                        //#debug
-                        L.i("LRU record store closed", rsName + " open=" + openRecordStores.size());
-                    }
-                } catch (Exception ex) {
-                    //#debug
-                    L.e("Can not close LRU record store", rsName, ex);
-                }
+            try {
+                rsName = rs.getName();
+                //#debug
+                L.i("Closing LRU record store", rsName + " open=" + openRecordStores.size());
+                rs.closeRecordStore();
+                //#debug
+                L.i("LRU record store closed", rsName + " open=" + openRecordStores.size());
+            } catch (Exception ex) {
+                //#debug
+                L.e("Can not close extra record store", rsName, ex);
             }
         }
     };
@@ -55,14 +45,13 @@ public class RMSUtils {
          *
          */
         Worker.forkShutdownTask(new Workable() {
-
             public Object exec(final Object in) {
                 //#debug
                 L.i("Closing record stores during shutdown", "open=" + openRecordStores.size());
                 openRecordStores.setMaxLength(0);
                 //#debug
                 L.i("Closed record stores during shutdown", "open=" + openRecordStores.size());
-                
+
                 return in;
             }
         });
@@ -192,23 +181,17 @@ public class RMSUtils {
     public static void delete(String recordStoreName) {
         try {
             recordStoreName = truncateRecordStoreName(recordStoreName);
-            RecordStore rs = null;
             synchronized (openRecordStores) {
                 for (int i = 0; i < openRecordStores.size(); i++) {
-                    rs = (RecordStore) openRecordStores.elementAt(i);
+                    final RecordStore rs = (RecordStore) openRecordStores.elementAt(i);
+
                     if (rs.getName().equals(recordStoreName)) {
-                        openRecordStores.removeElementAt(i);
+                        openRecordStores.markAsExtra(rs);
                         rs.closeRecordStore();
-                        break;
                     }
-                    rs = null;
                 }
-                RecordStore.deleteRecordStore(recordStoreName);
             }
-//            if (rs != null) {
-//                rs.closeRecordStore();
-//            }
-//            RecordStore.deleteRecordStore(recordStoreName);
+            RecordStore.deleteRecordStore(recordStoreName);
         } catch (RecordStoreNotFoundException ex) {
         } catch (RecordStoreException ex) {
             //#debug
