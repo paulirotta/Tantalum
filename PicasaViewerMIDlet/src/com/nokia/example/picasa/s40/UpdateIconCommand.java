@@ -4,12 +4,12 @@
  */
 package com.nokia.example.picasa.s40;
 
+import com.futurice.tantalum3.log.L;
 import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.IconCommand;
 import com.nokia.mid.ui.orientation.Orientation;
 import java.util.Timer;
 import java.util.TimerTask;
-import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;

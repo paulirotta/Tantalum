@@ -40,6 +40,7 @@ public final class DetailedCanvas extends GestureCanvas {
         super(midlet);
 
         width = getWidth();
+        this.setFullScreenMode(true);
     }
 
     public void paint(final Graphics g) {
@@ -60,7 +61,7 @@ public final class DetailedCanvas extends GestureCanvas {
                             stopSpin();
                             repaint();
                         }
-                        
+
                         return in;
                     }
                 });
@@ -96,14 +97,14 @@ public final class DetailedCanvas extends GestureCanvas {
 
     public void showNotify() {
         XC = getWidth() / 2;
-        this.setFullScreenMode(true);
- 
+        top = getHeight();
+
         // Show statusbar
-        try {
-            LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", Boolean.TRUE);
-        } catch (Throwable t) {
-            L.i("showNotify LCDUIUtil", "trait not supported, normal before SDK 2.0");
-        }
+//        try {
+//            LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", Boolean.TRUE);
+//        } catch (Throwable t) {
+//            L.i("showNotify LCDUIUtil", "trait not supported, normal before SDK 2.0");
+//        }
 
         super.showNotify();
     }
@@ -115,10 +116,23 @@ public final class DetailedCanvas extends GestureCanvas {
         super.hideNotify();
     }
 
-    public void pointerPressed(int x, int y) {
-        if (x >= getWidth() - iconSide && y >= getHeight() - iconSide) {
-            midlet.goBack();
-        }
+//    public void pointerPressed(int x, int y) {
+//        if (x >= getWidth() - iconSide && y >= getHeight() - iconSide) {
+//            midlet.goBack();
+//        }
+//    }
+    public boolean gestureTap(int startX, int startY) {
+        midlet.goBack();
+
+        return true;
+    }
+
+    public void gestureDrag(int startX, int startY, int dragDistanceX, int dragDistanceY) {
+        // Do nothing
+    }
+
+    public void gestureFlick(int startX, int startY, float flickDirection, int flickSpeed, int flickSpeedX, int flickSpeedY) {
+        // Do nothing
     }
 
     /**

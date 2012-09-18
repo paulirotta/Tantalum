@@ -40,7 +40,6 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
             CategoryBarHandler.setMidlet(PicasaViewer.this);
             categoryBarHandler = (CategoryBarHandler) cbc.newInstance();
             refreshCommand = (Command) Class.forName("com.nokia.example.picasa.s40.UpdateIconCommand").newInstance();
-//            ((UpdateIconCommand) refreshCommand).setCanvas(featuredView);
         } catch (Throwable t) {
             //#debug
             L.i("Can not set category bar handler", "normal before SDK 2.0");
