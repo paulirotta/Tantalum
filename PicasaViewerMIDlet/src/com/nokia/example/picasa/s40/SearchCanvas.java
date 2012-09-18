@@ -2,6 +2,8 @@ package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
 import com.futurice.tantalum3.PlatformUtils;
+import com.futurice.tantalum3.Workable;
+import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.example.picasa.common.PicasaImageObject;
@@ -9,7 +11,6 @@ import com.nokia.example.picasa.common.PicasaStorage;
 import com.nokia.mid.ui.TextEditor;
 import com.nokia.mid.ui.TextEditorListener;
 import java.io.IOException;
-import java.util.Vector;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -25,7 +26,7 @@ public final class SearchCanvas extends ImageGridCanvas {
     private static final int SEARCH_WIDTH = 180;
     private static final int SEARCH_PADDING = 10;
     private static final int HEADER_BAR_HEIGHT = SEARCH_HEIGHT + 2 * SEARCH_PADDING;
-    private static final int SEARCH_BUTTON_WIDTH = 26;
+    private static int SEARCH_BUTTON_WIDTH;
     private static final int ROUNDED = 10;
     private Image searchImg;
     private TextEditor searchField;
@@ -43,6 +44,7 @@ public final class SearchCanvas extends ImageGridCanvas {
         }
         try {
             searchImg = Image.createImage("/search.png");
+            SEARCH_BUTTON_WIDTH = searchImg.getWidth();
         } catch (IOException e) {
             //#debug
             L.e("Can not create search image", "", e);
@@ -118,7 +120,7 @@ public final class SearchCanvas extends ImageGridCanvas {
                 } else {
                     PlatformUtils.runOnUiThread(new Runnable() {
                         public void run() {
-                            disableKeyboard(false);
+                            disableKeyboard(true);
                         }
                     });
                 }
@@ -145,15 +147,35 @@ public final class SearchCanvas extends ImageGridCanvas {
     }
 
     private AsyncCallbackTask startSearch() {
-        imageObjectModel.removeAllElements();
         if (searchField != null) {
             searchText = searchField.getContent().trim().toLowerCase();
         }
         disableKeyboard(false);
         scrollY = 0;
-        repaint();
+        startSpin(SPIN_SPEED);
 
-        return loadFeed(searchText, StaticWebCache.GET_WEB);
+        final AsyncCallbackTask t = (AsyncCallbackTask) loadFeed(searchText, StaticWebCache.GET_WEB);
+
+        Worker.fork(t, Worker.HIGH_PRIORITY);
+        Worker.fork(new Workable() {
+            public Object exec(final Object in) {
+                try {
+                    //#debug
+                    L.i("Search spinner join", searchText + " status=" + t.getStatus());
+                    t.joinUI(15000);
+                } catch (Exception ex) {
+                    //#debug
+                    L.e("Search spinner stop problem", searchText, ex);
+                }
+                //#debug
+                L.i("Search spinner will stop", searchText + " status=" + t.getStatus());
+                stopSpin();
+
+                return in;
+            }
+        });
+
+        return t;
     }
 
     private void enableKeyboard() {
@@ -167,7 +189,6 @@ public final class SearchCanvas extends ImageGridCanvas {
         searchField.setBackgroundColor(0x00000000);
         searchField.setParent(this); // Canvas to draw on
         searchField.setPosition(SEARCH_PADDING, SEARCH_PADDING);
-//        searchField.setCaret(searchText.length());
         if (this.hasPointerEvents()) {
             searchField.setTouchEnabled(true);
         }
@@ -194,9 +215,9 @@ public final class SearchCanvas extends ImageGridCanvas {
         searchField.setFocus(true);
     }
 
-    private void disableKeyboard(final boolean force) {
+    private boolean disableKeyboard(final boolean force) {
         if (!force && !midlet.phoneSupportsCategoryBar()) {
-            return;
+            return false;
         }
         if (searchField != null) {
             searchText = searchField.getContent().trim().toLowerCase();
@@ -206,7 +227,10 @@ public final class SearchCanvas extends ImageGridCanvas {
             searchField = null;
             removeCommand(deleteCommand);
             deleteCommand = null;
+            return true;
         }
+
+        return false;
     }
 
     public void gesturePinch(

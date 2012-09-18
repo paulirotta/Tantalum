@@ -19,6 +19,7 @@ import javax.microedition.lcdui.Image;
  */
 public abstract class GestureCanvas extends Canvas {
 
+    protected static final int SPIN_SPEED = 100; // ms per animation frame
     protected static Image backIcon;
     public static final Timer spinTimer = new Timer();
     private static TimerTask spinTimerTask = null; // Access within synchronized blocks only
@@ -63,20 +64,9 @@ public abstract class GestureCanvas extends Canvas {
             //#debug
             L.i("checkScroll", "bang bottom scrollY=" + scrollY);
             scrollY = 0;
-        }        
+        }
     }
-    
-    /**
-     * Two fingers, moving in or out
-     *
-     * @param pinchDistanceStartingp
-     * @param pinchDistanceCurrent
-     * @param pinchDistanceChange
-     * @param centerX
-     * @param centerY
-     * @param centerChangeX
-     * @param centerChangeY
-     */
+
     public void gesturePinch(
             int pinchDistanceStarting,
             int pinchDistanceCurrent,
@@ -89,10 +79,10 @@ public abstract class GestureCanvas extends Canvas {
 
     /**
      * Short press
-     * 
+     *
      * Always call the super.gestureTap() in the hierarchy and accept if the
      * parent class has caught and consumed the tap event
-     * 
+     *
      * @param startX
      * @param startY
      * @return true of the tap was caught, handled and consumed
@@ -103,7 +93,11 @@ public abstract class GestureCanvas extends Canvas {
             gestureHandler.stopAnimation();
             return true;
         }
-        
+        if (spinTimerTask != null) {
+            stopSpin();
+            return true;
+        }
+
         return false;
     }
 
@@ -179,6 +173,7 @@ public abstract class GestureCanvas extends Canvas {
         animating = false;
         gestureHandler.stopAnimation();
         gestureHandler.unregister();
+        stopSpin();
 
         super.hideNotify();
     }
@@ -189,24 +184,28 @@ public abstract class GestureCanvas extends Canvas {
         super.sizeChanged(w, h);
     }
 
-    public synchronized void startSpin(final long delay) {
-        if (spinTimerTask != null) {
-            // Spin speed has changed
-            stopSpin();
+    protected final synchronized void startSpin(final long delay) {
+        if (spinTimerTask == null) {
+            spinTimerTask = new TimerTask() {
+                public void run() {
+                    repaint();
+                }
+            };
+            spinTimer.scheduleAtFixedRate(spinTimerTask, 0, delay);
         }
-        spinTimerTask = new TimerTask() {
-            public void run() {
-                repaint();
-            }
-        };
-        spinTimer.scheduleAtFixedRate(spinTimerTask, delay, delay);
     }
+    
 
-    public synchronized void stopSpin() {
+    protected final synchronized void stopSpin() {
         if (spinTimerTask != null) {
             spinTimerTask.cancel();
             spinTimerTask = null;
+            repaint();
         }
+    }
+
+    protected final synchronized boolean isSpinning() {
+        return spinTimerTask != null;
     }
 
     /**
@@ -230,37 +229,4 @@ public abstract class GestureCanvas extends Canvas {
     protected void drawBackIcon(final Graphics g) {
         g.drawImage(backIcon, getWidth(), getHeight(), Graphics.BOTTOM | Graphics.RIGHT);
     }
-
-    /**
-     * Adding this method, even if it does nothing, tells some Series40 phones to
-     * not display a button in the top right corner. This button is not needed in
-     * this application, but it would allow the user to
-     * manually display the virtual keyboard. It is always better to automatically
-     * display the virtual keyboard when the user presses an area of the screen,
-     * or even better- when the user would need to enter input as the next logical
-     * action, even if they have not pressed the screen.
-     * 
-     * @param x
-     * @param y 
-     */
-//    protected void pointerPressed(int x, int y) {
-//    }
-//
-//    /**
-//     * See the comments for pointerPressed()
-//     * 
-//     * @param x
-//     * @param y 
-//     */
-//    protected void pointerReleased(int x, int y) {
-//    }
-//
-//    /**
-//     * See the comments for pointerPressed()
-//     * 
-//     * @param x
-//     * @param y 
-//     */
-//    protected void pointerDragged(int x, int y) {
-//    }
 }

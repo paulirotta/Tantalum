@@ -74,7 +74,7 @@ public final class Worker implements Runnable {
                     //#debug
                     L.e("Can not create worker", "i=" + i, e);
                 }
-                
+
                 return in;
             }
         });
@@ -110,6 +110,8 @@ public final class Worker implements Runnable {
                     ((Task) workable).notifyTaskQueued();
                 }
             } catch (IllegalStateException e) {
+                //#debug
+                L.e("Can not fork", workable.toString(), e);
                 q.removeElement(workable);
                 throw e;
             }
@@ -156,6 +158,8 @@ public final class Worker implements Runnable {
                             ((Task) workable).notifyTaskQueued();
                         }
                     } catch (IllegalStateException e) {
+                        //#debug
+                        L.e("Can not fork high priority", workable.toString(), e);
                         q.removeElement(workable);
                         throw e;
                     }
@@ -170,6 +174,8 @@ public final class Worker implements Runnable {
                             ((Task) workable).notifyTaskQueued();
                         }
                     } catch (IllegalStateException e) {
+                        //#debug
+                        L.e("Can not fork low priority", workable.toString(), e);
                         lowPriorityQ.removeElement(workable);
                         throw e;
                     }
@@ -252,7 +258,7 @@ public final class Worker implements Runnable {
      *
      * @param workable
      */
-    public static void queueShutdownTask(final Workable workable) {
+    public static void forkShutdownTask(final Workable workable) {
         synchronized (q) {
             shutdownQueue.addElement(workable);
             q.notify();

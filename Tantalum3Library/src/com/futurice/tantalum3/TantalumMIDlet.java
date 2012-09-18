@@ -52,7 +52,7 @@ public abstract class TantalumMIDlet extends MIDlet {
      * and ongoing tasks will complete.
      *
      * If you want something done during shutdown, use
-     * Worker.queueShutdownTask(Workable) and it will be handled for you.
+     * Worker.forkShutdownTask(Workable) and it will be handled for you.
      *
      * @param unconditional
      * @throws MIDletStateChangeException

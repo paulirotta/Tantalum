@@ -54,7 +54,7 @@ public class RMSUtils {
          * Close all open record stores during shutdown
          *
          */
-        Worker.queueShutdownTask(new Workable() {
+        Worker.forkShutdownTask(new Workable() {
 
             public Object exec(final Object in) {
                 //#debug
@@ -198,15 +198,17 @@ public class RMSUtils {
                     rs = (RecordStore) openRecordStores.elementAt(i);
                     if (rs.getName().equals(recordStoreName)) {
                         openRecordStores.removeElementAt(i);
+                        rs.closeRecordStore();
                         break;
                     }
                     rs = null;
                 }
+                RecordStore.deleteRecordStore(recordStoreName);
             }
-            if (rs != null) {
-                rs.closeRecordStore();
-            }
-            RecordStore.deleteRecordStore(recordStoreName);
+//            if (rs != null) {
+//                rs.closeRecordStore();
+//            }
+//            RecordStore.deleteRecordStore(recordStoreName);
         } catch (RecordStoreNotFoundException ex) {
         } catch (RecordStoreException ex) {
             //#debug

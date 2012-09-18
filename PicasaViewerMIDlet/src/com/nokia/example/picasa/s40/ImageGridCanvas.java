@@ -3,7 +3,6 @@ package com.nokia.example.picasa.s40;
 import com.futurice.tantalum3.AsyncCallbackTask;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
 import com.nokia.mid.ui.LCDUIUtil;
@@ -101,49 +100,36 @@ public abstract class ImageGridCanvas extends GestureCanvas {
      */
     public void drawGrid(final Graphics g, final int startY) {
         g.setColor(0x000000);
-        g.fillRect(0, 0, getWidth(), getHeight());
+        g.fillRect(0, startY, getWidth(), getHeight() - startY);
 
-        if (imageObjectModel.isEmpty()) {
-            // Loading...
-            this.drawSpinner(g);
-        } else {
-            for (int i = 0; i < imageObjectModel.size(); i++) {
-                int xPosition = i % 2 * (getWidth() / 2);
-                int yPosition = startY + scrollY + ((i - i % 2) / 2) * imageSide;
+        for (int i = 0; i < imageObjectModel.size(); i++) {
+            int xPosition = i % 2 * (getWidth() / 2);
+            int yPosition = startY + scrollY + ((i - i % 2) / 2) * imageSide;
 
-                if (yPosition > getHeight()) {
-                    break;
-                }
-                // If image is in RAM
-                if (images.containsKey(imageObjectModel.elementAt(i))) {
-                    g.drawImage((Image) (images.get(imageObjectModel.elementAt(i))), xPosition, yPosition, Graphics.LEFT | Graphics.TOP);
+            if (yPosition > getHeight()) {
+                break;
+            }
+            // If image is in RAM
+            if (images.containsKey(imageObjectModel.elementAt(i))) {
+                g.drawImage((Image) (images.get(imageObjectModel.elementAt(i))), xPosition, yPosition, Graphics.LEFT | Graphics.TOP);
+            } else {
+                // If there were no results
+                if (((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl.length() == 0) {
+                    g.setColor(0xFFFFFF);
+                    g.drawString("No Result.", 0, headerHeight, Graphics.TOP | Graphics.LEFT);
                 } else {
-                    // If there were no results
-                    if (((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl.length() == 0) {
-                        g.setColor(0xFFFFFF);
-                        g.drawString("No Result.", 0, headerHeight, Graphics.TOP | Graphics.LEFT);
-                    } else {
-                        // Start loading the image, draw a placeholder
-                        PicasaStorage.imageCache.get(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl,
-                                new ImageResult(imageObjectModel.elementAt(i)));
-                        g.setColor(0x111111);
-                        g.fillRect(xPosition, yPosition, imageSide, imageSide);
-                    }
+                    // Start loading the image, draw a placeholder
+                    PicasaStorage.imageCache.get(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl,
+                            new ImageResult(imageObjectModel.elementAt(i)));
+                    g.setColor(0x111111);
+                    g.fillRect(xPosition, yPosition, imageSide, imageSide);
                 }
             }
         }
-    }
-
-    public void gesturePinch(
-            int pinchDistanceStarting,
-            int pinchDistanceCurrent,
-            int pinchDistanceChange,
-            int centerX,
-            int centerY,
-            int centerChangeX,
-            int centerChangeY) {
-        // Pinch to reload
-        refresh(null, StaticWebCache.GET_WEB);
+        if (isSpinning()) {
+            // Loading...
+            drawSpinner(g);
+        }
     }
 
     public Task refresh(final String url, final int getType) {

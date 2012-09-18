@@ -79,10 +79,6 @@ public class StaticCache {
         //#debug
         L.i("Start to convert", key + " bytes length=" + bytes.length);
         final Object o = handler.convertToUseForm(bytes);
-        if (key.endsWith("dog")) {
-            //#debug
-            L.i("********************", key + " bytes length=" + bytes.length + " converted=" + o);
-        }
 
         synchronized (this) {
             accessOrder.addElement(key);
@@ -108,10 +104,6 @@ public class StaticCache {
             L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
             this.accessOrder.addElement(key);
             o = cache.get(key);
-            if (key.endsWith("dog")) {
-                //#debug
-                L.i("get*****************", key + " converted=" + o);
-            }
         }
 
         return o;

@@ -15,7 +15,6 @@ import javax.microedition.lcdui.Image;
 public final class DetailedCanvas extends GestureCanvas {
 
     private static final int PADDING = 10;
-    private static final int SPIN_SPEED = 100; // ms per animation frame
     private long spinAnimationStartTime = System.currentTimeMillis();
     private volatile Image image;
     private static final int iconSide = 43;
@@ -64,9 +63,9 @@ public final class DetailedCanvas extends GestureCanvas {
                 });
                 startSpin(SPIN_SPEED);
             }
-            if (image == null) {
+            if (isSpinning()) {
                 drawSpinner(g); // Loading...
-            } else {
+            } else if (image != null) {
                 // Done, draw image.
                 loading = false;
                 g.drawImage(image, getWidth() / 2, scrollY, Graphics.TOP | Graphics.HCENTER);

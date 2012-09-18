@@ -13,6 +13,7 @@ import com.futurice.tantalum3.log.L;
 public abstract class Task implements Workable {
     // status values
 
+    public static final int MAX_TIMEOUT = 120000;
     public static final int EXEC_PENDING = 1;
     public static final int EXEC_STARTED = 2;
     public static final int EXEC_FINISHED = 4;
@@ -53,31 +54,35 @@ public abstract class Task implements Workable {
      * @throws CancellationException
      * @throws ExecutionException
      */
-    public final Object get() throws InterruptedException, CancellationException, ExecutionException {
-        final Object r;
-        synchronized (this) {
-            switch (status) {
-                case EXEC_PENDING:
-                    Worker.tryUnfork(this);
-                    break;
-                case EXEC_STARTED:
-                    this.wait();
-                case EXEC_FINISHED:
-                    return result;
-                case CANCELED:
-                    throw new CancellationException();
-                case EXCEPTION:
-                default:
-                    throw new ExecutionException();
-            }
-            r = result;
-        }
-
-        return exec(r);
-    }
+//    public final Object get() throws InterruptedException, CancellationException, ExecutionException {
+//        final Object r;
+//        synchronized (this) {
+//            switch (status) {
+//                case EXEC_PENDING:
+//                    Worker.tryUnfork(this);
+//                    break;
+//                case EXEC_STARTED:
+//                    this.wait();
+//                case EXEC_FINISHED:
+//                    return result;
+//                case CANCELED:
+//                    throw new CancellationException();
+//                case EXCEPTION:
+//                default:
+//                    throw new ExecutionException();
+//            }
+//            r = result;
+//        }
+//
+//        return exec(r);
+//    }
 
     protected final synchronized Object getResult() {
         return result;
+    }
+    
+    public final Object get() throws InterruptedException, ExecutionException, CancellationException, TimeoutException {
+        return join(MAX_TIMEOUT);
     }
 
     protected final synchronized Object setResult(final Object result) {
