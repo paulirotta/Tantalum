@@ -1,10 +1,8 @@
 package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.util.StringUtils;
 import com.nokia.example.picasa.common.PicasaStorage;
-import com.nokia.mid.ui.LCDUIUtil;
 import java.util.Vector;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
@@ -44,7 +42,6 @@ public final class DetailedCanvas extends GestureCanvas {
     }
 
     public void paint(final Graphics g) {
-        checkScroll();
         g.setColor(0x000000);
         g.fillRect(0, 0, getWidth(), getHeight());
         g.setColor(0xffffff);

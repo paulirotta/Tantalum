@@ -92,7 +92,7 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
 
     public void stopReloadAnimation() {
         try {
-            ((UpdateIconCommand) refreshCommand).stopAnimation(GestureCanvas.spinTimer);
+            ((UpdateIconCommand) refreshCommand).stopAnimation();
         } catch (Throwable t) {
             //#debug
             L.e("Can not stop reload animation", null, t);

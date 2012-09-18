@@ -35,7 +35,6 @@ public class UpdateIconCommand extends IconCommand {
     private TimerTask timerTask = null;
     private double angle;
     private int startDot;
-//    private Canvas canvas = null;
 
     static {
         try {
@@ -55,24 +54,29 @@ public class UpdateIconCommand extends IconCommand {
         g.drawImage(image, (int) XC, (int) YC, Graphics.HCENTER | Graphics.VCENTER);
     }
 
-//    public void setCanvas(final Canvas canvas) {
-//        this.canvas = canvas;
-//    }
-    public void startAnimation(final Timer animationTimer) {
+    public synchronized void startAnimation(final Timer animationTimer) {
         g.setColor(0xff000000);
         g.fillRect(0, 0, WIDTH, HEIGHT);
+        stopAnimation();
+        timerTask = new TimerTask() {
+            public void run() {
+                Orientation.setAppOrientation(Orientation.ORIENTATION_PORTRAIT);
+            }
+        };
         animationTimer.schedule(timerTask, 0, 100);
     }
 
-    public void stopAnimation(final Timer animationTimer) {
-        timerTask.cancel();
-        timerTask = null;
-        g.setColor(0x000000);
-        g.fillRect(0, 0, WIDTH, HEIGHT);
-        g.drawImage(image, (int) XC, (int) YC, Graphics.HCENTER | Graphics.VCENTER);
+    public synchronized void stopAnimation() {
+        if (timerTask != null) {
+            timerTask.cancel();
+            timerTask = null;
+            g.setColor(0x000000);
+            g.fillRect(0, 0, WIDTH, HEIGHT);
+            g.drawImage(image, (int) XC, (int) YC, Graphics.HCENTER | Graphics.VCENTER);
 
-        // Force the screen to repaint completely, including the no-longer-animated icon
-        Orientation.setAppOrientation(Orientation.getAppOrientation());
+            // Force the screen to repaint completely, including the no-longer-animated icon
+            Orientation.setAppOrientation(Orientation.ORIENTATION_PORTRAIT);
+        }
     }
 
     public void drawSpinner() {
@@ -85,11 +89,6 @@ public class UpdateIconCommand extends IconCommand {
         }
         startDot++;
         startDot = startDot % dots;
-
-        // Force the screen to repaint completely, including the animated icon
-//        if (canvas != null) {
-//            canvas.repaint();
-//        }
         Orientation.setAppOrientation(Orientation.getAppOrientation());
     }
 }
