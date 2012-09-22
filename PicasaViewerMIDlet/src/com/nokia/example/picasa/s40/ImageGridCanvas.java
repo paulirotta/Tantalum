@@ -148,7 +148,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             final int index = getItemIndex(startX, startY);
 
             if (index >= 0 && index < imageObjectModel.size()) {
-                PicasaStorage.selectedImage = (PicasaImageObject) imageObjectModel.elementAt(index);
+                PicasaStorage.setSelectedImage((PicasaImageObject) imageObjectModel.elementAt(index));
                 midlet.setDetailed();
                 return true;
             }
@@ -197,7 +197,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     /**
      * Object for adding images to hashmap when they're loaded.
      */
-    protected final class ImageResult extends Task {
+    protected final class ImageResult extends AsyncCallbackTask {
 
         private final Object key;
 
@@ -208,10 +208,13 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         public Object doInBackground(final Object in) {
             if (in != null) {
                 images.put(key, in);
-                repaint();
             }
 
             return in;
+        }
+
+        protected void onPostExecute(Object result) {
+            repaint();
         }
     }
 }

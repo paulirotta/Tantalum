@@ -2,6 +2,7 @@ package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.util.StringUtils;
+import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
 import java.util.Vector;
 import javax.microedition.lcdui.Font;
@@ -41,16 +42,17 @@ public final class DetailedCanvas extends GestureCanvas {
     }
 
     public void paint(final Graphics g) {
+        final PicasaImageObject selectedImage = PicasaStorage.getSelectedImage();
         g.setColor(0x000000);
         g.fillRect(0, 0, getWidth(), getHeight());
         g.setColor(0xffffff);
 
-        if (PicasaStorage.selectedImage != null) {
+        if (selectedImage != null) {
 
             // If we do not have the image and we are not loading it, start loading it.
             if (image == null && !loading) {
                 loading = true;
-                PicasaStorage.imageCache.get(PicasaStorage.selectedImage.imageUrl, new Task() {
+                PicasaStorage.imageCache.get(selectedImage.imageUrl, new Task() {
                     public Object doInBackground(final Object in) {
                         if (in != null) {
                             image = (Image) in;
@@ -75,7 +77,7 @@ public final class DetailedCanvas extends GestureCanvas {
 
             if (titleLines == null) {
                 titleLines = new Vector();
-                StringUtils.splitToLines(titleLines, PicasaStorage.selectedImage.title, Font.getDefaultFont(), width - 2 * PADDING);
+                StringUtils.splitToLines(titleLines, selectedImage.title, Font.getDefaultFont(), width - 2 * PADDING);
             } else {
                 for (int i = 0; i < titleLines.size(); i++) {
                     g.drawString((String) titleLines.elementAt(i), PADDING, textY, Graphics.LEFT | Graphics.TOP);
@@ -86,7 +88,7 @@ public final class DetailedCanvas extends GestureCanvas {
                 }
             }
 
-            g.drawString(PicasaStorage.selectedImage.author, PADDING, textY, Graphics.LEFT | Graphics.TOP);
+            g.drawString(selectedImage.author, PADDING, textY, Graphics.LEFT | Graphics.TOP);
         }
         drawBackIcon(g);
     }

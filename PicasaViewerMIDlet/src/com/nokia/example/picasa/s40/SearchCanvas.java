@@ -106,6 +106,8 @@ public final class SearchCanvas extends ImageGridCanvas {
     }
 
     public boolean gestureTap(int startX, int startY) {
+        //#debug
+        L.i("tap", searchText + " (" + startX + ", " + startY + ")");
         if (!super.gestureTap(startX, startY)) {
             final int index = getItemIndex(startX, startY);
 
@@ -114,7 +116,7 @@ public final class SearchCanvas extends ImageGridCanvas {
                 // Keyboard is not active
                 if (searchField == null) {
                     if (imageObjectModel.size() > index) {
-                        PicasaStorage.selectedImage = (PicasaImageObject) imageObjectModel.elementAt(index);
+                        PicasaStorage.setSelectedImage((PicasaImageObject) imageObjectModel.elementAt(index));
                         midlet.setDetailed();
                     }
                 } else {

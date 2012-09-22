@@ -9,6 +9,7 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotFoundException;
+import javax.microedition.rms.RecordStoreNotOpenException;
 
 /**
  * RMS Utility methods
@@ -180,15 +181,36 @@ public class RMSUtils {
 
     public static void delete(String recordStoreName) {
         try {
+            final RecordStore[] recordStores;
             recordStoreName = truncateRecordStoreName(recordStoreName);
-            synchronized (openRecordStores) {
-                for (int i = 0; i < openRecordStores.size(); i++) {
-                    final RecordStore rs = (RecordStore) openRecordStores.elementAt(i);
 
-                    if (rs.getName().equals(recordStoreName)) {
-                        openRecordStores.markAsExtra(rs);
-                        rs.closeRecordStore();
+            synchronized (openRecordStores) {
+                recordStores = new RecordStore[openRecordStores.size()];
+                openRecordStores.copyInto(recordStores);
+            }
+
+            /**
+             * Close existing references to the record store
+             * 
+             * NOTE: This does not absolutely guarantee that there is no other
+             * thread accessing this record store at this exact moment. If that
+             * happens, you will be prevented from deleting the record store and
+             * "RMS delete problem" message will show up in your debug. For this
+             * reason, your application's logic may need to take into account
+             * that a delete might not be completed.
+             * 
+             * TODO Without adding complexity, a file locking mechanism or other
+             * solution may be added in future. Another solution might be to read
+             * and remember the RMS contents on startup, use that as an in-memory
+             * index... Still expensive. -paul
+             */
+            for (int i = 0; i < recordStores.length; i++) {
+                try {
+                    if (recordStores[i].getName().equals(recordStoreName)) {
+                        openRecordStores.markAsExtra(recordStores[i]);
                     }
+                } catch (RecordStoreNotOpenException ex) {
+                    L.e("Mark as extra close of record store failed", recordStoreName, ex);
                 }
             }
             RecordStore.deleteRecordStore(recordStoreName);

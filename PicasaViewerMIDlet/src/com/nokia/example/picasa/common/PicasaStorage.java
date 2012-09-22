@@ -32,7 +32,7 @@ public class PicasaStorage {
     private static String urlOptions;
     private static String featURL;
     private static String searchURL;
-    public static PicasaImageObject selectedImage = null;
+    private static volatile PicasaImageObject selectedImage = null;
     public static StaticWebCache feedCache;
     public static StaticWebCache imageCache;
 
@@ -63,6 +63,14 @@ public class PicasaStorage {
             featURL = "http://picasaweb.google.com/data/feed/base/featured" + urlOptions;
             searchURL = "http://picasaweb.google.com/data/feed/base/all" + urlOptions + "&q=";
         }
+    }
+    
+    public static PicasaImageObject getSelectedImage() {
+        return selectedImage;
+    }
+    
+    public static void setSelectedImage(final PicasaImageObject selectedImage) {
+        PicasaStorage.selectedImage = selectedImage;
     }
 
     /**

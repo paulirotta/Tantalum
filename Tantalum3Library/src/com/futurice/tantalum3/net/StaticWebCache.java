@@ -64,7 +64,7 @@ public class StaticWebCache extends StaticCache {
              */
             public Object doInBackground(final Object in) {
                 if (task != null) {
-                    return task.exec(in);
+                    task.exec(in);
                 }
 
                 return in;
