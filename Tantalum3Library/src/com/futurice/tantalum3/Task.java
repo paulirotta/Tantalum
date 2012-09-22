@@ -76,11 +76,10 @@ public abstract class Task implements Workable {
 //
 //        return exec(r);
 //    }
-
     protected final synchronized Object getResult() {
         return result;
     }
-    
+
     public final Object get() throws InterruptedException, ExecutionException, CancellationException, TimeoutException {
         return join(MAX_TIMEOUT);
     }
@@ -217,7 +216,7 @@ public abstract class Task implements Workable {
      */
     public final Object exec(final Object in) {
         Object out = in;
-        
+
         try {
             synchronized (this) {
                 if (status == CANCELED || status == EXCEPTION || status == EXEC_STARTED) {
@@ -279,19 +278,23 @@ public abstract class Task implements Workable {
      */
     public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
         boolean cancelled = false;
-        
+
         switch (status) {
             case EXEC_PENDING:
                 setStatus(CANCELED);
                 cancelled = true;
                 break;
+
             case EXEC_STARTED:
                 if (mayInterruptIfRunning) {
                     //TODO find the task on a thread, then interrupt that thread
                     setStatus(CANCELED);
                     cancelled = true;
                 }
+                break;
+
             default:
+                ;
         }
 
         return cancelled;

@@ -40,6 +40,14 @@ public class SortedVector extends Vector {
     public final void setElementAt(Object o, int index) {
         throw new IllegalArgumentException("setElementAt() not supported");
     }
+    
+    public boolean equals(Object o) {
+        return super.equals(o) && o instanceof SortedVector && this.comparator.equals(((SortedVector) o).comparator);
+    }
+    
+    public int hashCode() {
+        return super.hashCode() ^ comparator.hashCode();
+    }
 
     /**
      * Indicate the sort order for the Vector with the given current data type

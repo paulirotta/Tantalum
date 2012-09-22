@@ -21,7 +21,7 @@ public abstract class AsyncTask extends Task {
      * better performance.
      */
 
-    public static boolean agressiveThreading = true;
+    private static volatile boolean agressiveThreading = true;
 
     /*
      * If tasks are called with execute(Params) then they will all execute in
@@ -37,6 +37,14 @@ public abstract class AsyncTask extends Task {
      */
     private volatile Object params = ""; // For default toString debug helper
 
+    /**
+     * Run for complete Android compatability, or if your AsyncTask is (!) not
+     * thread safe.
+     */
+    public static void disableAgressiveThreading() {
+        AsyncTask.agressiveThreading = false;
+    }
+    
     /**
      * For compatability with Android, run one Runnable task on a single
      * background thread. Execution is guaranteed to be in the same order

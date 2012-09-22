@@ -105,7 +105,8 @@ public class HttpGetter extends Task {
             success = true;
         } catch (IllegalArgumentException e) {
             //#debug
-            L.e(this.getClass().getName() + " has a problem", url, e);
+            L.e(this.getClass().getName() + " HttpGetter has illegal argument", url, e);
+            throw e;
         } catch (IOException e) {
             //#debug
             L.e(this.getClass().getName() + " retries remaining", url + ", retries=" + retriesRemaining, e);
@@ -116,9 +117,6 @@ public class HttpGetter extends Task {
                 //#debug
                 L.i(this.getClass().getName() + " no more retries", url);
             }
-        } catch (Exception e) {
-            //#debug
-            L.e(this.getClass().getName() + " has a problem", url, e);
         } finally {
             try {
                 inputStream.close();

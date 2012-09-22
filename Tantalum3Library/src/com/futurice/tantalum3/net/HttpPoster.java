@@ -26,7 +26,8 @@ public class HttpPoster extends HttpGetter {
         if (postMessage == null) {
             throw new IllegalArgumentException(this.getClass().getName() + " was passed null post message- meaningless post operation: " + url);
         }
-        this.postMessage = postMessage;
+        this.postMessage = new byte[postMessage.length];
+        System.arraycopy(postMessage, 0, this.postMessage, 0, postMessage.length);
         this.requestMethod = HttpConnection.POST;
     }
 }

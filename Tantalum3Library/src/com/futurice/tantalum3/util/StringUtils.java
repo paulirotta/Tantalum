@@ -76,7 +76,7 @@ public class StringUtils {
             }
         }
         vector.addElement(text.trim());
-        
+
         return vector;
     }
 
@@ -90,8 +90,14 @@ public class StringUtils {
      */
     private byte[] doReadBytesFromJAR(final String name) throws IOException {
         final InputStream in = getClass().getResourceAsStream(name);
-        final byte[] bytes = new byte[in.available()];
-        in.read(bytes);
+        final byte[] bytes;
+
+        try {
+            bytes = new byte[in.available()];
+            in.read(bytes);
+        } finally {
+            in.close();
+        }
 
         return bytes;
     }

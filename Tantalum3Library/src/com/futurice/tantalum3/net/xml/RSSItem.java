@@ -21,7 +21,7 @@ public class RSSItem {
     private Font truncatedFont;
     private int truncatedTitleWidth = 0;
     
-    public String getDescription() {
+    public synchronized String getDescription() {
         return description;
     }
 
