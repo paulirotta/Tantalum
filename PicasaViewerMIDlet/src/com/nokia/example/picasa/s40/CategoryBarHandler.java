@@ -11,7 +11,6 @@ import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.ElementListener;
 import com.nokia.mid.ui.IconCommand;
 import java.io.IOException;
-import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Image;
 

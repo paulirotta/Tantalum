@@ -1,5 +1,6 @@
 package com.nokia.example.picasa.s40;
 
+import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.TantalumMIDlet;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
@@ -37,7 +38,7 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
         lastView = featuredView;
         try {
             final Class cbc = Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler");
-            CategoryBarHandler.setMidlet(PicasaViewer.this);
+            CategoryBarHandler.setMidlet(this);
             categoryBarHandler = (CategoryBarHandler) cbc.newInstance();
             refreshCommand = (Command) Class.forName("com.nokia.example.picasa.s40.UpdateIconCommand").newInstance();
         } catch (Throwable t) {
@@ -75,12 +76,16 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
     }
 
     public void setDetailed() {
-        if (phoneSupportsCategoryBar()) {
-            categoryBarHandler.setVisibility(false);
-        }
-        lastView = Display.getDisplay(this).getCurrent();
+        PlatformUtils.runOnUiThread(new Runnable() {
+            public void run() {
+                if (phoneSupportsCategoryBar()) {
+                    categoryBarHandler.setVisibility(false);
+                }
+                lastView = Display.getDisplay(PicasaViewer.this).getCurrent();
 
-        Display.getDisplay(this).setCurrent(detailedView);
+                Display.getDisplay(PicasaViewer.this).setCurrent(detailedView);
+            }
+        });
     }
 
     public void goBack() {
@@ -128,5 +133,11 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
 
     public boolean phoneSupportsCategoryBar() {
         return categoryBarHandler != null;
+    }
+    
+    public void setCategoryBarVisibility(final boolean visibility) {
+        if (categoryBarHandler != null) {
+            categoryBarHandler.setVisibility(visibility);
+        }
     }
 }

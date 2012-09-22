@@ -88,17 +88,17 @@ public abstract class GestureCanvas extends Canvas {
      * @return true of the tap was caught, handled and consumed
      */
     public boolean gestureTap(int startX, int startY) {
+        boolean gestureHandled = false;
+        
         if (animating) {
             animating = false;
             gestureHandler.stopAnimation();
-            return true;
+            gestureHandled = true;
         }
-        if (spinTimerTask != null) {
-            stopSpin();
-            return true;
-        }
-
-        return false;
+        
+        gestureHandled |= stopSpin();
+        
+        return gestureHandled;
     }
 
     /**
@@ -196,12 +196,16 @@ public abstract class GestureCanvas extends Canvas {
     }
     
 
-    protected final synchronized void stopSpin() {
-        if (spinTimerTask != null) {
+    protected final synchronized boolean stopSpin() {
+        boolean stopped = spinTimerTask != null;
+        
+        if (stopped) {
             spinTimerTask.cancel();
             spinTimerTask = null;
             repaint();
         }
+        
+        return stopped;
     }
 
     protected final synchronized boolean isSpinning() {

@@ -28,7 +28,7 @@ public final class DetailedCanvas extends GestureCanvas {
     private static final int dots = shades.length;
     private static final double step = (2 * Math.PI) / dots;
     private static final double circle = (2 * Math.PI);
-    private boolean loading = false;
+//    private boolean loading = false;
     private final int width;
     private Vector titleLines;
     private int textY = 0;
@@ -38,7 +38,8 @@ public final class DetailedCanvas extends GestureCanvas {
         super(midlet);
 
         width = getWidth();
-        this.setFullScreenMode(true);
+        setFullScreenMode(true);
+        setTitle("DetailedCanvas");
     }
 
     public void paint(final Graphics g) {
@@ -48,10 +49,8 @@ public final class DetailedCanvas extends GestureCanvas {
         g.setColor(0xffffff);
 
         if (selectedImage != null) {
-
             // If we do not have the image and we are not loading it, start loading it.
-            if (image == null && !loading) {
-                loading = true;
+            if (image == null && !isSpinning()) {
                 PicasaStorage.imageCache.get(selectedImage.imageUrl, new Task() {
                     public Object doInBackground(final Object in) {
                         if (in != null) {
@@ -69,7 +68,6 @@ public final class DetailedCanvas extends GestureCanvas {
                 drawSpinner(g); // Loading...
             } else if (image != null) {
                 // Done, draw image.
-                loading = false;
                 g.drawImage(image, getWidth() / 2, scrollY, Graphics.TOP | Graphics.HCENTER);
             }
             textY = image == null ? (int) YC + ((int) R) << 1 : image.getHeight() + scrollY;
@@ -96,13 +94,7 @@ public final class DetailedCanvas extends GestureCanvas {
     public void showNotify() {
         XC = getWidth() / 2;
         top = -getHeight();
-
-        // Show statusbar
-//        try {
-//            LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", Boolean.TRUE);
-//        } catch (Throwable t) {
-//            L.i("showNotify LCDUIUtil", "trait not supported, normal before SDK 2.0");
-//        }
+        midlet.setCategoryBarVisibility(false);
 
         super.showNotify();
     }
@@ -114,11 +106,6 @@ public final class DetailedCanvas extends GestureCanvas {
         super.hideNotify();
     }
 
-//    public void pointerPressed(int x, int y) {
-//        if (x >= getWidth() - iconSide && y >= getHeight() - iconSide) {
-//            midlet.goBack();
-//        }
-//    }
     public boolean gestureTap(int startX, int startY) {
         midlet.goBack();
 

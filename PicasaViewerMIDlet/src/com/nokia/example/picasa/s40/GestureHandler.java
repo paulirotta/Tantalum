@@ -122,6 +122,7 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
         //#debug
         L.i("Canvas " + canvas.getTitle(), "unregister");
         GestureRegistrationManager.unregister(canvas, giz);
+        animator.stop();
         animator.unregister();
     }
     
@@ -136,8 +137,8 @@ public final class GestureHandler implements FrameAnimatorListener, GestureListe
     public void register(final int x, final int y) {
         //#debug
         L.i("Canvas " + canvas.getTitle(), "register");
-        GestureRegistrationManager.register(canvas, giz);
         updateCanvasSize();
+        GestureRegistrationManager.register(canvas, giz);
         GestureRegistrationManager.setListener(canvas, this);
         animator.register(x, y, (short) 0, (short) 0, this);
     }

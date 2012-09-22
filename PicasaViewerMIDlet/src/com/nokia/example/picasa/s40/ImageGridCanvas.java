@@ -77,11 +77,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public void showNotify() {
-        if (statusBarVisible == Boolean.FALSE) {
-            if (midlet.phoneSupportsCategoryBar()) {
-                this.setFullScreenMode(true);
-            }
-        }
+        midlet.setCategoryBarVisibility(true);
 
         // Show statusbar
         try {

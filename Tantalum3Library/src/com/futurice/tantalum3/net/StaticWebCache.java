@@ -97,7 +97,7 @@ public class StaticWebCache extends StaticCache {
                         } catch (Exception e) {
                             //#debug
                             L.e("Can not set result", url, e);
-                            super.cancel(false);
+                            setStatus(EXCEPTION);
                         }
 
                         return bytes;

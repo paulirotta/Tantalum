@@ -97,13 +97,12 @@ public class StaticCache {
      * @return
      */
     public synchronized Object synchronousRAMCacheGet(final String key) {
-        Object o = null;
+        Object o = cache.get(key);
 
-        if (containsKey(key)) {
+        if (o != null) {
             //#debug            
             L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
             this.accessOrder.addElement(key);
-            o = cache.get(key);
         }
 
         return o;
@@ -418,7 +417,7 @@ public class StaticCache {
     protected void remove(final String key) {
         try {
             if (containsKey(key)) {
-                synchronized (StaticCache.this) {
+                synchronized (this) {
                     accessOrder.removeElement(key);
                     cache.remove(key);
                 }
@@ -462,7 +461,8 @@ public class StaticCache {
         if (key == null) {
             throw new IllegalArgumentException("containsKey was passed null");
         }
-        return  cache.containsKey(key);
+
+        return cache.containsKey(key);
     }
 
     /**
@@ -500,12 +500,21 @@ public class StaticCache {
      * @return
      */
     public synchronized String toString() {
-        String str = "StaticCache --- priority: " + priority + " size: " + getSize() + " size (bytes): " + sizeAsBytes + "\n";
+        StringBuffer str = new StringBuffer();
+
+        str.append("StaticCache --- priority: ");
+        str.append(priority);
+        str.append(" size: ");
+        str.append(getSize());
+        str.append(" size (bytes): ");
+        str.append(sizeAsBytes);
+        str.append("\n");
 
         for (int i = 0; i < accessOrder.size(); i++) {
-            str += accessOrder.elementAt(i) + "\n";
+            str.append(accessOrder.elementAt(i));
+            str.append("\n");
         }
 
-        return str;
+        return str.toString();
     }
 }
