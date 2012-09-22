@@ -63,10 +63,9 @@ public abstract class LengthLimitedVector extends Vector {
         }
         if (extra != null) {
             lengthExceeded(extra);
-            return true;
         }
 
-        return false;
+        return extra != null;
     }
 
     public synchronized void setMaxLength(final int maxLength) {

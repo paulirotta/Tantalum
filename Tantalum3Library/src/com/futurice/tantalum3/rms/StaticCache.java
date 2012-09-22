@@ -117,16 +117,16 @@ public class StaticCache {
      * @param task
      * @return
      */
-    protected final Task getCallback(final Task task) {
-        if (task != null) {
-            return task;
+    protected final Task getCallback(Task task) {
+        if (task == null) {
+            task = new Task() {
+                protected Object doInBackground(Object in) {
+                    return in;
+                }
+            };
         }
 
-        return new Task() {
-            protected Object doInBackground(Object in) {
-                return in;
-            }
-        };
+        return task;
     }
 
     /**
@@ -459,11 +459,10 @@ public class StaticCache {
      * @return
      */
     public synchronized boolean containsKey(final String key) {
-        if (key != null) {
-            return this.cache.containsKey(key);
+        if (key == null) {
+            throw new IllegalArgumentException("containsKey was passed null");
         }
-
-        return false;
+        return  cache.containsKey(key);
     }
 
     /**

@@ -102,16 +102,17 @@ public class RSSModel extends XMLModel {
      * @return
      */
     public synchronized RSSItem itemNextTo(final RSSItem item, final boolean before) {
+        RSSItem adjacentItem = null;
         int i = items.indexOf(item);
 
         if (before) {
             if (i > 0) {
-                return (RSSItem) items.elementAt(--i);
+                adjacentItem = (RSSItem) items.elementAt(--i);
             }
         } else if (i < size() - 1) {
-            return (RSSItem) items.elementAt(++i);
+            adjacentItem = (RSSItem) items.elementAt(++i);
         }
 
-        return null;
+        return adjacentItem;
     }
 }

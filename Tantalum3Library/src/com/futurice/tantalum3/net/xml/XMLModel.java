@@ -55,6 +55,8 @@ public abstract class XMLModel extends DefaultHandler {
             try {
                 in.close();
             } catch (Exception e) {
+                //#debug
+                L.e("Can not close", "bytearrayStream", e);
             }
             qnameStack = null;
             charStack = null;

@@ -2,7 +2,6 @@ package com.futurice.tantalum3.net.xml;
 
 import com.futurice.tantalum3.util.StringUtils;
 import javax.microedition.lcdui.Font;
-import javax.microedition.lcdui.Image;
 
 /**
  * RSS Item object, associated with RSSModel which is a list of such objects.
@@ -17,7 +16,6 @@ public class RSSItem {
     private String link = "";
     private String pubDate = "";
     private String thumbnail = "";
-    private Image thumbnailImage = null;
     private volatile boolean loadingImage = false;
     private volatile boolean newItem = true;
     private Font truncatedFont;

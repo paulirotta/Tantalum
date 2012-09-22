@@ -37,13 +37,14 @@ public class WeakHashCache {
     protected final Hashtable hash = new Hashtable();
 
     public Object get(final Object key) {
+        Object o = null;
         final WeakReference reference = (WeakReference) hash.get(key);
 
         if (reference != null) {
-            return reference.get();
+            o = reference.get();
         }
 
-        return null;
+        return o;
     }
 
     public void put(final Object key, final Object value) {
@@ -71,13 +72,11 @@ public class WeakHashCache {
     }
 
     public boolean containsKey(final Object key) {
-        if (key != null) {
-            return hash.containsKey(key);
-        } else {
-            //#debug
-            L.i("WeakHashCache", "containsKey() with null key");
-            return false;
+        if (key == null) {
+            throw new IllegalArgumentException("containsKey() with null key");
         }
+
+        return hash.containsKey(key);
     }
 
     public int size() {

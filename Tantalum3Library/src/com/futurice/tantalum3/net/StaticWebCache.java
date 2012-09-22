@@ -28,20 +28,25 @@ public class StaticWebCache extends StaticCache {
     }
 
     public Task get(final String url, final Task callback, final int getType) {
+        final Task task;
+        
         //#debug
         L.i("StaticWebCache get type " + getType, url);
         switch (getType) {
             case GET_LOCAL:
-                return localGet(url, callback);
+                task = localGet(url, callback);
+                break;
 
             case GET_ANYWHERE:
-                return get(url, callback);
+                task = get(url, callback);
+                break;
 
             case GET_WEB:
             default:
-                return netGet(url, callback);
+                task = netGet(url, callback);
         }
-
+        
+        return task;
     }
 
     /**

@@ -215,6 +215,8 @@ public class RMSUtils {
             }
             RecordStore.deleteRecordStore(recordStoreName);
         } catch (RecordStoreNotFoundException ex) {
+            //#debug
+            L.i("RMS not found (normal result)", recordStoreName);
         } catch (RecordStoreException ex) {
             //#debug
             L.e("RMS delete problem", recordStoreName, ex);

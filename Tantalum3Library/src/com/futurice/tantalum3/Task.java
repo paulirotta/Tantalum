@@ -108,7 +108,7 @@ public abstract class Task implements Workable {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
         boolean doExec = false;
-        final Object r;
+        Object r;
 
         synchronized (this) {
             switch (status) {
@@ -141,7 +141,7 @@ public abstract class Task implements Workable {
         if (doExec) {
             //#debug
             L.i("Start exec() out-of-sequence exec() after join() and successful unfork()", this.toString());
-            return exec(null);
+            r = exec(null);
         }
 
         return r;
@@ -216,6 +216,8 @@ public abstract class Task implements Workable {
      * @return
      */
     public final Object exec(final Object in) {
+        Object out = in;
+        
         try {
             synchronized (this) {
                 if (status == CANCELED || status == EXCEPTION || status == EXEC_STARTED) {
@@ -224,10 +226,10 @@ public abstract class Task implements Workable {
                 result = in;
                 setStatus(EXEC_STARTED);
             }
-            final Object r = doInBackground(in);
+            out = doInBackground(in);
             final boolean doRun;
             synchronized (this) {
-                result = r;
+                result = out;
                 doRun = status == EXEC_STARTED;
                 if (doRun) {
                     setStatus(EXEC_FINISHED);
@@ -241,15 +243,13 @@ public abstract class Task implements Workable {
                     }
                 });
             }
-
-            return r;
         } catch (final Throwable t) {
             //#debug
             L.e("Async task exception", this.toString(), t);
             setStatus(EXCEPTION);
         }
 
-        return in;
+        return out;
     }
 
     /**
@@ -278,22 +278,23 @@ public abstract class Task implements Workable {
      * @return
      */
     public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
+        boolean cancelled = false;
+        
         switch (status) {
             case EXEC_PENDING:
                 setStatus(CANCELED);
-                return true;
+                cancelled = true;
+                break;
             case EXEC_STARTED:
                 if (mayInterruptIfRunning) {
                     //TODO find the task on a thread, then interrupt that thread
                     setStatus(CANCELED);
-                    return true;
-                } else {
-                    return false;
+                    cancelled = true;
                 }
             default:
         }
 
-        return false;
+        return cancelled;
     }
 
     /**

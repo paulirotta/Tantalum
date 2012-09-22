@@ -39,9 +39,11 @@ public final class ImageTypeHandler implements DataTypeHandler {
     }
 
     public Object convertToUseForm(final byte[] bytes) {
+        final Image img;
+        
         try {
             if (imageWidth == -1) {
-                return Image.createImage(bytes, 0, bytes.length);
+                img = Image.createImage(bytes, 0, bytes.length);
             } else {                
                 Image temp = Image.createImage(bytes, 0, bytes.length);
                 final int w = temp.getWidth();
@@ -49,15 +51,15 @@ public final class ImageTypeHandler implements DataTypeHandler {
                 int[] data = new int[w*h];
                 temp.getRGB(data, 0, w, 0, 0, w, h);
                 temp = null;
-                final Image img = ImageUtils.downscaleImage(data, w, h, imageWidth, imageWidth, true, processAlpha, bestQuality);
+                img = ImageUtils.downscaleImage(data, w, h, imageWidth, imageWidth, true, processAlpha, bestQuality);
                 data = null;
-                
-                return img;
             }
         } catch (IllegalArgumentException e) {
             //#debug
             L.e("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
             throw e;
         }
+        
+        return img;
     }
 }

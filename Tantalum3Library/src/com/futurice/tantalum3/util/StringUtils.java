@@ -19,12 +19,14 @@ public class StringUtils {
         if (singleton == null) {
             singleton = new StringUtils();
         }
-        
+
         return singleton;
     }
-    
+
     private StringUtils() {
-    };
+    }
+
+    ;
     
     /**
      * Truncates the string to fit the maxWidth. If truncated, an elipsis "..."
@@ -36,22 +38,23 @@ public class StringUtils {
      * @return String - truncated string with ellipsis added to end of the
      * string
      */
-    public static String truncate(final String str, final Font font, final int maxWidth) {
-        if (font.stringWidth(str) <= maxWidth) {
-            return str;
+    public static String truncate(String str, final Font font, final int maxWidth) {
+        if (font.stringWidth(str) > maxWidth) {
+            final StringBuffer truncated = new StringBuffer(str);
+            while (font.stringWidth(truncated.toString()) > maxWidth) {
+                truncated.deleteCharAt(truncated.length() - 1);
+            }
+            truncated.delete(truncated.length() - ELIPSIS.length(), truncated.length());
+            truncated.append(ELIPSIS);
+            str = truncated.toString();
         }
 
-        StringBuffer truncated = new StringBuffer(str);
-        while (font.stringWidth(truncated.toString()) > maxWidth) {
-            truncated.deleteCharAt(truncated.length() - 1);
-        }
-        truncated.delete(truncated.length() - ELIPSIS.length(), truncated.length());
-        truncated.append(ELIPSIS);
-        return truncated.toString();
+        return str;
     }
 
     /**
-     * Split a string in to several lines of text which will display within a maximum width.
+     * Split a string in to several lines of text which will display within a
+     * maximum width.
      *
      * @param vector
      * @param str
@@ -59,8 +62,9 @@ public class StringUtils {
      * @param maxWidth
      * @return
      */
-    public static Vector splitToLines(Vector vector, String text, Font font, int maxWidth) {
+    public static Vector splitToLines(final Vector vector, final String text, final Font font, final int maxWidth) {
         int len, lastSpace = 0;
+
         for (int i = 0; i < text.length(); i++) {
             if (text.charAt(i) == ' ') {
                 lastSpace = i;
@@ -72,15 +76,17 @@ public class StringUtils {
             }
         }
         vector.addElement(text.trim());
+        
         return vector;
     }
 
     /**
-     * This method can not be static in order to access the current instance's path
-     * 
+     * This method can not be static in order to access the current instance's
+     * path
+     *
      * @param name
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     private byte[] doReadBytesFromJAR(final String name) throws IOException {
         final InputStream in = getClass().getResourceAsStream(name);
@@ -92,10 +98,10 @@ public class StringUtils {
 
     /**
      * Return a byte[] stored as a file in the JAR package
-     * 
+     *
      * @param name
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public static byte[] readBytesFromJAR(final String name) throws IOException {
         return getStringUtils().doReadBytesFromJAR(name);
@@ -103,10 +109,10 @@ public class StringUtils {
 
     /**
      * Return a String object stored as a file in the JAR package
-     * 
+     *
      * @param name
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public static String readStringFromJAR(final String name) throws IOException {
         return new String(readBytesFromJAR(name));
