@@ -76,16 +76,17 @@ public final class PicasaViewer extends TantalumMIDlet implements CommandListene
     }
 
     public void setDetailed() {
-        PlatformUtils.runOnUiThread(new Runnable() {
-            public void run() {
-                if (phoneSupportsCategoryBar()) {
-                    categoryBarHandler.setVisibility(false);
-                }
+//        PlatformUtils.runOnUiThread(new Runnable() {
+//            public void run() {
+//                if (phoneSupportsCategoryBar()) {
+//                    categoryBarHandler.setVisibility(false);
+//                }
                 lastView = Display.getDisplay(PicasaViewer.this).getCurrent();
 
                 Display.getDisplay(PicasaViewer.this).setCurrent(detailedView);
-            }
-        });
+//            }
+//        });
+     //   setCategoryBarVisibility(false);
     }
 
     public void goBack() {

@@ -171,7 +171,6 @@ public abstract class GestureCanvas extends Canvas {
 
     public void hideNotify() {
         animating = false;
-        gestureHandler.stopAnimation();
         gestureHandler.unregister();
         stopSpin();
 
@@ -194,7 +193,6 @@ public abstract class GestureCanvas extends Canvas {
             spinTimer.scheduleAtFixedRate(spinTimerTask, 0, delay);
         }
     }
-    
 
     protected final synchronized boolean stopSpin() {
         boolean stopped = spinTimerTask != null;

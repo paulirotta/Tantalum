@@ -73,20 +73,20 @@ public final class DetailedCanvas extends GestureCanvas {
             textY = image == null ? (int) YC + ((int) R) << 1 : image.getHeight() + scrollY;
             g.setColor(0xFFFFFF);
 
-            if (titleLines == null) {
-                titleLines = new Vector();
-                StringUtils.splitToLines(titleLines, selectedImage.title, Font.getDefaultFont(), width - 2 * PADDING);
-            } else {
-                for (int i = 0; i < titleLines.size(); i++) {
-                    g.drawString((String) titleLines.elementAt(i), PADDING, textY, Graphics.LEFT | Graphics.TOP);
-                    textY = textY + Font.getDefaultFont().getHeight();
-                }
-                if (-textY < bottom) {
-                    bottom = -textY;
-                }
-            }
-
-            g.drawString(selectedImage.author, PADDING, textY, Graphics.LEFT | Graphics.TOP);
+//            if (titleLines == null) {
+//                titleLines = new Vector();
+//                StringUtils.splitToLines(titleLines, selectedImage.title, Font.getDefaultFont(), width - 2 * PADDING);
+//            } else {
+//                for (int i = 0; i < titleLines.size(); i++) {
+//                    g.drawString((String) titleLines.elementAt(i), PADDING, textY, Graphics.LEFT | Graphics.TOP);
+//                    textY = textY + Font.getDefaultFont().getHeight();
+//                }
+//                if (-textY < bottom) {
+//                    bottom = -textY;
+//                }
+//            }
+//
+//            g.drawString(selectedImage.author, PADDING, textY, Graphics.LEFT | Graphics.TOP);
         }
         drawBackIcon(g);
     }
@@ -94,7 +94,7 @@ public final class DetailedCanvas extends GestureCanvas {
     public void showNotify() {
         XC = getWidth() / 2;
         top = -getHeight();
-        midlet.setCategoryBarVisibility(false);
+        //midlet.setCategoryBarVisibility(false);
 
         super.showNotify();
     }

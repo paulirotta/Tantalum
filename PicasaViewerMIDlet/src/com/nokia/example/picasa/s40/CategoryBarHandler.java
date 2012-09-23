@@ -4,6 +4,7 @@
  */
 package com.nokia.example.picasa.s40;
 
+import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.nokia.mid.ui.CategoryBar;
@@ -48,11 +49,11 @@ public final class CategoryBarHandler implements ElementListener {
         categoryBar.setVisibility(true);
         categoryBar.setElementListener(this);
     }
-    
+
     public static void setMidlet(final PicasaViewer midlet) {
         CategoryBarHandler.midlet = midlet;
     }
-    
+
     /**
      * This method takes an image and overlays all the visible pixels with the
      * specified color. This is useful for single color icons that should be
@@ -115,7 +116,11 @@ public final class CategoryBarHandler implements ElementListener {
     }
 
     public void setVisibility(final boolean visibility) {
-        categoryBar.setVisibility(visibility);
+        PlatformUtils.runOnUiThread(new Runnable() {
+            public void run() {
+                categoryBar.setVisibility(visibility);
+            }
+        });
     }
 
     public void goBack() {
