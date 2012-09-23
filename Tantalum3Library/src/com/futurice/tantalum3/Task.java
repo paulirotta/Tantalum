@@ -226,6 +226,7 @@ public abstract class Task implements Workable {
                 setStatus(EXEC_STARTED);
             }
             out = doInBackground(in);
+            
             final boolean doRun;
             synchronized (this) {
                 result = out;

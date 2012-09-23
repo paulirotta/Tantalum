@@ -91,7 +91,9 @@ public class StaticWebCache extends StaticCache {
                         final byte[] bytes = (byte[]) super.doInBackground(in);
                         try {
                             final Object useForm = put(url, bytes); // Convert to use form
-                            task.exec(useForm);
+                            if (task != null) {
+                                task.exec(useForm);
+                            }
 
                             return useForm;
                         } catch (Exception e) {
@@ -106,7 +108,7 @@ public class StaticWebCache extends StaticCache {
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible fork delays
-                setResult(httpGetter.doInBackground(url));
+                setResult(httpGetter.exec(url));
                 if (httpGetter.getStatus() == EXEC_FINISHED) {
                     setStatus(EXEC_FINISHED);
                 } else {

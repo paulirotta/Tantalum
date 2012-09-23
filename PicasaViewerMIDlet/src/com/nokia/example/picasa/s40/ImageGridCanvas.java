@@ -1,6 +1,7 @@
 package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
+import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
@@ -46,6 +47,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         final AsyncCallbackTask task = new AsyncCallbackTask() {
             protected void onPostExecute(final Object result) {
                 try {
+                    scrollY = 0;
                     stopSpin();
                     imageObjectModel.removeAllElements();
                     images.clear();
@@ -53,6 +55,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                         final Vector newModel = (Vector) result;
                         for (int i = 0; i < newModel.size(); i++) {
                             imageObjectModel.addElement(newModel.elementAt(i));
+                            PicasaStorage.imageCache.prefetch(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl);
                         }
                     }
                     top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2);
@@ -64,8 +67,8 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             }
 
             public void onCancelled() {
-                repaint();
                 stopSpin();
+                repaint();
             }
         };
 
@@ -123,7 +126,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             }
         }
         if (isSpinning()) {
-            // Loading...
             drawSpinner(g);
         }
     }
@@ -131,7 +133,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     public void refresh(final String url, final int getType) {
 //        imageObjectModel.removeAllElements();
 //        images.clear();
-        scrollY = 0;
+//        scrollY = 0;
         top = -getHeight();
         repaint();
         loadFeed(url, getType);

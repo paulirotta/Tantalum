@@ -90,7 +90,6 @@ public class PicasaStorage {
      * PicasaImageObject-objects. The vector is saved by Tantalum.
      */
     private static class ImageObjectTypeHandler implements DataTypeHandler {
-
         public Object convertToUseForm(byte[] bytes) {
             JSONObject o;
             final Vector vector = new Vector();

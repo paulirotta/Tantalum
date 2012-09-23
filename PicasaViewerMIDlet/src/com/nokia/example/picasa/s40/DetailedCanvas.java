@@ -2,11 +2,13 @@ package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
+import com.futurice.tantalum3.util.StringUtils;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
 import java.util.Vector;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
@@ -77,7 +79,7 @@ public final class DetailedCanvas extends GestureCanvas {
                 startSpin();
             }
             if (isSpinning()) {
-                drawSpinner(g); // Loading...
+                drawSpinner(g);
             } else if (image != null) {
                 // Done, draw image.
                 g.drawImage(image, getWidth() / 2, scrollY, Graphics.TOP | Graphics.HCENTER);
