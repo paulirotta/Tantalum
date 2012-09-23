@@ -22,7 +22,6 @@ import javax.microedition.lcdui.Image;
 public final class CategoryBarHandler implements ElementListener {
 
     private static PicasaViewer midlet;
-    private int previousCategoryIndex = 0;
     private CategoryBar categoryBar;
     private IconCommand featured;
     private IconCommand search;
@@ -84,47 +83,22 @@ public final class CategoryBarHandler implements ElementListener {
     public void notifyElementSelected(CategoryBar cb, int i) {
         switch (i) {
             case ElementListener.BACK:
-                // Confirmation alert
                 Worker.shutdown(false);
-//                final Alert alert = new Alert("Quit?", "Really quit?", null, AlertType.CONFIRMATION);
-//                alert.addCommand(new Command("Yes", Command.OK, 1));
-//                alert.addCommand(new Command("No", Command.CANCEL, 1));
-//                alert.setCommandListener(new CommandListener() {
-//                    public void commandAction(Command c, Displayable d) {
-//                        if (c.getLabel().equals("Yes")) {
-//                            Worker.shutdown(false);
-//                        }
-//                        if (c.getLabel().equals("No")) {
-//                            midlet.goBack();
-//                        }
-//                    }
-//                });
-//                Display.getDisplay(midlet).setCurrent(alert);
                 break;
             case 0:
-                Display.getDisplay(midlet).setCurrent(midlet.featuredView);
-                previousCategoryIndex = categoryBar.getSelectedIndex();
+                midlet.goFeaturedCanvas();
                 break;
             case 1:
-                Display.getDisplay(midlet).setCurrent(midlet.searchView);
-                previousCategoryIndex = categoryBar.getSelectedIndex();
-                break;
-            case 2:
-                midlet.setDetailed();
+                midlet.goSearchCanvas();
                 break;
         }
     }
 
     public void setVisibility(final boolean visibility) {
-        PlatformUtils.runOnUiThread(new Runnable() {
-            public void run() {
+//        PlatformUtils.runOnUiThread(new Runnable() {
+//            public void run() {
                 categoryBar.setVisibility(visibility);
-            }
-        });
-    }
-
-    public void goBack() {
-        categoryBar.setVisibility(true);
-        categoryBar.setSelectedIndex(previousCategoryIndex);
+//            }
+//        });
     }
 }

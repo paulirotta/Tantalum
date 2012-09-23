@@ -1,11 +1,12 @@
 package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.util.StringUtils;
+import com.futurice.tantalum3.log.L;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
 import java.util.Vector;
-import javax.microedition.lcdui.Font;
+import javax.microedition.lcdui.Command;
+import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
@@ -28,11 +29,11 @@ public final class DetailedCanvas extends GestureCanvas {
     private static final int dots = shades.length;
     private static final double step = (2 * Math.PI) / dots;
     private static final double circle = (2 * Math.PI);
-//    private boolean loading = false;
     private final int width;
     private Vector titleLines;
     private int textY = 0;
     private int bottom = 0;
+    private Command backCommand = new Command("Back", Command.BACK, 0);
 
     public DetailedCanvas(final PicasaViewer midlet) {
         super(midlet);
@@ -40,8 +41,19 @@ public final class DetailedCanvas extends GestureCanvas {
         width = getWidth();
         setFullScreenMode(true);
         setTitle("DetailedCanvas");
+        if (!midlet.phoneSupportsCategoryBar()) {
+                addCommand(backCommand);
+        }
     }
 
+    public void commandAction(Command c, Displayable d) {
+        //#debug
+        L.i("DetailedCanvas Command action", "Command " + c);
+        if (c.getCommandType() == Command.BACK) {
+            midlet.goBack();
+        }
+    }
+    
     public void paint(final Graphics g) {
         final PicasaImageObject selectedImage = PicasaStorage.getSelectedImage();
         g.setColor(0x000000);

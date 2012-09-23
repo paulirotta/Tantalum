@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
@@ -17,7 +18,7 @@ import javax.microedition.lcdui.Image;
  *
  * @author phou
  */
-public abstract class GestureCanvas extends Canvas {
+public abstract class GestureCanvas extends Canvas implements CommandListener {
 
     protected static final int SPIN_SPEED = 100; // ms per animation frame
     protected static Image backIcon;
@@ -41,6 +42,7 @@ public abstract class GestureCanvas extends Canvas {
 
     public GestureCanvas(final PicasaViewer midlet) {
         this.midlet = midlet;
+        this.setCommandListener(this);
         try {
             gestureHandler = (GestureHandler) Class.forName("com.nokia.example.picasa.s40.GestureHandler").newInstance();
             gestureHandler.setCanvas(this);

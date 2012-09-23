@@ -55,7 +55,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                         }
                     }
                     top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2);
-                    midlet.stopReloadAnimation();
                     repaint();
                 } catch (Exception ex) {
                     //#debug
@@ -64,7 +63,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             }
 
             public void onCancelled() {
-                midlet.stopReloadAnimation();
                 repaint();
             }
         };
@@ -77,13 +75,12 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public void showNotify() {
-        midlet.setCategoryBarVisibility(true);
-
-        // Show statusbar
         try {
-            LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", statusBarVisible);
+            if (midlet.phoneSupportsCategoryBar()) {
+                LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", statusBarVisible);
+            }
         } catch (Exception e) {
-            L.i("showNotify LCDUIUtil", "trait not supported, normal before SDK 2.0");
+            L.e("showNotify LCDUIUtil", "trait not supported", e);
         }
 
         super.showNotify();
@@ -129,7 +126,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public Task refresh(final String url, final int getType) {
-        midlet.startReloadAnimation();
         imageObjectModel.removeAllElements();
         images.clear();
         scrollY = 0;

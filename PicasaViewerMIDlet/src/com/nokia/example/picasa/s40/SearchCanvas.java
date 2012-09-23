@@ -12,6 +12,7 @@ import com.nokia.mid.ui.TextEditor;
 import com.nokia.mid.ui.TextEditorListener;
 import java.io.IOException;
 import javax.microedition.lcdui.Command;
+import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.TextField;
@@ -32,6 +33,7 @@ public final class SearchCanvas extends ImageGridCanvas {
     private TextEditor searchField;
     private String searchText = "";
     private Command deleteCommand;
+    private final Command featuredCommand = new Command("Home", Command.SCREEN, 0);
 
     public SearchCanvas(PicasaViewer midlet) {
         super(midlet);
@@ -48,6 +50,20 @@ public final class SearchCanvas extends ImageGridCanvas {
         } catch (IOException e) {
             //#debug
             L.e("Can not create search image", "", e);
+        }
+        if (!midlet.phoneSupportsCategoryBar()) {
+                addCommand(featuredCommand);
+        }
+    }
+
+    public void commandAction(Command c, Displayable d) {
+        //#debug
+        L.i("SearchCanvas Command action", "Command " + c);
+
+        if (c.getCommandType() == Command.EXIT) {
+            Worker.shutdown(false);
+        } else if (c.getCommandType() == Command.CANCEL) {
+            deleteChar();
         }
     }
 
