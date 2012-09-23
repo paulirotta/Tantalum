@@ -74,7 +74,7 @@ public final class DetailedCanvas extends GestureCanvas {
                         return in;
                     }
                 });
-                startSpin(SPIN_SPEED);
+                startSpin();
             }
             if (isSpinning()) {
                 drawSpinner(g); // Loading...

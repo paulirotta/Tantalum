@@ -1,7 +1,6 @@
 package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
-import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
@@ -47,7 +46,9 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         final AsyncCallbackTask task = new AsyncCallbackTask() {
             protected void onPostExecute(final Object result) {
                 try {
+                    stopSpin();
                     imageObjectModel.removeAllElements();
+                    images.clear();
                     if (result != null) {
                         final Vector newModel = (Vector) result;
                         for (int i = 0; i < newModel.size(); i++) {
@@ -64,13 +65,15 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
             public void onCancelled() {
                 repaint();
+                stopSpin();
             }
         };
 
         //#debug
         L.i("loadFeed", search);
         PicasaStorage.getImageObjects(task, search, getType);
-
+        startSpin();
+        
         return task;
     }
 
@@ -125,14 +128,13 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         }
     }
 
-    public Task refresh(final String url, final int getType) {
-        imageObjectModel.removeAllElements();
-        images.clear();
+    public void refresh(final String url, final int getType) {
+//        imageObjectModel.removeAllElements();
+//        images.clear();
         scrollY = 0;
         top = -getHeight();
         repaint();
-
-        return loadFeed(url, getType);
+        loadFeed(url, getType);
     }
 
     public boolean gestureTap(int startX, int startY) {

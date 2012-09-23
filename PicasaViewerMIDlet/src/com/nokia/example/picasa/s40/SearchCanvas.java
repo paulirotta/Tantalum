@@ -2,7 +2,6 @@ package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
 import com.futurice.tantalum3.PlatformUtils;
-import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
@@ -170,30 +169,8 @@ public final class SearchCanvas extends ImageGridCanvas {
         }
         disableKeyboard(false);
         scrollY = 0;
-        startSpin(SPIN_SPEED);
 
-        final AsyncCallbackTask t = (AsyncCallbackTask) loadFeed(searchText, StaticWebCache.GET_WEB);
-
-        Worker.fork(t, Worker.HIGH_PRIORITY);
-        Worker.fork(new Workable() {
-            public Object exec(final Object in) {
-                try {
-                    //#debug
-                    L.i("Search spinner join", searchText + " status=" + t.getStatus());
-                    t.joinUI(15000);
-                } catch (Exception ex) {
-                    //#debug
-                    L.e("Search spinner stop problem", searchText, ex);
-                }
-                //#debug
-                L.i("Search spinner will stop", searchText + " status=" + t.getStatus());
-                stopSpin();
-
-                return in;
-            }
-        });
-
-        return t;
+        return loadFeed(searchText, StaticWebCache.GET_WEB);
     }
 
     private void enableKeyboard() {

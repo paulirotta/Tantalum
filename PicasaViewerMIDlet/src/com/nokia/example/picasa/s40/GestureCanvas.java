@@ -185,14 +185,14 @@ public abstract class GestureCanvas extends Canvas implements CommandListener {
         super.sizeChanged(w, h);
     }
 
-    protected final synchronized void startSpin(final long delay) {
+    protected final synchronized void startSpin() {
         if (spinTimerTask == null) {
             spinTimerTask = new TimerTask() {
                 public void run() {
                     repaint();
                 }
             };
-            spinTimer.scheduleAtFixedRate(spinTimerTask, 0, delay);
+            spinTimer.scheduleAtFixedRate(spinTimerTask, 0, SPIN_SPEED);
         }
     }
 
