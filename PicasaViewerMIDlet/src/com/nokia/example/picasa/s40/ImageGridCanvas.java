@@ -47,19 +47,18 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         final AsyncCallbackTask task = new AsyncCallbackTask() {
             protected void onPostExecute(final Object result) {
                 try {
+                    //#debug
+                    L.i("Load feed success, type=" + getType, search);
                     scrollY = 0;
-                    stopSpin();
                     imageObjectModel.removeAllElements();
                     images.clear();
-                    if (result != null) {
-                        final Vector newModel = (Vector) result;
-                        for (int i = 0; i < newModel.size(); i++) {
-                            imageObjectModel.addElement(newModel.elementAt(i));
-                            PicasaStorage.imageCache.prefetch(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl);
-                        }
+                    final Vector newModel = (Vector) result;
+                    for (int i = 0; i < newModel.size(); i++) {
+                        imageObjectModel.addElement(newModel.elementAt(i));
+                        PicasaStorage.imageCache.prefetch(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl);
                     }
                     top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2);
-                    repaint();
+                    stopSpin();
                 } catch (Exception ex) {
                     //#debug
                     L.e("Can not get images to grid", "", ex);
@@ -67,33 +66,24 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             }
 
             public void onCancelled() {
-                stopSpin();
+                //#debug
+                L.i("Load feed cancelled, type=" + getType, search);
                 if (getType == StaticWebCache.GET_LOCAL) {
                     imageObjectModel.removeAllElements();
                     images.clear();
                 }
-                repaint();
+                stopSpin();
             }
         };
 
         //#debug
         L.i("loadFeed", search);
         PicasaStorage.getImageObjects(task, search, getType);
-        startSpin();
-        
-        return task;
-    }
-
-    public void showNotify() {
-        try {
-            if (midlet.phoneSupportsCategoryBar()) {
-                LCDUIUtil.setObjectTrait(this, "nokia.ui.canvas.status_zone", statusBarVisible);
-            }
-        } catch (Exception e) {
-            L.e("showNotify LCDUIUtil", "trait not supported", e);
+        if (getType != StaticWebCache.GET_LOCAL) {
+            startSpin();
         }
 
-        super.showNotify();
+        return task;
     }
 
     /**
@@ -130,7 +120,15 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             }
         }
         if (isSpinning()) {
-            drawSpinner(g);
+            // Draw loading animation
+            for (int i = 0; i < dots; i++) {
+                int x = (int) (XC + R * Math.cos(angle));
+                int y = (int) (YC + R * Math.sin(angle));
+                g.setColor(shades[(i + startDot) % dots]);
+                g.fillRoundRect(x, y, 6, 6, 3, 3);
+                angle = (angle - step) % circle;
+            }
+            startDot = ++startDot % dots;
         }
     }
 
@@ -168,21 +166,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             return (row * 2 + column);
         }
         return -1;
-    }
-
-    /**
-     * Loading animation
-     */
-    public void drawSpinner(final Graphics g) {
-        for (int i = 0; i < dots; i++) {
-            int x = (int) (XC + R * Math.cos(angle));
-            int y = (int) (YC + R * Math.sin(angle));
-            g.setColor(shades[(i + startDot) % dots]);
-            g.fillRoundRect(x, y, 6, 6, 3, 3);
-            angle = (angle - step) % circle;
-        }
-        startDot++;
-        startDot = startDot % dots;
     }
 
     public void sizeChanged(final int w, final int h) {

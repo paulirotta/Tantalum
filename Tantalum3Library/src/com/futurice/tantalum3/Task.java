@@ -226,7 +226,7 @@ public abstract class Task implements Workable {
                 setStatus(EXEC_STARTED);
             }
             out = doInBackground(in);
-            
+
             final boolean doRun;
             synchronized (this) {
                 result = out;
@@ -260,19 +260,12 @@ public abstract class Task implements Workable {
     protected abstract Object doInBackground(Object in);
 
     /**
-     * Cancel execution if possible.
+     * Cancel execution if possible. This is called on the Worker thread
      *
-     * Generally you do not want to override this. onCancelled() is the normal
-     * notification location, and is called from the UI thread.
+     * Do not override this unless you also call super.cancel(boolean).
      *
-     * You may override this if for example you want to complete at task on the
-     * worker thread, or if you need to prevent the state change because the
-     * Task can still recover automatically from the situation.
-     *
-     * In this case, be sure that you know which thread cancel() will be called
-     * from. In Tantalum itself, cancel() is only called from a Worker thread,
-     * so you can trust that such activity is done in the background unless your
-     * code accidentally calls cancel() from the UI thread.
+     * Override onCancelled() is the normal notification location, and is called
+     * from the UI thread with Task state updates handled for you.
      *
      * @param mayInterruptIfRunning
      * @return
@@ -280,12 +273,9 @@ public abstract class Task implements Workable {
     public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
         boolean cancelled = false;
 
+        //#debug
+        L.i("Cancel task", toString());
         switch (status) {
-            case EXEC_PENDING:
-                setStatus(CANCELED);
-                cancelled = true;
-                break;
-
             case EXEC_STARTED:
                 if (mayInterruptIfRunning) {
                     //TODO find the task on a thread, then interrupt that thread
@@ -295,7 +285,8 @@ public abstract class Task implements Workable {
                 break;
 
             default:
-                ;
+                setStatus(CANCELED);
+                cancelled = true;
         }
 
         return cancelled;

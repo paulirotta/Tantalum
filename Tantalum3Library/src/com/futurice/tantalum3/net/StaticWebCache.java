@@ -64,6 +64,7 @@ public class StaticWebCache extends StaticCache {
             throw new IllegalArgumentException("Trivial StaticWebCache get");
         }
 
+        final Task callback = getCallback(task);
         final Task onNotFoundInCacheTask = new Task() {
             /**
              * Local Cache get returned a result, no need to get it from the
@@ -71,9 +72,7 @@ public class StaticWebCache extends StaticCache {
              *
              */
             public Object doInBackground(final Object in) {
-                if (task != null) {
-                    task.exec(in);
-                }
+                callback.exec(in);
 
                 return in;
             }
@@ -82,7 +81,7 @@ public class StaticWebCache extends StaticCache {
              * Local Cache get failed to return a result- not cached
              *
              */
-            public boolean cancel(final boolean mayInterruptIfNeeded) {
+            public final boolean cancel(final boolean mayInterruptIfNeeded) {
                 //#debug
                 L.i("No result from cache get, shift to HTTP", url);
                 if (mayInterruptIfNeeded) {
@@ -92,26 +91,25 @@ public class StaticWebCache extends StaticCache {
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES) {
                     public Object doInBackground(final Object in) {
                         final byte[] bytes = (byte[]) super.doInBackground(in);
-                        try {
-                            final Object useForm = put(url, bytes); // Convert to use form
-                            if (task != null) {
-                                task.exec(useForm);
-                            }
 
-                            return useForm;
-                        } catch (Exception e) {
-                            //#debug
-                            L.e("Can not set result", url, e);
-                            setStatus(EXCEPTION);
+                        if (bytes != null) {
+                            try {
+                                final Object useForm = put(url, bytes); // Convert to use form
+                                callback.exec(useForm);
+
+                                return useForm;
+                            } catch (Exception e) {
+                                //#debug
+                                L.e("Can not set result", url, e);
+                                setStatus(EXCEPTION);
+                            }
                         }
 
                         return bytes;
                     }
-                    
+
                     protected void onCancelled() {
-                        if (task != null) {
-                            task.cancel(false);
-                        }
+                        callback.cancel(false);
                     }
                 };
 
@@ -121,7 +119,8 @@ public class StaticWebCache extends StaticCache {
                 if (httpGetter.getStatus() == EXEC_FINISHED) {
                     setStatus(EXEC_FINISHED);
                 } else {
-                    super.cancel(mayInterruptIfNeeded);
+                    super.cancel(false);
+                    callback.cancel(false);
                 }
 
                 return false;

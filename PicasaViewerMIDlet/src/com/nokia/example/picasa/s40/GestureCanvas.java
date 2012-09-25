@@ -202,8 +202,8 @@ public abstract class GestureCanvas extends Canvas implements CommandListener {
         if (stopped) {
             spinTimerTask.cancel();
             spinTimerTask = null;
-            repaint();
         }
+        repaint();
         
         return stopped;
     }
