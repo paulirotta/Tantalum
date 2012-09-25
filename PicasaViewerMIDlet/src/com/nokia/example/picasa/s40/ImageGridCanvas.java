@@ -1,8 +1,8 @@
 package com.nokia.example.picasa.s40;
 
 import com.futurice.tantalum3.AsyncCallbackTask;
-import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
+import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.example.picasa.common.PicasaImageObject;
 import com.nokia.example.picasa.common.PicasaStorage;
 import com.nokia.mid.ui.LCDUIUtil;
@@ -68,6 +68,10 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
             public void onCancelled() {
                 stopSpin();
+                if (getType == StaticWebCache.GET_LOCAL) {
+                    imageObjectModel.removeAllElements();
+                    images.clear();
+                }
                 repaint();
             }
         };
@@ -131,9 +135,6 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public void refresh(final String url, final int getType) {
-//        imageObjectModel.removeAllElements();
-//        images.clear();
-//        scrollY = 0;
         top = -getHeight();
         repaint();
         loadFeed(url, getType);

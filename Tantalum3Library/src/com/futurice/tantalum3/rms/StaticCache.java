@@ -207,14 +207,12 @@ public class StaticCache {
                 final Object r = synchronousGet(key);
                 //#debug
                 L.i("local get result", r == null ? "(null)" : r.toString());
-                if (callback != null) {
-                    if (r == null) {
-                        callback.cancel(false);
-                    } else {
-                        //#debug
-                        L.i("local get callback", key);
-                        callback.exec(r);
-                    }
+                if (r != null) {
+                    callback.exec(r);
+                } else {
+                    //#debug
+                    L.i("local get was null, cancel callback", key);
+                    callback.cancel(false);
                 }
 
                 return r;

@@ -74,16 +74,14 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
             }
 
             final Task result = new Task() {
-                public Object doInBackground(Object params) {
+                public Object doInBackground(final Object in) {
                     isReloading = false;
                     
-                    return params;
+                    return in;
                 }
                 
-                public boolean cancel(boolean mayInterruptIfNeeded) {
+                protected void onCancelled() {
                     isReloading = false;
-                    
-                    return super.cancel(mayInterruptIfNeeded);
                 }
             };
 

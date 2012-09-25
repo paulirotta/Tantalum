@@ -158,13 +158,11 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
 
-                public boolean cancel(final boolean mayInterruptIfNeeded) {
+                protected void onCancelled() {
                     //#debug
                     L.i("force reload cancelled", "model length=" + rssModel.size());
                     loading = false;
                     paint();
-
-                    return super.cancel(mayInterruptIfNeeded);
                 }
             };
             feedCache.netGet(feedUrl, uiTask);

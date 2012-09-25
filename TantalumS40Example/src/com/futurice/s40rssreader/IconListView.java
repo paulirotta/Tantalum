@@ -173,10 +173,8 @@ public final class IconListView extends RSSListView {
                                     return o;
                                 }
 
-                                public boolean cancel(boolean mayInterruptIfNeeded) {
+                                protected void onCancelled() {
                                     item.setLoadingImage(false);
-
-                                    return super.cancel(mayInterruptIfNeeded);
                                 }
                             });
                         }

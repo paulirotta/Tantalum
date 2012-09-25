@@ -29,7 +29,7 @@ public class StaticWebCache extends StaticCache {
 
     public Task get(final String url, final Task callback, final int getType) {
         final Task task;
-        
+
         //#debug
         L.i("StaticWebCache get type " + getType, url);
         switch (getType) {
@@ -42,10 +42,13 @@ public class StaticWebCache extends StaticCache {
                 break;
 
             case GET_WEB:
-            default:
                 task = netGet(url, callback);
+                break;
+
+            default:
+                throw new IllegalArgumentException("StaticWebCache get type not supported: " + getType);
         }
-        
+
         return task;
     }
 
@@ -103,6 +106,12 @@ public class StaticWebCache extends StaticCache {
                         }
 
                         return bytes;
+                    }
+                    
+                    protected void onCancelled() {
+                        if (task != null) {
+                            task.cancel(false);
+                        }
                     }
                 };
 
