@@ -4,7 +4,6 @@
  */
 package com.nokia.example.picasa.s40;
 
-import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.nokia.mid.ui.CategoryBar;
@@ -12,6 +11,7 @@ import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.ElementListener;
 import com.nokia.mid.ui.IconCommand;
 import java.io.IOException;
+import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Image;
 
@@ -23,34 +23,48 @@ public final class CategoryBarHandler implements ElementListener {
 
     private static PicasaViewer midlet;
     private CategoryBar categoryBar;
-    private IconCommand featured;
-    private IconCommand search;
+    private IconCommand featuredIconCommand;
+    private IconCommand searchIconCommand;
+    private Command refreshCommand;
 
     public CategoryBarHandler() {
+    }
+
+    public void setMidlet(final PicasaViewer midlet) {
+        CategoryBarHandler.midlet = midlet;
         try {
             Image homeImg = Image.createImage("/home.png");
-            featured = new IconCommand("Home", "Home View", homeImg, drawMaskedImage(homeImg), IconCommand.SCREEN, 1);
+            featuredIconCommand = new IconCommand("Home", "Home View", homeImg, drawMaskedImage(homeImg), IconCommand.SCREEN, 1);
         } catch (IOException e) {
             //#debug
             L.e("category bar handler init", "Can not create home icon", e);
-            featured = new IconCommand("Home", "Home View", IconCommand.SCREEN, 1, IconCommand.ICON_OK);
+            featuredIconCommand = new IconCommand("Home", "Home View", IconCommand.SCREEN, 1, IconCommand.ICON_OK);
         }
         try {
             Image searchImg = Image.createImage("/search.png");
-            search = new IconCommand("Search", "Search View", searchImg, drawMaskedImage(searchImg), IconCommand.SCREEN, 1);
+            searchIconCommand = new IconCommand("Search", "Search View", searchImg, drawMaskedImage(searchImg), IconCommand.SCREEN, 1);
         } catch (IOException e) {
             //#debug
             L.e("category bar handler init", "Can not create search icon", e);
-            search = new IconCommand("Search", "Search View", IconCommand.SCREEN, 1, IconCommand.ICON_OK);
+            searchIconCommand = new IconCommand("Search", "Search View", IconCommand.SCREEN, 1, IconCommand.ICON_OK);
         }
-        final IconCommand[] iconCommands = {featured, search};
+        try {
+            final Image iconImage = Image.createImage("/connect.png");
+            refreshCommand = (Command) new IconCommand("Refresh", "Refresh images", iconImage, iconImage, Command.OK, 0);
+        } catch (IOException e) {
+            //#debug
+            L.e("category bar handler init", "Can not create refresh icon", e);
+            searchIconCommand = new IconCommand("Search", "Search View", IconCommand.SCREEN, 1, IconCommand.ICON_OK);
+        }
+
+        final IconCommand[] iconCommands = {featuredIconCommand, searchIconCommand};
         categoryBar = new CategoryBar(iconCommands, true);
         categoryBar.setVisibility(true);
         categoryBar.setElementListener(this);
     }
 
-    public static void setMidlet(final PicasaViewer midlet) {
-        CategoryBarHandler.midlet = midlet;
+    public Command getRefreshIconCommand() throws IOException {
+        return refreshCommand;
     }
 
     /**
@@ -97,7 +111,7 @@ public final class CategoryBarHandler implements ElementListener {
     public void setVisibility(final boolean visibility) {
 //        PlatformUtils.runOnUiThread(new Runnable() {
 //            public void run() {
-                categoryBar.setVisibility(visibility);
+        categoryBar.setVisibility(visibility);
 //            }
 //        });
     }

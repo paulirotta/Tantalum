@@ -16,7 +16,7 @@ import javax.microedition.lcdui.Image;
  * The class displaying the larger image, title and photographer.
  *
  */
-public final class DetailedCanvas extends GestureCanvas {
+public final class DetailCanvas extends GestureCanvas {
 
     private static final int PADDING = 10;
     private long spinAnimationStartTime = System.currentTimeMillis();
@@ -37,7 +37,7 @@ public final class DetailedCanvas extends GestureCanvas {
     private int bottom = 0;
     private Command backCommand = new Command("Back", Command.BACK, 0);
 
-    public DetailedCanvas(final PicasaViewer midlet) {
+    public DetailCanvas(final PicasaViewer midlet) {
         super(midlet);
 
         width = getWidth();
@@ -108,7 +108,6 @@ public final class DetailedCanvas extends GestureCanvas {
     public void showNotify() {
         XC = getWidth() / 2;
         top = -getHeight();
-        //midlet.setCategoryBarVisibility(false);
 
         super.showNotify();
     }

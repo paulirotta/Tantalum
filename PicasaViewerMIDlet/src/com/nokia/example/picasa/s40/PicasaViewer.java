@@ -5,13 +5,14 @@ import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.example.picasa.common.PicasaStorage;
+import java.io.IOException;
 import javax.microedition.lcdui.*;
 
 public final class PicasaViewer extends TantalumMIDlet {
 
     FeaturedCanvas featuredView;
     SearchCanvas searchView;
-    private DetailedCanvas detailedView;
+    private DetailCanvas detailedView;
     private Displayable lastView;
     private CategoryBarHandler categoryBarHandler = null;
 
@@ -21,9 +22,8 @@ public final class PicasaViewer extends TantalumMIDlet {
 
     public void startApp() {
         try {
-            final Class cbc = Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler");
-            CategoryBarHandler.setMidlet(this);
-            categoryBarHandler = (CategoryBarHandler) cbc.newInstance();
+            categoryBarHandler = (CategoryBarHandler) Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler").newInstance();
+            categoryBarHandler.setMidlet(this);
         } catch (Throwable t) {
             //#debug
             L.i("Can not set category bar handler", "normal before SDK 2.0");
@@ -46,41 +46,43 @@ public final class PicasaViewer extends TantalumMIDlet {
         Display.getDisplay(this).setCurrent(featuredView);
 
         // Initial display is on-screen, continue init tasks before releasing start thread
-        detailedView = new DetailedCanvas(PicasaViewer.this);
+        detailedView = new DetailCanvas(PicasaViewer.this);
         searchView = new SearchCanvas(PicasaViewer.this);
     }
 
-    public void setDetailed() {
-//        PlatformUtils.runOnUiThread(new Runnable() {
-//            public void run() {
-                categoryBarHandler.setVisibility(false);
-                lastView = Display.getDisplay(PicasaViewer.this).getCurrent();
+    public Command getRefreshIconCommand() throws IOException {
+        return categoryBarHandler.getRefreshIconCommand();
+    }
 
-                Display.getDisplay(PicasaViewer.this).setCurrent(detailedView);
-//            }
-//        });
-     //   setCategoryBarVisibility(false);
+    public void goDetailCanvas() {
+        if (phoneSupportsCategoryBar()) {
+            categoryBarHandler.setVisibility(false);
+        }
+        lastView = Display.getDisplay(PicasaViewer.this).getCurrent();
+        Display.getDisplay(PicasaViewer.this).setCurrent(detailedView);
     }
 
     public void goBack() {
-        setCategoryBarVisibility(true);
+        if (phoneSupportsCategoryBar()) {
+            categoryBarHandler.setVisibility(true);
+        }
         Display.getDisplay(this).setCurrent(lastView);
     }
 
     public void goSearchCanvas() {
         lastView = searchView;
-        Display.getDisplay(this).setCurrent(searchView);        
+        Display.getDisplay(this).setCurrent(searchView);
     }
 
     public void goFeaturedCanvas() {
         lastView = featuredView;
-        Display.getDisplay(this).setCurrent(featuredView);        
+        Display.getDisplay(this).setCurrent(featuredView);
     }
 
     public boolean phoneSupportsCategoryBar() {
         return categoryBarHandler != null;
     }
-    
+
     public void setCategoryBarVisibility(final boolean visibility) {
         if (categoryBarHandler != null) {
             categoryBarHandler.setVisibility(visibility);

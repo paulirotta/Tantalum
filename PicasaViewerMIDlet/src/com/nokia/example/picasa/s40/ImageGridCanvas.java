@@ -57,7 +57,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                         imageObjectModel.addElement(newModel.elementAt(i));
                         PicasaStorage.imageCache.prefetch(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl);
                     }
-                    top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2) + imageSide;
+                    top = -((imageObjectModel.size() * imageSide) / 2 - getHeight() / 2) + imageSide - 20;
                     stopSpin();
                 } catch (Exception ex) {
                     //#debug
@@ -145,7 +145,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
             if (index >= 0 && index < imageObjectModel.size()) {
                 PicasaStorage.setSelectedImage((PicasaImageObject) imageObjectModel.elementAt(index));
-                midlet.setDetailed();
+                midlet.goDetailCanvas();
                 return true;
             }
         }

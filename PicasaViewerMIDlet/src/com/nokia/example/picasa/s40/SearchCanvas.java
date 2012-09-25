@@ -32,7 +32,7 @@ public final class SearchCanvas extends ImageGridCanvas {
     private TextEditor searchField;
     private String searchText = "";
     private Command deleteCommand;
-    private final Command featuredCommand = new Command("Home", Command.SCREEN, 0);
+    private final Command featuredCommand = new Command("Featured", Command.SCREEN, 0);
 
     public SearchCanvas(PicasaViewer midlet) {
         super(midlet);
@@ -59,8 +59,8 @@ public final class SearchCanvas extends ImageGridCanvas {
         //#debug
         L.i("SearchCanvas Command action", "Command " + c);
 
-        if (c.getCommandType() == Command.EXIT) {
-            Worker.shutdown(false);
+        if (c == featuredCommand) {
+            midlet.goFeaturedCanvas();
         } else if (c.getCommandType() == Command.CANCEL) {
             deleteChar();
         }
@@ -132,7 +132,7 @@ public final class SearchCanvas extends ImageGridCanvas {
                 if (searchField == null) {
                     if (imageObjectModel.size() > index) {
                         PicasaStorage.setSelectedImage((PicasaImageObject) imageObjectModel.elementAt(index));
-                        midlet.setDetailed();
+                        midlet.goDetailCanvas();
                     }
                 } else {
                     PlatformUtils.runOnUiThread(new Runnable() {
@@ -177,7 +177,7 @@ public final class SearchCanvas extends ImageGridCanvas {
             searchField.setCaret(searchField.getContent().length());
             return;
         }
-        searchField = TextEditor.createTextEditor("", 20, TextField.ANY, SEARCH_WIDTH, SEARCH_HEIGHT);
+        searchField = TextEditor.createTextEditor("", 20, TextField.NON_PREDICTIVE, SEARCH_WIDTH, SEARCH_HEIGHT);
         searchField.insert(searchText, 0);
         searchField.setForegroundColor(0xFF000000);
         searchField.setBackgroundColor(0x00000000);
