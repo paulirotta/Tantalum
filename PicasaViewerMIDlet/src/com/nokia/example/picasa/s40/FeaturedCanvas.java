@@ -4,6 +4,7 @@ import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.nokia.mid.ui.LCDUIUtil;
+import com.nokia.mid.ui.VirtualKeyboard;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
@@ -27,6 +28,7 @@ public final class FeaturedCanvas extends ImageGridCanvas {
             try {
                 final Image iconImage = Image.createImage("/connect.png");
                 refreshCommand = (Command) new com.nokia.mid.ui.IconCommand("Refresh", "Refresh images", iconImage, iconImage, Command.OK, 0);
+                VirtualKeyboard.hideOpenKeypadCommand(true);
             } catch (Exception e) {
                 //#debug
                 L.e("Can not initialize", "Update icon image", e);

@@ -141,10 +141,9 @@ public final class SearchCanvas extends ImageGridCanvas {
                         }
                     });
                 }
-                //Search bar
             } else {
-                //Search button
-                if (startX > getWidth() - SEARCH_BUTTON_WIDTH
+                //Search bar or button
+                if (startX > getWidth() - SEARCH_BUTTON_WIDTH * 2
                         && startY < HEADER_BAR_HEIGHT) {
                     startSearch();
                 } else {
