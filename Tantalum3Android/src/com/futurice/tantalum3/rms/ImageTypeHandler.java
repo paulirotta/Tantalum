@@ -15,14 +15,15 @@ import com.futurice.tantalum3.log.L;
  */
 public final class ImageTypeHandler implements DataTypeHandler {
 
-    private int imageSide;
-
     public ImageTypeHandler() {
-        imageSide = -1;
     }
 
     public ImageTypeHandler(int side) {
-        imageSide = side;
+        /*
+         * This constructor creates a resizing Image converter on S40, but on Android
+         * we RAM cache the full sime image and let the resize be done at render
+         * time, thus the "side" parameter is ignored.
+         */
     }
 
     @Override

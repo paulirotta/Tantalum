@@ -26,15 +26,19 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
     
     private Task initTask = new Task() {
         @Override
-        public void exec() {
+        public Object doInBackground(final Object in) {
             db = getWritableDatabase();
-            Worker.queueShutdownTask(new Workable() {
+            Worker.forkShutdownTask(new Workable() {
                 @Override
-                public void exec() {
+                public Object exec(final Object in2) {
                     db.close();
                     db = null;
+                    
+                    return in2;
                 }
             });
+            
+            return in;
         }
     };
 
