@@ -4,6 +4,13 @@
  */
 package com.futurice.tantalum3;
 
+import com.futurice.tantalum3.rms.FlashCache;
+import com.futurice.tantalum3.rms.RMSCache;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import javax.microedition.io.Connector;
+import javax.microedition.io.HttpConnection;
 import javax.microedition.lcdui.Display;
 import javax.microedition.midlet.MIDlet;
 
@@ -19,6 +26,7 @@ public class PlatformUtils {
 
     private static MIDlet program;
     private static Display display;
+    private static FlashCache flashDatabase;
 
     /**
      * During initialization, the main program is set
@@ -57,5 +65,71 @@ public class PlatformUtils {
      */
     public static void notifyDestroyed() {
         program.notifyDestroyed();
+    }
+    public static synchronized FlashCache getFlashCache() {
+        if (flashDatabase == null) {
+            flashDatabase = new RMSCache();
+        }
+        
+        return flashDatabase;
+    }
+
+    public static HttpConn getHttpGetConn(final String url) throws IOException {
+        final HttpConn httpConn = new HttpConn(url);
+        httpConn.con.setRequestMethod("GET");
+
+        return httpConn;
+    }
+
+    public static HttpConn getHttpPostConn(final String url, final byte[] bytes) throws IOException {
+        OutputStream out = null;
+
+        try {
+            final HttpConn httpConn = new HttpConn(url);
+            httpConn.con.setRequestMethod("PUT");
+            out = httpConn.con.openOutputStream();
+            out.write(bytes);
+
+            return httpConn;
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+        }
+    }
+
+    public static final class HttpConn {
+
+        final HttpConnection con;
+        InputStream is = null;
+
+        public HttpConn(final String url) throws IOException {
+            con = (HttpConnection) Connector.open(url);
+        }
+
+        public InputStream getInputStream() throws IOException {
+            if (is == null) {
+                is = con.openInputStream();
+            }
+
+            return is;
+        }
+
+        public long getLength() {
+            return con.getLength();
+        }
+
+        public final void close() throws IOException {
+            if (is != null) {
+                is.close();
+            }
+        }
+    }
+
+    /**
+     * RMS Full or Database Full on the phone, need to clear space
+     * 
+     */
+    public static final class FlashFullException extends Exception {
     }
 }

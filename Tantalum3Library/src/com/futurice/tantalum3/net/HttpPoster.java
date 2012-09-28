@@ -4,8 +4,6 @@
  */
 package com.futurice.tantalum3.net;
 
-import javax.microedition.io.HttpConnection;
-
 /**
  *
  * @author phou
@@ -28,6 +26,5 @@ public class HttpPoster extends HttpGetter {
         }
         this.postMessage = new byte[postMessage.length];
         System.arraycopy(postMessage, 0, this.postMessage, 0, postMessage.length);
-        this.requestMethod = HttpConnection.POST;
     }
 }

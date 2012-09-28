@@ -18,10 +18,38 @@ import com.futurice.tantalum3.rms.StaticCache;
  */
 public class StaticWebCache extends StaticCache {
 
+    public static final int GET_LOCAL = 0;
+    public static final int GET_ANYWHERE = 1;
+    public static final int GET_WEB = 2;
     private static final int HTTP_GET_RETRIES = 3;
 
     public StaticWebCache(final char priority, final DataTypeHandler handler) {
         super(priority, handler);
+    }
+
+    public Task get(final String url, final Task callback, final int getType) {
+        final Task task;
+
+        //#debug
+        L.i("StaticWebCache get type " + getType, url);
+        switch (getType) {
+            case GET_LOCAL:
+                task = localGet(url, callback);
+                break;
+
+            case GET_ANYWHERE:
+                task = get(url, callback);
+                break;
+
+            case GET_WEB:
+                task = netGet(url, callback);
+                break;
+
+            default:
+                throw new IllegalArgumentException("StaticWebCache get type not supported: " + getType);
+        }
+
+        return task;
     }
 
     /**
@@ -29,83 +57,79 @@ public class StaticWebCache extends StaticCache {
      *
      * @param url
      * @param result
+     * @param priority - Default is Worker.NORMAL_PRIORITY
      */
-    @Override
-    public void get(final String url, final Task r) {
-        super.get(url, new Task() {
+    public Task get(final String url, final Task task) {
+        if (url == null || url.length() == 0) {
+            throw new IllegalArgumentException("Trivial StaticWebCache get");
+        }
+
+        final Task callback = getCallback(task);
+        final Task onNotFoundInCacheTask = new Task() {
             /**
              * Local Cache get returned a result, no need to get it from the
              * network
              *
              */
-            @Override
-            public void set(final Object o) {
-                if (r != null) {
-                    r.set(o);
-                }
+            public Object doInBackground(final Object in) {
+                callback.exec(in);
+
+                return in;
             }
 
             /**
              * Local Cache get failed to return a result- not cached
              *
              */
-            @Override
-            public boolean cancel(final boolean mayInterruptIfRunning) {
+            public final boolean cancel(final boolean mayInterruptIfNeeded) {
+                //#debug
                 L.i("No result from cache get, shift to HTTP", url);
-                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES, new Task() {
-                    @Override
-                    public void set(Object o) {
-                        try {
-                            o = put(url, (byte[]) o); // Convert to use form
-                            if (r != null) {
-                                if (o != null) {
-                                    r.set(o);
-                                    //#debug
-                                    L.i("END SAVE: After no result from cache get, shift to HTTP", url);
-                                } else {
-                                    r.cancel(false);
-                                }
+                if (mayInterruptIfNeeded) {
+                    return super.cancel(mayInterruptIfNeeded);
+                }
+
+                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES) {
+                    public Object doInBackground(final Object in) {
+                        final byte[] bytes = (byte[]) super.doInBackground(in);
+
+                        if (bytes != null) {
+                            try {
+                                final Object useForm = put(url, bytes); // Convert to use form
+                                callback.exec(useForm);
+
+                                return useForm;
+                            } catch (Exception e) {
+                                //#debug
+                                L.e("Can not set result", url, e);
+                                setStatus(EXCEPTION);
                             }
-                        } catch (Exception e) {
-                            L.e("Can not set result", url, e);
-                            cancel(false);
                         }
+
+                        return bytes;
                     }
 
-//                    @Override
-//                    public synchronized boolean cancel(boolean mayInterruptIfRunning) {
-//                        return super.cancel(mayInterruptIfRunning);
-//                    }
-                    
-//                    @Override
-//                    public void cancel(final boolean mayInterruptIfRunning) {
-//                        if (r != null) {
-//                            r.cancel(false);
-//                        }
-//                        super.cancel(mayInterruptIfRunning);
-//                    }
-                    //TODO FIXME once HttpGetter is a Task
-                });
-                // super.cancel(mayInterruptIfRunning);
+                    protected void onCancelled() {
+                        callback.cancel(false);
+                    }
+                };
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
-                // This avoids possible forkSerial delays
-                //httpGetter.exec();
-                httpGetter.exec();
-                try {
-                    //Worker.fork(httpGetter, RMS_WORKER_INDEX);
-                    if (httpGetter.get() == null) {
-                        //TODO FIXME Is this correct when re-getting multiple times?
-                        return super.cancel(mayInterruptIfRunning);
-                    }
-                } catch (Exception ex) {
-                    L.e("Cache can not re-get from net", url, ex);
+                // This avoids possible fork delays
+                setResult(httpGetter.exec(url));
+                if (httpGetter.getStatus() == EXEC_FINISHED) {
+                    setStatus(EXEC_FINISHED);
+                } else {
+                    super.cancel(false);
+                    callback.cancel(false);
                 }
-                
+
                 return false;
             }
-        });
+        };
 
+        super.get(url, onNotFoundInCacheTask);
+
+        return onNotFoundInCacheTask;
     }
 
     /**
@@ -114,18 +138,27 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public void update(final String url, final Task result) {
+    public Task netGet(final String url, final Task task) {
+        if (url == null || url.length() == 0) {
+            throw new IllegalArgumentException("Trivial StaticWebCache netGet");
+        }
+
+        final Task callback = getCallback(task);
         Worker.fork(new Workable() {
-            @Override
-            public void exec() {
+            public Object exec(final Object in) {
                 try {
                     remove(url);
-                    get(url, result);
+                    StaticWebCache.this.get(url, callback);
                 } catch (Exception e) {
+                    //#debug
                     L.e("Can not update", url, e);
                 }
+
+                return in;
             }
-        });
+        }, Worker.HIGH_PRIORITY);
+
+        return task;
     }
 
     /**
@@ -137,13 +170,15 @@ public class StaticWebCache extends StaticCache {
     public void prefetch(final String url) {
         if (synchronousRAMCacheGet(url) == null) {
             Worker.fork(new Workable() {
-                @Override
-                public void exec() {
+                public Object exec(final Object in) {
                     try {
                         get(url, null);
                     } catch (Exception e) {
+                        //#debug
                         L.e("Can not prefetch", url, e);
                     }
+
+                    return in;
                 }
             }, Worker.LOW_PRIORITY);
         }

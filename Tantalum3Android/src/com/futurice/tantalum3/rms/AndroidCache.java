@@ -4,13 +4,15 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteFullException;
 import android.database.sqlite.SQLiteOpenHelper;
+import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 
-public final class AndroidDatabase extends SQLiteOpenHelper {
+public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
     protected static final int DB_VERSION = 1;
     protected static final String DB_NAME = "TantalumRMS";
@@ -52,7 +54,7 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         context = c;
     }
 
-    public AndroidDatabase() {
+    public AndroidCache() {
         super(context, DB_NAME, null, DB_VERSION);
         Worker.fork(initTask);
     }
@@ -68,6 +70,7 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    @Override
     public synchronized byte[] getData(final String key) {
         try {
             final String[] fields = new String[]{COL_DATA};
@@ -93,7 +96,8 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
         }
     }
 
-    public synchronized void putData(final String key, final byte[] data) {
+    @Override
+    public synchronized void putData(final String key, final byte[] data) throws PlatformUtils.FlashFullException {
         final ContentValues values = new ContentValues();
 
         values.put(COL_KEY, key);
@@ -109,9 +113,13 @@ public final class AndroidDatabase extends SQLiteOpenHelper {
                 L.e("db not initialized, join then try again problem", "putData", e);
             }
             putData(key, data);
+        } catch (SQLiteFullException e) {
+            L.e("Android database full, attempting cleanup of old...", key, e);
+            throw new PlatformUtils.FlashFullException();
         }
     }
 
+    @Override
     public synchronized void removeData(final String key) {
         final String where = COL_KEY + "==\"" + key + "\"";
 

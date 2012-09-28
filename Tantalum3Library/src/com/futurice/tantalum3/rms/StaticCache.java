@@ -1,5 +1,6 @@
 package com.futurice.tantalum3.rms;
 
+import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
@@ -7,10 +8,8 @@ import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.util.LRUVector;
 import com.futurice.tantalum3.util.SortedVector;
 import com.futurice.tantalum3.util.WeakHashCache;
+import java.io.IOException;
 import java.util.Vector;
-import javax.microedition.rms.RecordStore;
-import javax.microedition.rms.RecordStoreException;
-import javax.microedition.rms.RecordStoreFullException;
 
 /**
  * A cache which returns Objects based on a String key asynchronously from RAM,
@@ -33,6 +32,7 @@ public class StaticCache {
             return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
         }
     });
+    private static final FlashCache flashCache = PlatformUtils.getFlashCache();
     protected final WeakHashCache cache = new WeakHashCache();
     protected final LRUVector accessOrder = new LRUVector();
     protected final char priority; // Must be unique, preferrably and integer, larger characters get more space when space is limited
@@ -229,7 +229,8 @@ public class StaticCache {
         L.i("StaticCache RAM result", "(" + priority + ") " + key + " : " + o);
         if (o == null) {
             // Load from flash memory
-            byte[] bytes = RMSUtils.cacheRead(key);
+            byte[] bytes = flashCache.getData(key);
+//            byte[] bytes = RMSUtils.cacheRead(key);
 
             //#debug
             L.i("StaticCache RMS intermediate result", "(" + priority + ") " + key + " : " + bytes);
@@ -311,11 +312,12 @@ public class StaticCache {
                 try {
                     //#debug
                     L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
-                    RMSUtils.cacheWrite(key, bytes);
+                    flashCache.putData(key, bytes);
+//                    RMSUtils.cacheWrite(key, bytes);
                     //#debug
                     L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
                     break;
-                } catch (RecordStoreFullException ex) {
+                } catch (PlatformUtils.FlashFullException ex) {
                     //#debug
                     L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
                     if (!clearSpace(bytes.length)) {
@@ -378,13 +380,21 @@ public class StaticCache {
     private static int getByteSizeByKey(final String key) {
         int size = 0;
 
-        try {
-            final RecordStore rs = RMSUtils.getRecordStore(key, false);
-            size = rs.getSize();
-        } catch (RecordStoreException ex) {
+//        try {
+            final byte[] bytes = flashCache.getData(key);
+            if (bytes != null) {
+                size = bytes.length;
+            } else {
             //#debug
-            L.e("Can not check size of record store to clear space", key, ex);
-        }
+            L.i("Can not check size of record store to clear space", key);
+            }
+            
+//            final RecordStore rs = RMSUtils.getRecordStore(key, false);
+//            size = rs.getSize();
+//        } catch (IOException ex) {
+//            //#debug
+//            L.e("Can not check size of record store to clear space", key, ex);
+//        }
 
         return size;
     }

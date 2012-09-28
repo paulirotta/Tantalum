@@ -6,7 +6,7 @@ package com.futurice.tantalum3;
 
 import android.app.Activity;
 import android.os.Bundle;
-import com.futurice.tantalum3.rms.AndroidDatabase;
+import com.futurice.tantalum3.rms.AndroidCache;
 
 /**
  *
@@ -36,7 +36,7 @@ public abstract class TantalumActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        AndroidDatabase.setContext(((Activity) this).getApplicationContext());
+        AndroidCache.setContext(((Activity) this).getApplicationContext());
     }
 
     @Override

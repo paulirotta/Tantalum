@@ -1,5 +1,6 @@
 package com.futurice.tantalum3.rms;
 
+import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
@@ -7,7 +8,8 @@ import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.util.LRUVector;
 import com.futurice.tantalum3.util.SortedVector;
 import com.futurice.tantalum3.util.WeakHashCache;
-import java.util.LinkedList;
+import java.io.IOException;
+import java.util.Vector;
 
 /**
  * A cache which returns Objects based on a String key asynchronously from RAM,
@@ -23,54 +25,20 @@ import java.util.LinkedList;
  * given StaticCache.
  */
 public class StaticCache {
-    
-    private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
-    private static final AndroidDatabase database;
-    protected static final int DATA_TYPE_IMAGE = 1;
-    protected static final int DATA_TYPE_XML = 2;
 
+    private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
     private static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
-        @Override
         public boolean before(final Object o1, final Object o2) {
             return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
         }
     });
-    private static final LinkedList rmsWriteWorkables = new LinkedList();
-    private static final Workable writeAllPending = new Workable() {
-        @Override
-        public void exec() {
-            try {
-                Workable work;
-                while (!rmsWriteWorkables.isEmpty()) {
-                    synchronized (rmsWriteWorkables) {
-                        work = (Workable) rmsWriteWorkables.poll();
-                    }
-                    work.exec();
-                    if (!rmsWriteWorkables.isEmpty()) {
-                        try {
-                            // DEBUG TEST- be kind to slow phones, avoid crashes
-                            Thread.sleep(50);
-                        } catch (InterruptedException ex) {
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                L.e("Can not write all pending", "", e);
-            }
-        }
-    };
+    private static final FlashCache flashCache = PlatformUtils.getFlashCache();
     protected final WeakHashCache cache = new WeakHashCache();
     protected final LRUVector accessOrder = new LRUVector();
-    protected final char priority; // Must be unique, preferrably and integer,
-    // larger characters get more space when
-    // space is limited
+    protected final char priority; // Must be unique, preferrably and integer, larger characters get more space when space is limited
     protected final DataTypeHandler handler;
     protected int sizeAsBytes = 0;
 
-    static {
-        database = new AndroidDatabase();        
-    }
-    
     /**
      * Create a named cache
      *
@@ -78,7 +46,7 @@ public class StaticCache {
      * is limited.
      *
      * @param name
-     * @param priority , a character from '0' to '9', higher numbers get a
+     * @param priority, a character from '0' to '9', higher numbers get a
      * preference for space
      * @param handler
      */
@@ -107,101 +75,214 @@ public class StaticCache {
      * @param key
      * @param o
      */
-    protected synchronized Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
+    protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         //#debug
-        L.i("Start to convert", key);
+        L.i("Start to convert", key + " bytes length=" + bytes.length);
         final Object o = handler.convertToUseForm(bytes);
-        accessOrder.addElement(key);
-        cache.put(key, o);
+
+        synchronized (this) {
+            accessOrder.addElement(key);
+            cache.put(key, o);
+        }
         //#debug
         L.i("End convert", key);
 
         return o;
     }
 
+    /**
+     * Synchronously return the hash object
+     *
+     * @param key
+     * @return
+     */
     public synchronized Object synchronousRAMCacheGet(final String key) {
-        Object o = null;
+        Object o = cache.get(key);
 
-        if (containsKey(key)) {
-            // L.i("StaticCache hit in RAM", key);
+        if (o != null) {
+            //#debug            
+            L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
             this.accessOrder.addElement(key);
-            o = cache.get(key);
         }
 
         return o;
     }
 
-    public void get(final String key, final Task result) {
-        if (key == null || key.length() == 0) {
-            L.i("Trivial get", "");
-            result.cancel(false);
-            return;
+    /**
+     * Create a generate result carrier Task for cases where the callback
+     * provided by the developer is null. This allows the developer to receive,
+     * and be event notified when the result is ready.
+     *
+     * @param task
+     * @return
+     */
+    protected final Task getCallback(Task task) {
+        if (task == null) {
+            task = new Task() {
+                protected Object doInBackground(Object in) {
+                    return in;
+                }
+            };
         }
-        final Object ho = synchronousRAMCacheGet(key);
 
-        if (ho != null) {
+        return task;
+    }
+
+    /**
+     * Retrieve an object from RAM or RMS storage.
+     *
+     *
+     * @param key
+     * @param callback
+     * @param priority - default is Work.NORMAL_PRIORITY set to
+     * Work.HIGH_PRIORITY if you want the results quickly. Note that your
+     * request for priority may be denied if you have recently changed the value
+     * and the value happens to have expired from the RAM cache due to a low
+     * memory condition.
+     */
+    public Task get(final String key, final Task task) {
+        if (key == null || key.length() == 0) {
+            throw new IllegalArgumentException("Trivial StaticCache get");
+        }
+
+        final Task callback = getCallback(task);
+        final Object fromRamCache = synchronousRAMCacheGet(key);
+
+        if (fromRamCache != null) {
+            //#debug
             L.i("RAM cache hit", "(" + priority + ") " + key);
-            result.set(ho);
+            callback.exec(fromRamCache);
         } else {
+            //#debug
+            L.i("RAM cache miss", "(" + priority + ") " + key);
             final Workable getWorkable = new Workable() {
-                @Override
-                public void exec() {
+                public Object exec(final Object in) {
+                    //#debug
+                    L.i("RMS get", key);
                     try {
                         final Object o = synchronousGet(key);
 
                         if (o != null) {
+                            //#debug
                             L.i("RMS cache hit", key);
-                            result.set(o);
+                            callback.exec(o);
                         } else {
+                            //#debug
                             L.i("RMS cache miss", key);
-                            result.cancel(false);
+                            callback.cancel(false);
                         }
+
+                        return o;
                     } catch (Exception e) {
+                        //#debug
                         L.e("Can not get", key, e);
                     }
+
+                    return in;
                 }
             };
-
-            Worker.forkSerial(getWorkable, RMS_WORKER_INDEX);
+            Worker.fork(getWorkable, Worker.HIGH_PRIORITY);
         }
+
+        return callback;
     }
 
-    protected Object synchronousGet(final String key) {
+    /**
+     * Get a value from the local cache, value return async in the Task
+     *
+     * @param key
+     * @return task
+     */
+    public Task localGet(final String key, final Task task) {
+        if (key == null || key.length() == 0) {
+            throw new IllegalArgumentException("Trivial StaticCache localGet");
+        }
+
+        final Task callback = getCallback(task);
+
+        Worker.fork(new Workable() {
+            public Object exec(Object in) {
+                //#debug
+                L.i("local get", key);
+                final Object r = synchronousGet(key);
+                //#debug
+                L.i("local get result", r == null ? "(null)" : r.toString());
+                if (r != null) {
+                    callback.exec(r);
+                } else {
+                    //#debug
+                    L.i("local get was null, cancel callback", key);
+                    callback.cancel(false);
+                }
+
+                return r;
+            }
+        }, Worker.HIGH_PRIORITY);
+
+        return callback;
+    }
+
+    private Object synchronousGet(final String key) {
         Object o = synchronousRAMCacheGet(key);
 
+        //#debug
+        L.i("StaticCache RAM result", "(" + priority + ") " + key + " : " + o);
         if (o == null) {
             // Load from flash memory
-            final byte[] bytes = this.database.getData(key);
+            byte[] bytes = flashCache.getData(key);
+//            byte[] bytes = RMSUtils.cacheRead(key);
 
+            //#debug
+            L.i("StaticCache RMS intermediate result", "(" + priority + ") " + key + " : " + bytes);
             if (bytes != null) {
                 //#debug
                 L.i("StaticCache hit in RMS", "(" + priority + ") " + key);
-
                 o = convertAndPutToHeapCache(key, bytes);
+                bytes = null;
+                //#debug
+                L.i("StaticCache RMS result", "(" + priority + ") " + key + " : " + o);
             }
         }
 
         return o;
     }
 
-    public synchronized Object put(final String key, final byte[] bytes) {
+    /**
+     * Store a value to heap and flash memory.
+     *
+     * Note that the storage to RMS is done asynchronously in the background
+     * which may lead to large binary objects being queued up on the Worker
+     * thread. If you do this many times, you could run short on memory, and
+     * should re-factor with use of synchronousPutToRMS() instead.
+     *
+     * Note that conversion to use form happens immediately and synchronously on
+     * the calling thread before before this method returns. If conversion may
+     * take a long time (XML parsing, etc) then consider not calling this from
+     * the user event dispatch thread.
+     *
+     * @param key
+     * @param bytes
+     * @return the byte[] converted to use form by the cache's Handler
+     */
+    public Object put(final String key, final byte[] bytes) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }
-        if (bytes == null) {
+        if (bytes == null || bytes.length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
-        rmsWriteWorkables.addLast(new Workable() {
-            @Override
-            public void exec() {
+        Worker.forkSerial(new Workable() {
+            public Object exec(final Object in) {
                 try {
                     synchronousPutToRMS(key, bytes);
                 } catch (Exception e) {
+                    //#debug
                     L.e("Can not synch write to RMS", key, e);
                 }
+
+                return in;
             }
-        });
-        Worker.forkSerial(writeAllPending, RMS_WORKER_INDEX);
+        }, RMS_WORKER_INDEX);
 
         return convertAndPutToHeapCache(key, bytes);
     }
@@ -211,9 +292,9 @@ public class StaticCache {
      * complete.
      *
      * Generally you should use this method if you are on a Worker thread to
-     * avoid adding large objects in the Worker forkSerial waiting to be stored to
-     * the RMS which could lead to a memory shortage. If you are on the EDT, use
-     * the asynchronous put() method instead to avoid blocking the calling
+     * avoid adding large objects in the Worker forkSerial waiting to be stored
+     * to the RMS which could lead to a memory shortage. If you are on the EDT,
+     * use the asynchronous put() method instead to avoid blocking the calling
      * thread.
      *
      * @param key
@@ -222,19 +303,31 @@ public class StaticCache {
      * already done this
      * @return
      */
-    protected void synchronousPutToRMS(final String key, final byte[] bytes) {
+    private void synchronousPutToRMS(final String key, final byte[] bytes) {
         if (key == null) {
             throw new IllegalArgumentException("Null key put to cache");
         }
         try {
             do {
-                L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
-                this.database.putData(key, bytes);
-                L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
-                break;
-
+                try {
+                    //#debug
+                    L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
+                    flashCache.putData(key, bytes);
+//                    RMSUtils.cacheWrite(key, bytes);
+                    //#debug
+                    L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
+                    break;
+                } catch (PlatformUtils.FlashFullException ex) {
+                    //#debug
+                    L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
+                    if (!clearSpace(bytes.length)) {
+                        //#debug
+                        L.i("Can not clear enough space for data, ABORTING", key);
+                    }
+                }
             } while (true);
         } catch (Exception e) {
+            //#debug
             L.e("Couldn't store object to RMS", key, e);
         }
     }
@@ -246,49 +339,80 @@ public class StaticCache {
      * @param minSpaceToClear - in bytes
      * @return true if the requested amount of space has been cleared
      */
-    protected static boolean clearSpace(final int minSpaceToClear) {
+    private static boolean clearSpace(final int minSpaceToClear) {
+        int spaceCleared = 0;
+        final Vector rsv = RMSUtils.getCachedRecordStoreNames();
 
-        //TODO: Implement on Android
+        //#debug
+        L.i("Clearing RMS space", minSpaceToClear + " bytes");
 
-        /*
-         * int spaceCleared = 0; final Vector rsv =
-         * RMSUtils.getCachedRecordStoreNames();
-         * 
-         * // #debug L.i("Clearing RMS space", minSpaceToClear + "
-         * bytes");
-         * 
-         * // First: clear cached objects not currently appearing in any open
-         * cache for (int i = rsv.size() - 1; i >= 0; i--) { final String key =
-         * (String) rsv.elementAt(i); final StaticCache cache =
-         * getCacheContainingKey(key);
-         * 
-         * if (cache != null) { spaceCleared += getByteSizeByKey(key);
-         * cache.remove(key); } } // #debug L.i("End phase 1: clearing RMS
-         * space", spaceCleared + " bytes recovered");
-         * 
-         * // Second: remove currently cached items, first from low priority
-         * caches while (spaceCleared < minSpaceToClear && rsv.size() > 0) { for
-         * (int i = 0; i < caches.size(); i++) { final StaticCache cache =
-         * (StaticCache) caches.elementAt(i);
-         * 
-         * while (!cache.accessOrder.isEmpty() && spaceCleared <
-         * minSpaceToClear) { final String key = (String) cache.accessOrder
-         * .removeLeastRecentlyUsed(); spaceCleared += getByteSizeByKey(key);
-         * cache.remove(key); } } } // #debug L.i("End phase 2: clearing
-         * RMS space", spaceCleared + " bytes recovered (total)");
-         * 
-         * return spaceCleared >= minSpaceToClear;
-         */
-        return true;
+        // First: clear cached objects not currently appearing in any open cache
+        for (int i = rsv.size() - 1; i >= 0; i--) {
+            final String key = (String) rsv.elementAt(i);
+            final StaticCache cache = getCacheContainingKey(key);
+
+            if (cache != null) {
+                spaceCleared += getByteSizeByKey(key);
+                cache.remove(key);
+            }
+        }
+        //#debug
+        L.i("End phase 1: clearing RMS space", spaceCleared + " bytes recovered");
+
+        // Second: remove currently cached items, first from low priority caches
+        while (spaceCleared < minSpaceToClear && rsv.size() > 0) {
+            for (int i = 0; i < caches.size(); i++) {
+                final StaticCache cache = (StaticCache) caches.elementAt(i);
+
+                while (!cache.accessOrder.isEmpty() && spaceCleared < minSpaceToClear) {
+                    final String key = (String) cache.accessOrder.removeLeastRecentlyUsed();
+                    spaceCleared += getByteSizeByKey(key);
+                    cache.remove(key);
+                }
+            }
+        }
+        //#debug
+        L.i("End phase 2: clearing RMS space", spaceCleared + " bytes recovered (total)");
+
+        return spaceCleared >= minSpaceToClear;
     }
 
-    protected static int getByteSizeByKey(final String key) {
+    private static int getByteSizeByKey(final String key) {
         int size = 0;
 
-        // TODO: Write for android
-        L.i("Can not check size of record store to clear space", key);
+//        try {
+            final byte[] bytes = flashCache.getData(key);
+            if (bytes != null) {
+                size = bytes.length;
+            } else {
+            //#debug
+            L.i("Can not check size of record store to clear space", key);
+            }
+            
+//            final RecordStore rs = RMSUtils.getRecordStore(key, false);
+//            size = rs.getSize();
+//        } catch (IOException ex) {
+//            //#debug
+//            L.e("Can not check size of record store to clear space", key, ex);
+//        }
 
         return size;
+    }
+
+    private static StaticCache getCacheContainingKey(String key) {
+        StaticCache cache = null;
+
+        synchronized (caches) {
+            for (int i = 0; i < caches.size(); i++) {
+                final StaticCache currentCache = (StaticCache) caches.elementAt(i);
+                if (currentCache.containsKey(key)) {
+                    cache = currentCache;
+                    break;
+                }
+            }
+        }
+
+        return cache;
     }
 
     /**
@@ -301,19 +425,26 @@ public class StaticCache {
     protected void remove(final String key) {
         try {
             if (containsKey(key)) {
-                synchronized (StaticCache.this) {
+                synchronized (this) {
                     accessOrder.removeElement(key);
                     cache.remove(key);
                 }
-                this.database.removeData(key);
+                RMSUtils.cacheDelete(key);
+                //#debug
                 L.i("Cache remove (from RAM and RMS)", key);
             }
         } catch (Exception e) {
+            //#debug
             L.e("Couldn't remove object from cache", key, e);
         }
     }
 
+    /**
+     * Remove all elements from this cache
+     *
+     */
     public void clear() {
+        //#debug
         L.i("Start Cache Clear", "ID=" + priority);
         final String[] keys;
 
@@ -324,37 +455,74 @@ public class StaticCache {
         for (int i = 0; i < keys.length; i++) {
             remove(keys[i]);
         }
+        //#debug
         L.i("Cache cleared", "ID=" + priority);
     }
 
+    /**
+     * Does this cache contain an object matching the key?
+     *
+     * @param key
+     * @return
+     */
     public synchronized boolean containsKey(final String key) {
-        if (key != null) {
-            return this.cache.containsKey(key);
+        if (key == null) {
+            throw new IllegalArgumentException("containsKey was passed null");
         }
 
-        return false;
+        return cache.containsKey(key);
     }
 
+    /**
+     * The number of items in the cache
+     *
+     * @return
+     */
     public synchronized int getSize() {
         return this.cache.size();
     }
 
+    /**
+     * The relative priority used for allocating RMS space between multiple
+     * caches. Higher priority caches synchronousRAMCacheGet more space.
+     *
+     * @return
+     */
     public synchronized int getPriority() {
         return priority;
     }
 
+    /**
+     * Provide the handler which this caches uses for converting between
+     * in-memory and binary formats
+     *
+     * @return
+     */
     public DataTypeHandler getHandler() {
         return handler;
     }
 
-    @Override
+    /**
+     * For debugging use
+     *
+     * @return
+     */
     public synchronized String toString() {
-        String str = "StaticCache --- priority: " + priority + " size: " + getSize() + " size (bytes): " + sizeAsBytes + "\n";
+        StringBuffer str = new StringBuffer();
+
+        str.append("StaticCache --- priority: ");
+        str.append(priority);
+        str.append(" size: ");
+        str.append(getSize());
+        str.append(" size (bytes): ");
+        str.append(sizeAsBytes);
+        str.append("\n");
 
         for (int i = 0; i < accessOrder.size(); i++) {
-            str += accessOrder.elementAt(i) + "\n";
+            str.append(accessOrder.elementAt(i));
+            str.append("\n");
         }
 
-        return str;
+        return str.toString();
     }
 }

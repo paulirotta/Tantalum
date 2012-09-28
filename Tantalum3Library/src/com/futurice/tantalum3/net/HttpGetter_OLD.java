@@ -4,12 +4,14 @@
  */
 package com.futurice.tantalum3.net;
 
-import com.futurice.tantalum3.PlatformUtils;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.log.L;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import javax.microedition.io.Connector;
+import javax.microedition.io.HttpConnection;
 
 /**
  * GET something from a URL on the Worker thread
@@ -19,11 +21,12 @@ import java.io.InputStream;
  *
  * @author pahought
  */
-public class HttpGetter extends Task {
+public class HttpGetter_OLD extends Task {
 
     private final String url;
     protected int retriesRemaining;
     protected byte[] postMessage = null;
+    protected String requestMethod = HttpConnection.GET;
 
     /**
      * Get the contents of a URL and return that asynchronously as a AsyncResult
@@ -32,7 +35,7 @@ public class HttpGetter extends Task {
      * @param retriesRemaining - how many time to attempt connection
      * @param task - optional object notified on the EDT with the task
      */
-    public HttpGetter(final String url, final int retriesRemaining) {
+    public HttpGetter_OLD(final String url, final int retriesRemaining) {
         if (url == null || url.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }
@@ -48,18 +51,21 @@ public class HttpGetter extends Task {
         //#debug
         L.i(this.getClass().getName() + " start", url);
         ByteArrayOutputStream bos = null;
-        PlatformUtils.HttpConn httpConn = null;
+        HttpConnection httpConnection = null;
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
         boolean tryAgain = false;
         boolean success = false;
 
         try {
-            if (postMessage == null) {
-                httpConn = PlatformUtils.getHttpPostConn(url, postMessage);
-            } else {
-                httpConn = PlatformUtils.getHttpGetConn(url);
+            httpConnection = (HttpConnection) Connector.open(url);
+            httpConnection.setRequestMethod(requestMethod);
+            if (postMessage != null) {
+                outputStream = httpConnection.openDataOutputStream();
+                outputStream.write(postMessage);
             }
-            final InputStream inputStream = httpConn.getInputStream();
-            final long length = httpConn.getLength();
+            inputStream = httpConnection.openInputStream();
+            final long length = httpConnection.getLength();
             if (length > 0 && length < 1000000) {
                 //#debug
                 L.i(this.getClass().getName() + " start fixed_length read", url + " content_length=" + length);
@@ -113,19 +119,29 @@ public class HttpGetter extends Task {
             }
         } finally {
             try {
-                httpConn.close();
+                inputStream.close();
             } catch (Exception e) {
-                //#debug
-                L.e("Closing Http InputStream error", url, e);
             }
-            httpConn = null;
+            try {
+                if (outputStream != null) {
+                    outputStream.close();
+                }
+            } catch (Exception e) {
+            }
             try {
                 if (bos != null) {
                     bos.close();
                 }
             } catch (Exception e) {
             }
+            try {
+                httpConnection.close();
+            } catch (Exception e) {
+            }
+            inputStream = null;
+            outputStream = null;
             bos = null;
+            httpConnection = null;
 
             if (tryAgain) {
                 try {
@@ -138,7 +154,7 @@ public class HttpGetter extends Task {
             }
             //#debug
             L.i("End " + this.getClass().getName(), url);
-
+            
             return getResult();
         }
     }
