@@ -17,29 +17,17 @@ public class LTest extends TestCase {
     
     public LTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(2, "LogTest");
+        super(1, "LogTest");
     }    
     
     public void test(int testNumber) throws Throwable {
         switch (testNumber) {
             case 0:
-                testPrintMessage();
-                break;
-            case 1:
                 testLog();
                 break;
             default:
                 break;
         }
-    }
-
-    /**
-     * Test of testPrintMessage method, of class L.
-     */
-    public void testPrintMessage() throws AssertionFailedException {
-        System.out.println("printMessage");
-        L instance = new L();
-        instance.printMessage("Test message");
     }
 
     /**

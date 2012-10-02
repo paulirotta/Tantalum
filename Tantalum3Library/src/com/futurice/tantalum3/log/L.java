@@ -15,7 +15,7 @@ import javax.microedition.io.Connector;
  *
  * @author mark voit, paul houghton
  */
-public class L {
+public final class L {
 
 //#if UsbDebug
 //#     private static final byte[] LFCR = "\n\r".getBytes();
@@ -50,7 +50,7 @@ public class L {
      */
     public final static void i(final String tag, final String message) {
 //#debug
-        printMessage(getMessage(tag, message));
+        printMessage(getMessage(tag, message).toString());
     }
 
     /**
@@ -62,10 +62,12 @@ public class L {
      */
     public final static void e(final String tag, final String message, final Throwable th) {
 //#mdebug
-        final String s = getMessage(tag, message) + ", EXCEPTION: " + th;
+        final StringBuffer sb = getMessage(tag, message);        
+        sb.append(", EXCEPTION: ");
+        sb.append(th);
         
         synchronized (L.class) {
-            printMessage(s);
+            printMessage(sb.toString());
             if (th != null) {
                 th.printStackTrace();
             }
@@ -78,7 +80,7 @@ public class L {
      *
      * @param string string to print
      */
-    protected synchronized static void printMessage(final String string) {
+    private synchronized static void printMessage(final String string) {
 //#if UsbDebug
 //#         if (os != null) {
 //#             byteArrayQueue.addElement(string.getBytes());
@@ -94,7 +96,7 @@ public class L {
      *
      * @return message string
      */
-    private static String getMessage(String tag, String message) {
+    private static StringBuffer getMessage(String tag, String message) {
         if (tag == null) {
             tag = "<null>";
         }
@@ -118,7 +120,7 @@ public class L {
         sb.append(": ");
         sb.append(message);
 
-        return sb.toString();
+        return sb;
     }
 
     /**
