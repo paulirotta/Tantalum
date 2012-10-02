@@ -42,7 +42,6 @@ public class L {
 //#         }
 //#     }
 //#endif    
-    
     /**
      * Logs an "information" message.
      *
@@ -63,9 +62,13 @@ public class L {
      */
     public final static void e(final String tag, final String message, final Throwable th) {
 //#mdebug
-        printMessage(getMessage(tag, message) + ", EXCEPTION: " + th);
-        if (th != null) {
-            th.printStackTrace();
+        final String s = getMessage(tag, message) + ", EXCEPTION: " + th;
+        
+        synchronized (L.class) {
+            printMessage(s);
+            if (th != null) {
+                th.printStackTrace();
+            }
         }
 //#enddebug
     }
@@ -145,7 +148,6 @@ public class L {
         printMessage("Tantalum log shutdown");
 //#endif        
     }
-
 //#if UsbDebug
 //#     private static final class UsbWriter implements Runnable {
 //# 

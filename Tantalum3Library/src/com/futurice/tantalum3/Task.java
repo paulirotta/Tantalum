@@ -13,7 +13,7 @@ import com.futurice.tantalum3.log.L;
 public abstract class Task implements Workable {
     // status values
 
-    public static final int MAX_TIMEOUT = 120000;
+    public static final int MAX_TIMEOUT = 120000; // If not specified, no thread can wait more than 2 minutes
     public static final int EXEC_PENDING = 1;
     public static final int EXEC_STARTED = 2;
     public static final int EXEC_FINISHED = 4;
@@ -102,13 +102,16 @@ public abstract class Task implements Workable {
      * @throws CancellationException
      * @throws ExecutionException
      */
-    public final Object join(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    public final Object join(long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (timeout < 0) {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
         boolean doExec = false;
         Object r;
+        long t = System.currentTimeMillis();
 
+        //#debug
+        L.i("Start join", "timeout=" + timeout + " " + this.toString());
         synchronized (this) {
             switch (status) {
                 case EXEC_PENDING:
@@ -120,10 +123,13 @@ public abstract class Task implements Workable {
                     }
                 case EXEC_STARTED:
                     //#debug
-                    L.i("Start join wait()", "timeout=" + timeout + " " + this.toString());
-                    this.wait(timeout);
+                    L.i("START WAIT", "status=" + status);
+                    //timeout -= System.currentTimeMillis() - t;
+//                    if (timeout > 0) {
+                        this.wait(timeout);
+//                    }
                     //#debug
-                    L.i("End join wait()", this.toString());
+                    L.i("End join wait()", "status=" + status);
                     if (status == EXEC_STARTED) {
                         throw new TimeoutException();
                     }
@@ -152,7 +158,7 @@ public abstract class Task implements Workable {
         return this;
     }
 
-    public final synchronized Object joinUI(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    public final Object joinUI(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (!(this instanceof Runnable)) {
             throw new ClassCastException("Can not joinUI() unless Task is a Runnable such as AsyncCallbackTask");
         }
@@ -160,21 +166,23 @@ public abstract class Task implements Workable {
         long t = System.currentTimeMillis();
         join(timeout);
 
-        if (status < UI_RUN_FINISHED) {
-            t = timeout - (System.currentTimeMillis() - t);
-            //#debug
-            L.i("Start joinUI wait()", "timeout remaining=" + t + " " + this.toString());
-            if (t > 0) {
-                this.wait(t);
-            }
+        synchronized (this) {
             if (status < UI_RUN_FINISHED) {
-                throw new TimeoutException();
+                t = timeout - (System.currentTimeMillis() - t);
+                //#debug
+                L.i("Start joinUI wait()", "timeout remaining=" + t + " " + this.toString());
+                if (t > 0) {
+                    this.wait(t);
+                }
+                if (status < UI_RUN_FINISHED) {
+                    throw new TimeoutException();
+                }
+                //#debug
+                L.i("End joinUIThread wait()", this.toString());
             }
-            //#debug
-            L.i("End joinUIThread wait()", this.toString());
-        }
 
-        return result;
+            return result;
+        }
     }
 
     /**
@@ -191,11 +199,9 @@ public abstract class Task implements Workable {
      *
      * @param status
      */
-    protected final void setStatus(final int status) {
-        synchronized (this) {
-            this.status = status;
-            this.notifyAll();
-        }
+    protected synchronized final void setStatus(final int status) {
+        this.status = status;
+        this.notifyAll();
 
         if (status == CANCELED || status == EXCEPTION) {
             PlatformUtils.runOnUiThread(new Runnable() {
@@ -267,7 +273,7 @@ public abstract class Task implements Workable {
      * Override onCancelled() is the normal notification location, and is called
      * from the UI thread with Task state updates handled for you.
      *
-     * @param mayInterruptIfRunning
+     * @param mayInterruptIfRunning (not yet supported)
      * @return
      */
     public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
@@ -278,7 +284,7 @@ public abstract class Task implements Workable {
         switch (status) {
             case EXEC_STARTED:
                 if (mayInterruptIfRunning) {
-                    //TODO find the task on a thread, then interrupt that thread
+                    //FIXME find the task on a thread, then interrupt that thread
                     setStatus(CANCELED);
                     cancelled = true;
                 }
@@ -304,7 +310,7 @@ public abstract class Task implements Workable {
     protected void onCancelled() {
     }
 
-    public String toString() {
+    public synchronized String toString() {
         return super.toString() + " status=" + status + " result=" + result;
     }
 }

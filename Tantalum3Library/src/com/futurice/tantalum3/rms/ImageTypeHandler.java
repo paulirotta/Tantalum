@@ -43,6 +43,8 @@ public final class ImageTypeHandler implements DataTypeHandler {
         
         try {
             if (imageWidth == -1) {
+                //#debug
+                L.i("convert image", "length=" + bytes.length);
                 img = Image.createImage(bytes, 0, bytes.length);
             } else {                
                 Image temp = Image.createImage(bytes, 0, bytes.length);

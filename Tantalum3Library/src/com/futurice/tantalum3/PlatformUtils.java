@@ -76,7 +76,7 @@ public class PlatformUtils {
 
     public static HttpConn getHttpGetConn(final String url) throws IOException {
         final HttpConn httpConn = new HttpConn(url);
-        httpConn.con.setRequestMethod("GET");
+        httpConn.con.setRequestMethod(HttpConnection.GET);
 
         return httpConn;
     }
@@ -86,7 +86,7 @@ public class PlatformUtils {
 
         try {
             final HttpConn httpConn = new HttpConn(url);
-            httpConn.con.setRequestMethod("PUT");
+            httpConn.con.setRequestMethod(HttpConnection.POST);
             out = httpConn.con.openOutputStream();
             out.write(bytes);
 
@@ -119,10 +119,12 @@ public class PlatformUtils {
             return con.getLength();
         }
 
-        public final void close() throws IOException {
+        public void close() throws IOException {
             if (is != null) {
                 is.close();
+                is = null;
             }
+            con.close();
         }
     }
 

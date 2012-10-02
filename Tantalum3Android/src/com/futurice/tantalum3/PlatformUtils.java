@@ -88,7 +88,7 @@ public final class PlatformUtils {
             final HttpConn httpConn = new HttpConn(url);
             httpConn.con.setDoOutput(true);
             httpConn.con.setDoInput(true);
-            httpConn.con.setRequestMethod("PUT");
+            httpConn.con.setRequestMethod("POST");
             out = httpConn.con.getOutputStream();
             out.write(bytes);
 

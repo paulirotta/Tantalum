@@ -1,5 +1,6 @@
 package com.futurice.tantalum3.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
@@ -122,5 +123,24 @@ public class StringUtils {
      */
     public static String readStringFromJAR(final String name) throws IOException {
         return new String(readBytesFromJAR(name));
+    }
+
+    public static String urlDecode(final String in) {
+        final char[] chars = new char[in.length()];
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(in.length());
+
+        in.getChars(0, in.length(), chars, 0);
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i] == '+') {
+                out.write(' ');
+            } else if (chars[i] == '%') {
+                out.write((char) ((Character.digit(chars[++i], 16) << 4) + Character.digit(chars[++i], 16)));
+            } else {
+                out.write(chars[i]);
+            }
+        }
+
+        return out.toString();
+
     }
 }

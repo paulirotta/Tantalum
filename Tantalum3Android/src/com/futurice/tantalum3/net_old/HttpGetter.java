@@ -10,6 +10,7 @@ import com.futurice.tantalum3.log.L;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * GET something from a URL on the Worker thread

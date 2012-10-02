@@ -38,8 +38,6 @@ public class StaticWebCache extends StaticCache {
                 break;
 
             case GET_ANYWHERE:
-                //#debug
-                L.i("Get anywhere", url);
                 task = get(url, callback);
                 break;
 
@@ -85,15 +83,13 @@ public class StaticWebCache extends StaticCache {
              */
             public final boolean cancel(final boolean mayInterruptIfNeeded) {
                 //#debug
-                L.i("No result from staticcache get, shift to HTTP", url);
+                L.i("No result from cache get, shift to HTTP", url);
                 if (mayInterruptIfNeeded) {
                     return super.cancel(mayInterruptIfNeeded);
                 }
 
                 final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES) {
                     public Object doInBackground(final Object in) {
-                        //#debug
-                        L.i("Start StaticWebCache httpGetter doInBackground", url);
                         final byte[] bytes = (byte[]) super.doInBackground(in);
 
                         if (bytes != null) {
@@ -104,7 +100,7 @@ public class StaticWebCache extends StaticCache {
                                 return useForm;
                             } catch (Exception e) {
                                 //#debug
-                                L.e("Can not set result after staticwebcache http get", url, e);
+                                L.e("Can not set result", url, e);
                                 setStatus(EXCEPTION);
                             }
                         }
@@ -113,8 +109,6 @@ public class StaticWebCache extends StaticCache {
                     }
 
                     protected void onCancelled() {
-                        //#debug
-                        L.i("StaticWebCache httpgetter onCancelled()", url);
                         callback.cancel(false);
                     }
                 };
@@ -133,8 +127,6 @@ public class StaticWebCache extends StaticCache {
             }
         };
 
-        //#debug
-        L.i("Calling staticcache get with new callback", url);
         super.get(url, onNotFoundInCacheTask);
 
         return onNotFoundInCacheTask;
