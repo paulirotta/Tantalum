@@ -4,11 +4,11 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum3.AsyncCallbackTask;
-import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.net.StaticWebCache;
-import com.futurice.tantalum3.net.xml.RSSItem;
+import com.futurice.tantalum4.AsyncCallbackTask;
+import com.futurice.tantalum4.Worker;
+import com.futurice.tantalum4.log.L;
+import com.futurice.tantalum4.net.StaticWebCache;
+import com.futurice.tantalum4.net.xml.RSSItem;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Image;

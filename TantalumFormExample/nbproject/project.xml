@@ -19,9 +19,9 @@
                 </properties>
             </reference>
             <reference>
-                <foreign-project>Tantalum3Library</foreign-project>
+                <foreign-project>Tantalum4Library</foreign-project>
                 <artifact-type>jar</artifact-type>
-                <script>${project.Tantalum3Library}/build.xml</script>
+                <script>${project.Tantalum4Library}/build.xml</script>
                 <target>jar</target>
                 <clean-target>clean</clean-target>
                 <id>jar</id>
@@ -30,9 +30,9 @@
                 </properties>
             </reference>
             <reference>
-                <foreign-project>Tantalum3Library</foreign-project>
+                <foreign-project>Tantalum4Library</foreign-project>
                 <artifact-type>jar</artifact-type>
-                <script>${project.Tantalum3Library}/build.xml</script>
+                <script>${project.Tantalum4Library}/build.xml</script>
                 <target>jar</target>
                 <clean-target>clean</clean-target>
                 <id>jar.Release</id>
@@ -41,9 +41,9 @@
                 </properties>
             </reference>
             <reference>
-                <foreign-project>Tantalum3Library</foreign-project>
+                <foreign-project>Tantalum4Library</foreign-project>
                 <artifact-type>jar</artifact-type>
-                <script>${project.Tantalum3Library}/build.xml</script>
+                <script>${project.Tantalum4Library}/build.xml</script>
                 <target>jar</target>
                 <clean-target>clean</clean-target>
                 <id>jar.UsbDebug</id>

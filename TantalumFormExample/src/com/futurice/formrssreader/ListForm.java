@@ -4,19 +4,19 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum3.AsyncCallbackTask;
-import com.futurice.tantalum3.CancellationException;
-import com.futurice.tantalum3.ExecutionException;
-import com.futurice.tantalum3.PlatformUtils;
-import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.Workable;
-import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.net.StaticWebCache;
-import com.futurice.tantalum3.net.xml.RSSItem;
-import com.futurice.tantalum3.net.xml.RSSModel;
-import com.futurice.tantalum3.rms.DataTypeHandler;
-import com.futurice.tantalum3.rms.RMSUtils;
+import com.futurice.tantalum4.AsyncCallbackTask;
+import com.futurice.tantalum4.CancellationException;
+import com.futurice.tantalum4.ExecutionException;
+import com.futurice.tantalum4.PlatformUtils;
+import com.futurice.tantalum4.Task;
+import com.futurice.tantalum4.Workable;
+import com.futurice.tantalum4.Worker;
+import com.futurice.tantalum4.log.L;
+import com.futurice.tantalum4.net.StaticWebCache;
+import com.futurice.tantalum4.net.xml.RSSItem;
+import com.futurice.tantalum4.net.xml.RSSModel;
+import com.futurice.tantalum4.storage.DataTypeHandler;
+import com.futurice.tantalum4.storage.RMSUtils;
 import javax.microedition.lcdui.*;
 
 /**

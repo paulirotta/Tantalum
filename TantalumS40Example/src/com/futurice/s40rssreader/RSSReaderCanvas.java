@@ -1,7 +1,7 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.net.xml.RSSItem;
+import com.futurice.tantalum4.log.L;
+import com.futurice.tantalum4.net.xml.RSSItem;
 import com.nokia.mid.ui.frameanimator.FrameAnimator;
 import com.nokia.mid.ui.frameanimator.FrameAnimatorListener;
 import com.nokia.mid.ui.gestures.GestureEvent;

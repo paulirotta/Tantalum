@@ -1,12 +1,12 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.net.StaticWebCache;
-import com.futurice.tantalum3.net.xml.RSSItem;
-import com.futurice.tantalum3.rms.ImageTypeHandler;
-import com.futurice.tantalum3.util.StringUtils;
+import com.futurice.tantalum4.Task;
+import com.futurice.tantalum4.Worker;
+import com.futurice.tantalum4.log.L;
+import com.futurice.tantalum4.net.StaticWebCache;
+import com.futurice.tantalum4.net.xml.RSSItem;
+import com.futurice.tantalum4.storage.ImageTypeHandler;
+import com.futurice.tantalum4.util.StringUtils;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Command;

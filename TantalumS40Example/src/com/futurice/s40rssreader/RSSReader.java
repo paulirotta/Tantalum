@@ -1,10 +1,10 @@
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.TantalumMIDlet;
-import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.TimeoutException;
-import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.L;
+import com.futurice.tantalum4.TantalumMIDlet;
+import com.futurice.tantalum4.Task;
+import com.futurice.tantalum4.TimeoutException;
+import com.futurice.tantalum4.Worker;
+import com.futurice.tantalum4.log.L;
 import javax.microedition.lcdui.*;
 
 /**

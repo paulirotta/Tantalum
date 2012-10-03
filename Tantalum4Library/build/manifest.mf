@@ -1,0 +1,16 @@
+MIDlet-9: RSSModelTest,,com.futurice.tantalum4.net.xml.RSSModelTest
+MIDlet-8: SortedVectorTest,,com.futurice.tantalum4.util.SortedVectorTest
+MIDlet-7: LengthLimitedLRUVectorTest,,com.futurice.tantalum4.util.LengthLimitedVectorTest
+MIDlet-6: LRUVectorTest,,com.futurice.tantalum4.util.LRUVectorTest
+MIDlet-5: PoolingWeakHashCacheTest,,com.futurice.tantalum4.util.PoolingWeakHashCacheTest
+MIDlet-4: LogTest,,com.futurice.tantalum4.log.LTest
+MIDlet-3: WorkerTest,,com.futurice.tantalum4.WorkerTest
+MIDlet-2: WeakHashCacheTest,,com.futurice.tantalum4.util.WeakHashCacheTest
+MIDlet-1: TestSuite,,jmunit.framework.cldc11.TestSuite
+MIDlet-Permissions-Opt: javax.microedition.io.Connector.https
+MIDlet-Permissions: javax.microedition.io.Connector.http
+MIDlet-Vendor: Tantalum Project
+MIDlet-Name: Tantalum4
+MIDlet-Version: 4.0
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.1

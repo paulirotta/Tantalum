@@ -2,4 +2,11 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/C:/Users/phou/Documents/NetBeansProjects/Tantalum/Tantalum3Library/src/com/futurice/tantalum4/PlatformUtils.java</file>
+        <file>file:/C:/Users/phou/Documents/NetBeansProjects/Tantalum/Tantalum3Library/src/com/futurice/tantalum4/storage/FlashCache.java</file>
+        <file>file:/C:/Users/phou/Documents/NetBeansProjects/Tantalum/Tantalum3Library/src/com/futurice/tantalum4/storage/RMSCache.java</file>
+        <file>file:/C:/Users/phou/Documents/NetBeansProjects/Tantalum/Tantalum3Library/src/com/futurice/tantalum4/storage/StaticCache.java</file>
+        <file>file:/C:/Users/phou/Documents/NetBeansProjects/Tantalum/Tantalum3Library/src/com/futurice/tantalum4/storage/FlashFullException.java</file>
+    </open-files>
 </project-private>

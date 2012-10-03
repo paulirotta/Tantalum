@@ -1,7 +1,7 @@
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.rms.RMSUtils;
+import com.futurice.tantalum4.log.L;
+import com.futurice.tantalum4.storage.RMSUtils;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;

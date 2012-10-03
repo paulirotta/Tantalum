@@ -1,13 +1,13 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum3.CancellationException;
-import com.futurice.tantalum3.ExecutionException;
-import com.futurice.tantalum3.Task;
-import com.futurice.tantalum3.TimeoutException;
-import com.futurice.tantalum3.Worker;
-import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.net.StaticWebCache;
-import com.futurice.tantalum3.net.xml.RSSItem;
+import com.futurice.tantalum4.CancellationException;
+import com.futurice.tantalum4.ExecutionException;
+import com.futurice.tantalum4.Task;
+import com.futurice.tantalum4.TimeoutException;
+import com.futurice.tantalum4.Worker;
+import com.futurice.tantalum4.log.L;
+import com.futurice.tantalum4.net.StaticWebCache;
+import com.futurice.tantalum4.net.xml.RSSItem;
 import com.sun.lwuit.*;
 import com.sun.lwuit.animations.CommonTransitions;
 import com.sun.lwuit.events.ActionEvent;

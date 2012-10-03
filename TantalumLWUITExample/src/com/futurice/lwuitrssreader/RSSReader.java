@@ -1,6 +1,6 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum3.TantalumMIDlet;
+import com.futurice.tantalum4.TantalumMIDlet;
 import com.sun.lwuit.Dialog;
 import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;

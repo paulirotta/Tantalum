@@ -4,7 +4,7 @@
  */
 package com.futurice.s40rssreader;
 
-import com.futurice.tantalum3.log.L;
+import com.futurice.tantalum4.log.L;
 import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.IconCommand;
 import com.nokia.mid.ui.orientation.Orientation;
