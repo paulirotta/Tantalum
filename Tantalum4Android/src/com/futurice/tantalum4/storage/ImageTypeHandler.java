@@ -19,7 +19,7 @@ public final class ImageTypeHandler implements DataTypeHandler {
     public ImageTypeHandler() {
     }
 
-    public ImageTypeHandler(int side) {
+    public ImageTypeHandler(final boolean processAlpha, final boolean bestQuality, final int width) {
         /*
          * This constructor creates a resizing Image converter on S40, but on Android
          * we RAM cache the full sime image and let the resize be done at render
