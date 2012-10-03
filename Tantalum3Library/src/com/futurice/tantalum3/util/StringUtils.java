@@ -63,22 +63,21 @@ public class StringUtils {
      * @param maxWidth
      * @return
      */
-    public static Vector splitToLines(final Vector vector, final String text, final Font font, final int maxWidth) {
-        int len, lastSpace = 0;
+    public static void splitToLines(final Vector vector, final String text, final Font font, final int maxWidth) {
+        int lastSpace = 0;
 
         for (int i = 0; i < text.length(); i++) {
             if (text.charAt(i) == ' ') {
                 lastSpace = i;
             }
-            len = font.stringWidth(text.substring(0, i));
+            final int len = font.stringWidth(text.substring(0, i));
             if (len > maxWidth) {
                 vector.addElement(text.substring(0, lastSpace + 1).trim());
-                return splitToLines(vector, text.substring(lastSpace), font, maxWidth);
+                splitToLines(vector, text.substring(lastSpace + 1), font, maxWidth);
+                return;
             }
         }
         vector.addElement(text.trim());
-
-        return vector;
     }
 
     /**

@@ -27,24 +27,24 @@ public class StaticWebCache extends StaticCache {
         super(priority, handler);
     }
 
-    public Task get(final String url, final Task callback, final int getType) {
+    public Task get(final String url, final Task callback, final int getType, final int getPriority) {
         final Task task;
 
         //#debug
         L.i("StaticWebCache get type " + getType, url);
         switch (getType) {
             case GET_LOCAL:
-                task = localGet(url, callback);
+                task = localGet(url, callback, getPriority);
                 break;
 
             case GET_ANYWHERE:
                 //#debug
                 L.i("Get anywhere", url);
-                task = get(url, callback);
+                task = get(url, callback, getPriority);
                 break;
 
             case GET_WEB:
-                task = netGet(url, callback);
+                task = netGet(url, callback, getPriority);
                 break;
 
             default:
@@ -61,7 +61,7 @@ public class StaticWebCache extends StaticCache {
      * @param result
      * @param priority - Default is Worker.NORMAL_PRIORITY
      */
-    public Task get(final String url, final Task task) {
+    public Task get(final String url, final Task task, final int getPriority) {
         if (url == null || url.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticWebCache get");
         }
@@ -135,7 +135,7 @@ public class StaticWebCache extends StaticCache {
 
         //#debug
         L.i("Calling staticcache get with new callback", url);
-        super.get(url, onNotFoundInCacheTask);
+        super.get(url, onNotFoundInCacheTask, getPriority);
 
         return onNotFoundInCacheTask;
     }
@@ -146,7 +146,7 @@ public class StaticWebCache extends StaticCache {
      * @param url
      * @param result
      */
-    public Task netGet(final String url, final Task task) {
+    private Task netGet(final String url, final Task task, final int getPriority) {
         if (url == null || url.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticWebCache netGet");
         }
@@ -156,7 +156,7 @@ public class StaticWebCache extends StaticCache {
             public Object exec(final Object in) {
                 try {
                     remove(url);
-                    StaticWebCache.this.get(url, callback);
+                    StaticWebCache.this.get(url, callback, getPriority);
                 } catch (Exception e) {
                     //#debug
                     L.e("Can not update", url, e);
@@ -164,7 +164,7 @@ public class StaticWebCache extends StaticCache {
 
                 return in;
             }
-        }, Worker.HIGH_PRIORITY);
+        }, getPriority);
 
         return task;
     }
@@ -180,7 +180,7 @@ public class StaticWebCache extends StaticCache {
             Worker.fork(new Workable() {
                 public Object exec(final Object in) {
                     try {
-                        get(url, null);
+                        get(url, null, Worker.LOW_PRIORITY);
                     } catch (Exception e) {
                         //#debug
                         L.e("Can not prefetch", url, e);

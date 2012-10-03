@@ -8,7 +8,6 @@ import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.util.LRUVector;
 import com.futurice.tantalum3.util.SortedVector;
 import com.futurice.tantalum3.util.WeakHashCache;
-import java.io.IOException;
 import java.util.Vector;
 
 /**
@@ -140,7 +139,7 @@ public class StaticCache {
      * and the value happens to have expired from the RAM cache due to a low
      * memory condition.
      */
-    public Task get(final String key, final Task task) {
+    public Task get(final String key, final Task task, final int getPriority) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
@@ -181,7 +180,7 @@ public class StaticCache {
                     return in;
                 }
             };
-            Worker.fork(getWorkable, Worker.HIGH_PRIORITY);
+            Worker.fork(getWorkable, getPriority);
         }
 
         return callback;
@@ -193,7 +192,7 @@ public class StaticCache {
      * @param key
      * @return task
      */
-    public Task localGet(final String key, final Task task) {
+    public Task localGet(final String key, final Task task, final int getPriority) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache localGet");
         }
@@ -217,7 +216,7 @@ public class StaticCache {
 
                 return r;
             }
-        }, Worker.HIGH_PRIORITY);
+        }, getPriority);
 
         return callback;
     }
