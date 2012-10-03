@@ -58,7 +58,7 @@ public final class ListForm extends Form implements CommandListener {
 
         //#debug
         L.i("Start start thread reload", "");
-        final Task reloadTask = reload(false);
+        reload(false);
         ListForm.instance = ListForm.this;
         this.rssReader = rssReader;
         detailsView = new DetailsForm(rssReader, title);
@@ -66,14 +66,7 @@ public final class ListForm extends Form implements CommandListener {
         addCommand(reloadCommand);
         addCommand(settingsCommand);
         setCommandListener(this);
-        try {
-            /*
-             * Pause here up to 2 seconds while waiting for the feed to load from RMS
-             */
-            reloadTask.join(2000);
-        } catch (Exception ex) {
-            L.e("Did not complete initial reload", "This may be a normal 2sec timeout, waiting for network", ex);
-        }
+        //#debug
         L.i("End start thread reload", "");
     }
 
@@ -165,7 +158,7 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
             };
-            feedCache.netGet(feedUrl, uiTask);
+            feedCache.get(feedUrl, uiTask, StaticWebCache.GET_WEB, Worker.HIGH_PRIORITY);
         } else {
             uiTask = new AsyncCallbackTask() {
                 public void onPostExecute(final Object result) {
@@ -185,7 +178,7 @@ public final class ListForm extends Form implements CommandListener {
                     return false;
                 }
             };
-            feedCache.get(feedUrl, uiTask);
+            feedCache.get(feedUrl, uiTask, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
         }
         Worker.fork(uiTask);
 

@@ -1,7 +1,11 @@
 package com.futurice.lwuitrssreader;
 
+import com.futurice.tantalum3.CancellationException;
+import com.futurice.tantalum3.ExecutionException;
 import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.TimeoutException;
 import com.futurice.tantalum3.Worker;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
 import com.sun.lwuit.*;
@@ -73,22 +77,22 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 list.getModel().removeItem(i);
             }
 
-            final Task result = new Task() {
+            final Task task = new Task() {
                 public Object doInBackground(final Object in) {
                     isReloading = false;
-                    
+
                     return in;
                 }
-                
+
                 protected void onCancelled() {
                     isReloading = false;
                 }
             };
 
             if (fromNet) {
-                feedCache.netGet(midlet.getUrl(), result);
+                feedCache.get(midlet.getUrl(), task, StaticWebCache.GET_WEB, Worker.HIGH_PRIORITY);
             } else {
-                feedCache.get(midlet.getUrl(), result);
+                feedCache.get(midlet.getUrl(), task, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
             }
         }
     }

@@ -102,7 +102,6 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     public void startApp() {
         INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
         try {
-//            getCanvas();
             final Task reloadTask = new Task() {
                 public Object doInBackground(final Object params) {
                     getCanvas().getListView().reload(false);
@@ -110,7 +109,6 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
                     return null;
                 }
             };
-            reloadTask.fork();
             final Display display = getDisplay();
             COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
             COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
@@ -119,7 +117,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
             COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
             COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
             try {
-                reloadTask.join(2000);
+                reloadTask.fork().join(200);
             } catch (TimeoutException ex) {
                 //#debug
                 L.e("Startup reload timeout", "This is normal if loading from the net", ex);

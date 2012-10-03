@@ -7,6 +7,7 @@ package com.futurice.s40rssreader;
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
+import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
 import com.futurice.tantalum3.util.ImageUtils;
 import java.util.Hashtable;
@@ -176,7 +177,7 @@ public final class IconListView extends RSSListView {
                                 protected void onCancelled() {
                                     item.setLoadingImage(false);
                                 }
-                            });
+                            }, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
                         }
                     }
                 } else {

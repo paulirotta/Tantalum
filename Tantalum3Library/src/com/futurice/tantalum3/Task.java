@@ -20,8 +20,9 @@ public abstract class Task implements Workable {
     public static final int UI_RUN_FINISHED = 8; // for Closure extension
     public static final int CANCELED = 16;
     public static final int EXCEPTION = 32;
+    public static final int READY = 64;
     private Object result = null; // Always access within a synchronized block
-    protected int status = UI_RUN_FINISHED; // Always access within a synchronized block
+    protected int status = READY; // Always access within a synchronized block
 
     public Task() {
     }
@@ -44,38 +45,6 @@ public abstract class Task implements Workable {
         setStatus(EXEC_PENDING);
     }
 
-    /**
-     * Never call get() from the UI thread unless you know the state is
-     * EXEC_FINISHED (as it is in a Closure). Otherwise it can make your UI
-     * freeze for unpredictable periods of time.
-     *
-     * @return
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
-     */
-//    public final Object get() throws InterruptedException, CancellationException, ExecutionException {
-//        final Object r;
-//        synchronized (this) {
-//            switch (status) {
-//                case EXEC_PENDING:
-//                    Worker.tryUnfork(this);
-//                    break;
-//                case EXEC_STARTED:
-//                    this.wait();
-//                case EXEC_FINISHED:
-//                    return result;
-//                case CANCELED:
-//                    throw new CancellationException();
-//                case EXCEPTION:
-//                default:
-//                    throw new ExecutionException();
-//            }
-//            r = result;
-//        }
-//
-//        return exec(r);
-//    }
     protected final synchronized Object getResult() {
         return result;
     }
@@ -108,11 +77,10 @@ public abstract class Task implements Workable {
         }
         boolean doExec = false;
         Object r;
-        long t = System.currentTimeMillis();
 
-        //#debug
-        L.i("Start join", "timeout=" + timeout + " " + this.toString());
         synchronized (this) {
+        //#debug
+        L.i("Start join", "timeout=" + timeout + " status=" + status);
             switch (status) {
                 case EXEC_PENDING:
                     //#debug
@@ -121,13 +89,19 @@ public abstract class Task implements Workable {
                         doExec = true;
                         break;
                     }
+                case READY:
                 case EXEC_STARTED:
                     //#debug
                     L.i("START WAIT", "status=" + status);
-                    //timeout -= System.currentTimeMillis() - t;
-//                    if (timeout > 0) {
-                        this.wait(timeout);
-//                    }
+                    do {
+                        final long t = System.currentTimeMillis();
+                        
+                        wait(timeout);
+                        if (status == EXEC_FINISHED) {
+                            break;
+                        }
+                        timeout -= System.currentTimeMillis() - t;
+                    } while (timeout > 0);
                     //#debug
                     L.i("End join wait()", "status=" + status);
                     if (status == EXEC_STARTED) {
@@ -146,7 +120,7 @@ public abstract class Task implements Workable {
         if (doExec) {
             //#debug
             L.i("Start exec() out-of-sequence exec() after join() and successful unfork()", this.toString());
-            r = exec(null);
+            r = exec(r);
         }
 
         return r;
@@ -158,7 +132,7 @@ public abstract class Task implements Workable {
         return this;
     }
 
-    public final Object joinUI(final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    public final Object joinUI(long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (!(this instanceof Runnable)) {
             throw new ClassCastException("Can not joinUI() unless Task is a Runnable such as AsyncCallbackTask");
         }
@@ -168,17 +142,34 @@ public abstract class Task implements Workable {
 
         synchronized (this) {
             if (status < UI_RUN_FINISHED) {
-                t = timeout - (System.currentTimeMillis() - t);
-                //#debug
-                L.i("Start joinUI wait()", "timeout remaining=" + t + " " + this.toString());
-                if (t > 0) {
-                    this.wait(t);
-                }
-                if (status < UI_RUN_FINISHED) {
-                    throw new TimeoutException();
-                }
-                //#debug
-                L.i("End joinUIThread wait()", this.toString());
+                    //#debug
+                    L.i("Start joinUI wait", "status=" + status);
+                    timeout -= System.currentTimeMillis() - t;
+                    do {
+                        final long t2 = System.currentTimeMillis();                        
+                        wait(timeout);
+                        if (status == UI_RUN_FINISHED) {
+                            break;
+                        }
+                        timeout -= System.currentTimeMillis() - t2;
+                    } while (timeout > 0);
+                    //#debug
+                    L.i("End joinUI wait", "status=" + status);
+                    if (status == EXEC_STARTED) {
+                        throw new TimeoutException();
+                    }
+                
+//                t = timeout - (System.currentTimeMillis() - t);
+//                //#debug
+//                L.i("Start joinUI wait()", "timeout remaining=" + t + " " + this.toString());
+//                if (t > 0) {
+//                    this.wait(t);
+//                }
+//                if (status < UI_RUN_FINISHED) {
+//                    throw new TimeoutException();
+//                }
+//                //#debug
+//                L.i("End joinUIThread wait()", this.toString());
             }
 
             return result;

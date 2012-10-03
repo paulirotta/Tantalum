@@ -1,6 +1,7 @@
 package com.futurice.s40rssreader;
 
 import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.StaticWebCache;
 import com.futurice.tantalum3.net.xml.RSSItem;
@@ -90,7 +91,9 @@ public final class DetailsView extends View {
 
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_FOREGROUND);
-        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), StringUtils.splitToLines(new Vector(), item.getTitle(), RSSReaderCanvas.FONT_TITLE, width - 2 * RSSReaderCanvas.MARGIN));
+        final Vector lines = new Vector();
+        StringUtils.splitToLines(lines, item.getTitle(), RSSReaderCanvas.FONT_TITLE, width - 2 * RSSReaderCanvas.MARGIN);
+        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), lines);
 
         if (!canvas.isPortrait()) {
             width >>= 1;
@@ -102,7 +105,9 @@ public final class DetailsView extends View {
         curY += RSSReaderCanvas.FONT_DATE.getHeight() << 1;
 
         g.setFont(RSSReaderCanvas.FONT_DESCRIPTION);
-        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), StringUtils.splitToLines(new Vector(), item.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, width - 2 * RSSReaderCanvas.MARGIN));
+        final Vector lines2 = new Vector();
+        StringUtils.splitToLines(lines2, item.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, width - 2 * RSSReaderCanvas.MARGIN);
+        curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), lines2);
 
         curY += RSSReaderCanvas.FONT_DESCRIPTION.getHeight();
 
@@ -137,7 +142,7 @@ public final class DetailsView extends View {
                         
                         return false;
                     }
-                });
+                }, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
             }
         }
 
@@ -189,7 +194,7 @@ public final class DetailsView extends View {
                     
                     return r;
                 }
-            });
+            }, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
         }
         if (rightItem != null) {
             imageCache.get(rightItem.getThumbnail(), new Task() {
@@ -203,7 +208,7 @@ public final class DetailsView extends View {
                     
                     return r;
                 }
-            });
+            }, StaticWebCache.GET_WEB, Worker.HIGH_PRIORITY);
         }
     }
 
