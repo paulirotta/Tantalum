@@ -110,6 +110,8 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
             }
 
             return null;
+        } finally {
+            L.i("db getData", "end");            
         }
     }
 

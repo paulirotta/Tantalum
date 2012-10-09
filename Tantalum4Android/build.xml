@@ -9,7 +9,7 @@
     <target name="-post-jar">
         <jar jarfile="dist/Tantalum4AndroidLibrary.jar" duplicate="preserve">
             <zipfileset src="${dist.jar}" excludes="META-INF/*" />
-            <zipfileset src="..\Tantalum4Library\dist\Release\Tantalum4.jar" excludes="META-INF/*" />
+            <zipfileset src="..\Tantalum4Library\dist\Tantalum4_Debug.jar" excludes="META-INF/*" />
         </jar>
     </target>
 </project>

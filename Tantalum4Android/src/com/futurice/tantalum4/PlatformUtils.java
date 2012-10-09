@@ -63,7 +63,6 @@ public final class PlatformUtils {
 
     public static HttpConn getHttpGetConn(final String url) throws IOException {
         final HttpConn httpConn = new HttpConn(url);
-        httpConn.con.setDoOutput(true);
         httpConn.con.setDoInput(true);
         httpConn.con.setRequestMethod("GET");
 
