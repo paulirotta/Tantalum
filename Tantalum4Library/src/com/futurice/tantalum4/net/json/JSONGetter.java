@@ -39,9 +39,9 @@ public class JSONGetter extends HttpGetter {
     }
 
     public Object doInBackground(final Object in) {
-        String value = ((byte[]) super.doInBackground(in)).toString().trim();
-
+        String value = null;
         try {
+            value = new String((byte[]) super.doInBackground(in), "UTF8").trim();
             if (value.startsWith("[")) {
                 // Parser expects non-array base object- add one
                 value = "{\"base:\"" + value + "}";
@@ -53,7 +53,7 @@ public class JSONGetter extends HttpGetter {
             L.e("JSONGetter HTTP response problem", this.getUrl() + " : " + value, e);
             cancel(false);
         }
-        
+
         return jsonModel;
     }
 }
