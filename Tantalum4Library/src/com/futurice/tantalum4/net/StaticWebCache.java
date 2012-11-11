@@ -27,31 +27,44 @@ public class StaticWebCache extends StaticCache {
         super(priority, handler);
     }
 
-    public Task get(final String url, final Task callback, final int getType, final int getPriority) {
-        final Task task;
+    /**
+     * Retrieve one item from the cache using the method specified in the
+     * getType parameter. The call returns immediately, is executed concurrently
+     * on a worker thread, and code in the Task will be executed automatically
+     * on a Worker and optionally also the UI thread after the get operation
+     * completes.
+     * 
+     * @param url - The web service location to HTTP_GET the cacheable data
+     * @param task - your extension of Task, UICallbackTask, or AsyncTask
+     * @param priority - Worker.HIGH_PRIORITY, Worker.NORMAL_PRIORITY, or Worker.LOW_PRIORITY
+     * @param getType - StaticWebCache.GET_ANYWHERE, StaticWebCache.GET_WEB, or StaticWebCache.GET_LOCAL
+     * @return a new Task containing the result
+     */
+    public Task get(final String url, final Task task, final int priority, final int getType) {
+        final Task t;
 
         //#debug
         L.i("StaticWebCache get type " + getType, url);
         switch (getType) {
             case GET_LOCAL:
-                task = localGet(url, callback, getPriority);
+                t = localGet(url, task, priority);
                 break;
 
             case GET_ANYWHERE:
                 //#debug
                 L.i("Get anywhere", url);
-                task = get(url, callback, getPriority);
+                t = get(url, task, priority);
                 break;
 
             case GET_WEB:
-                task = netGet(url, callback, getPriority);
+                t = netGet(url, task, priority);
                 break;
 
             default:
                 throw new IllegalArgumentException("StaticWebCache get type not supported: " + getType);
         }
 
-        return task;
+        return t;
     }
 
     /**
@@ -61,7 +74,26 @@ public class StaticWebCache extends StaticCache {
      * @param result
      * @param priority - Default is Worker.NORMAL_PRIORITY
      */
-    public Task get(final String url, final Task task, final int getPriority) {
+    /**
+     * Retrieve one item from the cache with method StaticWebCache.GET_ANYWHERE.
+     * This is done in the following order:
+     * 1. RAM if available: Task completion is immediate but still asynchronous
+     * 2. Local flash storage (RMS) if available: may take several milliseconds,
+     * or longer if the Worker task queue is long and you do not specify high priority
+     * 3. web:  may take several seconds
+     * 
+     * The call returns immediately, is executed concurrently
+     * on a worker thread, and code in the Task will be executed automatically
+     * on a Worker and optionally also the UI thread after the get operation
+     * completes.
+     * 
+     * @param url - The web service location to HTTP_GET the cacheable data
+     * @param task - your extension of Task, UICallbackTask, or AsyncTask
+     * @param priority - Worker.HIGH_PRIORITY, Worker.NORMAL_PRIORITY, or Worker.LOW_PRIORITY
+     * @return a new Task containing the result
+     * @return 
+     */
+    public Task get(final String url, final Task task, final int priority) {
         if (url == null || url.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticWebCache get");
         }
@@ -135,7 +167,7 @@ public class StaticWebCache extends StaticCache {
 
         //#debug
         L.i("Calling staticcache get with new callback", url);
-        super.get(url, onNotFoundInCacheTask, getPriority);
+        super.get(url, onNotFoundInCacheTask, priority);
 
         return onNotFoundInCacheTask;
     }

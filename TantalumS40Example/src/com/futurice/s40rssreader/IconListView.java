@@ -177,7 +177,7 @@ public final class IconListView extends RSSListView {
                                 protected void onCancelled() {
                                     item.setLoadingImage(false);
                                 }
-                            }, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
+                            }, Worker.HIGH_PRIORITY);
                         }
                     }
                 } else {

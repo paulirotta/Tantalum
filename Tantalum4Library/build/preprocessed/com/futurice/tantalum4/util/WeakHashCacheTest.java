@@ -12,12 +12,12 @@ import jmunit.framework.cldc11.*;
  * @author phou
  */
 public class WeakHashCacheTest extends TestCase {
-    
+
     public WeakHashCacheTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(5, "WeakHashCacheTest");
-    }    
-    
+    }
+
     public void test(int testNumber) throws Throwable {
         switch (testNumber) {
             case 0:
@@ -68,7 +68,11 @@ public class WeakHashCacheTest extends TestCase {
         String expectedVal1 = "fruit";
         instance.put(key1, expectedVal1);
         instance.put(key2, "cake");
-        instance.put(null, "dog");
+        try {
+            instance.put(null, "dog");
+            this.fail("Did not catch null key put to WeakHashCache");
+        } catch (Exception e) {
+        }
         assertEquals(instance.size(), 2);
         instance.put(key2, null);
         assertEquals(instance.size(), 1);
@@ -113,7 +117,11 @@ public class WeakHashCacheTest extends TestCase {
         instance.put(key2, value2);
         assertEquals(false, instance.containsKey("red"));
         assertEquals(true, instance.containsKey(key1));
-        assertEquals(false, instance.containsKey(null));
+        try {
+            instance.containsKey(null);
+            fail("Did not throw exception on containsKey(null)");
+        } catch (Exception e) {
+        }
     }
 
     /**

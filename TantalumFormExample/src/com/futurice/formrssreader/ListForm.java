@@ -4,11 +4,7 @@
  */
 package com.futurice.formrssreader;
 
-import com.futurice.tantalum4.AsyncCallbackTask;
-import com.futurice.tantalum4.CancellationException;
-import com.futurice.tantalum4.ExecutionException;
-import com.futurice.tantalum4.PlatformUtils;
-import com.futurice.tantalum4.Task;
+import com.futurice.tantalum4.UITask;
 import com.futurice.tantalum4.Workable;
 import com.futurice.tantalum4.Worker;
 import com.futurice.tantalum4.log.L;
@@ -117,8 +113,8 @@ public final class ListForm extends Form implements CommandListener {
      *
      * @param forceLoad
      */
-    public AsyncCallbackTask reload(final boolean forceLoad) {
-        final AsyncCallbackTask uiTask;
+    public UITask reload(final boolean forceLoad) {
+        final UITask uiTask;
 
         if (loading && !forceLoad) {
             //already loading
@@ -143,7 +139,7 @@ public final class ListForm extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            uiTask = new AsyncCallbackTask() {
+            uiTask = new UITask() {
                 public void onPostExecute(final Object result) {
                     //#debug
                     L.i("start postExecute on force reload", "model length=" + rssModel.size());
@@ -158,9 +154,9 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
             };
-            feedCache.get(feedUrl, uiTask, StaticWebCache.GET_WEB, Worker.HIGH_PRIORITY);
+            feedCache.get(feedUrl, uiTask, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB);
         } else {
-            uiTask = new AsyncCallbackTask() {
+            uiTask = new UITask() {
                 public void onPostExecute(final Object result) {
                     //#debug
                     L.i("start postExecute on reload", "model length=" + rssModel.size());
@@ -178,7 +174,7 @@ public final class ListForm extends Form implements CommandListener {
                     return false;
                 }
             };
-            feedCache.get(feedUrl, uiTask, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
+            feedCache.get(feedUrl, uiTask, Worker.HIGH_PRIORITY);
         }
         Worker.fork(uiTask);
 

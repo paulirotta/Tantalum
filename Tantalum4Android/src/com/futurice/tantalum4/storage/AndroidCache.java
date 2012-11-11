@@ -24,23 +24,6 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
     private static Context context;
     private volatile SQLiteDatabase db = null;
 
-//    private Task initTask = new Task() {
-//        @Override
-//        public Object doInBackground(final Object in) {
-//            db = getWritableDatabase();
-//            Worker.forkShutdownTask(new Workable() {
-//                @Override
-//                public Object exec(final Object in2) {
-//                    db.close();
-//                    db = null;
-//                    
-//                    return in2;
-//                }
-//            });
-//            
-//            return in;
-//        }
-//    };
     /**
      * Your app must call this to set the context before the database is
      * initialized in Tantalum
@@ -53,8 +36,6 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
     public AndroidCache() {
         super(context, DB_NAME, null, DB_VERSION);
-//        Worker.fork(initTask);
-//        db = getWritableDatabase();
         Worker.forkShutdownTask(new Workable() {
             @Override
             public Object exec(final Object in2) {
@@ -101,17 +82,10 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
             }
         } catch (NullPointerException e) {
             L.e("db not initialized, join then try again", "getData", e);
-            try {
-//                initTask.join(10000);
-//                Thread.sleep(1000);
-//            return getData(key);
-            } catch (Exception ex) {
-                L.e("db not initialized, join then try again problem", "getData", e);
-            }
 
             return null;
         } finally {
-            L.i("db getData", "end");            
+            L.i("db getData", "end");
         }
     }
 
@@ -127,14 +101,6 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
                 db = getWritableDatabase();
             }
             db.insert(TABLE_NAME, null, values);
-        } catch (NullPointerException e) {
-            L.e("db not initialized, join then try again", "putData", e);
-//            try {
-//                initTask.join(10000);
-//            } catch (Exception ex) {
-//                L.e("db not initialized, join then try again problem", "putData", e);
-//            }
-            putData(key, data);
         } catch (SQLiteFullException e) {
             L.e("Android database full, attempting cleanup of old...", key, e);
             throw new FlashFullException();
@@ -145,19 +111,9 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
     public synchronized void removeData(final String key) {
         final String where = COL_KEY + "==\"" + key + "\"";
 
-        try {
-            if (db == null) {
-                db = getWritableDatabase();
-            }
-            db.delete(TABLE_NAME, where, null);
-        } catch (NullPointerException e) {
-            L.e("db not initialized, join then try again", "removeData", e);
-//            try {
-//                initTask.join(10000);
-//            } catch (Exception ex) {
-//                L.e("db not initialized, join then try again problem", "removeData", e);
-//            }
-            removeData(key);
+        if (db == null) {
+            db = getWritableDatabase();
         }
+        db.delete(TABLE_NAME, where, null);
     }
 }

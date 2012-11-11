@@ -78,9 +78,9 @@ public abstract class RSSListView extends View {
 
         String feedUrl = RSSReader.INITIAL_FEED_URL;
         if (forceNetLoad) {
-            feedCache.get(feedUrl, rssResult, StaticWebCache.GET_WEB, Worker.HIGH_PRIORITY);
+            feedCache.get(feedUrl, rssResult, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB);
         } else {
-            feedCache.get(feedUrl, rssResult, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
+            feedCache.get(feedUrl, rssResult, Worker.HIGH_PRIORITY);
         }
 
         return rssResult;

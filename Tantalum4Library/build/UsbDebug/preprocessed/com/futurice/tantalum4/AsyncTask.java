@@ -9,7 +9,7 @@ package com.futurice.tantalum4;
  * simpler Task (Java7-like fork-join), UITask (Task with UI thread completion)
  * or basic open loop Workable patterns.
  */
-public abstract class AsyncTask extends Task {
+public abstract class AsyncTask extends UITask {
     /*
      * Control if objects passed to executeOnExecutor() are thread safe to
      * allow parallel handling on the UI and a worker thread.

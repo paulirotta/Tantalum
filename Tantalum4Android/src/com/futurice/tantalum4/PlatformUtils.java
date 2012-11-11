@@ -4,7 +4,6 @@
  */
 package com.futurice.tantalum4;
 
-import com.futurice.tantalum4.PlatformUtils;
 import android.app.Activity;
 import com.futurice.tantalum4.storage.AndroidCache;
 import com.futurice.tantalum4.storage.FlashCache;

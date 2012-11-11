@@ -4,7 +4,7 @@
  */
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum4.AsyncCallbackTask;
+import com.futurice.tantalum4.UITask;
 import com.futurice.tantalum4.Worker;
 import com.futurice.tantalum4.log.L;
 import com.futurice.tantalum4.net.StaticWebCache;
@@ -86,7 +86,7 @@ public class DetailsForm extends Form implements ActionListener {
         addLabels(descriptionLabels);
         addComponent(imgLabel);
 
-        imageCache.get(item.getThumbnail(), new AsyncCallbackTask() {
+        imageCache.get(item.getThumbnail(), new UITask() {
             protected void onPostExecute(final Object result) {
                 try {
                     imgLabel.setIcon((Image) result);
@@ -96,7 +96,7 @@ public class DetailsForm extends Form implements ActionListener {
                     L.e("Can not get image for RSSItem", item.getThumbnail(), ex);
                 }
             }
-        }, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
+        }, Worker.HIGH_PRIORITY);
 
         addLabels(linkLabels);
         setScrollY(0);

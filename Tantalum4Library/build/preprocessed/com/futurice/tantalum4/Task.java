@@ -79,8 +79,8 @@ public abstract class Task implements Workable {
         Object r;
 
         synchronized (this) {
-        //#debug
-        L.i("Start join", "timeout=" + timeout + " status=" + status);
+            //#debug
+            L.i("Start join", "timeout=" + timeout + " status=" + status);
             switch (status) {
                 case EXEC_PENDING:
                     //#debug
@@ -95,7 +95,7 @@ public abstract class Task implements Workable {
                     L.i("START JOIN WAIT", "status=" + status);
                     do {
                         final long t = System.currentTimeMillis();
-                        
+
                         wait(timeout);
                         if (status == EXEC_FINISHED) {
                             break;
@@ -142,34 +142,22 @@ public abstract class Task implements Workable {
 
         synchronized (this) {
             if (status < UI_RUN_FINISHED) {
-                    //#debug
-                    L.i("Start joinUI wait", "status=" + status);
-                    timeout -= System.currentTimeMillis() - t;
-                    do {
-                        final long t2 = System.currentTimeMillis();                        
-                        wait(timeout);
-                        if (status == UI_RUN_FINISHED) {
-                            break;
-                        }
-                        timeout -= System.currentTimeMillis() - t2;
-                    } while (timeout > 0);
-                    //#debug
-                    L.i("End joinUI wait", "status=" + status);
-                    if (status == EXEC_STARTED) {
-                        throw new TimeoutException();
+                //#debug
+                L.i("Start joinUI wait", "status=" + status);
+                timeout -= System.currentTimeMillis() - t;
+                do {
+                    final long t2 = System.currentTimeMillis();
+                    wait(timeout);
+                    if (status == UI_RUN_FINISHED) {
+                        break;
                     }
-                
-//                t = timeout - (System.currentTimeMillis() - t);
-//                //#debug
-//                L.i("Start joinUI wait()", "timeout remaining=" + t + " " + this.toString());
-//                if (t > 0) {
-//                    this.wait(t);
-//                }
-//                if (status < UI_RUN_FINISHED) {
-//                    throw new TimeoutException();
-//                }
-//                //#debug
-//                L.i("End joinUIThread wait()", this.toString());
+                    timeout -= System.currentTimeMillis() - t2;
+                } while (timeout > 0);
+                //#debug
+                L.i("End joinUI wait", "status=" + status);
+                if (status == EXEC_STARTED) {
+                    throw new TimeoutException();
+                }
             }
 
             return result;
@@ -232,17 +220,12 @@ public abstract class Task implements Workable {
                     setStatus(EXEC_FINISHED);
                 }
             }
-            if (this instanceof Runnable && doRun) {
-                PlatformUtils.runOnUiThread(new Runnable() {
-                    public void run() {
-                        ((Runnable) Task.this).run();
-                        setStatus(UI_RUN_FINISHED);
-                    }
-                });
+            if (this instanceof UITask && doRun) {
+                PlatformUtils.runOnUiThread((UITask) this);
             }
         } catch (final Throwable t) {
             //#debug
-            L.e("Async task exception", this.toString(), t);
+            L.e("Unhandled task exception", this.toString(), t);
             setStatus(EXCEPTION);
         }
 
@@ -292,13 +275,16 @@ public abstract class Task implements Workable {
     /**
      * This is executed on the UI thread
      *
-     * Override if needed
+     * Override if needed, the default implementation does nothing except
+     * provide debug output.
      *
      * Use getStatus() to distinguish between CANCELLED and EXCEPTION states if
      * necessary.
      *
      */
     protected void onCancelled() {
+        //#debug
+        L.i("Task cancelled", this.toString());
     }
 
     public synchronized String toString() {

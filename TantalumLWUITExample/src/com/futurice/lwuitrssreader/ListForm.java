@@ -1,11 +1,7 @@
 package com.futurice.lwuitrssreader;
 
-import com.futurice.tantalum4.CancellationException;
-import com.futurice.tantalum4.ExecutionException;
 import com.futurice.tantalum4.Task;
-import com.futurice.tantalum4.TimeoutException;
 import com.futurice.tantalum4.Worker;
-import com.futurice.tantalum4.log.L;
 import com.futurice.tantalum4.net.StaticWebCache;
 import com.futurice.tantalum4.net.xml.RSSItem;
 import com.sun.lwuit.*;
@@ -90,9 +86,9 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
             };
 
             if (fromNet) {
-                feedCache.get(midlet.getUrl(), task, StaticWebCache.GET_WEB, Worker.HIGH_PRIORITY);
+                feedCache.get(midlet.getUrl(), task, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB);
             } else {
-                feedCache.get(midlet.getUrl(), task, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
+                feedCache.get(midlet.getUrl(), task, Worker.HIGH_PRIORITY);
             }
         }
     }

@@ -142,7 +142,7 @@ public final class DetailsView extends View {
                         
                         return false;
                     }
-                }, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
+                }, Worker.HIGH_PRIORITY);
             }
         }
 
@@ -194,7 +194,7 @@ public final class DetailsView extends View {
                     
                     return r;
                 }
-            }, StaticWebCache.GET_ANYWHERE, Worker.HIGH_PRIORITY);
+            }, Worker.HIGH_PRIORITY);
         }
         if (rightItem != null) {
             imageCache.get(rightItem.getThumbnail(), new Task() {
@@ -208,7 +208,7 @@ public final class DetailsView extends View {
                     
                     return r;
                 }
-            }, StaticWebCache.GET_WEB, Worker.HIGH_PRIORITY);
+            }, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB);
         }
     }
 
