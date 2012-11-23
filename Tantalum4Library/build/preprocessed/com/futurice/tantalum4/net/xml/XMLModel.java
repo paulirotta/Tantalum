@@ -4,6 +4,7 @@
  */
 package com.futurice.tantalum4.net.xml;
 
+import com.futurice.tantalum4.Worker;
 import com.futurice.tantalum4.log.L;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -31,36 +32,38 @@ public abstract class XMLModel extends DefaultHandler {
         if (xml == null || xml.length == 0) {
             throw new IllegalArgumentException("Attempt to XML parse a null or zero byte value");
         }
-        final InputStream in = new ByteArrayInputStream(xml);
+        synchronized (Worker.LARGE_MEMORY_MUTEX) {
+            final InputStream in = new ByteArrayInputStream(xml);
 
-        qnameStack = new String[100];
-        charStack = new String[100];
-        attributeStack = new XMLAttributes[100];
-        currentDepth = 0;
+            qnameStack = new String[100];
+            charStack = new String[100];
+            attributeStack = new XMLAttributes[100];
+            currentDepth = 0;
 
-        try {
-            //#debug
-            L.i("Start parse", "length=" + xml.length);
-            SAXParserFactory.newInstance().newSAXParser().parse(in, this);
-            //#debug
-            L.i("End parse", "length=" + xml.length);
-        } catch (SAXException t) {
-            //#debug
-            L.e("SAX Parse error", new String(xml), t);
-            throw t;
-        } catch (Throwable t) {
-            //#debug
-            L.e("Parse error", "", t);
-        } finally {
             try {
-                in.close();
-            } catch (Exception e) {
                 //#debug
-                L.e("Can not close", "bytearrayStream", e);
+                L.i("Start parse", "length=" + xml.length);
+                SAXParserFactory.newInstance().newSAXParser().parse(in, this);
+                //#debug
+                L.i("End parse", "length=" + xml.length);
+            } catch (SAXException t) {
+                //#debug
+                L.e("SAX Parse error", new String(xml), t);
+                throw t;
+            } catch (Throwable t) {
+                //#debug
+                L.e("Parse error", "", t);
+            } finally {
+                try {
+                    in.close();
+                } catch (Exception e) {
+                    //#debug
+                    L.e("Can not close", "bytearrayStream", e);
+                }
+                qnameStack = null;
+                charStack = null;
+                attributeStack = null;
             }
-            qnameStack = null;
-            charStack = null;
-            attributeStack = null;
         }
     }
 

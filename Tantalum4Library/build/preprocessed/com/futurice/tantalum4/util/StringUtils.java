@@ -27,8 +27,6 @@ public class StringUtils {
 
     private StringUtils() {
     }
-
-    ;
     
     /**
      * Truncates the string to fit the maxWidth. If truncated, an elipsis "..."

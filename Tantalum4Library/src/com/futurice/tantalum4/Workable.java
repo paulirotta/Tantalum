@@ -18,7 +18,8 @@ package com.futurice.tantalum4;
 public interface Workable {
     
     /**
-     * Do a task on a background thread
+     * Do a task on a background thread, possibly returning a result for
+     * asynchronous pipeline operations.
      * 
      * @param in 
      */
