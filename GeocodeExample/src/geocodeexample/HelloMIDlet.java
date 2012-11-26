@@ -7,11 +7,13 @@ package geocodeexample;
 import com.futurice.tantalum4.TantalumMIDlet;
 import com.futurice.tantalum4.Task;
 import com.futurice.tantalum4.UITask;
-import com.futurice.tantalum4.Worker;
 import com.futurice.tantalum4.log.L;
-import com.futurice.tantalum4.net.StaticWebCache;
+import com.futurice.tantalum4.net.HttpGetter;
 import com.futurice.tantalum4.util.StringUtils;
 import javax.microedition.lcdui.*;
+import org.json.me.JSONArray;
+import org.json.me.JSONException;
+import org.json.me.JSONObject;
 
 /**
  * @author phou
@@ -20,12 +22,13 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 
     private boolean midletPaused = false;
     private String json = "";
-    private final StaticWebCache locationsCache = new StaticWebCache('0', new LocationDataTypeHandler());
+ //   private final StaticWebCache locationsCache = new StaticWebCache('0', new LocationDataTypeHandler());
 //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
     private Command exitCommand;
     private Command okCommand;
     private Form form;
     private StringItem locationStringItem;
+    private TextField addressTextField;
 //</editor-fold>//GEN-END:|fields|0|
 
     /**
@@ -116,51 +119,75 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                 // write pre-action user code here
 //GEN-LINE:|7-commandAction|4|23-postAction
                 // write post-action user code here
-                final Task task = this.locationsCache.get(getGeocodeUrl("sabo, herbert macauley way, Lagos, Nigeria"), new UITask() {
-                    public Object doInBackground(Object in) { // Worker thread
-                        json = (String) in;
-                        (new Task() {
-                            protected Object doInBackground(Object in) {
-                                // In parallel
-                                return in;
-                            }
-                        }).fork();
+                final Task getter = new HttpGetter(getGeocodeUrl(this.getAddressTextField().getString()));
+                getter.chain(new UITask() {
+                    protected Object doInBackground(final Object in) {
+                        // Parse the JSON on the Worker thread to keep the UI fast and responsive
+                        String out = "Parse error- try a different address";
+                        String s = new String((byte[]) in);
+                        
+                        try {
+                            JSONObject src = new JSONObject(s);
+                            JSONArray inn = src.getJSONArray("Placemark");
+                            JSONObject arr = inn.getJSONObject(1);
+                            JSONObject d = arr.getJSONObject("Point");
+                            JSONArray f = d.getJSONArray("coordinates");
 
-                        return in;
+                            out = "Lat: " + f.getString(0) + " & Lon: " + f.getString(1);
+                        } catch (JSONException ex) {
+                            L.e("Can not parse JSON", s, ex);
+                        }
+
+                        return out;
                     }
 
-                    protected void onPostExecute(Object result) { // UI Thread
+                    protected void onPostExecute(Object result) {
+                        // Update UI on the UI thread
                         HelloMIDlet.this.getLocationStringItem().setText((String) result);
                     }
 
-                    protected void onCanceled() { // UI Thread
-                        HelloMIDlet.this.getLocationStringItem().setText("You suck");
-                    }
-                }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
-                Worker.fork(new Task() {
-                    protected Object doInBackground(Object in) {
-                        try {
-                            HelloMIDlet.this.getLocationStringItem().setText("Joined..");
-                            task.join(2000);
-                            HelloMIDlet.this.getLocationStringItem().setText("After join: " + task.getStatusString());
-                        } catch (Exception ex) {
-                            L.e("Problem with monitor thread", "", ex);
-                            HelloMIDlet.this.getLocationStringItem().setText("After join: " + ex);
-                        }
-
-                        return in;
+                    protected void onCanceled() {
+                        // Update on the UI thread if there is a problem
+                        HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
                 });
+                getter.fork();
 
-//                                HttpGetter getter = new HttpGetter(new Geocoder().getGeocodeUrl("sabo, herbert macauley way, Lagos, Nigeria"), 3);
-//                Worker.fork(getter);
-//                try {
-//                    byte[] bytes = (byte[]) getter.get();
-//                    String s = new String(bytes);
-//                    L.i("Result", s);
-//                } catch (Exception e) {
-//                    L.e("Could not get", getter.getUrl(), e);
-//                }
+//                final Task task = this.locationsCache.get(getGeocodeUrl("sabo, herbert macauley way, Lagos, Nigeria"), new UITask() {
+//                    public Object doInBackground(Object in) { // Worker thread
+//                        json = (String) in;
+//                        (new Task() {
+//                            protected Object doInBackground(Object in) {
+//                                // In parallel
+//                                return in;
+//                            }
+//                        }).fork();
+//
+//                        return in;
+//                    }
+//
+//                    protected void onPostExecute(Object result) { // UI Thread
+//                        HelloMIDlet.this.getLocationStringItem().setText((String) result);
+//                    }
+//
+//                    protected void onCanceled() { // UI Thread
+//                        HelloMIDlet.this.getLocationStringItem().setText("You suck");
+//                    }
+//                }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
+//                Worker.fork(new Task() {
+//                    protected Object doInBackground(Object in) {
+//                        try {
+//                            HelloMIDlet.this.getLocationStringItem().setText("Joined..");
+//                            task.join(2000);
+//                            HelloMIDlet.this.getLocationStringItem().setText("After join: " + task.getStatusString());
+//                        } catch (Exception ex) {
+//                            L.e("Problem with monitor thread", "", ex);
+//                            HelloMIDlet.this.getLocationStringItem().setText("After join: " + ex);
+//                        }
+//
+//                        return in;
+//                    }
+//                });
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction
         }//GEN-END:|7-commandAction|5|7-postCommandAction
         // write post-action user code here
@@ -192,7 +219,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     public Form getForm() {
         if (form == null) {//GEN-END:|14-getter|0|14-preInit
             // write pre-init user code here
-            form = new Form("Welcome", new Item[]{getLocationStringItem()});//GEN-BEGIN:|14-getter|1|14-postInit
+            form = new Form("Geocoder", new Item[]{getAddressTextField(), getLocationStringItem()});//GEN-BEGIN:|14-getter|1|14-postInit
             form.addCommand(getExitCommand());
             form.addCommand(getOkCommand());
             form.setCommandListener(this);//GEN-END:|14-getter|1|14-postInit
@@ -211,7 +238,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     public StringItem getLocationStringItem() {
         if (locationStringItem == null) {//GEN-END:|16-getter|0|16-preInit
             // write pre-init user code here
-            locationStringItem = new StringItem("Location", "(ready)");//GEN-LINE:|16-getter|1|16-postInit
+            locationStringItem = new StringItem("Coordinates", "(ready)");//GEN-LINE:|16-getter|1|16-postInit
             // write post-init user code here
         }//GEN-BEGIN:|16-getter|2|
         return locationStringItem;
@@ -233,6 +260,23 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
         return okCommand;
     }
 //</editor-fold>//GEN-END:|22-getter|2|
+
+//<editor-fold defaultstate="collapsed" desc=" Generated Getter: addressTextField ">//GEN-BEGIN:|24-getter|0|24-preInit
+    /**
+     * Returns an initialized instance of addressTextField component.
+     *
+     * @return the initialized component instance
+     */
+    public TextField getAddressTextField() {
+        if (addressTextField == null) {//GEN-END:|24-getter|0|24-preInit
+            // write pre-init user code here
+            addressTextField = new TextField("Address", "sabo, herbert macauley way, Lagos, Nigeria", 80, TextField.ANY);//GEN-BEGIN:|24-getter|1|24-postInit
+            addressTextField.setPreferredSize(-1, -1);//GEN-END:|24-getter|1|24-postInit
+            // write post-init user code here
+        }//GEN-BEGIN:|24-getter|2|
+        return addressTextField;
+    }
+//</editor-fold>//GEN-END:|24-getter|2|
 
     /**
      * Returns a display instance.
@@ -270,8 +314,8 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     public void pauseApp() {
         midletPaused = true;
     }
-    
+
     public String getGeocodeUrl(String address) {
         return "http://maps.google.com/maps/geo?q=" + StringUtils.urlEncode(address) + "&output=json";
-    }    
+    }
 }

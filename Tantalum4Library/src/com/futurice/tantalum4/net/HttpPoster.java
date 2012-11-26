@@ -14,17 +14,18 @@ public class HttpPoster extends HttpGetter {
      * HTTP POST a message to a given URL
      * 
      * @param url
-     * @param retriesRemaining
-     * @param task
-     * @param postMessage 
      */
-    public HttpPoster(final String url, final int retriesRemaining, final byte[] postMessage) {
-        super(url, retriesRemaining);
-        
+    public HttpPoster(final String url) {
+        super(url);
+    }
+    
+    public HttpPoster setPostMessage(final byte[] postMessage) {
         if (postMessage == null) {
             throw new IllegalArgumentException(this.getClass().getName() + " was passed null post message- meaningless post operation: " + url);
         }
         this.postMessage = new byte[postMessage.length];
-        System.arraycopy(postMessage, 0, this.postMessage, 0, postMessage.length);
+        System.arraycopy(postMessage, 0, this.postMessage, 0, postMessage.length);        
+        
+        return this;
     }
 }

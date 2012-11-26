@@ -21,30 +21,59 @@ import java.io.InputStream;
  */
 public class HttpGetter extends Task {
 
-    private final String url;
-    protected int retriesRemaining;
+    private static final int HTTP_GET_RETRIES = 3;
+    private static final int HTTP_RETRY_DELAY = 5000; // 5 seconds
+    protected String url = null;
+    protected int retriesRemaining = HTTP_GET_RETRIES;
     protected byte[] postMessage = null;
+
+    /**
+     * Get the byte[] from a specified web service URL.
+     *
+     * Be default, the client will automatically retry 3 times if the web
+     * service does not respond on the first attempt (happens frequently with
+     * the mobile web...). You can disable this by calling
+     * setRetriesRemaining(0).
+     *
+     * @param url
+     */
+    public HttpGetter(final String url) {
+        super(url);
+    }
+
+    /**
+     * Specify how many more times the HttpGetter should re-attempt HTTP GET if
+     * there is a network error.
+     *
+     * This will automatically count down to zero at which point the Task shifts
+     * to the Task.EXCEPTION state and onCanceled() will be called from the UI
+     * Thread.
+     *
+     * @param retries
+     * @return
+     */
+    public Task setRetriesRemaining(final int retries) {
+        this.retriesRemaining = retries;
+
+        return this;
+    }
 
     /**
      * Get the contents of a URL and return that asynchronously as a AsyncResult
      *
-     * @param url - where on the Internet to synchronousGet the data
-     * @param retriesRemaining - how many time to attempt connection
-     * @param task - optional object notified on the EDT with the task
+     * Note that your web service should set the HTTP Header field
+     * content_length as this makes the phone run slightly faster when we can
+     * predict how many bytes to expect.
+     *
+     * @param in - The URL we will get from
+     *
+     * @return
      */
-    public HttpGetter(final String url, final int retriesRemaining) {
+    public Object doInBackground(final Object in) {
+        this.url = (String) in;
         if (url == null || url.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }
-        this.url = url;
-        this.retriesRemaining = retriesRemaining;
-    }
-
-    public String getUrl() {
-        return this.url;
-    }
-
-    public Object doInBackground(final Object in) {
         //#debug
         L.i(this.getClass().getName() + " start", url);
         ByteArrayOutputStream bos = null;
@@ -129,7 +158,7 @@ public class HttpGetter extends Task {
 
             if (tryAgain) {
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(HTTP_RETRY_DELAY);
                 } catch (InterruptedException ex) {
                 }
                 doInBackground(in);

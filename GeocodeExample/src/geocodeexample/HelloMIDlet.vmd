@@ -42,13 +42,13 @@
                     <Property name="instanceName" typeID="Pjava.lang.String" value="Vform"/>
                     <Property name="codeGenerated" typeID="Pboolean" value="Vtrue"/>
                     <Property name="commands" typeID="1C#CommandEventSource" value="A2:3_R193_R23"/>
-                    <Property name="title" typeID="Pjava.lang.String" value="VWelcome"/>
+                    <Property name="title" typeID="Pjava.lang.String" value="VGeocoder"/>
                     <Property name="commandListener" typeID="C#CommandListener" value="R7"/>
-                    <Property name="items" typeID="1Cjavax.microedition.lcdui.Item" value="A1:3_R16"/>
+                    <Property name="items" typeID="1Cjavax.microedition.lcdui.Item" value="A2:3_R243_R16"/>
                     <Component componentID="16" typeID="Cjavax.microedition.lcdui.StringItem">
                         <Property name="instanceName" typeID="Pjava.lang.String" value="VlocationStringItem"/>
                         <Property name="codeGenerated" typeID="Pboolean" value="Vtrue"/>
-                        <Property name="label" typeID="Pjava.lang.String" value="VLocation"/>
+                        <Property name="label" typeID="Pjava.lang.String" value="VCoordinates"/>
                         <Property name="itemCommandListener" typeID="C#ItemCommandListener" value="R17"/>
                         <Property name="text" typeID="Pjava.lang.String" value="V(ready)"/>
                     </Component>
@@ -65,6 +65,16 @@
                         <Property name="displayable" typeID="Cjavax.microedition.lcdui.Displayable" value="R14"/>
                         <Property name="command" typeID="Cjavax.microedition.lcdui.Command" value="R22"/>
                     </Component>
+                    <Component componentID="24" typeID="Cjavax.microedition.lcdui.TextField">
+                        <Property name="instanceName" typeID="Pjava.lang.String" value="VaddressTextField"/>
+                        <Property name="codeGenerated" typeID="Pboolean" value="Vtrue"/>
+                        <Property name="label" typeID="Pjava.lang.String" value="VAddress"/>
+                        <Property name="preferredHeight" typeID="Pint" value="V-1"/>
+                        <Property name="itemCommandListener" typeID="C#ItemCommandListener" value="R17"/>
+                        <Property name="text" typeID="Pjava.lang.String" value="Vsabo, herbert macauley way, Lagos, Nigeria"/>
+                        <Property name="maxSize" typeID="Pint" value="V80"/>
+                        <Property name="constraints" typeID="Pint" value="V0"/>
+                    </Component>
                 </Component>
             </Component>
             <Component componentID="13" typeID="C#ResourcesCategory"/>
@@ -72,7 +82,7 @@
         </Component>
     </Document>
     <FlowScene version="1">
-        <Node componentID="2" descriptorID="componentNode2" x="34" y="32"/>
         <Node componentID="14" descriptorID="componentNode14" x="203" y="137"/>
+        <Node componentID="2" descriptorID="componentNode2" x="34" y="32"/>
     </FlowScene>
 </VisualDesign>

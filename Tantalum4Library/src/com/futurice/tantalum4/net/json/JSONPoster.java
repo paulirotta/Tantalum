@@ -13,12 +13,10 @@ import com.futurice.tantalum4.net.HttpPoster;
  */
 public abstract class JSONPoster extends HttpPoster {
 
-    private final JSONModel jsonModel;
+    private final JSONModel jsonModel = new JSONModel();
 
-    public JSONPoster(final String url, final String postMessage, final JSONModel jsonModel, final int retriesRemaining) {
-        super(url, retriesRemaining, postMessage.getBytes());
-        
-        this.jsonModel = jsonModel;
+    public JSONPoster(final String url) {
+        super(url);
     }
 
     public Object doInBackground(final Object in) {
@@ -34,7 +32,7 @@ public abstract class JSONPoster extends HttpPoster {
             setValue(jsonModel);
         } catch (Exception e) {
             //#debug
-            L.e("JSONPoster HTTP response problem", this.getUrl() + " : " + value, e);
+            L.e("JSONPoster HTTP response problem", url + " : " + value, e);
             cancel(false);
         }
         

@@ -21,7 +21,6 @@ public class StaticWebCache extends StaticCache {
     public static final int GET_LOCAL = 0;
     public static final int GET_ANYWHERE = 1;
     public static final int GET_WEB = 2;
-    private static final int HTTP_GET_RETRIES = 3;
 
     public StaticWebCache(final char priority, final DataTypeHandler handler) {
         super(priority, handler);
@@ -122,7 +121,7 @@ public class StaticWebCache extends StaticCache {
                     return super.cancel(mayInterruptIfNeeded);
                 }
 
-                final HttpGetter httpGetter = new HttpGetter(url, HTTP_GET_RETRIES) {
+                final HttpGetter httpGetter = new HttpGetter(url) {
                     public Object doInBackground(final Object in) {
                         //#debug
                         L.i("Start StaticWebCache httpGetter doInBackground", url);

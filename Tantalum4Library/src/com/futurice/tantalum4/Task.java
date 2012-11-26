@@ -289,6 +289,14 @@ public abstract class Task implements Workable {
                     onCanceled();
                 }
             });
+            // Also cancel any chained Tasks expecting the output of this Task
+            final Task chainedTask;
+            synchronized (this) {
+                chainedTask = nextTask;
+            }
+            if (chainedTask != null) {
+                chainedTask.cancel(false);
+            }
         }
     }
 
@@ -306,7 +314,7 @@ public abstract class Task implements Workable {
      * @param nextTask
      * @return nextTask
      */
-    public final Task chain(final Task nextTask) {
+    public final synchronized Task chain(final Task nextTask) {
         this.nextTask = nextTask;
 
         return nextTask;
@@ -332,17 +340,18 @@ public abstract class Task implements Workable {
             out = doInBackground(in);
 
             final boolean doRun;
+            final Task chainedTask;
             synchronized (this) {
                 value = out;
                 doRun = status == EXEC_STARTED;
                 if (doRun) {
                     setStatus(EXEC_FINISHED);
                 }
+                chainedTask = nextTask;
             }
             if (this instanceof UITask && doRun) {
                 PlatformUtils.runOnUiThread((UITask) this);
             }
-            final Task chainedTask = nextTask;
             if (chainedTask != null) {
                 //#debug
                 L.i("Begin exec chained task", chainedTask.toString());
