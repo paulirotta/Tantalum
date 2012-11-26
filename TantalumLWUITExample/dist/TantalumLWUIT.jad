@@ -1,0 +1,10 @@
+MIDlet-1: RSSReader,/icon.png,com.futurice.lwuitrssreader.RSSReader
+MIDlet-Jar-Size: 1040812
+MIDlet-Jar-URL: TantalumLWUIT.jar
+MIDlet-Name: Tantlaum LWUIT
+MIDlet-Permissions: javax.microedition.io.Connector.http
+MIDlet-Vendor: Tantalum Project
+MIDlet-Version: 2.2
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0
+RSS-Feed-Url: http://feeds.bbci.co.uk/news/rss.xml

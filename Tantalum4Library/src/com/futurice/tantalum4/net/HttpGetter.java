@@ -75,7 +75,7 @@ public class HttpGetter extends Task {
                         break;
                     }
                 }
-                setResult(bytes);
+                setValue(bytes);
                 bytes = null;
             } else {
                 //#debug
@@ -90,12 +90,12 @@ public class HttpGetter extends Task {
                         break;
                     }
                 }
-                setResult(bos.toByteArray());
+                setValue(bos.toByteArray());
                 readBuffer = null;
             }
 
             //#debug
-            L.i(this.getClass().getName() + " complete", ((byte[]) getResult()).length + " bytes, " + url);
+            L.i(this.getClass().getName() + " complete", ((byte[]) getValue()).length + " bytes, " + url);
             success = true;
         } catch (IllegalArgumentException e) {
             //#debug
@@ -139,7 +139,7 @@ public class HttpGetter extends Task {
             //#debug
             L.i("End " + this.getClass().getName(), url);
 
-            return getResult();
+            return getValue();
         }
     }
 }

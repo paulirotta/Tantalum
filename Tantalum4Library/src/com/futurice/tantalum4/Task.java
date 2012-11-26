@@ -14,21 +14,38 @@ public abstract class Task implements Workable {
     // status values
 
     public static final int MAX_TIMEOUT = 120000; // If not specified, no thread can wait more than 2 minutes
-    public static final int EXEC_PENDING = 1;
-    public static final int EXEC_STARTED = 2;
-    public static final int EXEC_FINISHED = 4;
-    public static final int UI_RUN_FINISHED = 8; // for Closure extension
-    public static final int CANCELED = 16;
-    public static final int EXCEPTION = 32;
-    public static final int READY = 64;
-    private Object result = null; // Always access within a synchronized block
+    public static final int EXEC_PENDING = 0;
+    public static final int EXEC_STARTED = 1;
+    public static final int EXEC_FINISHED = 2;
+    public static final int UI_RUN_FINISHED = 3; // for Closure extension
+    public static final int CANCELED = 4;
+    public static final int EXCEPTION = 5;
+    public static final int READY = 6;
+    private static final String[] STATUS_STRINGS = {"EXEC_PENDING", "EXEC_STARTED", "EXEC_FINISHED", "UI_RUN_FINISHED", "CANCELED", "EXCEPTION", "READY"};
+    private Object value = null; // Always access within a synchronized block
     protected int status = READY; // Always access within a synchronized block
+    private volatile Task nextTask = null; // Run afterwords, passing output as input parameter
 
+    /**
+     * Create a Task with input value of null
+     *
+     * Use this constructor if your Task does not accept an input value,
+     * otherwise use the Task(Object) constructor.
+     *
+     */
     public Task() {
     }
 
+    /**
+     * Create a Task with the specified input value.
+     *
+     * The default action is for the output value to be the same as the input
+     * value, however many Tasks will return their own value.
+     *
+     * @param in
+     */
     public Task(final Object in) {
-        this.result = in;
+        this.value = in;
     }
 
     /**
@@ -38,49 +55,105 @@ public abstract class Task implements Workable {
      * @throws IllegalStateException if the task is currently queued or
      * currently running
      */
-    public synchronized void notifyTaskQueued() throws IllegalStateException {
+    public synchronized void notifyTaskForked() throws IllegalStateException {
         if (status < EXEC_FINISHED || (this instanceof Runnable && status < UI_RUN_FINISHED)) {
-            throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + status);
+            throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + getStatusString());
         }
         setStatus(EXEC_PENDING);
     }
 
-    protected final synchronized Object getResult() {
-        return result;
+    /**
+     * Get the current input or result value of this Task without forcing
+     * execution.
+     *
+     * If the task has not yet been executed, this will be the input value. If
+     * the task has been executed, this will be the return value.
+     *
+     * @return
+     */
+    protected final synchronized Object getValue() {
+        return value;
     }
 
+    /**
+     * Execute synchronously if needed and return the resulting value.
+     *
+     * This is similar to join() with a very long timeout. Note that a
+     * MAX_TIMEOUT of 2 minutes is enforced.
+     *
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException
+     * @throws CancellationException
+     * @throws TimeoutException
+     */
     public final Object get() throws InterruptedException, ExecutionException, CancellationException, TimeoutException {
         return join(MAX_TIMEOUT);
     }
 
-    protected final synchronized Object setResult(final Object result) {
-        return this.result = result;
+    /**
+     * Set the return value of this task during or at the end of execution.
+     *
+     * Note that although you can use this to set or override the initial input
+     * value of a task before fork()ing it, it is more clear and preferred to
+     * use the Task(Object) constructor to set the input value.
+     *
+     * @param value
+     * @return
+     */
+    protected final synchronized Object setValue(final Object value) {
+        return this.value = value;
     }
 
     /**
-     * Never call join() from the UI thread. You might succeed with a very short
-     * timeout, but this is still bad design and better handled with proper
-     * worker threading.
+     * Execute this task asynchronously on a Worker thread as soon as possible.
+     *
+     * This will queue the Task with Worker.NORMAL_PRIORITY
+     *
+     * @return
+     */
+    public final Task fork() {
+        Worker.fork(this);
+
+        return this;
+    }
+
+    /**
+     * Wait for a maximum of timeout milliseconds for the Task to run and return
+     * it's evaluation value, otherwise throw a TimeoutExeception.
      *
      * Similar to get(), except the total wait() time if the AsyncTask has not
-     * completed is limited
+     * completed is explicitly limited to prevent long delays.
      *
-     * @param timeout
-     * @return
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
+     * Never call join() from the UI thread with a timeout greater than 100ms.
+     * This is still bad design and better handled with a chained Task or
+     * UITask. You will receive a debug warning, but are not prevented from
+     * making longer join() calls from the user interface Thread.
+     *
+     * @param timeout in milliseconds
+     * @return final evaluation result of the Task
+     * @throws InterruptedException - task was running when it was explicitly
+     * canceled by another thread
+     * @throws CancellationException - task was explicitly canceled by another
+     * thread
+     * @throws ExecutionException - an uncaught exception was thrown
+     * @throws TimeoutException - UITask failed to complete within timeout
+     * milliseconds
      */
     public final Object join(long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (timeout < 0) {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
+        }
+        if (PlatformUtils.isUIThread() && timeout > 100) {
+            //#debug
+            L.i("WARNING- slow Task.join() on UI Thread", "timeout=" + timeout + " " + this);
         }
         boolean doExec = false;
         Object r;
 
         synchronized (this) {
             //#debug
-            L.i("Start join", "timeout=" + timeout + " status=" + status);
+            L.i("Start join", "timeout=" + timeout + " " + this);
             switch (status) {
                 case EXEC_PENDING:
                     //#debug
@@ -89,10 +162,15 @@ public abstract class Task implements Workable {
                         doExec = true;
                         break;
                     }
+                // Continue to next state
                 case READY:
+                    if (status == READY) {
+                        Worker.fork(this, Worker.HIGH_PRIORITY);
+                    }
+                // Continue to next state
                 case EXEC_STARTED:
                     //#debug
-                    L.i("START JOIN WAIT", "status=" + status);
+                    L.i("START JOIN WAIT", "status=" + getStatusString());
                     do {
                         final long t = System.currentTimeMillis();
 
@@ -103,7 +181,7 @@ public abstract class Task implements Workable {
                         timeout -= System.currentTimeMillis() - t;
                     } while (timeout > 0);
                     //#debug
-                    L.i("End join wait()", "status=" + status);
+                    L.i("End join wait()", "status=" + getStatusString());
                     if (status == EXEC_STARTED) {
                         throw new TimeoutException();
                     }
@@ -115,7 +193,7 @@ public abstract class Task implements Workable {
                 default:
                     ;
             }
-            r = result;
+            r = value;
         }
         if (doExec) {
             //#debug
@@ -126,12 +204,24 @@ public abstract class Task implements Workable {
         return r;
     }
 
-    public final Task fork() {
-        Worker.fork(this);
-
-        return this;
-    }
-
+    /**
+     * Wait for a maximum of timeout milliseconds for the UITask to complete if
+     * needed and then also complete the followup action on the user interface
+     * thread.
+     *
+     * You will receive a debug time warning if you are currently on the UI
+     * thread and the timeout value is greater than 100ms.
+     *
+     * @param timeout in milliseconds
+     * @return final evaluation result of the Task
+     * @throws InterruptedException - task was running when it was explicitly
+     * canceled by another thread
+     * @throws CancellationException - task was explicitly canceled by another
+     * thread
+     * @throws ExecutionException - an uncaught exception was thrown
+     * @throws TimeoutException - UITask failed to complete within timeout
+     * milliseconds
+     */
     public final Object joinUI(long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (!(this instanceof UITask)) {
             throw new ClassCastException("Can not joinUI() unless Task is a UITask");
@@ -143,24 +233,24 @@ public abstract class Task implements Workable {
         synchronized (this) {
             if (status < UI_RUN_FINISHED) {
                 //#debug
-                L.i("Start joinUI wait", "status=" + status);
+                L.i("Start joinUI wait", "status=" + getStatusString());
                 timeout -= System.currentTimeMillis() - t;
-                do {
+                while (timeout > 0) {
                     final long t2 = System.currentTimeMillis();
                     wait(timeout);
                     if (status == UI_RUN_FINISHED) {
                         break;
                     }
                     timeout -= System.currentTimeMillis() - t2;
-                } while (timeout > 0);
+                };
                 //#debug
-                L.i("End joinUI wait", "status=" + status);
-                if (status == EXEC_STARTED) {
+                L.i("End joinUI wait", "status=" + getStatusString());
+                if (status < UI_RUN_FINISHED) {
                     throw new TimeoutException();
                 }
             }
 
-            return result;
+            return value;
         }
     }
 
@@ -171,6 +261,15 @@ public abstract class Task implements Workable {
      */
     public final synchronized int getStatus() {
         return status;
+    }
+
+    /**
+     * Return the current status as a string for easy debug information display
+     *
+     * @return
+     */
+    public final synchronized String getStatusString() {
+        return Task.STATUS_STRINGS[status];
     }
 
     /**
@@ -186,11 +285,31 @@ public abstract class Task implements Workable {
             PlatformUtils.runOnUiThread(new Runnable() {
                 public void run() {
                     //#debug
-                    L.i("Cancelled task", this.toString());
-                    onCancelled();
+                    L.i("Task onCanceled()", Task.this.toString());
+                    onCanceled();
                 }
             });
         }
+    }
+
+    /**
+     * Add a Task (or UITAsk, etc) which will run immediately after the present
+     * Task and on the same Worker thread.
+     *
+     * The output result of the present task is fed as the input to
+     * doInBackground() on the nextTask, so any processing changes can
+     * propagated forward if the nextTask is so designed. This Task behavior may
+     * thus be slightly different from the first Task in the chain, which by
+     * default receives "null" as the input argument unless setValue() is called
+     * before fork()ing the first task in the chain.
+     *
+     * @param nextTask
+     * @return nextTask
+     */
+    public final Task chain(final Task nextTask) {
+        this.nextTask = nextTask;
+
+        return nextTask;
     }
 
     /**
@@ -205,16 +324,16 @@ public abstract class Task implements Workable {
         try {
             synchronized (this) {
                 if (status == CANCELED || status == EXCEPTION || status == EXEC_STARTED) {
-                    throw new IllegalStateException("Can not exec() AsyncTask: status=" + status);
+                    throw new IllegalStateException("Can not exec() Task: status=" + getStatusString() + " " + this);
                 }
-                result = in;
+                value = in;
                 setStatus(EXEC_STARTED);
             }
             out = doInBackground(in);
 
             final boolean doRun;
             synchronized (this) {
-                result = out;
+                value = out;
                 doRun = status == EXEC_STARTED;
                 if (doRun) {
                     setStatus(EXEC_FINISHED);
@@ -222,6 +341,14 @@ public abstract class Task implements Workable {
             }
             if (this instanceof UITask && doRun) {
                 PlatformUtils.runOnUiThread((UITask) this);
+            }
+            final Task chainedTask = nextTask;
+            if (chainedTask != null) {
+                //#debug
+                L.i("Begin exec chained task", chainedTask.toString());
+                chainedTask.exec(out);
+                //#debug
+                L.i("End exec chained task", chainedTask.toString());
             }
         } catch (final Throwable t) {
             //#debug
@@ -244,32 +371,32 @@ public abstract class Task implements Workable {
      *
      * Do not override this unless you also call super.cancel(boolean).
      *
-     * Override onCancelled() is the normal notification location, and is called
+     * Override onCanceled() is the normal notification location, and is called
      * from the UI thread with Task state updates handled for you.
      *
      * @param mayInterruptIfRunning (not yet supported)
      * @return
      */
     public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
-        boolean cancelled = false;
+        boolean canceled = false;
 
         //#debug
-        L.i("Cancel task", toString());
+        L.i("Begin explicit cancel task", "status=" + this.getStatusString() + " " + this);
         switch (status) {
             case EXEC_STARTED:
                 if (mayInterruptIfRunning) {
-                    //FIXME find the task on a thread, then interrupt that thread
+                    Worker.interruptWorkable(this);
                     setStatus(CANCELED);
-                    cancelled = true;
+                    canceled = true;
                 }
                 break;
 
             default:
                 setStatus(CANCELED);
-                cancelled = true;
+                canceled = true;
         }
 
-        return cancelled;
+        return canceled;
     }
 
     /**
@@ -278,16 +405,21 @@ public abstract class Task implements Workable {
      * Override if needed, the default implementation does nothing except
      * provide debug output.
      *
-     * Use getStatus() to distinguish between CANCELLED and EXCEPTION states if
+     * Use getStatus() to distinguish between CANCELED and EXCEPTION states if
      * necessary.
      *
      */
-    protected void onCancelled() {
+    protected void onCanceled() {
         //#debug
-        L.i("Task cancelled", this.toString());
+        L.i("Task canceled", this.toString());
     }
 
+    /**
+     * For debug
+     *
+     * @return
+     */
     public synchronized String toString() {
-        return super.toString() + " status=" + status + " result=" + result;
+        return super.toString() + " status=" + getStatusString() + " result=" + value + " nextTask=(" + nextTask + ")";
     }
 }

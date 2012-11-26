@@ -22,9 +22,39 @@ public final class PlatformUtils {
 
     private static Activity program;
     private static FlashCache flashDatabase;
+    private static volatile Thread uiThread = null;
 
+    /**
+     * During initialization, the main program is set
+     *
+     * @param program
+     */
     public static void setProgram(final Object program) {
         PlatformUtils.program = (Activity) program;
+        runOnUiThread(new Runnable() {
+            public void run() {
+                uiThread = Thread.currentThread();
+            }
+        });
+    }
+
+    /**
+     * Return a reference to the main program object appropriate for this phone
+     * platform
+     *
+     * @return
+     */
+    public static Activity getProgram() {
+        return PlatformUtils.program;
+    }
+
+    /**
+     * Check if the current execution thread is the user interface thread
+     *
+     * @return
+     */
+    public static boolean isUIThread() {
+        return Thread.currentThread() == uiThread;
     }
 
     /**
@@ -51,15 +81,27 @@ public final class PlatformUtils {
     public static void notifyDestroyed() {
         program.finish();
     }
-    
+
+    /**
+     * Get a persistent cache implementation appropriate for this phone platform
+     *
+     * @return
+     */
     public static synchronized FlashCache getFlashCache() {
         if (flashDatabase == null) {
             flashDatabase = new AndroidCache();
         }
-        
+
         return flashDatabase;
     }
 
+    /**
+     * Create an HTTP GET connection appropriate for this phone platform
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
     public static HttpConn getHttpGetConn(final String url) throws IOException {
         final HttpConn httpConn = new HttpConn(url);
         httpConn.con.setDoInput(true);
@@ -68,6 +110,13 @@ public final class PlatformUtils {
         return httpConn;
     }
 
+    /**
+     * Create an HTTP POST connection appropriate for this phone platform
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
     public static HttpConn getHttpPostConn(final String url, final byte[] bytes) throws IOException {
         OutputStream out = null;
 
@@ -87,6 +136,10 @@ public final class PlatformUtils {
         }
     }
 
+    /**
+     * A convenience class abstracting HTTP connection operations between
+     * different platforms
+     */
     public static final class HttpConn {
 
         final HttpURLConnection con;

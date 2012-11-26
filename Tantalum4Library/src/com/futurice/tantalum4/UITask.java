@@ -12,9 +12,17 @@ import com.futurice.tantalum4.log.L;
  */
 public abstract class UITask extends Task implements Runnable {
 
+    public UITask() {
+        super();
+    }
+
+    public UITask(final Object in) {
+        super(in);
+    }
+
     public final void run() {
         try {
-            onPostExecute(getResult());
+            onPostExecute(getValue());
         } catch (Throwable t) {
             L.e("UITask onPostExecute uncaught error", this.toString(), t);
         } finally {
@@ -31,7 +39,7 @@ public abstract class UITask extends Task implements Runnable {
      * @param in
      * @return
      */
-    public Object doInBackground(final Object in) {
+    protected Object doInBackground(final Object in) {
         return in;
     }
 

@@ -80,7 +80,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                     return in;
                 }
 
-                protected void onCancelled() {
+                protected void onCanceled() {
                     isReloading = false;
                 }
             };

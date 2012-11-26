@@ -47,7 +47,7 @@ public class JSONGetter extends HttpGetter {
                 value = "{\"base:\"" + value + "}";
             }
             jsonModel.setJSON(value);
-            setResult(jsonModel);
+            setValue(jsonModel);
         } catch (Exception e) {
             //#debug
             L.e("JSONGetter HTTP response problem", this.getUrl() + " : " + value, e);

@@ -13,7 +13,7 @@ import java.util.Vector;
  *
  * @author pahought
  */
-public final class Worker implements Runnable {
+public final class Worker extends Thread {
 
     public static final int HIGH_PRIORITY = 3;
     public static final int NORMAL_PRIORITY = 2;
@@ -46,6 +46,11 @@ public final class Worker implements Runnable {
     private static volatile int workerCount = 0;
     private static int currentlyIdleCount = 0;
     private static boolean shuttingDown = false;
+    private Workable workable = null; // Access only within synchronized(q)
+
+    private Worker(final String name) {
+        super(name);
+    }
 
     /**
      * Initialize the Worker class at the start of your MIDlet.
@@ -81,8 +86,8 @@ public final class Worker implements Runnable {
     }
 
     private static void createWorker() {
-        workers[workerCount] = new Worker();
-        (new Thread(workers[workerCount], "Worker" + workerCount)).start();
+        workers[workerCount] = new Worker("Worker" + workerCount);
+        workers[workerCount].start();
         ++workerCount;
     }
 
@@ -107,7 +112,7 @@ public final class Worker implements Runnable {
             q.addElement(workable);
             try {
                 if (workable instanceof Task) {
-                    ((Task) workable).notifyTaskQueued();
+                    ((Task) workable).notifyTaskForked();
                 }
             } catch (IllegalStateException e) {
                 //#debug
@@ -155,7 +160,7 @@ public final class Worker implements Runnable {
                     q.insertElementAt(workable, 0);
                     try {
                         if (workable instanceof Task) {
-                            ((Task) workable).notifyTaskQueued();
+                            ((Task) workable).notifyTaskForked();
                         }
                     } catch (IllegalStateException e) {
                         //#debug
@@ -171,7 +176,7 @@ public final class Worker implements Runnable {
                     lowPriorityQ.addElement(workable);
                     try {
                         if (workable instanceof Task) {
-                            ((Task) workable).notifyTaskQueued();
+                            ((Task) workable).notifyTaskForked();
                         }
                     } catch (IllegalStateException e) {
                         //#debug
@@ -214,6 +219,35 @@ public final class Worker implements Runnable {
     }
 
     /**
+     * Stop the specified task if it is currently running
+     *
+     * @param task
+     * @return
+     */
+    static boolean interruptWorkable(final Task task) {
+        if (task == null) {
+            throw new IllegalArgumentException("interruptWorkable(null) not allowed");
+        }
+        synchronized (q) {
+            boolean interrupted = false;
+
+            for (int i = 0; i < workers.length; i++) {
+                if (task.equals(workers[i].workable)) {
+                    //#debug
+                    L.i("Sending interrupt signal", "thread=" + workers[i].getName() + " workable=" + task);
+                    interrupted = task == workers[i].workable;
+                    if (interrupted) {
+                        workers[i].interrupt();
+                    }
+                    break;
+                }
+            }
+
+            return interrupted;
+        }
+    }
+
+    /**
      * Queue compute to the Worker specified by serialQIndex. This compute will
      * be done after any previously serialQueue()d compute to this Worker. This
      * Worker will do only serialQueue() tasks until they are complete, then
@@ -230,7 +264,7 @@ public final class Worker implements Runnable {
         workers[serialQIndex].serialQ.addElement(workable);
         try {
             if (workable instanceof Task) {
-                ((Task) workable).notifyTaskQueued();
+                ((Task) workable).notifyTaskForked();
             }
         } catch (IllegalStateException e) {
             workers[serialQIndex].serialQ.removeElement(workable);
@@ -321,60 +355,73 @@ public final class Worker implements Runnable {
      */
     public void run() {
         try {
-            Workable workable = null;
-
             while (true) {
-                if (serialQ.isEmpty()) {
+                try {
+                    final Workable w;
                     synchronized (q) {
-                        if (q.size() > 0) {
-                            // Normal compute
-                            workable = (Workable) q.firstElement();
-                            q.removeElementAt(0);
-                        } else {
-                            if (lowPriorityQ.size() > 0 && !shuttingDown && currentlyIdleCount > 0) {
-                                // Idle compute, at least 1 thread is left for new normal compute
-                                workable = (Workable) lowPriorityQ.firstElement();
-                                lowPriorityQ.removeElementAt(0);
+                        workable = null;
+                        if (serialQ.isEmpty()) {
+                            if (q.size() > 0) {
+                                // Normal compute
+                                workable = (Workable) q.firstElement();
+                                q.removeElementAt(0);
                             } else {
-                                // Nothing to do
-                                ++currentlyIdleCount;
-                                if (!shuttingDown || currentlyIdleCount < workerCount) {
-                                    // Empty forkSerial, or waiting for other Worker tasks to complete before shutdown tasks start
-                                    q.wait();
-                                } else if (!shutdownQueue.isEmpty()) {
-                                    // PHASE 1: Execute shutdown actions
-                                    workable = (Workable) shutdownQueue.firstElement();
-                                    shutdownQueue.removeElementAt(0);
-                                } else if (currentlyIdleCount >= workerCount) {
-                                    // PHASE 2: Shutdown actions are all complete
-                                    //#mdebug
-                                    L.i("notifyDestroyed", "");
-                                    L.shutdown();
-                                    //#enddebug
-                                    PlatformUtils.notifyDestroyed();
-                                    break;
+                                if (lowPriorityQ.size() > 0 && !shuttingDown && currentlyIdleCount > 0) {
+                                    // Idle compute, at least 1 thread is left for new normal compute
+                                    workable = (Workable) lowPriorityQ.firstElement();
+                                    lowPriorityQ.removeElementAt(0);
+                                } else {
+                                    // Nothing to do
+                                    ++currentlyIdleCount;
+                                    if (!shuttingDown || currentlyIdleCount < workerCount) {
+                                        // Empty forkSerial, or waiting for other Worker tasks to complete before shutdown tasks start
+                                        q.wait();
+                                    } else if (!shutdownQueue.isEmpty()) {
+                                        // PHASE 1: Execute shutdown actions
+                                        workable = (Workable) shutdownQueue.firstElement();
+                                        shutdownQueue.removeElementAt(0);
+                                    } else if (currentlyIdleCount >= workerCount) {
+                                        // PHASE 2: Shutdown actions are all complete
+                                        //#mdebug
+                                        L.i("notifyDestroyed", "");
+                                        L.shutdown();
+                                        //#enddebug
+                                        PlatformUtils.notifyDestroyed();
+                                        break;
+                                    }
+                                    --currentlyIdleCount;
                                 }
-                                --currentlyIdleCount;
                             }
+                        } else {
+                            workable = (Workable) serialQ.firstElement();
+                            serialQ.removeElementAt(0);
+                        }
+                        w = workable;
+                    }
+                    if (w != null) {
+                        if (w instanceof Task) {
+                            final Task t = (Task) w;
+                            if (t.getStatus() < Task.CANCELED) {
+                                w.exec(t.getValue()); // Pass in argument
+                            } else {
+                                //#debug
+                                L.i("Worker will not execute canceled task", t.toString());
+                            }
+                        } else {
+                            w.exec(null);
                         }
                     }
-                } else {
-                    workable = (Workable) serialQ.firstElement();
-                    serialQ.removeElementAt(0);
-                }
-                try {
-                    if (workable != null) {
-                        workable.exec(null);
-                    }
+                } catch (InterruptedException e) {
+                    //#debug
+                    L.i("Worker interrupted", "workable=" + workable);
                 } catch (Exception e) {
                     //#debug
-                    L.e("Uncaught worker error", "workers=" + workerCount, e);
+                    L.e("Uncaught worker error", "workable=" + workable, e);
                 }
-                workable = null;
             }
         } catch (Throwable t) {
             //#debug
-            L.e("Worker error", "", t);
+            L.e("Worker error", "workable=" + workable, t);
         } finally {
             --workerCount;
             //#debug

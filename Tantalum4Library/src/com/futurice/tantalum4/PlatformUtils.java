@@ -16,10 +16,10 @@ import javax.microedition.midlet.MIDlet;
 
 /**
  * Utilities for support of each specific platform (J2ME, Android, ..)
- * 
- * The platform-specific local copy of this class replaces this base version
- * for other platforms.
- * 
+ *
+ * The platform-specific local copy of this class replaces this base version for
+ * other platforms.
+ *
  * @author phou
  */
 public class PlatformUtils {
@@ -27,19 +27,40 @@ public class PlatformUtils {
     private static MIDlet program;
     private static Display display;
     private static FlashCache flashDatabase;
+    private static volatile Thread uiThread = null;
 
     /**
      * During initialization, the main program is set
-     * 
-     * @param program 
+     *
+     * @param program
      */
     public static void setProgram(final Object program) {
         PlatformUtils.program = (MIDlet) program;
         PlatformUtils.display = Display.getDisplay(PlatformUtils.program);
+        runOnUiThread(new Runnable() {
+            public void run() {
+                uiThread = Thread.currentThread();
+            }
+        });
     }
-    
+
+    /**
+     * Return a reference to the main program object appropriate for this phone
+     * platform
+     *
+     * @return
+     */
     public static MIDlet getProgram() {
         return PlatformUtils.program;
+    }
+
+    /**
+     * Check if the current execution thread is the user interface thread
+     *
+     * @return
+     */
+    public static boolean isUIThread() {
+        return Thread.currentThread() == uiThread;
     }
 
     /**
@@ -66,14 +87,27 @@ public class PlatformUtils {
     public static void notifyDestroyed() {
         program.notifyDestroyed();
     }
+
+    /**
+     * Get a persistent cache implementation appropriate for this phone platform
+     * 
+     * @return 
+     */
     public static synchronized FlashCache getFlashCache() {
         if (flashDatabase == null) {
             flashDatabase = new RMSCache();
         }
-        
+
         return flashDatabase;
     }
 
+    /**
+     * Create an HTTP GET connection appropriate for this phone platform
+     * 
+     * @param url
+     * @return
+     * @throws IOException 
+     */
     public static HttpConn getHttpGetConn(final String url) throws IOException {
         final HttpConn httpConn = new HttpConn(url);
         httpConn.httpConnection.setRequestMethod(HttpConnection.GET);
@@ -81,6 +115,13 @@ public class PlatformUtils {
         return httpConn;
     }
 
+    /**
+     * Create an HTTP POST connection appropriate for this phone platform
+     * 
+     * @param url
+     * @return
+     * @throws IOException 
+     */
     public static HttpConn getHttpPostConn(final String url, final byte[] bytes) throws IOException {
         OutputStream out = null;
 
@@ -98,6 +139,10 @@ public class PlatformUtils {
         }
     }
 
+    /**
+     * A convenience class abstracting HTTP connection operations between
+     * different platforms
+     */
     public static final class HttpConn {
 
         final HttpConnection httpConnection;

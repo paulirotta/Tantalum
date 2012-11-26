@@ -1,0 +1,18 @@
+syntax: glob
+*.orig
+*.rej
+*.class
+*~
+*.o
+tests/*.err
+dist/*
+build/*
+nbproject/private/*
+
+syntax: regexp
+.*\#.*\#$
+\.orig\..*$
+\.orig$
+\.chg\..*$
+\.rej$
+\.conflict\~$

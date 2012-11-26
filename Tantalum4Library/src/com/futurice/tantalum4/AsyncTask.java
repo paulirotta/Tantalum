@@ -79,7 +79,7 @@ public abstract class AsyncTask extends UITask {
         this.params = params;
         synchronized (this) {
             if (status <= EXEC_FINISHED) {
-                throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + status);
+                throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + getStatusString());
             }
             setStatus(EXEC_PENDING);
         }
@@ -107,7 +107,7 @@ public abstract class AsyncTask extends UITask {
     public final AsyncTask executeOnExecutor(final Object params) {
         synchronized (this) {
             if (status <= EXEC_FINISHED) {
-                throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + status);
+                throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + getStatusString());
             }
             setStatus(EXEC_PENDING);
         }
@@ -136,7 +136,7 @@ public abstract class AsyncTask extends UITask {
         return this;
     }
 
-    public final synchronized boolean isCancelled() {
+    public final synchronized boolean isCanceled() {
         return status == AsyncTask.CANCELED || status == EXCEPTION;
     }
 

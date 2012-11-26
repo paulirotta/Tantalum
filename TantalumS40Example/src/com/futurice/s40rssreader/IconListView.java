@@ -167,14 +167,14 @@ public final class IconListView extends RSSListView {
                                         canvas.repaint();
                                     } catch (Exception e) {
                                         //#debug
-                                        L.e("Problem with getIcon setResult", item.getThumbnail(), e);
+                                        L.e("Problem with getIcon setValue", item.getThumbnail(), e);
                                         cancel(false);
                                     }
 
                                     return o;
                                 }
 
-                                protected void onCancelled() {
+                                protected void onCanceled() {
                                     item.setLoadingImage(false);
                                 }
                             }, Worker.HIGH_PRIORITY);

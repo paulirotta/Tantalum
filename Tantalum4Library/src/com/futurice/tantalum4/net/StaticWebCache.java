@@ -144,16 +144,16 @@ public class StaticWebCache extends StaticCache {
                         return bytes;
                     }
 
-                    protected void onCancelled() {
+                    protected void onCanceled() {
                         //#debug
-                        L.i("StaticWebCache httpgetter onCancelled()", url);
+                        L.i("StaticWebCache HttpGetter onCanceled()", url);
                         callback.cancel(false);
                     }
                 };
 
                 // Continue the HTTP GET attempt immediately on the same Worker thread
                 // This avoids possible fork delays
-                setResult(httpGetter.exec(url));
+                setValue(httpGetter.exec(url));
                 if (httpGetter.getStatus() == EXEC_FINISHED) {
                     setStatus(EXEC_FINISHED);
                 } else {

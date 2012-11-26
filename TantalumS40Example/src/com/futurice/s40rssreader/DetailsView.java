@@ -186,7 +186,7 @@ public final class DetailsView extends View {
             imageCache.get(leftItem.getThumbnail(), new Task() {
 
                 public Object doInBackground(final Object params) {
-                    final Object r = getResult();
+                    final Object r = getValue();
                     
                     if (DetailsView.this.leftItem == leftItem) {
                         leftIcon = (Image) r;
@@ -200,7 +200,7 @@ public final class DetailsView extends View {
             imageCache.get(rightItem.getThumbnail(), new Task() {
 
                 public Object doInBackground(final Object params) {
-                    final Object r = getResult();
+                    final Object r = getValue();
                     
                     if (DetailsView.this.rightItem == rightItem) {
                         rightIcon = (Image) r;

@@ -147,9 +147,9 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
 
-                protected void onCancelled() {
+                protected void onCanceled() {
                     //#debug
-                    L.i("force reload cancelled", "model length=" + rssModel.size());
+                    L.i("force reload canceled", "model length=" + rssModel.size());
                     loading = false;
                     paint();
                 }
@@ -166,7 +166,7 @@ public final class ListForm extends Form implements CommandListener {
 
                 public boolean cancel(final boolean mayInterruptIfNeeded) {
                     //#debug
-                    L.i("reload cancelled, not found locally, try again to get from net", "model length=" + rssModel.size());
+                    L.i("reload canceled, not found locally, try again to get from net", "model length=" + rssModel.size());
                     loading = false;
                     reload(true);
                     paint();
