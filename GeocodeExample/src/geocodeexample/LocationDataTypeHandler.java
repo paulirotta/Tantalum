@@ -20,7 +20,6 @@ public class LocationDataTypeHandler implements DataTypeHandler {
     public Object convertToUseForm(byte[] bytes) {
         String out ="";
         String s = new String(bytes);
-//        L.i(s, "");
         try {
             JSONObject src = new JSONObject(s);
             JSONArray inn = src.getJSONArray("Placemark");
@@ -28,18 +27,11 @@ public class LocationDataTypeHandler implements DataTypeHandler {
             JSONObject d = arr.getJSONObject("Point");
             JSONArray f = d.getJSONArray("coordinates");
             
-            L.i((String)f.getString(0), "");
-            L.i(f.getString(1), "");
-            
             out = "Lat: " + f.getString(0) + " & Lon: " + f.getString(1);
-            
-//            JSON
-//            for (int i = 0; i < arr.length(); i++) {
-//                
-//            }
         } catch (JSONException ex) {
-            ex.printStackTrace();
+            L.e("Can not parse JSON", s, ex);
         }
+        
         return out;
     }
 }

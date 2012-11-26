@@ -1,6 +1,8 @@
 package com.futurice.tantalum4.util;
 
 import com.futurice.tantalum4.log.L;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
@@ -14,6 +16,7 @@ import javax.microedition.lcdui.Font;
 public class StringUtils {
 
     private final static String UNRESERVED_CHARS = ".-_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQURSTUVWXYZ*~";
+    private static final char[] HEX = "0123456789ABCDEF".toCharArray();
     private static StringUtils singleton;
     private final static String ELIPSIS = "...";
 
@@ -27,7 +30,7 @@ public class StringUtils {
 
     private StringUtils() {
     }
-    
+
     /**
      * Truncates the string to fit the maxWidth. If truncated, an elipsis "..."
      * is displayed to indicate this.
@@ -125,9 +128,9 @@ public class StringUtils {
 
     /**
      * UTF-8 URL decode of data received from a web service
-     * 
+     *
      * @param in
-     * @return 
+     * @return
      */
     public static String urlDecode(final String in) {
         final char[] chars = new char[in.length()];
@@ -184,55 +187,36 @@ public class StringUtils {
 
         return sb.toString();
     }
-    
+
     /**
      * UTF-8 url encode data before submitting to a web service
-     * 
+     *
      * @param in
-     * @return 
+     * @return
      */
     public static String urlEncode(final String in) {
-        final StringBuffer sb = new StringBuffer(10 + in.length() * 5 / 4);
-        final int l = in.length();
-        
-        for (int i = 0; i < l; i++) {
-            int c = in.charAt(i);
-
-            if (UNRESERVED_CHARS.indexOf(c) >= 0) {
-                sb.append(c);
-            } else if (c == ' ') {
-                sb.append('+');
-            } else if (c < 0x80) {
-                // single byte
-                hexEncode(c, sb);
-            } else if (c < 0x800) {
-                // two byte
-                hexEncode(0x60 | (c >>> 6), sb);
-                hexEncode(0x80 | (c & 0x3F), sb);
+        StringBuffer buf = new StringBuffer();
+        byte[] bytes = null;
+        try {
+            final ByteArrayOutputStream bos = new ByteArrayOutputStream(in.length() * 5 / 4);
+            final DataOutputStream dos = new DataOutputStream(bos);
+            dos.writeUTF(in);
+            bytes = bos.toByteArray();
+            dos.close();
+        } catch (IOException e) {
+            //#debug
+            L.e("Can not urlEncode", in, e);
+        }
+        for (int i = 2; i < bytes.length; i++) {
+            byte b = bytes[i];
+            if (UNRESERVED_CHARS.indexOf(b) >= 0) {
+                buf.append((char) b);
             } else {
-                // three byte
-                hexEncode(0xF0 | (c >>> 12), sb);
-                hexEncode(0x80 | ((c >>> 6) & 0x3F), sb);
-                hexEncode(0x80 | (c & 0x3F), sb);
+                buf.append('%');
+                buf.append(HEX[(b >>> 4) & 0x0F]);
+                buf.append(HEX[b & 0x0F]);
             }
         }
-
-        return sb.toString();
-    }
-
-    /**
-     * Add the byte in #xx hex format for URL Encoding
-     * 
-     * @param i
-     * @param sb 
-     */
-    private static void hexEncode(int i, StringBuffer sb) {
-        final String s = Integer.toHexString(i);
-
-        sb.append('%');
-        if (s.length() == 1) {
-            sb.append('0');
-        }
-        sb.append(s);
+        return buf.toString();
     }
 }

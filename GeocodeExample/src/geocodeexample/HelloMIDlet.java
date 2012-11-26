@@ -10,6 +10,7 @@ import com.futurice.tantalum4.UITask;
 import com.futurice.tantalum4.Worker;
 import com.futurice.tantalum4.log.L;
 import com.futurice.tantalum4.net.StaticWebCache;
+import com.futurice.tantalum4.util.StringUtils;
 import javax.microedition.lcdui.*;
 
 /**
@@ -115,7 +116,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                 // write pre-action user code here
 //GEN-LINE:|7-commandAction|4|23-postAction
                 // write post-action user code here
-                final Task task = this.locationsCache.get(new Geocoder().getGeocodeUrl("sabo, herbert macauley way, Lagos, Nigeria"), new UITask() {
+                final Task task = this.locationsCache.get(getGeocodeUrl("sabo, herbert macauley way, Lagos, Nigeria"), new UITask() {
                     public Object doInBackground(Object in) { // Worker thread
                         json = (String) in;
                         (new Task() {
@@ -269,4 +270,8 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     public void pauseApp() {
         midletPaused = true;
     }
+    
+    public String getGeocodeUrl(String address) {
+        return "http://maps.google.com/maps/geo?q=" + StringUtils.urlEncode(address) + "&output=json";
+    }    
 }
