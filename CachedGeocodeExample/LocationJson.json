@@ -1,0 +1,79 @@
+{
+    
+    "name": "sabo, herbert macauley way, Lagos, Nigeria",
+    "Status": {
+        "code": 200,
+        "request": "geocode"
+    },
+    "Placemark": [
+    {
+        "id": "p1",
+        "address": "Sabo Post Office, Herbert Macaulay Rd, Lagos, Nigeria",
+        "AddressDetails": {
+            "Accuracy" : 9,
+            "Country" : {
+                "AdministrativeArea" : {
+                    "AdministrativeAreaName" : "Lagos",
+                    "Locality" : {
+                        "DependentLocality" : {
+                            "AddressLine" : [ "Sabo Post Office" ],
+                            "DependentLocalityName" : "Lagos Mainland",
+                            "Thoroughfare" : {
+                                "ThoroughfareName" : "Herbert Macaulay Rd"
+                            }
+                        },
+                        "LocalityName" : "Lagos"
+                    }
+                },
+                "CountryName" : "Nigeria",
+                "CountryNameCode" : "NG"
+            }
+        },
+        "ExtendedData": {
+            "LatLonBox": {
+                "north": 6.5172564,
+                "south": 6.4950841,
+                "east": 3.3941960,
+                "west": 3.3621812
+            }
+        },
+        "Point": {
+            "coordinates": [ 3.3781886, 6.5061704, 0 ]
+        }
+    }, 
+    {
+        "id": "p2",
+        "address": "Sabo Police Station, Herbert Macaulay Rd, Lagos, Nigeria",
+        "AddressDetails": {
+            "Accuracy" : 9,
+            "Country" : {
+                "AdministrativeArea" : {
+                    "AdministrativeAreaName" : "Lagos",
+                    "Locality" : {
+                        "DependentLocality" : {
+                            "AddressLine" : [ "Sabo Police Station" ],
+                            "DependentLocalityName" : "Lagos Mainland",
+                            "Thoroughfare" : {
+                                "ThoroughfareName" : "Herbert Macaulay Rd"
+                            }
+                        },
+                        "LocalityName" : "Lagos"
+                    }
+                },
+                "CountryName" : "Nigeria",
+                "CountryNameCode" : "NG"
+            }
+        },
+        "ExtendedData": {
+            "LatLonBox": {
+                "north": 6.5066249,
+                "south": 6.5039269,
+                "east": 3.3791589,
+                "west": 3.3764609
+            }
+        },
+        "Point": {
+            "coordinates": [ 3.3778099, 6.5052759, 0 ]
+        }
+    } ]
+}

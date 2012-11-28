@@ -5,10 +5,11 @@
 package geocodeexample;
 
 import com.futurice.tantalum4.TantalumMIDlet;
-import com.futurice.tantalum4.Task;
 import com.futurice.tantalum4.UITask;
+import com.futurice.tantalum4.Worker;
 import com.futurice.tantalum4.log.L;
-import com.futurice.tantalum4.net.HttpGetter;
+import com.futurice.tantalum4.net.StaticWebCache;
+import com.futurice.tantalum4.storage.DataTypeHandler;
 import com.futurice.tantalum4.util.StringUtils;
 import javax.microedition.lcdui.*;
 import org.json.me.JSONArray;
@@ -16,11 +17,57 @@ import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
 /**
+ * Demonstration of a JSON service which returns locally cached values if the
+ * same web service request has been performed before.
+ * 
+ * Note that you can force the cache to update with the latest results from the
+ * web server by calling locationsCache.get() with the parameter
+ * StaticWebCache.GET_WEB. You can also force offline-only operation to run off
+ * the local cache using StaticWebCache.GET_LOCAL.
+ * 
  * @author phou
  */
 public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 
     private boolean midletPaused = false;
+    
+    /*
+     * Think of a cache as a Hashtable of key-value pairs, where the key is the
+     * URL of a web service (HTTP GET of a unique URL).
+     * 
+     * This cache keep local copies of the web service to speed up the application
+     * and allow it to work also when there is no network available (online-offline
+     * application). When the phone runs out of flash memory for storing cached
+     * data (too many pictures etc on the phone) the cache will automatically delete the
+     * least-recently-used local data. If that data is requested again, it will
+     * be requested from the web server.
+     */
+    private final StaticWebCache locationsCache = new StaticWebCache('0', new DataTypeHandler() {
+        /**
+         * This method converts the JSON byte[] received from the web service, or
+         * stored in local flash memory, into an object we can use in the
+         * application ("use form"). It is called by the cache automatically as
+         * needed on a background Worker thread so the User Interface Thread (UI Thread)
+         * is not blocked and the interface continues to be responsive.
+         */
+        public Object convertToUseForm(final byte[] bytes) {
+            String out = "";
+            String s = new String(bytes);
+            try {
+                JSONObject src = new JSONObject(s);
+                JSONArray inn = src.getJSONArray("Placemark");
+                JSONObject arr = inn.getJSONObject(1);
+                JSONObject d = arr.getJSONObject("Point");
+                JSONArray f = d.getJSONArray("coordinates");
+
+                out = "Lat: " + f.getString(0) + " & Lon: " + f.getString(1);
+            } catch (JSONException ex) {
+                L.e("Can not parse JSON", s, ex);
+            }
+
+            return out;
+        }
+    });
 //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
     private Command exitCommand;
     private Command okCommand;
@@ -117,39 +164,25 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                 // write pre-action user code here
 //GEN-LINE:|7-commandAction|4|23-postAction
                 // write post-action user code here
-                final Task getter = new HttpGetter(getGeocodeUrl(this.getAddressTextField().getString()));
-                getter.chain(new UITask() {
-                    protected Object doInBackground(final Object in) {
-                        // Parse the JSON on the Worker thread to keep the UI fast and responsive
-                        String out = "Parse error- try a different address";
-                        String s = new String((byte[]) in);
-                        
-                        try {
-                            JSONObject src = new JSONObject(s);
-                            JSONArray inn = src.getJSONArray("Placemark");
-                            JSONObject arr = inn.getJSONObject(1);
-                            JSONObject d = arr.getJSONObject("Point");
-                            JSONArray f = d.getJSONArray("coordinates");
-
-                            out = "Lat: " + f.getString(0) + " & Lon: " + f.getString(1);
-                        } catch (JSONException ex) {
-                            L.e("Can not parse JSON", s, ex);
-                        }
-
-                        return out;
-                    }
-
+                
+                /*
+                 * Request with Worker.HIGH_PRIORITY to complete the action before
+                 * any other pending Tasks which have not yet started. This is normal
+                 * for Tasks done in the background in response to user input- the
+                 * user wants to see the result of their latest action as soon as possible
+                 * without the UI ever locking up.
+                 */
+                this.locationsCache.get(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), new UITask() {
                     protected void onPostExecute(Object result) {
-                        // Update UI on the UI thread
+                        // UI Thread callback on success
                         HelloMIDlet.this.getLocationStringItem().setText((String) result);
                     }
 
                     protected void onCanceled() {
-                        // Update on the UI thread if there is a problem
+                        // UI Thread callback if not already cached and the HTTP GET fails
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
-                });
-                getter.fork();
+                }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction
         }//GEN-END:|7-commandAction|5|7-postCommandAction
         // write post-action user code here
