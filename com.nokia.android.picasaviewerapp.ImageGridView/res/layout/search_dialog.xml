@@ -1,27 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/search_dialog_layout"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="10dip" >
-
-    <EditText
-        android:id="@+id/search_box"
-        android:layout_width="0dip"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.37"
-        android:ems="10"
-        android:hint="@string/search"
-        android:inputType="textNoSuggestions" >
-
-        <requestFocus />
-    </EditText>
-
-    <Button
-        android:id="@+id/search_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:minWidth="84dip"
-        android:text="@string/search" />
-
-</LinearLayout>

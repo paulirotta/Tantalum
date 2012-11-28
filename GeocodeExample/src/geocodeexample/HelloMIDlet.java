@@ -118,9 +118,12 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //GEN-LINE:|7-commandAction|4|23-postAction
                 // write post-action user code here
                 final Task getter = new HttpGetter(getGeocodeUrl(this.getAddressTextField().getString()));
+
+                // Add a task which will run after the HTTP GET
                 getter.chain(new UITask() {
                     protected Object doInBackground(final Object in) {
-                        // Parse the JSON on the Worker thread to keep the UI fast and responsive
+                        // Parse the JSON on the background Worker thread
+                        // Using the background thread keeps the UI fast and responsive
                         String out = "Parse error- try a different address";
                         String s = new String((byte[]) in);
                         
@@ -149,7 +152,8 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
                 });
-                getter.fork();
+                
+                getter.fork(); // Start task on a background Worker thread
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction
         }//GEN-END:|7-commandAction|5|7-postCommandAction
         // write post-action user code here

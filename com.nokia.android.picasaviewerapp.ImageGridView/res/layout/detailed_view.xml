@@ -1,41 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/detailed_view_scroll"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fillViewport="true" >
-
-    <LinearLayout
-        android:id="@+id/detailed_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/black"
-        android:orientation="vertical" >
-
-        <ImageView
-            android:id="@+id/bigImage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:adjustViewBounds="true"
-            android:contentDescription="@string/description"
-            android:scaleType="centerInside"
-            android:src="@android:drawable/ic_menu_view" />
-
-        <TextView
-            android:id="@+id/imageTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/imageTitle"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textColor="@color/white" />
-
-        <TextView
-            android:id="@+id/authorName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/authorName"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="@color/white" />
-    </LinearLayout>
-
-</ScrollView>
