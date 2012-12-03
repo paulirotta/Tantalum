@@ -82,10 +82,20 @@ public class HttpGetter extends Task {
         boolean success = false;
 
         try {
-            if (postMessage == null) {
-                httpConn = PlatformUtils.getHttpGetConn(url);
-            } else {
+            if (this instanceof HttpDeleter) {
+                httpConn = PlatformUtils.getHttpDeleteConn(url);
+            } else if (this instanceof HttpPutter) {
+                if (postMessage == null) {
+                    throw new IllegalArgumentException("null HTTP PUT- did you forget to call HttpPutter.this.setMessage(byte[]) ? : " + url);
+                }
+                httpConn = PlatformUtils.getHttpPutConn(url, postMessage);
+            } else if (this instanceof HttpPoster) {
+                if (postMessage == null) {
+                    throw new IllegalArgumentException("null HTTP POST- did you forget to call HttpPoster.this.setMessage(byte[]) ? : " + url);
+                }
                 httpConn = PlatformUtils.getHttpPostConn(url, postMessage);
+            } else {
+                httpConn = PlatformUtils.getHttpGetConn(url);
             }
             final InputStream inputStream = httpConn.getInputStream();
             final long length = httpConn.getLength();

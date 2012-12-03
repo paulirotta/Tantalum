@@ -4,6 +4,7 @@
  */
 package com.futurice.tantalum4;
 
+import com.futurice.tantalum4.log.L;
 import com.futurice.tantalum4.storage.FlashCache;
 import com.futurice.tantalum4.storage.RMSCache;
 import java.io.IOException;
@@ -90,8 +91,8 @@ public class PlatformUtils {
 
     /**
      * Get a persistent cache implementation appropriate for this phone platform
-     * 
-     * @return 
+     *
+     * @return
      */
     public static synchronized FlashCache getFlashCache() {
         if (flashDatabase == null) {
@@ -103,10 +104,10 @@ public class PlatformUtils {
 
     /**
      * Create an HTTP GET connection appropriate for this phone platform
-     * 
+     *
      * @param url
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public static HttpConn getHttpGetConn(final String url) throws IOException {
         final HttpConn httpConn = new HttpConn(url);
@@ -116,20 +117,58 @@ public class PlatformUtils {
     }
 
     /**
-     * Create an HTTP POST connection appropriate for this phone platform
-     * 
+     * Create an HTTP DELETE connection appropriate for this phone platform
+     *
      * @param url
      * @return
-     * @throws IOException 
+     * @throws IOException
+     */
+    public static HttpConn getHttpDeleteConn(final String url) throws IOException {
+        final HttpConn httpConn = new HttpConn(url);
+        httpConn.httpConnection.setRequestMethod("DELETE");
+
+        return httpConn;
+    }
+
+    /**
+     * Create an HTTP POST connection appropriate for this phone platform
+     *
+     * @param url
+     * @return
+     * @throws IOException
      */
     public static HttpConn getHttpPostConn(final String url, final byte[] bytes) throws IOException {
+        return doGetHttpPostOrPutConn(url, bytes, "POST");
+    }
+
+    /**
+     * Create an HTTP PUT connection appropriate for this phone platform
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
+    public static HttpConn getHttpPutConn(final String url, final byte[] bytes) throws IOException {
+        return doGetHttpPostOrPutConn(url, bytes, "PUT");
+    }
+
+    /**
+     * Create an HTTP PUT connection appropriate for this phone platform
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
+    private static HttpConn doGetHttpPostOrPutConn(final String url, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
 
         try {
             final HttpConn httpConn = new HttpConn(url);
-            httpConn.httpConnection.setRequestMethod(HttpConnection.POST);
+            httpConn.httpConnection.setRequestMethod(requestMethod);
             out = httpConn.httpConnection.openOutputStream();
-            out.write(bytes);
+            if (bytes != null) {
+                out.write(bytes);
+            }
 
             return httpConn;
         } finally {
