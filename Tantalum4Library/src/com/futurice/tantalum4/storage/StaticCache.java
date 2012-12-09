@@ -115,18 +115,17 @@ public class StaticCache {
      * @param task
      * @return
      */
-    protected final Task getCallback(Task task) {
-        if (task == null) {
-            task = new Task() {
-                protected Object doInBackground(Object in) {
-                    return in;
-                }
-            };
-        }
-
-        return task;
-    }
-
+//    protected final Task getCallback(Task task) {
+//        if (task == null) {
+//            task = new Task() {
+//                protected Object doInBackground(Object in) {
+//                    return in;
+//                }
+//            };
+//        }
+//
+//        return task;
+//    }
     /**
      * Retrieve an object from RAM or RMS storage.
      *
@@ -139,51 +138,41 @@ public class StaticCache {
      * and the value happens to have expired from the RAM cache due to a low
      * memory condition.
      */
-    public Task get(final String key, final Task task, final int getPriority) {
+    public Task get(final String key, final int getPriority) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
 
-        final Task callback = getCallback(task);
+        final Task task = new Task(key) {
+            protected Object doInBackground(final Object in) {
+                //#debug
+                L.i("Async StaticCache get", (String) in);
+                if (in == key) {
+                    try {
+                        return synchronousGet(key);
+                    } catch (Exception e) {
+                        //#debug
+                        L.e("Can not async StaticCache get", key, e);
+                        this.cancel(false);
+                    }
+                }
+
+                return in;
+            }
+        };
         final Object fromRamCache = synchronousRAMCacheGet(key);
 
         if (fromRamCache != null) {
             //#debug
             L.i("RAM cache hit", "(" + priority + ") " + key);
-            callback.exec(fromRamCache);
+            task.exec(fromRamCache);
         } else {
             //#debug
             L.i("RAM cache miss", "(" + priority + ") " + key);
-            final Workable getWorkable = new Workable() {
-                public Object exec(final Object in) {
-                    //#debug
-                    L.i("RMS get", key);
-                    try {
-                        final Object o = synchronousGet(key);
-
-                        if (o != null) {
-                            //#debug
-                            L.i("RMS cache hit", key);
-                            callback.exec(o);
-                        } else {
-                            //#debug
-                            L.i("RMS cache miss", key);
-                            callback.cancel(false);
-                        }
-
-                        return o;
-                    } catch (Exception e) {
-                        //#debug
-                        L.e("Can not get", key, e);
-                    }
-
-                    return in;
-                }
-            };
-            Worker.fork(getWorkable, getPriority);
+            Worker.fork(task, getPriority);
         }
 
-        return callback;
+        return task;
     }
 
     /**
@@ -192,36 +181,36 @@ public class StaticCache {
      * @param key
      * @return task
      */
-    public Task localGet(final String key, final Task task, final int getPriority) {
-        if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("Trivial StaticCache localGet");
-        }
+//    public Task localGet(final String key, final Task task, final int getPriority) {
+//        if (key == null || key.length() == 0) {
+//            throw new IllegalArgumentException("Trivial StaticCache localGet");
+//        }
+//
+//        final Task callback = getCallback(task);
+//
+//        Worker.fork(new Workable() {
+//            public Object exec(Object in) {
+//                //#debug
+//                L.i("local get", key);
+//                final Object r = synchronousGet(key);
+//                //#debug
+//                L.i("local get result", r == null ? "(null)" : r.toString());
+//                if (r != null) {
+//                    callback.exec(r);
+//                } else {
+//                    //#debug
+//                    L.i("local get was null, cancel callback", key);
+//                    callback.cancel(false);
+//                }
+//
+//                return r;
+//            }
+//        }, getPriority);
+//
+//        return callback;
+//    }
 
-        final Task callback = getCallback(task);
-
-        Worker.fork(new Workable() {
-            public Object exec(Object in) {
-                //#debug
-                L.i("local get", key);
-                final Object r = synchronousGet(key);
-                //#debug
-                L.i("local get result", r == null ? "(null)" : r.toString());
-                if (r != null) {
-                    callback.exec(r);
-                } else {
-                    //#debug
-                    L.i("local get was null, cancel callback", key);
-                    callback.cancel(false);
-                }
-
-                return r;
-            }
-        }, getPriority);
-
-        return callback;
-    }
-
-    private Object synchronousGet(final String key) {
+    protected Object synchronousGet(final String key) {
         Object o = synchronousRAMCacheGet(key);
 
         //#debug
@@ -229,7 +218,6 @@ public class StaticCache {
         if (o == null) {
             // Load from flash memory
             byte[] bytes = flashCache.getData(key);
-//            byte[] bytes = RMSUtils.cacheRead(key);
 
             //#debug
             L.i("StaticCache RMS intermediate result", "(" + priority + ") " + key + " : " + bytes);
@@ -273,7 +261,7 @@ public class StaticCache {
         Worker.forkSerial(new Workable() {
             public Object exec(final Object in) {
                 try {
-                    synchronousPutToRMS(key, bytes);
+                    synchronousFlashPut(key, bytes);
                 } catch (Exception e) {
                     //#debug
                     L.e("Can not synch write to RMS", key, e);
@@ -302,7 +290,7 @@ public class StaticCache {
      * already done this
      * @return
      */
-    private void synchronousPutToRMS(final String key, final byte[] bytes) {
+    private void synchronousFlashPut(final String key, final byte[] bytes) {
         if (key == null) {
             throw new IllegalArgumentException("Null key put to cache");
         }
@@ -312,7 +300,6 @@ public class StaticCache {
                     //#debug
                     L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
                     flashCache.putData(key, bytes);
-//                    RMSUtils.cacheWrite(key, bytes);
                     //#debug
                     L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
                     break;
@@ -340,6 +327,7 @@ public class StaticCache {
      */
     private static boolean clearSpace(final int minSpaceToClear) {
         int spaceCleared = 0;
+        //FIXME Not appropriate for Android. Why is there no compilation bad reference error?
         final Vector rsv = RMSUtils.getCachedRecordStoreNames();
 
         //#debug
@@ -379,21 +367,13 @@ public class StaticCache {
     private static int getByteSizeByKey(final String key) {
         int size = 0;
 
-//        try {
-            final byte[] bytes = flashCache.getData(key);
-            if (bytes != null) {
-                size = bytes.length;
-            } else {
+        final byte[] bytes = flashCache.getData(key);
+        if (bytes != null) {
+            size = bytes.length;
+        } else {
             //#debug
             L.i("Can not check size of record store to clear space", key);
-            }
-            
-//            final RecordStore rs = RMSUtils.getRecordStore(key, false);
-//            size = rs.getSize();
-//        } catch (IOException ex) {
-//            //#debug
-//            L.e("Can not check size of record store to clear space", key, ex);
-//        }
+        }
 
         return size;
     }
@@ -523,5 +503,35 @@ public class StaticCache {
         }
 
         return str.toString();
+    }
+
+    final public class GetLocalTask extends Task {
+        public GetLocalTask() {
+            super();
+        }
+        
+        public GetLocalTask(final String url) {
+            super(url);
+        }
+        
+        protected Object doInBackground(final Object in) {
+            //#debug
+            L.i("Async StaticCache get", (String) in);
+            if (in == null || !(in instanceof String)) {
+                L.i("ERROR", "StaticCache.GetLocalTask must receive a String url, but got " + in == null ? "null" : in.toString());
+                cancel(false);
+                
+                return in;
+            }
+            try {
+                return synchronousGet((String) in);
+            } catch (Exception e) {
+                //#debug
+                L.e("Can not async StaticCache get", in.toString(), e);
+                this.cancel(false);
+            }
+
+            return in;
+        }
     }
 }

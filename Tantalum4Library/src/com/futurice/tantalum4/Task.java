@@ -24,7 +24,7 @@ public abstract class Task implements Workable {
     private static final String[] STATUS_STRINGS = {"EXEC_PENDING", "EXEC_STARTED", "EXEC_FINISHED", "UI_RUN_FINISHED", "CANCELED", "EXCEPTION", "READY"};
     private Object value = null; // Always access within a synchronized block
     protected int status = READY; // Always access within a synchronized block
-    private volatile Task nextTask = null; // Run afterwords, passing output as input parameter
+    protected volatile Task chainedTask = null; // Run afterwords, passing output as input parameter
 
     /**
      * Create a Task with input value of null
@@ -290,12 +290,12 @@ public abstract class Task implements Workable {
                 }
             });
             // Also cancel any chained Tasks expecting the output of this Task
-            final Task chainedTask;
+            final Task t;
             synchronized (this) {
-                chainedTask = nextTask;
+                t = chainedTask;
             }
-            if (chainedTask != null) {
-                chainedTask.cancel(false);
+            if (t != null) {
+                t.cancel(false);
             }
         }
     }
@@ -315,7 +315,12 @@ public abstract class Task implements Workable {
      * @return nextTask
      */
     public final synchronized Task chain(final Task nextTask) {
-        this.nextTask = nextTask;
+        //#mdebug
+        if (nextTask == null) {
+            L.i("WARNING", "chain(null) is probably a mistake- no effect");
+        }
+        //#enddebug
+        this.chainedTask = nextTask;
 
         return nextTask;
     }
@@ -340,22 +345,22 @@ public abstract class Task implements Workable {
             out = doInBackground(in);
 
             final boolean doRun;
-            final Task chainedTask;
+            final Task t;
             synchronized (this) {
                 value = out;
                 doRun = status == EXEC_STARTED;
                 if (doRun) {
                     setStatus(EXEC_FINISHED);
                 }
-                chainedTask = nextTask;
+                t = chainedTask;
             }
             if (this instanceof UITask && doRun) {
                 PlatformUtils.runOnUiThread((UITask) this);
             }
-            if (chainedTask != null) {
+            if (t != null) {
                 //#debug
                 L.i("Begin exec chained task", chainedTask.toString());
-                chainedTask.exec(out);
+                t.exec(out);
                 //#debug
                 L.i("End exec chained task", chainedTask.toString());
             }
@@ -429,6 +434,6 @@ public abstract class Task implements Workable {
      * @return
      */
     public synchronized String toString() {
-        return super.toString() + " status=" + getStatusString() + " result=" + value + " nextTask=(" + nextTask + ")";
+        return super.toString() + " status=" + getStatusString() + " result=" + value + " nextTask=(" + chainedTask + ")";
     }
 }

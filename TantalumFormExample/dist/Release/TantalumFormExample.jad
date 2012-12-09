@@ -1,5 +1,5 @@
 MIDlet-1: Tantalum Form,/icon.png,com.futurice.formrssreader.RSSReader
-MIDlet-Jar-Size: 54406
+MIDlet-Jar-Size: 54272
 MIDlet-Jar-URL: TantalumFormExample.jar
 MIDlet-Name: Tantalum Form
 MIDlet-Permissions: javax.microedition.io.Connector.http

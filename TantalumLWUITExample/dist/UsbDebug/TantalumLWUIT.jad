@@ -1,5 +1,5 @@
 MIDlet-1: RSSReader,/icon.png,com.futurice.lwuitrssreader.RSSReader
-MIDlet-Jar-Size: 265552
+MIDlet-Jar-Size: 265960
 MIDlet-Jar-URL: TantalumLWUIT.jar
 MIDlet-Name: Tantlaum LWUIT
 MIDlet-Permissions: javax.microedition.io.Connector.http

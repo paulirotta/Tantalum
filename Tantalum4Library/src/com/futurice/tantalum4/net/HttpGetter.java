@@ -42,6 +42,14 @@ public class HttpGetter extends Task {
     }
 
     /**
+     * Get the byte[] from the URL specified by the input argument when exec(url)
+     * is called. This may be chained from a previous asynchronous task.
+     */
+    public HttpGetter() {
+        super();
+    }
+
+    /**
      * Specify how many more times the HttpGetter should re-attempt HTTP GET if
      * there is a network error.
      *

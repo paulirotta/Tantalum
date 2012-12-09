@@ -174,9 +174,8 @@ public final class ListForm extends Form implements CommandListener {
                     return false;
                 }
             };
-            feedCache.get(feedUrl, uiTask, Worker.HIGH_PRIORITY);
+            feedCache.get(feedUrl, uiTask, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
         }
-        Worker.fork(uiTask);
 
         return uiTask;
     }

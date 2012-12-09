@@ -88,7 +88,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
             if (fromNet) {
                 feedCache.get(midlet.getUrl(), task, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB);
             } else {
-                feedCache.get(midlet.getUrl(), task, Worker.HIGH_PRIORITY);
+                feedCache.get(midlet.getUrl(), task, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
             }
         }
     }

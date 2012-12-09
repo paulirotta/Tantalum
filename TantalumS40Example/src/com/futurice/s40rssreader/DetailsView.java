@@ -142,7 +142,7 @@ public final class DetailsView extends View {
                         
                         return false;
                     }
-                }, Worker.HIGH_PRIORITY);
+                }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
             }
         }
 
@@ -194,7 +194,7 @@ public final class DetailsView extends View {
                     
                     return r;
                 }
-            }, Worker.HIGH_PRIORITY);
+            }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
         }
         if (rightItem != null) {
             imageCache.get(rightItem.getThumbnail(), new Task() {

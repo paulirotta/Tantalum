@@ -89,12 +89,14 @@ public final class DetailsForm extends Form implements CommandListener {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
                 imageCache.get(selectedItem.getThumbnail(), new UITask() {
+                    int count = 0;
 
                     public void onPostExecute(final Object result) {
+                        L.i("IMAGE DEBUG", "count=" + ++count);
                         selectedItem.setLoadingImage(false);
                         DetailsForm.this.appendImageItem();
                     }
-                }, Worker.HIGH_PRIORITY);
+                }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
             }
         }
     }

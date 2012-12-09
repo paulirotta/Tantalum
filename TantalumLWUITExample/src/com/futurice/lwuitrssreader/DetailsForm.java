@@ -96,7 +96,7 @@ public class DetailsForm extends Form implements ActionListener {
                     L.e("Can not get image for RSSItem", item.getThumbnail(), ex);
                 }
             }
-        }, Worker.HIGH_PRIORITY);
+        }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
 
         addLabels(linkLabels);
         setScrollY(0);

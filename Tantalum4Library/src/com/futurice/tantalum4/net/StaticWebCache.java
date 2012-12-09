@@ -32,11 +32,13 @@ public class StaticWebCache extends StaticCache {
      * on a worker thread, and code in the Task will be executed automatically
      * on a Worker and optionally also the UI thread after the get operation
      * completes.
-     * 
+     *
      * @param url - The web service location to HTTP_GET the cacheable data
      * @param task - your extension of Task, UICallbackTask, or AsyncTask
-     * @param priority - Worker.HIGH_PRIORITY, Worker.NORMAL_PRIORITY, or Worker.LOW_PRIORITY
-     * @param getType - StaticWebCache.GET_ANYWHERE, StaticWebCache.GET_WEB, or StaticWebCache.GET_LOCAL
+     * @param priority - Worker.HIGH_PRIORITY, Worker.NORMAL_PRIORITY, or
+     * Worker.LOW_PRIORITY
+     * @param getType - StaticWebCache.GET_ANYWHERE, StaticWebCache.GET_WEB, or
+     * StaticWebCache.GET_LOCAL
      * @return a new Task containing the result
      */
     public Task get(final String url, final Task task, final int priority, final int getType) {
@@ -46,22 +48,24 @@ public class StaticWebCache extends StaticCache {
         L.i("StaticWebCache get type " + getType, url);
         switch (getType) {
             case GET_LOCAL:
-                t = localGet(url, task, priority);
+                t = new StaticCache.GetLocalTask(url);
                 break;
 
             case GET_ANYWHERE:
                 //#debug
                 L.i("Get anywhere", url);
-                t = get(url, task, priority);
+                t = new StaticWebCache.GetAnywhereTask(url);
                 break;
 
             case GET_WEB:
-                t = netGet(url, task, priority);
+                t = new StaticWebCache.GetWebTask(url);
                 break;
 
             default:
                 throw new IllegalArgumentException("StaticWebCache get type not supported: " + getType);
         }
+        t.chain(task);
+        Worker.fork(t, priority);
 
         return t;
     }
@@ -75,131 +79,130 @@ public class StaticWebCache extends StaticCache {
      */
     /**
      * Retrieve one item from the cache with method StaticWebCache.GET_ANYWHERE.
-     * This is done in the following order:
-     * 1. RAM if available: Task completion is immediate but still asynchronous
-     * 2. Local flash storage (RMS) if available: may take several milliseconds,
-     * or longer if the Worker task queue is long and you do not specify high priority
-     * 3. web:  may take several seconds
-     * 
-     * The call returns immediately, is executed concurrently
-     * on a worker thread, and code in the Task will be executed automatically
-     * on a Worker and optionally also the UI thread after the get operation
-     * completes.
-     * 
+     * This is done in the following order: 1. RAM if available: Task completion
+     * is immediate but still asynchronous 2. Local flash storage (RMS) if
+     * available: may take several milliseconds, or longer if the Worker task
+     * queue is long and you do not specify high priority 3. web: may take
+     * several seconds
+     *
+     * The call returns immediately, is executed concurrently on a worker
+     * thread, and code in the Task will be executed automatically on a Worker
+     * and optionally also the UI thread after the get operation completes.
+     *
      * @param url - The web service location to HTTP_GET the cacheable data
      * @param task - your extension of Task, UICallbackTask, or AsyncTask
-     * @param priority - Worker.HIGH_PRIORITY, Worker.NORMAL_PRIORITY, or Worker.LOW_PRIORITY
+     * @param priority - Worker.HIGH_PRIORITY, Worker.NORMAL_PRIORITY, or
+     * Worker.LOW_PRIORITY
      * @return a new Task containing the result
-     * @return 
+     * @return
      */
-    public Task get(final String url, final Task task, final int priority) {
-        if (url == null || url.length() == 0) {
-            throw new IllegalArgumentException("Trivial StaticWebCache get");
-        }
-
-        final Task callback = getCallback(task);
-        final Task onNotFoundInCacheTask = new Task() {
-            /**
-             * Local Cache get returned a result, no need to get it from the
-             * network
-             *
-             */
-            public Object doInBackground(final Object in) {
-                callback.exec(in);
-
-                return in;
-            }
-
-            /**
-             * Local Cache get failed to return a result- not cached
-             *
-             */
-            public final boolean cancel(final boolean mayInterruptIfNeeded) {
-                //#debug
-                L.i("No result from staticcache get, shift to HTTP", url);
-                if (mayInterruptIfNeeded) {
-                    return super.cancel(mayInterruptIfNeeded);
-                }
-
-                final HttpGetter httpGetter = new HttpGetter(url) {
-                    public Object doInBackground(final Object in) {
-                        //#debug
-                        L.i("Start StaticWebCache httpGetter doInBackground", url);
-                        final byte[] bytes = (byte[]) super.doInBackground(in);
-
-                        if (bytes != null) {
-                            try {
-                                final Object useForm = put(url, bytes); // Convert to use form
-                                callback.exec(useForm);
-
-                                return useForm;
-                            } catch (Exception e) {
-                                //#debug
-                                L.e("Can not set result after staticwebcache http get", url, e);
-                                setStatus(EXCEPTION);
-                            }
-                        }
-
-                        return bytes;
-                    }
-
-                    protected void onCanceled() {
-                        //#debug
-                        L.i("StaticWebCache HttpGetter onCanceled()", url);
-                        callback.cancel(false);
-                    }
-                };
-
-                // Continue the HTTP GET attempt immediately on the same Worker thread
-                // This avoids possible fork delays
-                setValue(httpGetter.exec(url));
-                if (httpGetter.getStatus() == EXEC_FINISHED) {
-                    setStatus(EXEC_FINISHED);
-                } else {
-                    super.cancel(false);
-                    callback.cancel(false);
-                }
-
-                return false;
-            }
-        };
-
-        //#debug
-        L.i("Calling staticcache get with new callback", url);
-        super.get(url, onNotFoundInCacheTask, priority);
-
-        return onNotFoundInCacheTask;
-    }
-
+//    public Task get(final String url, final Task task, final int priority) {
+//        if (url == null || url.length() == 0) {
+//            throw new IllegalArgumentException("Trivial StaticWebCache get");
+//        }
+//        
+//
+//        final Task callback = getCallback(task);
+//        final Task onNotFoundInCacheTask = new Task() {
+//            /**
+//             * Local Cache get returned a result, no need to get it from the
+//             * network
+//             *
+//             */
+//            public Object doInBackground(final Object in) {
+//                callback.exec(in);
+//
+//                return in;
+//            }
+//
+//            /**
+//             * Local Cache get failed to return a result- not cached
+//             *
+//             */
+//            public final boolean cancel(final boolean mayInterruptIfNeeded) {
+//                //#debug
+//                L.i("No result from staticcache get, shift to HTTP", url);
+//                if (mayInterruptIfNeeded) {
+//                    return super.cancel(mayInterruptIfNeeded);
+//                }
+//
+//                final HttpGetter httpGetter = new HttpGetter(url) {
+//                    public Object doInBackground(final Object in) {
+//                        //#debug
+//                        L.i("Start StaticWebCache httpGetter doInBackground", url);
+//                        final byte[] bytes = (byte[]) super.doInBackground(in);
+//
+//                        if (bytes != null) {
+//                            try {
+//                                final Object useForm = put(url, bytes); // Convert to use form
+//                                callback.exec(useForm);
+//
+//                                return useForm;
+//                            } catch (Exception e) {
+//                                //#debug
+//                                L.e("Can not set result after staticwebcache http get", url, e);
+//                                setStatus(EXCEPTION);
+//                            }
+//                        }
+//
+//                        return bytes;
+//                    }
+//
+//                    protected void onCanceled() {
+//                        //#debug
+//                        L.i("StaticWebCache HttpGetter onCanceled()", url);
+//                        callback.cancel(false);
+//                    }
+//                };
+//
+//                // Continue the HTTP GET attempt immediately on the same Worker thread
+//                // This avoids possible fork delays
+//                setValue(httpGetter.exec(url));
+//                if (httpGetter.getStatus() == EXEC_FINISHED) {
+//                    setStatus(EXEC_FINISHED);
+//                } else {
+//                    super.cancel(false);
+//                    callback.cancel(false);
+//                }
+//
+//                return false;
+//            }
+//        };
+//
+//        //#debug
+//        L.i("Calling staticcache get with new callback", url);
+//        super.get(url, onNotFoundInCacheTask, priority);
+//
+//        return onNotFoundInCacheTask;
+//    }
     /**
      * Delete any existing version, then retrieve the object from WEB.
      *
      * @param url
      * @param result
      */
-    private Task netGet(final String url, final Task task, final int getPriority) {
-        if (url == null || url.length() == 0) {
-            throw new IllegalArgumentException("Trivial StaticWebCache netGet");
-        }
-
-        final Task callback = getCallback(task);
-        Worker.fork(new Workable() {
-            public Object exec(final Object in) {
-                try {
-                    remove(url);
-                    StaticWebCache.this.get(url, callback, getPriority);
-                } catch (Exception e) {
-                    //#debug
-                    L.e("Can not update", url, e);
-                }
-
-                return in;
-            }
-        }, getPriority);
-
-        return task;
-    }
-
+//    private Task netGet(final String url, final Task task, final int getPriority) {
+//        if (url == null || url.length() == 0) {
+//            throw new IllegalArgumentException("Trivial StaticWebCache netGet");
+//        }
+//
+//        final Task callback = getCallback(task);
+//        Worker.fork(new Workable() {
+//            public Object exec(final Object in) {
+//                try {
+//                    remove(url);
+//                    StaticWebCache.this.get(url, callback, getPriority);
+//                } catch (Exception e) {
+//                    //#debug
+//                    L.e("Can not update", url, e);
+//                }
+//
+//                return in;
+//            }
+//        }, getPriority);
+//
+//        return task;
+//    }
     /**
      * Retrieve the object from WEB if it is not already cached locally.
      *
@@ -211,7 +214,7 @@ public class StaticWebCache extends StaticCache {
             Worker.fork(new Workable() {
                 public Object exec(final Object in) {
                     try {
-                        get(url, null, Worker.LOW_PRIORITY);
+                        get(url, null, Worker.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE);
                     } catch (Exception e) {
                         //#debug
                         L.e("Can not prefetch", url, e);
@@ -220,6 +223,84 @@ public class StaticWebCache extends StaticCache {
                     return in;
                 }
             }, Worker.LOW_PRIORITY);
+        }
+    }
+
+    final public class GetAnywhereTask extends Task {
+
+        public GetAnywhereTask() {
+            super();
+        }
+
+        public GetAnywhereTask(final String url) {
+            super(url);
+        }
+
+        protected Object doInBackground(final Object in) {
+            Object out = in;
+
+            if (in == null || !(in instanceof String)) {
+                L.i("ERROR", "StaticWebCache.GetAnywhereTask must receive a String url, but got " + in == null ? "null" : in.toString());
+                cancel(false);
+
+                return in;
+            }
+            //#debug
+            L.i("Async StaticCache.GET_ANYWHERE get", (String) in);
+            try {
+                out = synchronousGet((String) in);
+                if (out == null) {
+                    // Not found locally, get from web
+                    out = new GetWebTask().exec(in);
+                }
+            } catch (Exception e) {
+                //#debug
+                L.e("Can not get from StaticWebCache", (String) in, e);
+            }
+
+            return out;
+        }
+    }
+
+    final public class GetWebTask extends Task {
+
+        public GetWebTask() {
+            super();
+        }
+
+        public GetWebTask(final String url) {
+            super(url);
+        }
+
+        protected Object doInBackground(Object in) {
+            //#debug
+            L.i("Async StaticCache web get", (String) in);
+            final String url = (String) in;
+            try {
+                Task t = new HttpGetter();
+                in = t.exec(in);
+                if (t.getStatus() == Task.CANCELED || t.getStatus() == Task.EXCEPTION) {
+                    this.cancel(false);
+                    return in;
+                } else {
+                    byte[] bytes = (byte[]) in;
+                    if (bytes != null) {
+                        try {
+                            in = put(url, bytes); // Convert to use form
+                        } catch (Exception e) {
+                            //#debug
+                            L.e("Can not set result after staticwebcache http get", url, e);
+                            setStatus(EXCEPTION);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                //#debug
+                L.e("Can not async StaticCache web get", in.toString(), e);
+                this.cancel(false);
+            }
+
+            return in;
         }
     }
 }
