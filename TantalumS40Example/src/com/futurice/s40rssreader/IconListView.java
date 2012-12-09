@@ -131,7 +131,7 @@ public final class IconListView extends RSSListView {
                                     // End animation
                                     icons.put(item, ((AnimatedImage) icon).image);
                                 }
-                                canvas.repaint();
+                                canvas.refresh();
                             }
                         }
                     } else if (!item.isLoadingImage()) {
@@ -141,7 +141,7 @@ public final class IconListView extends RSSListView {
                             //#debug
                             L.i("Trivial thumbnail link in RSS feed", item.getTitle());
                         } else {
-                            DetailsView.imageCache.get(item.getThumbnail(), new Task() {
+                            DetailsView.imageCache.get(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
                                 public Object doInBackground(final Object o) {
                                     try {
                                         //#debug
@@ -164,7 +164,7 @@ public final class IconListView extends RSSListView {
                                         } else {
                                             icons.put(item, icon);
                                         }
-                                        canvas.repaint();
+                                        canvas.refresh();
                                     } catch (Exception e) {
                                         //#debug
                                         L.e("Problem with getIcon setValue", item.getThumbnail(), e);
@@ -177,7 +177,7 @@ public final class IconListView extends RSSListView {
                                 protected void onCanceled() {
                                     item.setLoadingImage(false);
                                 }
-                            }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
+                            });
                         }
                     }
                 } else {
@@ -203,7 +203,7 @@ public final class IconListView extends RSSListView {
 
     public void deselectItem() {
         if (setSelectedIndex(-1)) {
-            canvas.repaint();
+            canvas.refresh();
         }
     }
 
@@ -233,7 +233,7 @@ public final class IconListView extends RSSListView {
             if (tapped) {
                 canvas.showDetails((RSSItem) rssModel.elementAt(this.selectedIndex), 0);
             } else {
-                canvas.repaint();
+                canvas.refresh();
             }
         }
     }

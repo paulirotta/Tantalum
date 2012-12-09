@@ -42,8 +42,7 @@ public final class Worker extends Thread {
      */
     private static int nextSerialQWorkerIndex = 0;
     private static final Vector lowPriorityQ = new Vector();
-    private static final Vector shutdownQueue = new Vector();
-    private static volatile int workerCount = 0;
+    private static final Vector shutdownQ = new Vector();
     private static int currentlyIdleCount = 0;
     private static boolean shuttingDown = false;
     private Workable workable = null; // Access only within synchronized(q)
@@ -63,7 +62,7 @@ public final class Worker extends Thread {
      */
     public static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
-        createWorker(); // First worker
+        createWorker(0); // First worker
         Worker.fork(new Workable() {
             /**
              * The first worker creates the others in the background
@@ -73,7 +72,7 @@ public final class Worker extends Thread {
 
                 try {
                     for (; i < numberOfWorkers; i++) {
-                        createWorker();
+                        createWorker(i);
                     }
                 } catch (Exception e) {
                     //#debug
@@ -85,10 +84,9 @@ public final class Worker extends Thread {
         });
     }
 
-    private static void createWorker() {
-        workers[workerCount] = new Worker("Worker" + workerCount);
-        workers[workerCount].start();
-        ++workerCount;
+    private static void createWorker(final int i) {
+        workers[i] = new Worker("Worker" + i);
+        workers[i].start();
     }
 
     public Worker() {
@@ -294,7 +292,7 @@ public final class Worker extends Thread {
      */
     public static void forkShutdownTask(final Workable workable) {
         synchronized (q) {
-            shutdownQueue.addElement(workable);
+            shutdownQ.addElement(workable);
             q.notify();
         }
     }
@@ -319,11 +317,12 @@ public final class Worker extends Thread {
                 final long shutdownTimeout = System.currentTimeMillis() + 3000;
                 long timeRemaining;
 
-                while (workerCount > 0) {
+                final int numWorkersToWaitFor = Thread.currentThread() instanceof Worker ? workers.length - 1 : workers.length;
+                while (currentlyIdleCount < numWorkersToWaitFor) {
                     timeRemaining = shutdownTimeout - System.currentTimeMillis();
                     if (timeRemaining <= 0) {
                         //#debug
-                        L.i("Worker blocked shutdown timeout", "");
+                        L.i("A worker blocked shutdown timeout", Worker.toStringWorkers());
                         break;
                     }
                     synchronized (q) {
@@ -334,7 +333,7 @@ public final class Worker extends Thread {
         } catch (InterruptedException ex) {
         }
         //#debug
-        L.i("Shutdown exit", "workers=" + workerCount);
+        L.i("Shutdown exit", "currentlyIdleCount=" + currentlyIdleCount);
     }
 
     /**
@@ -343,7 +342,33 @@ public final class Worker extends Thread {
      * @return
      */
     static int getNumberOfWorkers() {
-        return workerCount;
+        return workers.length;
+    }
+
+    private static String toStringWorkers() {
+        final StringBuffer sb = new StringBuffer();
+
+        sb.append("WORKERS: currentlyIdleCount=");
+        sb.append(Worker.currentlyIdleCount);
+        sb.append(" q.size()=");
+        sb.append(Worker.q.size());
+        sb.append(" shutdownQ.size()=");
+        sb.append(Worker.shutdownQ.size());
+        sb.append(" lowPriorityQ.size()=");
+        sb.append(Worker.lowPriorityQ.size());
+
+        for (int i = 0; i < workers.length; i++) {
+            final Worker w = workers[i];
+            sb.append(" [");
+            sb.append(w.getName());
+            sb.append(" serialQsize=");
+            sb.append(w.serialQ.size());
+            sb.append(" currentWorkable=");
+            sb.append(w.workable);
+            sb.append("] ");
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -366,29 +391,32 @@ public final class Worker extends Thread {
                                 workable = (Workable) q.firstElement();
                                 q.removeElementAt(0);
                             } else {
-                                if (lowPriorityQ.size() > 0 && !shuttingDown && currentlyIdleCount > 0) {
-                                    // Idle compute, at least 1 thread is left for new normal compute
+                                if (shuttingDown) {
+                                    if (!shutdownQ.isEmpty()) {
+                                        // SHUTDOWN PHASE 1: Execute shutdown actions
+                                        workable = (Workable) shutdownQ.firstElement();
+                                        shutdownQ.removeElementAt(0);
+                                    } else if (currentlyIdleCount < workers.length - 1) {
+                                        // Nothing more to do, but other threads are still finishing last tasks
+                                        ++currentlyIdleCount;
+                                        q.wait();
+                                        --currentlyIdleCount;
+                                    } else {
+                                        // PHASE 2: Shutdown actions are all complete
+                                        PlatformUtils.notifyDestroyed("currentlyIdleCount=" + currentlyIdleCount);
+                                        //#mdebug
+                                        L.i("Log notifyDestroyed", "");
+                                        L.shutdown();
+                                        //#enddebug
+                                        shuttingDown = false;
+                                    }
+                                } else if (currentlyIdleCount >= workers.length && lowPriorityQ.size() > 0) {
+                                    // Idle compute, at least half available threads in the pool are left for new normal priority tasks
                                     workable = (Workable) lowPriorityQ.firstElement();
                                     lowPriorityQ.removeElementAt(0);
                                 } else {
-                                    // Nothing to do
                                     ++currentlyIdleCount;
-                                    if (!shuttingDown || currentlyIdleCount < workerCount) {
-                                        // Empty forkSerial, or waiting for other Worker tasks to complete before shutdown tasks start
-                                        q.wait();
-                                    } else if (!shutdownQueue.isEmpty()) {
-                                        // PHASE 1: Execute shutdown actions
-                                        workable = (Workable) shutdownQueue.firstElement();
-                                        shutdownQueue.removeElementAt(0);
-                                    } else if (currentlyIdleCount >= workerCount) {
-                                        // PHASE 2: Shutdown actions are all complete
-                                        //#mdebug
-                                        L.i("notifyDestroyed", "");
-                                        L.shutdown();
-                                        //#enddebug
-                                        PlatformUtils.notifyDestroyed();
-                                        break;
-                                    }
+                                    q.wait();
                                     --currentlyIdleCount;
                                 }
                             }
@@ -421,11 +449,7 @@ public final class Worker extends Thread {
             }
         } catch (Throwable t) {
             //#debug
-            L.e("Worker error", "workable=" + workable, t);
-        } finally {
-            --workerCount;
-            //#debug
-            L.i("Worker stop", "workerCount=" + workerCount);
+            L.e("Fatal worker error", "workable=" + workable, t);
         }
     }
 }

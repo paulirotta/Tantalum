@@ -125,24 +125,23 @@ public final class DetailsView extends View {
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
-                imageCache.get(item.getThumbnail(), new Task() {
-
+                imageCache.get(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
                     public Object doInBackground(final Object in) {
                         item.setLoadingImage(false);
                         if (currentItem == item) {
                             currentIcon = (Image) in;
                         }
-                        canvas.repaint();
-                        
+                        canvas.refresh();
+
                         return in;
                     }
 
                     public boolean cancel(boolean mayInterruptIfNeeded) {
                         item.setLoadingImage(false);
-                        
+
                         return false;
                     }
-                }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
+                });
             }
         }
 
@@ -151,7 +150,7 @@ public final class DetailsView extends View {
         if (x == 0) {
             renderScrollBar(g, contentHeight);
         } else {
-            canvas.repaint();
+            canvas.refresh();
         }
     }
 
@@ -183,32 +182,30 @@ public final class DetailsView extends View {
         this.leftItem = leftItem;
         this.rightItem = rightItem;
         if (leftItem != null) {
-            imageCache.get(leftItem.getThumbnail(), new Task() {
-
+            imageCache.get(leftItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
                 public Object doInBackground(final Object params) {
                     final Object r = getValue();
-                    
+
                     if (DetailsView.this.leftItem == leftItem) {
                         leftIcon = (Image) r;
                     }
-                    
+
                     return r;
                 }
-            }, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
+            });
         }
         if (rightItem != null) {
-            imageCache.get(rightItem.getThumbnail(), new Task() {
-
+            imageCache.get(rightItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
                 public Object doInBackground(final Object params) {
                     final Object r = getValue();
-                    
+
                     if (DetailsView.this.rightItem == rightItem) {
                         rightIcon = (Image) r;
                     }
-                    
+
                     return r;
                 }
-            }, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB);
+            });
         }
     }
 

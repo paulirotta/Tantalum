@@ -70,7 +70,7 @@ public abstract class RSSListView extends View {
         rssModel.removeAllElements();
         final Task rssResult = new Task() {
             public Object doInBackground(final Object params) {
-                canvas.repaint();
+                canvas.refresh();
 
                 return null;
             }
@@ -78,9 +78,9 @@ public abstract class RSSListView extends View {
 
         String feedUrl = RSSReader.INITIAL_FEED_URL;
         if (forceNetLoad) {
-            feedCache.get(feedUrl, rssResult, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB);
+            feedCache.get(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, rssResult);
         } else {
-            feedCache.get(feedUrl, rssResult, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
+            feedCache.get(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, rssResult);
         }
 
         return rssResult;
@@ -117,7 +117,7 @@ public abstract class RSSListView extends View {
                     if (prefetchImages) {
                         DetailsView.imageCache.prefetch(currentItem.getThumbnail());
                     }
-                    canvas.repaint();
+                    canvas.refresh();
                 }
             }
         }

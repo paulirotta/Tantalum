@@ -30,6 +30,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     private final RSSListView listView;
     private final DetailsView detailsView;
     private View currentView;
+    private volatile boolean refreshed = false;
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
@@ -101,6 +102,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
      * @param g
      */
     public void paint(final Graphics g) {
+        refreshed = false;
         currentView.render(g, getWidth() - View.SCROLL_BAR_WIDTH, getHeight());
     }
 
@@ -205,7 +207,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
      */
     public void animate(FrameAnimator fa, int x, int y, short delta, short deltaX, short deltaY, boolean lastFrame) {
         currentView.setRenderY(y);
-        repaint();
+        refresh();
     }
 //#endif
 
@@ -220,10 +222,17 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
             addCommand(currentView.getCommands()[i]);
         }
         setCommandListener(currentView);
-        repaint();
+        refresh();
     }
 
     public boolean isPortrait() {
         return getWidth() <= 240;
+    }
+    
+    public void refresh() {
+        if (!refreshed) {
+            refreshed = true;
+            repaint();
+        }
     }
 }

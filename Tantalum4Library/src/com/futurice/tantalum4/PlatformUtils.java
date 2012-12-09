@@ -85,7 +85,9 @@ public class PlatformUtils {
      * Do not call this directly, call Worker.shutdown() to initiate a close
      *
      */
-    public static void notifyDestroyed() {
+    public static void notifyDestroyed(final String reasonDestroyed) {
+        //#debug
+        L.i("Call to notifyDestroyed", reasonDestroyed);
         program.notifyDestroyed();
     }
 

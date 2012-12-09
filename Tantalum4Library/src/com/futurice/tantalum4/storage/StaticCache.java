@@ -108,25 +108,6 @@ public class StaticCache {
     }
 
     /**
-     * Create a generate result carrier Task for cases where the callback
-     * provided by the developer is null. This allows the developer to receive,
-     * and be event notified when the result is ready.
-     *
-     * @param task
-     * @return
-     */
-//    protected final Task getCallback(Task task) {
-//        if (task == null) {
-//            task = new Task() {
-//                protected Object doInBackground(Object in) {
-//                    return in;
-//                }
-//            };
-//        }
-//
-//        return task;
-//    }
-    /**
      * Retrieve an object from RAM or RMS storage.
      *
      *
@@ -138,7 +119,7 @@ public class StaticCache {
      * and the value happens to have expired from the RAM cache due to a low
      * memory condition.
      */
-    public Task get(final String key, final int getPriority) {
+    public Task getAsync(final String key, final int getPriority) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
@@ -165,6 +146,7 @@ public class StaticCache {
         if (fromRamCache != null) {
             //#debug
             L.i("RAM cache hit", "(" + priority + ") " + key);
+            // We must exec() the task to change state
             task.exec(fromRamCache);
         } else {
             //#debug
@@ -176,40 +158,12 @@ public class StaticCache {
     }
 
     /**
-     * Get a value from the local cache, value return async in the Task
-     *
+     * Get the value from local RAM or Flash cache memory. null is returned
+     * if the value is not available locally.
+     * 
      * @param key
-     * @return task
+     * @return 
      */
-//    public Task localGet(final String key, final Task task, final int getPriority) {
-//        if (key == null || key.length() == 0) {
-//            throw new IllegalArgumentException("Trivial StaticCache localGet");
-//        }
-//
-//        final Task callback = getCallback(task);
-//
-//        Worker.fork(new Workable() {
-//            public Object exec(Object in) {
-//                //#debug
-//                L.i("local get", key);
-//                final Object r = synchronousGet(key);
-//                //#debug
-//                L.i("local get result", r == null ? "(null)" : r.toString());
-//                if (r != null) {
-//                    callback.exec(r);
-//                } else {
-//                    //#debug
-//                    L.i("local get was null, cancel callback", key);
-//                    callback.cancel(false);
-//                }
-//
-//                return r;
-//            }
-//        }, getPriority);
-//
-//        return callback;
-//    }
-
     protected Object synchronousGet(final String key) {
         Object o = synchronousRAMCacheGet(key);
 
@@ -220,14 +174,14 @@ public class StaticCache {
             byte[] bytes = flashCache.getData(key);
 
             //#debug
-            L.i("StaticCache RMS intermediate result", "(" + priority + ") " + key + " : " + bytes);
+            L.i("StaticCache flash intermediate result", "(" + priority + ") " + key + " : " + bytes);
             if (bytes != null) {
                 //#debug
-                L.i("StaticCache hit in RMS", "(" + priority + ") " + key);
+                L.i("StaticCache hit in flash", "(" + priority + ") " + key);
                 o = convertAndPutToHeapCache(key, bytes);
                 bytes = null;
                 //#debug
-                L.i("StaticCache RMS result", "(" + priority + ") " + key + " : " + o);
+                L.i("StaticCache flash result", "(" + priority + ") " + key + " : " + o);
             }
         }
 
@@ -251,7 +205,7 @@ public class StaticCache {
      * @param bytes
      * @return the byte[] converted to use form by the cache's Handler
      */
-    public Object put(final String key, final byte[] bytes) {
+    public Object putAsync(final String key, final byte[] bytes) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }

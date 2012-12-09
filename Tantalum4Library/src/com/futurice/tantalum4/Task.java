@@ -170,12 +170,12 @@ public abstract class Task implements Workable {
                 // Continue to next state
                 case EXEC_STARTED:
                     //#debug
-                    L.i("START JOIN WAIT", "status=" + getStatusString());
+                    L.i("Start join wait()", "status=" + getStatusString());
                     do {
                         final long t = System.currentTimeMillis();
 
                         wait(timeout);
-                        if (status == EXEC_FINISHED) {
+                        if (status >= EXEC_FINISHED) {
                             break;
                         }
                         timeout -= System.currentTimeMillis() - t;
@@ -359,7 +359,7 @@ public abstract class Task implements Workable {
             }
             if (t != null) {
                 //#debug
-                L.i("Begin exec chained task", chainedTask.toString());
+                L.i("Begin exec chained task", chainedTask.toString() + " INPUT: " + out);
                 t.exec(out);
                 //#debug
                 L.i("End exec chained task", chainedTask.toString());

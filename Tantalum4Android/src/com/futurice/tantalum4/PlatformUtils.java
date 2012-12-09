@@ -5,6 +5,7 @@
 package com.futurice.tantalum4;
 
 import android.app.Activity;
+import com.futurice.tantalum4.log.L;
 import com.futurice.tantalum4.storage.AndroidCache;
 import com.futurice.tantalum4.storage.FlashCache;
 import java.io.IOException;
@@ -78,7 +79,8 @@ public final class PlatformUtils {
      * Do not call this directly, call Worker.shutdown() to initiate a close
      *
      */
-    public static void notifyDestroyed() {
+    public static void notifyDestroyed(final String reasonDestroyed) {
+        L.i("Call to notifyDestroyed", reasonDestroyed);
         program.finish();
     }
 

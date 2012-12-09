@@ -599,7 +599,7 @@ public class TaskTest extends TestCase {
         assertEquals(Task.EXEC_PENDING, instanceA.getStatus());
         instance2.cancel(true);
         try {
-            Thread.sleep(100);
+            Thread.sleep(200);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }

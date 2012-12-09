@@ -101,6 +101,7 @@ public final class ListForm extends Form implements CommandListener {
             try {
                 feedUrl = RMSUtils.read("settings").toString();
             } catch (Exception e) {
+                //#debug
                 L.e("Can not read settings", "", e);
             }
             rssReader.getSettingsForm().setUrlValue(feedUrl);
@@ -154,7 +155,7 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
             };
-            feedCache.get(feedUrl, uiTask, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB);
+            feedCache.get(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
             uiTask = new UITask() {
                 public void onPostExecute(final Object result) {
@@ -174,7 +175,7 @@ public final class ListForm extends Form implements CommandListener {
                     return false;
                 }
             };
-            feedCache.get(feedUrl, uiTask, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE);
+            feedCache.get(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
         }
 
         return uiTask;
