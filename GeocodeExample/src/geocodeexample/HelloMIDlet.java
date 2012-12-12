@@ -4,12 +4,12 @@
  */
 package geocodeexample;
 
-import com.futurice.tantalum4.TantalumMIDlet;
-import com.futurice.tantalum4.Task;
-import com.futurice.tantalum4.UITask;
-import com.futurice.tantalum4.log.L;
-import com.futurice.tantalum4.net.HttpGetter;
-import com.futurice.tantalum4.util.StringUtils;
+import org.tantalum.tantalum4.TantalumMIDlet;
+import org.tantalum.tantalum4.Task;
+import org.tantalum.tantalum4.UITask;
+import org.tantalum.tantalum4.log.L;
+import org.tantalum.tantalum4.net.HttpGetter;
+import org.tantalum.tantalum4.util.StringUtils;
 import javax.microedition.lcdui.*;
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
