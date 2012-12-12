@@ -173,7 +173,7 @@ public final class ImageUtils {
         final float dy = srcH / (float) (h + 1);
         int x, y = 0, z = 0, e;
 
-        for (; y < h; y++) {
+        for (; y < h - 1; y++) {
             final int rowstart = 1 + srcW + (srcW * (int) (y * dy));
             for (x = 0; x < w; x++) {
                 int i = rowstart + (int) (x * dx);
