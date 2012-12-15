@@ -331,7 +331,7 @@ public abstract class Task implements Workable {
      *
      * @return
      */
-    public final Object exec(final Object in) {
+    public final Object exec(Object in) {
         Object out = in;
 
         try {
@@ -339,7 +339,11 @@ public abstract class Task implements Workable {
                 if (status == CANCELED || status == EXCEPTION || status == EXEC_STARTED) {
                     throw new IllegalStateException("Can not exec() Task: status=" + getStatusString() + " " + this);
                 }
-                value = in;
+                if (in == null) {
+                    in = value;
+                } else {
+                    value = in;
+                }
                 setStatus(EXEC_STARTED);
             }
             out = doInBackground(in);

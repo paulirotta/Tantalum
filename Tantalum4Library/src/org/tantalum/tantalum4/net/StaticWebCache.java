@@ -4,6 +4,7 @@
  */
 package org.tantalum.tantalum4.net;
 
+import java.util.Hashtable;
 import org.tantalum.tantalum4.Task;
 import org.tantalum.tantalum4.Workable;
 import org.tantalum.tantalum4.Worker;
@@ -18,6 +19,8 @@ import org.tantalum.tantalum4.storage.StaticCache;
  */
 public class StaticWebCache extends StaticCache {
 
+    private static final HttpTaskFactory defaultHttpGetterFactory = new HttpTaskFactory();
+    private final HttpTaskFactory httpTaskFactory;
     /**
      * Get from the local cache only- do not request from a web server
      */
@@ -34,6 +37,14 @@ public class StaticWebCache extends StaticCache {
 
     public StaticWebCache(final char priority, final DataTypeHandler handler) {
         super(priority, handler);
+        
+        this.httpTaskFactory = StaticWebCache.defaultHttpGetterFactory;
+    }
+
+    public StaticWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) {
+        super(priority, handler);
+        
+        this.httpTaskFactory = httpTaskFactory;
     }
 
     /**
@@ -311,24 +322,29 @@ public class StaticWebCache extends StaticCache {
             super(url);
         }
 
-        protected Object doInBackground(Object in) {
+        protected Object doInBackground(final Object in) {
             //#debug
             L.i("Async StaticCache web get", (String) in);
-            final String url = (String) in;
+            Object out = in;
+
             try {
-                Task t = new HttpGetter();
-                in = t.exec(in);
-                if (t.getStatus() == Task.CANCELED || t.getStatus() == Task.EXCEPTION) {
+                final HttpGetter httpGetter = httpTaskFactory.getHttpTask((String) in);
+                out = httpGetter.exec(null);
+                if (!httpTaskFactory.checkHttpResponse(httpGetter.getResponseCode(), httpGetter.getResponseHeaders())) {
+                    //#debug
+                    L.i("staticwebcache task factory rejected server response", httpGetter.toString());
+                    httpGetter.cancel(false);
+                }
+                if (httpGetter.getStatus() == Task.CANCELED || httpGetter.getStatus() == Task.EXCEPTION) {
                     this.cancel(false);
-                    return in;
+                    return out;
                 } else {
-                    byte[] bytes = (byte[]) in;
-                    if (bytes != null) {
+                    if (out != null) {
                         try {
-                            in = putAsync(url, bytes); // Convert to use form
+                            out = putAsync((String) in, (byte[]) out); // Convert to use form
                         } catch (Exception e) {
                             //#debug
-                            L.e("Can not set result after staticwebcache http get", url, e);
+                            L.e("Can not set result after staticwebcache http get", httpGetter.toString(), e);
                             setStatus(EXCEPTION);
                         }
                     }
@@ -339,7 +355,41 @@ public class StaticWebCache extends StaticCache {
                 this.cancel(false);
             }
 
-            return in;
+            return out;
+        }
+    }
+
+    /**
+     * If you override this default implementation, you can add custom header
+     * parameters to the HTTP request and act on custom header fields such as
+     * cookies in the HTTP response.
+     *
+     */
+    public static class HttpTaskFactory {
+
+        /**
+         * Get an HTTP task, possibly with modified headers. Although this is
+         * usually an HttpGetter, in could be an HttpPoster.
+         *
+         * @param params
+         * @return
+         */
+        private HttpGetter getHttpTask(final String url) {
+            return new HttpGetter(url);
+        }
+
+        /**
+         * Check the servers response.
+         * 
+         * This is also where you can check, store and otherwise process cookies
+         * and custom security tags from the server.
+         *
+         * @param responseCode
+         * @param headers
+         * @return false to cancel() the HTTP operation
+         */
+        private boolean checkHttpResponse(final int responseCode, final Hashtable headers) {
+            return true;
         }
     }
 }

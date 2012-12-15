@@ -4,16 +4,16 @@
  */
 package org.tantalum.tantalum4;
 
-import org.tantalum.tantalum4.PlatformUtils;
 import android.app.Activity;
-import org.tantalum.tantalum4.log.L;
-import org.tantalum.tantalum4.storage.AndroidCache;
-import org.tantalum.tantalum4.storage.FlashCache;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Hashtable;
+import org.tantalum.tantalum4.log.L;
+import org.tantalum.tantalum4.storage.AndroidCache;
+import org.tantalum.tantalum4.storage.FlashCache;
 
 /**
  * Android-specific support routines for Tantalum
@@ -159,6 +159,26 @@ public final class PlatformUtils {
 
             return is;
         }
+        
+        public int getResponseCode() throws IOException {
+            return con.getResponseCode();
+        }
+        
+        public void getResponseHeaders(final Hashtable headers) throws IOException {
+            for (int i = 0; i < 10000; i++) {
+                final String key = con.getHeaderFieldKey(i);
+                if (key == null) {
+                    break;
+                }
+                final String value = con.getHeaderField(i);
+                headers.put(key, value);
+            };
+        }
+        
+        public void setRequestProperty(final String key, final String value) throws IOException {
+            con.setRequestProperty(key, value);
+        }
+
 
         public long getLength() {
             final String s = con.getHeaderField("Content-Length");

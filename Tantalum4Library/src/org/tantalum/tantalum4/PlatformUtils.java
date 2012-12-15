@@ -10,6 +10,7 @@ import org.tantalum.tantalum4.storage.RMSCache;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Hashtable;
 import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
 import javax.microedition.lcdui.Display;
@@ -199,6 +200,25 @@ public class PlatformUtils {
             }
 
             return is;
+        }
+        
+        public int getResponseCode() throws IOException {
+            return httpConnection.getResponseCode();
+        }
+        
+        public void getResponseHeaders(final Hashtable headers) throws IOException {
+            for (int i = 0; i < 10000; i++) {
+                final String key = httpConnection.getHeaderFieldKey(i);
+                if (key == null) {
+                    break;
+                }
+                final String value = httpConnection.getHeaderField(i);
+                headers.put(key, value);
+            };
+        }
+        
+        public void setRequestProperty(final String key, final String value) throws IOException {
+            httpConnection.setRequestProperty(key, value);
         }
 
         public long getLength() {

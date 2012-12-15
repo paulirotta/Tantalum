@@ -4,12 +4,14 @@
  */
 package org.tantalum.tantalum4.net;
 
-import org.tantalum.tantalum4.PlatformUtils;
-import org.tantalum.tantalum4.Task;
-import org.tantalum.tantalum4.log.L;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Hashtable;
+import java.util.Vector;
+import org.tantalum.tantalum4.PlatformUtils;
+import org.tantalum.tantalum4.Task;
+import org.tantalum.tantalum4.log.L;
 
 /**
  * GET something from a URL on the Worker thread
@@ -21,11 +23,20 @@ import java.io.InputStream;
  */
 public class HttpGetter extends Task {
 
+    /**
+     * The HTTP server has not yet been contacted, so no response code is yet
+     * available
+     */
+    public static final int HTTP_OPERATION_PENDING = -1;
     private static final int HTTP_GET_RETRIES = 3;
     private static final int HTTP_RETRY_DELAY = 5000; // 5 seconds
     protected String url = null;
     protected int retriesRemaining = HTTP_GET_RETRIES;
     protected byte[] postMessage = null;
+    private int responseCode = HTTP_OPERATION_PENDING;
+    private final Hashtable responseHeaders = new Hashtable();
+    private Vector requestPropertyKeys = new Vector();
+    private Vector requestPropertyValues = new Vector();
 
     /**
      * Get the byte[] from a specified web service URL.
@@ -42,8 +53,9 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Get the byte[] from the URL specified by the input argument when exec(url)
-     * is called. This may be chained from a previous asynchronous task.
+     * Get the byte[] from the URL specified by the input argument when
+     * exec(url) is called. This may be chained from a previous asynchronous
+     * task.
      */
     public HttpGetter() {
         super();
@@ -64,6 +76,40 @@ public class HttpGetter extends Task {
         this.retriesRemaining = retries;
 
         return this;
+    }
+
+    /**
+     * Find the HTTP server's response code, or HTTP_OPERATION_PENDING if the
+     * HTTP server has not yet been contacted.
+     *
+     * @return
+     */
+    public int getResponseCode() {
+        return responseCode;
+    }
+
+    /**
+     * Get a Hashtable of all HTTP headers recieved from the server
+     *
+     * @return
+     */
+    public Hashtable getResponseHeaders() {
+        return responseHeaders;
+    }
+
+    /**
+     * Add an HTTP header to the request sent to the server
+     * 
+     * @param key
+     * @param value 
+     */
+    public void setRequestProperty(final String key, final String value) {
+        if (this.responseCode != HTTP_OPERATION_PENDING) {
+            throw new IllegalStateException("Can not set request property to HTTP operation already executed  (" + key + ": " + value + ")");
+        }
+
+        this.requestPropertyKeys.addElement(key);
+        this.requestPropertyValues.addElement(value);
     }
 
     /**
@@ -105,8 +151,15 @@ public class HttpGetter extends Task {
             } else {
                 httpConn = PlatformUtils.getHttpGetConn(url);
             }
+
+            for (int i = 0; i < requestPropertyKeys.size(); i++) {
+                httpConn.setRequestProperty((String) requestPropertyKeys.elementAt(i), (String) requestPropertyValues.elementAt(i));
+            }
             final InputStream inputStream = httpConn.getInputStream();
             final long length = httpConn.getLength();
+            responseCode = httpConn.getResponseCode();
+            httpConn.getResponseHeaders(responseHeaders);
+
             if (length > 0 && length < 1000000) {
                 //#debug
                 L.i(this.getClass().getName() + " start fixed_length read", url + " content_length=" + length);
@@ -173,7 +226,7 @@ public class HttpGetter extends Task {
             } catch (Exception e) {
             }
             bos = null;
-
+            
             if (tryAgain) {
                 try {
                     Thread.sleep(HTTP_RETRY_DELAY);
