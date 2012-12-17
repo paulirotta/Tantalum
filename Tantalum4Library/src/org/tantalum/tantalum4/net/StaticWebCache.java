@@ -374,7 +374,7 @@ public class StaticWebCache extends StaticCache {
          * @param params
          * @return
          */
-        private HttpGetter getHttpTask(final String url) {
+        public HttpGetter getHttpTask(final String url) {
             return new HttpGetter(url);
         }
 
@@ -388,7 +388,7 @@ public class StaticWebCache extends StaticCache {
          * @param headers
          * @return false to cancel() the HTTP operation
          */
-        private boolean checkHttpResponse(final int responseCode, final Hashtable headers) {
+        public boolean checkHttpResponse(final int responseCode, final Hashtable headers) {
             return true;
         }
     }
