@@ -52,6 +52,11 @@ public class HttpGetter extends Task {
         super(url);
     }
 
+    public HttpGetter(final String url, final byte[] postMessage) {
+        super(url);
+        this.postMessage = postMessage;
+    }
+    
     /**
      * Get the byte[] from the URL specified by the input argument when
      * exec(url) is called. This may be chained from a previous asynchronous

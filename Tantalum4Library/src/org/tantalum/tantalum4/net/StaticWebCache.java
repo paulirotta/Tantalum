@@ -48,6 +48,19 @@ public class StaticWebCache extends StaticCache {
     }
 
     /**
+     * Get without the HTTP POST option (HTTP GET only)
+     * 
+     * @param url
+     * @param priority
+     * @param getType
+     * @param chainedTask
+     * @return 
+     */
+    public Task get(final String url, final int priority, final int getType, final Task chainedTask) {
+        return get(url, null, priority, getType, chainedTask);
+    }
+    
+    /**
      * Retrieve one item from the cache using the method specified in the
      * getType parameter. The call returns immediately, is executed concurrently
      * on a worker thread, and code in the Task will be executed automatically
@@ -72,6 +85,7 @@ public class StaticWebCache extends StaticCache {
      * completes.
      *
      * @param url - The web service location to HTTP_GET the cacheable data
+     * @param postMessage - Optional HTTP POST body
      * @param priority - Worker.HIGH_PRIORITY, Worker.NORMAL_PRIORITY, or
      * Worker.LOW_PRIORITY
      * @param getType - StaticWebCache.GET_ANYWHERE, StaticWebCache.GET_WEB, or
@@ -81,7 +95,7 @@ public class StaticWebCache extends StaticCache {
      *
      * @return a new Task containing the result
      */
-    public Task get(final String url, final int priority, final int getType, final Task chainedTask) {
+    public Task get(final String url, final byte[] postMessage, final int priority, final int getType, final Task chainedTask) {
         final Task t;
 
         //#debug
@@ -96,13 +110,13 @@ public class StaticWebCache extends StaticCache {
             case GET_ANYWHERE:
                 //#debug
                 L.i("GET_ANYWHERE", url);
-                t = new StaticWebCache.GetAnywhereTask(url);
+                t = new StaticWebCache.GetAnywhereTask(url, postMessage);
                 break;
 
             case GET_WEB:
                 //#debug
                 L.i("GET_WEB", url);
-                t = new StaticWebCache.GetWebTask(url);
+                t = new StaticWebCache.GetWebTask(url, postMessage);
                 break;
 
             default:
@@ -176,6 +190,7 @@ public class StaticWebCache extends StaticCache {
      * </code></pre>
      */
     final public class GetAnywhereTask extends Task {
+        final byte[] postMessage;
 
         /**
          * Create a
@@ -192,6 +207,7 @@ public class StaticWebCache extends StaticCache {
          */
         public GetAnywhereTask() {
             super();
+            this.postMessage = null;
         }
 
         /**
@@ -210,8 +226,9 @@ public class StaticWebCache extends StaticCache {
          *
          * @param url
          */
-        public GetAnywhereTask(final String url) {
+        public GetAnywhereTask(final String url, final byte[] postMessage) {
             super(url);
+            this.postMessage = postMessage;
         }
 
         protected Object doInBackground(final Object in) {
@@ -229,7 +246,7 @@ public class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i("StaticWebCache: not found locally, get from the web", (String) in);
-                        out = new GetWebTask().exec(in);
+                        out = new GetWebTask((String) in, postMessage).exec(in);
                     }
                 } catch (Exception e) {
                     //#debug
@@ -287,7 +304,8 @@ public class StaticWebCache extends StaticCache {
      * getTask.fork();
      */
     final public class GetWebTask extends Task {
-
+        final byte[] postMessage;
+        
         /**
          * Create a
          * <code>StaticWebCache.GET_WEB</code> actor which will execute on the
@@ -298,8 +316,10 @@ public class StaticWebCache extends StaticCache {
          * operation before
          * <code>fork()</code>ing the Task for background execution.
          */
-        public GetWebTask() {
+        public GetWebTask(final byte[] postMessage) {
             super();
+            
+            this.postMessage = postMessage;
         }
 
         /**
@@ -318,8 +338,10 @@ public class StaticWebCache extends StaticCache {
          *
          * @param url
          */
-        public GetWebTask(final String url) {
+        public GetWebTask(final String url, final byte[] postMessage) {
             super(url);
+            
+            this.postMessage = postMessage;
         }
 
         protected Object doInBackground(final Object in) {
@@ -328,7 +350,7 @@ public class StaticWebCache extends StaticCache {
             Object out = in;
 
             try {
-                final HttpGetter httpGetter = httpTaskFactory.getHttpTask((String) in);
+                final HttpGetter httpGetter = httpTaskFactory.getHttpTask((String) in, postMessage);
                 out = httpGetter.exec(null);
                 if (!httpTaskFactory.checkHttpResponse(httpGetter.getResponseCode(), httpGetter.getResponseHeaders())) {
                     //#debug
@@ -371,11 +393,19 @@ public class StaticWebCache extends StaticCache {
          * Get an HTTP task, possibly with modified headers. Although this is
          * usually an HttpGetter, in could be an HttpPoster.
          *
+         * @param url
          * @param params
          * @return
          */
-        public HttpGetter getHttpTask(final String url) {
-            return new HttpGetter(url);
+        public HttpGetter getHttpTask(final String url, final byte[] postMessage) {
+            if (postMessage == null) {
+                return new HttpGetter(url);
+            } else {
+                final HttpPoster poster = new HttpPoster(url);
+                poster.setMessage(postMessage);
+                
+                return poster;
+            }
         }
 
         /**
