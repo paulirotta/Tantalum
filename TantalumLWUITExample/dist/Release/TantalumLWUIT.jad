@@ -1,5 +1,5 @@
 MIDlet-1: RSSReader,/icon.png,org.tantalum.lwuitrssreader.RSSReader
-MIDlet-Jar-Size: 259906
+MIDlet-Jar-Size: 260120
 MIDlet-Jar-URL: TantalumLWUIT.jar
 MIDlet-Name: Tantlaum LWUIT
 MIDlet-Permissions: javax.microedition.io.Connector.http

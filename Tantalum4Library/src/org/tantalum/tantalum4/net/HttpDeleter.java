@@ -9,7 +9,7 @@ package org.tantalum.tantalum4.net;
  * @author phou
  */
 public class HttpDeleter extends HttpGetter {
-    HttpDeleter(final String url) {
+    public HttpDeleter(final String url) {
         super(url);
     }
 }

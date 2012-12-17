@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Hashtable;
+import java.util.Vector;
 import org.tantalum.tantalum4.log.L;
 import org.tantalum.tantalum4.storage.AndroidCache;
 import org.tantalum.tantalum4.storage.FlashCache;
@@ -105,10 +106,10 @@ public final class PlatformUtils {
      * @return
      * @throws IOException
      */
-    public static HttpConn getHttpGetConn(final String url) throws IOException {
-        final HttpConn httpConn = new HttpConn(url);
-        httpConn.con.setDoInput(true);
-        httpConn.con.setRequestMethod("GET");
+    public static HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
+        final HttpConn httpConn = new HttpConn(url, requestPropertyKeys, requestPropertyValues);
+        httpConn.httpConnection.setDoInput(true);
+        httpConn.httpConnection.setRequestMethod("GET");
 
         return httpConn;
     }
@@ -120,15 +121,27 @@ public final class PlatformUtils {
      * @return
      * @throws IOException
      */
-    public static HttpConn getHttpPostConn(final String url, final byte[] bytes) throws IOException {
+    public static HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
+        return PlatformUtils.doGetHttpPostOrPutConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
+    }
+    
+
+    /**
+     * Create an HTTP PUT connection appropriate for this phone platform
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
+    private static HttpConn doGetHttpPostOrPutConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
 
         try {
-            final HttpConn httpConn = new HttpConn(url);
-            httpConn.con.setDoOutput(true);
-            httpConn.con.setDoInput(true);
-            httpConn.con.setRequestMethod("POST");
-            out = httpConn.con.getOutputStream();
+            final HttpConn httpConn = new HttpConn(url, requestPropertyKeys, requestPropertyValues);
+            httpConn.httpConnection.setDoOutput(true);
+            httpConn.httpConnection.setDoInput(true);
+            httpConn.httpConnection.setRequestMethod(requestMethod);
+            out = httpConn.httpConnection.getOutputStream();
             out.write(bytes);
 
             return httpConn;
@@ -145,43 +158,45 @@ public final class PlatformUtils {
      */
     public static final class HttpConn {
 
-        final HttpURLConnection con;
+        final HttpURLConnection httpConnection;
         InputStream is = null;
 
-        public HttpConn(final String url) throws IOException {
-            con = (HttpURLConnection) new URL(url).openConnection();
+        public HttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
+            httpConnection = (HttpURLConnection) new URL(url).openConnection();
+            for (int i = 0; i < requestPropertyKeys.size(); i++) {
+                httpConnection.setRequestProperty((String) requestPropertyKeys.elementAt(i), (String) requestPropertyValues.elementAt(i));
+            }
         }
 
         public InputStream getInputStream() throws IOException {
             if (is == null) {
-                is = con.getInputStream();
+                is = httpConnection.getInputStream();
             }
 
             return is;
         }
-        
+
         public int getResponseCode() throws IOException {
-            return con.getResponseCode();
+            return httpConnection.getResponseCode();
         }
-        
+
         public void getResponseHeaders(final Hashtable headers) throws IOException {
             for (int i = 0; i < 10000; i++) {
-                final String key = con.getHeaderFieldKey(i);
+                final String key = httpConnection.getHeaderFieldKey(i);
                 if (key == null) {
                     break;
                 }
-                final String value = con.getHeaderField(i);
+                final String value = httpConnection.getHeaderField(i);
                 headers.put(key, value);
             };
         }
-        
+
         public void setRequestProperty(final String key, final String value) throws IOException {
-            con.setRequestProperty(key, value);
+            httpConnection.setRequestProperty(key, value);
         }
 
-
         public long getLength() {
-            final String s = con.getHeaderField("Content-Length");
+            final String s = httpConnection.getHeaderField("Content-Length");
             long length = 0;
 
             if (s != null && s.length() > 0) {

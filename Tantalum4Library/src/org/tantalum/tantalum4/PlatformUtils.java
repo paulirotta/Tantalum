@@ -1,20 +1,21 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * J2ME implementation of platform-specific libraries
+ * 
  */
 package org.tantalum.tantalum4;
 
-import org.tantalum.tantalum4.log.L;
-import org.tantalum.tantalum4.storage.FlashCache;
-import org.tantalum.tantalum4.storage.RMSCache;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Hashtable;
+import java.util.Vector;
 import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
 import javax.microedition.lcdui.Display;
 import javax.microedition.midlet.MIDlet;
+import org.tantalum.tantalum4.log.L;
+import org.tantalum.tantalum4.storage.FlashCache;
+import org.tantalum.tantalum4.storage.RMSCache;
 
 /**
  * Utilities for support of each specific platform (J2ME, Android, ..)
@@ -112,8 +113,8 @@ public class PlatformUtils {
      * @return
      * @throws IOException
      */
-    public static HttpConn getHttpGetConn(final String url) throws IOException {
-        final HttpConn httpConn = new HttpConn(url);
+    public static HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
+        final HttpConn httpConn = new HttpConn(url, requestPropertyKeys, requestPropertyValues);
         httpConn.httpConnection.setRequestMethod(HttpConnection.GET);
 
         return httpConn;
@@ -126,12 +127,12 @@ public class PlatformUtils {
      * @return
      * @throws IOException
      */
-    public static HttpConn getHttpDeleteConn(final String url) throws IOException {
-        final HttpConn httpConn = new HttpConn(url);
-        httpConn.httpConnection.setRequestMethod("DELETE");
-
-        return httpConn;
-    }
+//    public static HttpConn getHttpDeleteConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
+//        final HttpConn httpConn = new HttpConn(url, requestPropertyKeys, requestPropertyValues);
+//        httpConn.httpConnection.setRequestMethod("DELETE");
+//
+//        return httpConn;
+//    }
 
     /**
      * Create an HTTP POST connection appropriate for this phone platform
@@ -140,8 +141,8 @@ public class PlatformUtils {
      * @return
      * @throws IOException
      */
-    public static HttpConn getHttpPostConn(final String url, final byte[] bytes) throws IOException {
-        return doGetHttpPostOrPutConn(url, bytes, "POST");
+    public static HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
+        return doGetHttpPostOrPutConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
     }
 
     /**
@@ -151,9 +152,9 @@ public class PlatformUtils {
      * @return
      * @throws IOException
      */
-    public static HttpConn getHttpPutConn(final String url, final byte[] bytes) throws IOException {
-        return doGetHttpPostOrPutConn(url, bytes, "PUT");
-    }
+//    public static HttpConn getHttpPutConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
+//        return doGetHttpPostOrPutConn(url, requestPropertyKeys, requestPropertyValues, bytes, "PUT");
+//    }
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform
@@ -162,16 +163,14 @@ public class PlatformUtils {
      * @return
      * @throws IOException
      */
-    private static HttpConn doGetHttpPostOrPutConn(final String url, final byte[] bytes, final String requestMethod) throws IOException {
+    private static HttpConn doGetHttpPostOrPutConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
 
         try {
-            final HttpConn httpConn = new HttpConn(url);
+            final HttpConn httpConn = new HttpConn(url, requestPropertyKeys, requestPropertyValues);
             httpConn.httpConnection.setRequestMethod(requestMethod);
             out = httpConn.httpConnection.openOutputStream();
-            if (bytes != null) {
-                out.write(bytes);
-            }
+            out.write(bytes);
 
             return httpConn;
         } finally {
@@ -190,8 +189,11 @@ public class PlatformUtils {
         final HttpConnection httpConnection;
         InputStream is = null;
 
-        public HttpConn(final String url) throws IOException {
+        public HttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
             httpConnection = (HttpConnection) Connector.open(url);
+            for (int i = 0; i < requestPropertyKeys.size(); i++) {
+                httpConnection.setRequestProperty((String) requestPropertyKeys.elementAt(i), (String) requestPropertyValues.elementAt(i));
+            }
         }
 
         public InputStream getInputStream() throws IOException {
@@ -201,11 +203,11 @@ public class PlatformUtils {
 
             return is;
         }
-        
+
         public int getResponseCode() throws IOException {
             return httpConnection.getResponseCode();
         }
-        
+
         public void getResponseHeaders(final Hashtable headers) throws IOException {
             for (int i = 0; i < 10000; i++) {
                 final String key = httpConnection.getHeaderFieldKey(i);
@@ -215,10 +217,6 @@ public class PlatformUtils {
                 final String value = httpConnection.getHeaderField(i);
                 headers.put(key, value);
             };
-        }
-        
-        public void setRequestProperty(final String key, final String value) throws IOException {
-            httpConnection.setRequestProperty(key, value);
         }
 
         public long getLength() {

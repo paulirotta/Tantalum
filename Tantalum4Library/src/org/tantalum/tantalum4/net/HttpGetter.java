@@ -56,7 +56,7 @@ public class HttpGetter extends Task {
         super(url);
         this.postMessage = postMessage;
     }
-    
+
     /**
      * Get the byte[] from the URL specified by the input argument when
      * exec(url) is called. This may be chained from a previous asynchronous
@@ -104,9 +104,9 @@ public class HttpGetter extends Task {
 
     /**
      * Add an HTTP header to the request sent to the server
-     * 
+     *
      * @param key
-     * @param value 
+     * @param value
      */
     public void setRequestProperty(final String key, final String value) {
         if (this.responseCode != HTTP_OPERATION_PENDING) {
@@ -141,25 +141,23 @@ public class HttpGetter extends Task {
         boolean success = false;
 
         try {
-            if (this instanceof HttpDeleter) {
-                httpConn = PlatformUtils.getHttpDeleteConn(url);
-            } else if (this instanceof HttpPutter) {
-                if (postMessage == null) {
-                    throw new IllegalArgumentException("null HTTP PUT- did you forget to call HttpPutter.this.setMessage(byte[]) ? : " + url);
-                }
-                httpConn = PlatformUtils.getHttpPutConn(url, postMessage);
-            } else if (this instanceof HttpPoster) {
+//            if (this instanceof HttpDeleter) {
+//                httpConn = PlatformUtils.getHttpDeleteConn(url, requestPropertyKeys, requestPropertyValues);
+//            } else  if (this instanceof HttpPutter) {
+//                if (postMessage == null) {
+//                    throw new IllegalArgumentException("null HTTP PUT- did you forget to call HttpPutter.this.setMessage(byte[]) ? : " + url);
+//                }
+//                httpConn = PlatformUtils.getHttpPutConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
+//            } else 
+            if (this instanceof HttpPoster) {
                 if (postMessage == null) {
                     throw new IllegalArgumentException("null HTTP POST- did you forget to call HttpPoster.this.setMessage(byte[]) ? : " + url);
                 }
-                httpConn = PlatformUtils.getHttpPostConn(url, postMessage);
+                httpConn = PlatformUtils.getHttpPostConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
             } else {
-                httpConn = PlatformUtils.getHttpGetConn(url);
+                httpConn = PlatformUtils.getHttpGetConn(url, requestPropertyKeys, requestPropertyValues);
             }
 
-            for (int i = 0; i < requestPropertyKeys.size(); i++) {
-                httpConn.setRequestProperty((String) requestPropertyKeys.elementAt(i), (String) requestPropertyValues.elementAt(i));
-            }
             final InputStream inputStream = httpConn.getInputStream();
             final long length = httpConn.getLength();
             responseCode = httpConn.getResponseCode();
@@ -231,7 +229,7 @@ public class HttpGetter extends Task {
             } catch (Exception e) {
             }
             bos = null;
-            
+
             if (tryAgain) {
                 try {
                     Thread.sleep(HTTP_RETRY_DELAY);
