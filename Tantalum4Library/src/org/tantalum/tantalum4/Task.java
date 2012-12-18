@@ -274,10 +274,21 @@ public abstract class Task implements Workable {
 
     /**
      * Change the status
+     * 
+     * You can only change status CANCELED or EXCEPTION to the READY state to
+     * explicitly indicate you are going to re-use this Task. Note that Task
+     * re-use is generally not advised, but can be valid if you have a special
+     * need such as performance when re-creating the Task is particularly expensive.
      *
      * @param status
      */
     protected synchronized final void setStatus(final int status) {
+        if ((this.status == CANCELED || this.status == EXCEPTION) && status != READY) {
+            //#debug
+            L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
+            return;
+        }
+
         this.status = status;
         this.notifyAll();
 

@@ -108,10 +108,12 @@ public class PlatformUtils {
 
     /**
      * Create an HTTP GET connection appropriate for this phone platform
-     *
+     * 
      * @param url
+     * @param requestPropertyKeys
+     * @param requestPropertyValues
      * @return
-     * @throws IOException
+     * @throws IOException 
      */
     public static HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
         final HttpConn httpConn = new HttpConn(url, requestPropertyKeys, requestPropertyValues);
@@ -136,10 +138,13 @@ public class PlatformUtils {
 
     /**
      * Create an HTTP POST connection appropriate for this phone platform
-     *
+     * 
      * @param url
+     * @param requestPropertyKeys
+     * @param requestPropertyValues
+     * @param bytes
      * @return
-     * @throws IOException
+     * @throws IOException 
      */
     public static HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
         return doGetHttpPostOrPutConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
@@ -158,10 +163,14 @@ public class PlatformUtils {
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform
-     *
+     * 
      * @param url
+     * @param requestPropertyKeys
+     * @param requestPropertyValues
+     * @param bytes
+     * @param requestMethod
      * @return
-     * @throws IOException
+     * @throws IOException 
      */
     private static HttpConn doGetHttpPostOrPutConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
@@ -189,6 +198,15 @@ public class PlatformUtils {
         final HttpConnection httpConnection;
         InputStream is = null;
 
+        /**
+         * Create a platform-specific HTTP network connection, and set the HTTP
+         * header with the corresponding key-value pairs
+         * 
+         * @param url
+         * @param requestPropertyKeys - a list of header keys
+         * @param requestPropertyValues - a list of associated header values
+         * @throws IOException 
+         */
         public HttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
             httpConnection = (HttpConnection) Connector.open(url);
             for (int i = 0; i < requestPropertyKeys.size(); i++) {
@@ -196,6 +214,12 @@ public class PlatformUtils {
             }
         }
 
+        /**
+         * Get the InputStream from the platform-specific HTTP connection
+         * 
+         * @return
+         * @throws IOException 
+         */
         public InputStream getInputStream() throws IOException {
             if (is == null) {
                 is = httpConnection.openInputStream();
@@ -204,6 +228,13 @@ public class PlatformUtils {
             return is;
         }
 
+        /**
+         * Get the response code provided by the HTTP server after the connection
+         * is made
+         * 
+         * @return
+         * @throws IOException 
+         */
         public int getResponseCode() throws IOException {
             return httpConnection.getResponseCode();
         }
