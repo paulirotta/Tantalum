@@ -1,5 +1,5 @@
 MIDlet-1: HelloMIDlet, , geocodeexample.HelloMIDlet
-MIDlet-Jar-Size: 187782
+MIDlet-Jar-Size: 191458
 MIDlet-Jar-URL: GeocodeExample.jar
 MIDlet-Name: CachedGeocodeExample
 MIDlet-Vendor: Vendor

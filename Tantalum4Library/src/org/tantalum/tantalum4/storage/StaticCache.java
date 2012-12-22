@@ -464,8 +464,8 @@ public class StaticCache {
             super();
         }
         
-        public GetLocalTask(final String url) {
-            super(url);
+        public GetLocalTask(final String key) {
+            super(key);
         }
         
         protected Object doInBackground(final Object in) {
@@ -486,6 +486,32 @@ public class StaticCache {
             }
 
             return in;
+        }
+    }
+    
+    public class PutLocalTask extends Task {
+        private final String key;
+        
+        public PutLocalTask(final String key) {
+            this.key = key;
+        }
+
+        public PutLocalTask(final String key, final byte[] value) {
+            this.key = key;
+            this.setValue(value);
+        }
+
+        protected Object doInBackground(Object in) {
+            if (in == null) {
+                in = key;
+            }
+            if (in == null || !(in instanceof byte[])) {
+                throw new IllegalArgumentException("null put to Flash cache: " + key);
+            }
+
+            putAsync(key, (byte[]) in);
+            
+            return convertAndPutToHeapCache(key, (byte[]) in);
         }
     }
 }

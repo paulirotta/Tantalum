@@ -19,7 +19,7 @@ public class StringUtilsTest extends TestCase {
     
     public StringUtilsTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(6,"StringUtilsTest");
+        super(4,"StringUtilsTest");
     }            
 
     public void test(int testNumber) throws Throwable {
@@ -28,18 +28,12 @@ public class StringUtilsTest extends TestCase {
                 testReadStringFromJAR();
                 break;
             case 1:
-                testUrlEncode();
-                break;
-            case 2:
                 testReadBytesFromJAR();
                 break;
-            case 3:
+            case 2:
                 testTruncate();
                 break;
-            case 4:
-                testUrlDecode();
-                break;
-            case 5:
+            case 3:
                 testSplitToLines();
                 break;
             default:
@@ -55,18 +49,6 @@ public class StringUtilsTest extends TestCase {
         String name_1 = "";
         String expResult_1 = "";
         String result_1 = StringUtils.readStringFromJAR(name_1);
-        assertEquals(expResult_1, result_1);
-        //fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of testUrlEncode method, of class StringUtils.
-     */
-    public void testUrlEncode() throws AssertionFailedException {
-        System.out.println("urlEncode");
-        String in_1 = "";
-        String expResult_1 = "";
-        String result_1 = StringUtils.urlEncode(in_1);
         assertEquals(expResult_1, result_1);
         //fail("The test case is a prototype.");
     }
@@ -93,18 +75,6 @@ public class StringUtilsTest extends TestCase {
         System.out.println(expResult_1);
         System.out.println(result_1);
         assertEquals(result_1, expResult_1);
-    }
-
-    /**
-     * Test of testUrlDecode method, of class StringUtils.
-     */
-    public void testUrlDecode() throws AssertionFailedException {
-        System.out.println("urlDecode");
-        String in_1 = "";
-        String expResult_1 = "";
-        String result_1 = StringUtils.urlDecode(in_1);
-        assertEquals(expResult_1, result_1);
-        //fail("The test case is a prototype.");
     }
 
     /**

@@ -4,6 +4,9 @@
  */
 package geocodeexample;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import org.tantalum.tantalum4.TantalumMIDlet;
 import org.tantalum.tantalum4.Task;
 import org.tantalum.tantalum4.UITask;
@@ -282,6 +285,34 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     }
 
     public String getGeocodeUrl(String address) {
-        return "http://maps.google.com/maps/geo?q=" + StringUtils.urlEncode(address) + "&output=json";
+        return "http://maps.google.com/maps/geo?q=" + urlEncode(address) + "&output=json";
+    }
+    
+    private final static String UNRESERVED_CHARS = ".-_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQURSTUVWXYZ*~";
+    private static final char[] HEX = "0123456789ABCDEF".toCharArray();
+    public static String urlEncode(final String in) {
+        StringBuffer buf = new StringBuffer();
+        byte[] bytes = null;
+        try {
+            final ByteArrayOutputStream bos = new ByteArrayOutputStream(in.length() * 5 / 4);
+            final DataOutputStream dos = new DataOutputStream(bos);
+            dos.writeUTF(in);
+            bytes = bos.toByteArray();
+            dos.close();
+        } catch (IOException e) {
+            //#debug
+            L.e("Can not urlEncode", in, e);
+        }
+        for (int i = 2; i < bytes.length; i++) {
+            byte b = bytes[i];
+            if (UNRESERVED_CHARS.indexOf(b) >= 0) {
+                buf.append((char) b);
+            } else {
+                buf.append('%');
+                buf.append(HEX[(b >>> 4) & 0x0F]);
+                buf.append(HEX[b & 0x0F]);
+            }
+        }
+        return buf.toString();
     }
 }

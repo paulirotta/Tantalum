@@ -30,7 +30,7 @@ public class HttpGetter extends Task {
     public static final int HTTP_OPERATION_PENDING = -1;
     private static final int HTTP_GET_RETRIES = 3;
     private static final int HTTP_RETRY_DELAY = 5000; // 5 seconds
-    protected String url = null;
+    protected String key = null;
     protected int retriesRemaining = HTTP_GET_RETRIES;
     protected byte[] postMessage = null;
     private int responseCode = HTTP_OPERATION_PENDING;
@@ -45,15 +45,20 @@ public class HttpGetter extends Task {
      * service does not respond on the first attempt (happens frequently with
      * the mobile web...). You can disable this by calling
      * setRetriesRemaining(0).
+     * 
+     * The "key" is a url. You can optionally attach additional information to
+     * the key after \n (newline) to create a unique hashcode for cache management
+     * purposes. This is sometimes needed for example with HTTP POST where the
+     * url does not alone indicate a unique cachable entity- the post parameters do.
      *
-     * @param url
+     * @param key
      */
-    public HttpGetter(final String url) {
-        super(url);
+    public HttpGetter(final String key) {
+        super(key);
     }
 
-    public HttpGetter(final String url, final byte[] postMessage) {
-        super(url);
+    public HttpGetter(final String key, final byte[] postMessage) {
+        super(key);
         this.postMessage = postMessage;
     }
 
@@ -129,18 +134,21 @@ public class HttpGetter extends Task {
      * @return
      */
     public Object doInBackground(final Object in) {
-        this.url = (String) in;
-        if (url == null || url.indexOf(':') <= 0) {
-            throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
+        this.key = (String) in;
+        if (key == null || key.indexOf(':') <= 0) {
+            throw new IllegalArgumentException("HttpGetter was passed bad URL: " + key);
         }
         //#debug
-        L.i(this.getClass().getName() + " start", url);
+        L.i(this.getClass().getName() + " start", key);
         ByteArrayOutputStream bos = null;
         PlatformUtils.HttpConn httpConn = null;
         boolean tryAgain = false;
         boolean success = false;
+        final String url = getUrl();
 
         try {
+// The following are delayed until we can support HTTP DELETE and PUT in J2ME. HttpConnection needs to be replaced.            
+//            
 //            if (this instanceof HttpDeleter) {
 //                httpConn = PlatformUtils.getHttpDeleteConn(url, requestPropertyKeys, requestPropertyValues);
 //            } else  if (this instanceof HttpPutter) {
@@ -149,9 +157,34 @@ public class HttpGetter extends Task {
 //                }
 //                httpConn = PlatformUtils.getHttpPutConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
 //            } else 
+
+            // ADD THE FOLLOWING AS TOP LEVEL (NOT INNER) CLASSES WHEN HTTP DELETE IS SUPPORTED:
+//public class HttpDeleter extends HttpGetter {
+//    public HttpDeleter(final String url) {
+//        super(url);
+//    }
+//}
+//public class HttpPutter extends HttpPoster {
+//
+//    /**
+//     * PUT data to a web REST service
+//     *
+//     * HTTP PUT is structurally very similar to HTTP POST, but can be used for
+//     * different purposes by some servers.
+//     *
+//     * Make sure you call setMessage(byte[]) to specify what you want to PUT or
+//     * you will get an IllegalArgumentException
+//     *
+//     * @param url
+//     */
+//    public HttpPutter(final String url) {
+//        super(url);
+//    }
+//}
+
             if (this instanceof HttpPoster) {
                 if (postMessage == null) {
-                    throw new IllegalArgumentException("null HTTP POST- did you forget to call HttpPoster.this.setMessage(byte[]) ? : " + url);
+                    throw new IllegalArgumentException("null HTTP POST- did you forget to call HttpPoster.this.setMessage(byte[]) ? : " + key);
                 }
                 httpConn = PlatformUtils.getHttpPostConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
             } else {
@@ -165,7 +198,7 @@ public class HttpGetter extends Task {
 
             if (length > 0 && length < 1000000) {
                 //#debug
-                L.i(this.getClass().getName() + " start fixed_length read", url + " content_length=" + length);
+                L.i(this.getClass().getName() + " start fixed_length read", key + " content_length=" + length);
                 int bytesRead = 0;
                 byte[] bytes = new byte[(int) length];
                 while (bytesRead < bytes.length) {
@@ -174,7 +207,7 @@ public class HttpGetter extends Task {
                         bytesRead += br;
                     } else {
                         //#debug
-                        L.i(this.getClass().getName() + " recieved EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
+                        L.i(this.getClass().getName() + " recieved EOF before content_length exceeded", key + ", content_length=" + length + " bytes_read=" + bytesRead);
                         break;
                     }
                 }
@@ -182,7 +215,7 @@ public class HttpGetter extends Task {
                 bytes = null;
             } else {
                 //#debug
-                L.i(this.getClass().getName() + " start variable length read", url);
+                L.i(this.getClass().getName() + " start variable length read", key);
                 bos = new ByteArrayOutputStream();
                 byte[] readBuffer = new byte[16384];
                 while (true) {
@@ -198,28 +231,28 @@ public class HttpGetter extends Task {
             }
 
             //#debug
-            L.i(this.getClass().getName() + " complete", ((byte[]) getValue()).length + " bytes, " + url);
+            L.i(this.getClass().getName() + " complete", ((byte[]) getValue()).length + " bytes, " + key);
             success = true;
         } catch (IllegalArgumentException e) {
             //#debug
-            L.e(this.getClass().getName() + " HttpGetter has illegal argument", url, e);
+            L.e(this.getClass().getName() + " HttpGetter has illegal argument", key, e);
             throw e;
         } catch (IOException e) {
             //#debug
-            L.e(this.getClass().getName() + " retries remaining", url + ", retries=" + retriesRemaining, e);
+            L.e(this.getClass().getName() + " retries remaining", key + ", retries=" + retriesRemaining, e);
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
             } else {
                 //#debug
-                L.i(this.getClass().getName() + " no more retries", url);
+                L.i(this.getClass().getName() + " no more retries", key);
             }
         } finally {
             try {
                 httpConn.close();
             } catch (Exception e) {
                 //#debug
-                L.e("Closing Http InputStream error", url, e);
+                L.e("Closing Http InputStream error", key, e);
             }
             httpConn = null;
             try {
@@ -240,9 +273,26 @@ public class HttpGetter extends Task {
                 cancel(false);
             }
             //#debug
-            L.i("End " + this.getClass().getName(), url);
+            L.i("End " + this.getClass().getName(), key);
 
             return getValue();
         }
+    }
+
+    /**
+     * Strip additional (optional) lines from the key to create a URL. The key
+     * may contain this data to create several unique hashcodes for cache
+     * management purposes.
+     * 
+     * @return 
+     */
+    private String getUrl() {
+        final int i = key.indexOf('\n');
+        
+        if (i < 0) {
+            return key;
+        }
+        
+        return key.substring(0, i);
     }
 }

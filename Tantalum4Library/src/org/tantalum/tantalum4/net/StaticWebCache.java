@@ -50,14 +50,14 @@ public class StaticWebCache extends StaticCache {
     /**
      * Get without the HTTP POST option (HTTP GET only)
      * 
-     * @param url
+     * @param key
      * @param priority
      * @param getType
      * @param chainedTask
      * @return 
      */
-    public Task get(final String url, final int priority, final int getType, final Task chainedTask) {
-        return get(url, null, priority, getType, chainedTask);
+    public Task get(final String key, final int priority, final int getType, final Task chainedTask) {
+        return get(key, null, priority, getType, chainedTask);
     }
     
     /**
@@ -84,7 +84,7 @@ public class StaticWebCache extends StaticCache {
      * and optionally also the UI thread if UITask after the get operation
      * completes.
      *
-     * @param url - The web service location to HTTP_GET the cacheable data
+     * @param key - The web service location to HTTP_GET the cacheable data
      * @param postMessage - Optional HTTP POST body
      * @param priority - Worker.HIGH_PRIORITY, Worker.NORMAL_PRIORITY, or
      * Worker.LOW_PRIORITY
@@ -95,28 +95,28 @@ public class StaticWebCache extends StaticCache {
      *
      * @return a new Task containing the result
      */
-    public Task get(final String url, final byte[] postMessage, final int priority, final int getType, final Task chainedTask) {
+    public Task get(final String key, final byte[] postMessage, final int priority, final int getType, final Task chainedTask) {
         final Task t;
 
         //#debug
-        L.i("StaticWebCache get:" + getType + " : " + chainedTask, url);
+        L.i("StaticWebCache get:" + getType + " : " + chainedTask, key);
         switch (getType) {
             case GET_LOCAL:
                 //#debug
-                L.i("GET_LOCAL", url);
-                t = new StaticCache.GetLocalTask(url);
+                L.i("GET_LOCAL", key);
+                t = new StaticCache.GetLocalTask(key);
                 break;
 
             case GET_ANYWHERE:
                 //#debug
-                L.i("GET_ANYWHERE", url);
-                t = new StaticWebCache.GetAnywhereTask(url, postMessage);
+                L.i("GET_ANYWHERE", key);
+                t = new StaticWebCache.GetAnywhereTask(key, postMessage);
                 break;
 
             case GET_WEB:
                 //#debug
-                L.i("GET_WEB", url);
-                t = new StaticWebCache.GetWebTask(url, postMessage);
+                L.i("GET_WEB", key);
+                t = new StaticWebCache.GetWebTask(key, postMessage);
                 break;
 
             default:
@@ -131,18 +131,18 @@ public class StaticWebCache extends StaticCache {
     /**
      * Retrieve the object from WEB if it is not already cached locally.
      *
-     * @param url
+     * @param key
      * @param updateResult
      */
-    public void prefetch(final String url) {
-        if (synchronousRAMCacheGet(url) == null) {
+    public void prefetch(final String key) {
+        if (synchronousRAMCacheGet(key) == null) {
             Worker.fork(new Workable() {
                 public Object exec(final Object in) {
                     try {
-                        get(url, Worker.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
+                        get(key, Worker.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
                     } catch (Exception e) {
                         //#debug
-                        L.e("Can not prefetch", url, e);
+                        L.e("Can not prefetch", key, e);
                     }
 
                     return in;
@@ -224,10 +224,10 @@ public class StaticWebCache extends StaticCache {
          * operation before
          * <code>fork()</code>ing the Task for background execution.
          *
-         * @param url
+         * @param key
          */
-        public GetAnywhereTask(final String url, final byte[] postMessage) {
-            super(url);
+        public GetAnywhereTask(final String key, final byte[] postMessage) {
+            super(key);
             this.postMessage = postMessage;
         }
 
@@ -336,10 +336,10 @@ public class StaticWebCache extends StaticCache {
          * <code>fork()</code>ing the
          * <code>Task</code> for background execution.
          *
-         * @param url
+         * @param key
          */
-        public GetWebTask(final String url, final byte[] postMessage) {
-            super(url);
+        public GetWebTask(final String key, final byte[] postMessage) {
+            super(key);
             
             this.postMessage = postMessage;
         }
@@ -393,15 +393,15 @@ public class StaticWebCache extends StaticCache {
          * Get an HTTP task, possibly with modified headers. Although this is
          * usually an HttpGetter, in could be an HttpPoster.
          *
-         * @param url
+         * @param key
          * @param params
          * @return
          */
-        public HttpGetter getHttpTask(final String url, final byte[] postMessage) {
+        public HttpGetter getHttpTask(final String key, final byte[] postMessage) {
             if (postMessage == null) {
-                return new HttpGetter(url);
+                return new HttpGetter(key);
             } else {
-                final HttpPoster poster = new HttpPoster(url);
+                final HttpPoster poster = new HttpPoster(key);
                 poster.setMessage(postMessage);
                 
                 return poster;
@@ -422,4 +422,13 @@ public class StaticWebCache extends StaticCache {
             return true;
         }
     }
+    
+//    private int deepHashCode(final byte[] bytes) {
+//        int hashCode = 1;
+//        for (int i = 0; i < bytes.length; i++) {
+//            
+//            hashCode *= 31;
+//            hashCode += bytes[i];
+//        }
+//    }
 }

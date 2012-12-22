@@ -15,8 +15,8 @@ public abstract class JSONPoster extends HttpPoster {
 
     private final JSONModel jsonModel = new JSONModel();
 
-    public JSONPoster(final String url) {
-        super(url);
+    public JSONPoster(final String key) {
+        super(key);
     }
 
     public Object doInBackground(final Object in) {
@@ -32,7 +32,7 @@ public abstract class JSONPoster extends HttpPoster {
             setValue(jsonModel);
         } catch (Exception e) {
             //#debug
-            L.e("JSONPoster HTTP response problem", url + " : " + value, e);
+            L.e("JSONPoster HTTP response problem", key + " : " + value, e);
             cancel(false);
         }
         

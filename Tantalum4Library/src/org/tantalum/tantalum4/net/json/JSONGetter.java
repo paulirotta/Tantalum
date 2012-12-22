@@ -33,8 +33,8 @@ public class JSONGetter extends HttpGetter {
 
     private final JSONModel jsonModel;
 
-    public JSONGetter(final String url, final JSONModel jsonModel) {
-        super(url);
+    public JSONGetter(final String key, final JSONModel jsonModel) {
+        super(key);
         this.jsonModel = jsonModel;
     }
 
@@ -50,7 +50,7 @@ public class JSONGetter extends HttpGetter {
             setValue(jsonModel);
         } catch (Exception e) {
             //#debug
-            L.e("JSONGetter HTTP response problem", url + " : " + value, e);
+            L.e("JSONGetter HTTP response problem", key + " : " + value, e);
             cancel(false);
         }
 

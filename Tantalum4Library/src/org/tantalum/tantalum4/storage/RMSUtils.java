@@ -1,15 +1,15 @@
 package org.tantalum.tantalum4.storage;
 
-import org.tantalum.tantalum4.Workable;
-import org.tantalum.tantalum4.Worker;
-import org.tantalum.tantalum4.log.L;
-import org.tantalum.tantalum4.util.LengthLimitedVector;
 import java.util.Vector;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
+import org.tantalum.tantalum4.Workable;
+import org.tantalum.tantalum4.Worker;
+import org.tantalum.tantalum4.log.L;
+import org.tantalum.tantalum4.util.LengthLimitedVector;
 
 /**
  * RMS Utility methods
