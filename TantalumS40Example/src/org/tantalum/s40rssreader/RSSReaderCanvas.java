@@ -1,7 +1,7 @@
 package org.tantalum.s40rssreader;
 
-import org.tantalum.tantalum4.log.L;
-import org.tantalum.tantalum4.net.xml.RSSItem;
+import org.tantalum.log.L;
+import org.tantalum.net.xml.RSSItem;
 import com.nokia.mid.ui.frameanimator.FrameAnimator;
 import com.nokia.mid.ui.frameanimator.FrameAnimatorListener;
 import com.nokia.mid.ui.gestures.GestureEvent;

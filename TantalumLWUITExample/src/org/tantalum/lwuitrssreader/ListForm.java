@@ -1,9 +1,9 @@
 package org.tantalum.lwuitrssreader;
 
-import org.tantalum.tantalum4.Task;
-import org.tantalum.tantalum4.Worker;
-import org.tantalum.tantalum4.net.StaticWebCache;
-import org.tantalum.tantalum4.net.xml.RSSItem;
+import org.tantalum.Task;
+import org.tantalum.Worker;
+import org.tantalum.net.StaticWebCache;
+import org.tantalum.net.xml.RSSItem;
 import com.sun.lwuit.*;
 import com.sun.lwuit.animations.CommonTransitions;
 import com.sun.lwuit.events.ActionEvent;

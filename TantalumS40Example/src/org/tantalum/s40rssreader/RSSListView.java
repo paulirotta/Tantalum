@@ -4,13 +4,13 @@
  */
 package org.tantalum.s40rssreader;
 
-import org.tantalum.tantalum4.Task;
-import org.tantalum.tantalum4.Workable;
-import org.tantalum.tantalum4.Worker;
-import org.tantalum.tantalum4.log.L;
-import org.tantalum.tantalum4.net.StaticWebCache;
-import org.tantalum.tantalum4.net.xml.RSSModel;
-import org.tantalum.tantalum4.storage.DataTypeHandler;
+import org.tantalum.Task;
+import org.tantalum.Workable;
+import org.tantalum.Worker;
+import org.tantalum.log.L;
+import org.tantalum.net.StaticWebCache;
+import org.tantalum.net.xml.RSSModel;
+import org.tantalum.storage.DataTypeHandler;
 import org.xml.sax.SAXException;
 
 /**

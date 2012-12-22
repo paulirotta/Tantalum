@@ -1,5 +1,5 @@
 MIDlet-1: BBC Reader,/icon.png,org.tantalum.s40rssreader.RSSReader
-MIDlet-Jar-Size: 77299
+MIDlet-Jar-Size: 76454
 MIDlet-Jar-URL: TantalumS40.jar
 MIDlet-Name: BBC Reader
 MIDlet-Permissions: javax.microedition.io.Connector.http

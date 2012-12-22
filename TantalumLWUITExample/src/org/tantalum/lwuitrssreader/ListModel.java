@@ -4,9 +4,9 @@
  */
 package org.tantalum.lwuitrssreader;
 
-import org.tantalum.tantalum4.log.L;
-import org.tantalum.tantalum4.net.xml.RSSModel;
-import org.tantalum.tantalum4.storage.DataTypeHandler;
+import org.tantalum.log.L;
+import org.tantalum.net.xml.RSSModel;
+import org.tantalum.storage.DataTypeHandler;
 import com.sun.lwuit.events.DataChangedListener;
 import com.sun.lwuit.list.DefaultListModel;
 import org.xml.sax.SAXException;

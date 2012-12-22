@@ -4,7 +4,7 @@
  */
 package org.tantalum.s40rssreader;
 
-import org.tantalum.tantalum4.log.L;
+import org.tantalum.log.L;
 import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.IconCommand;
 import com.nokia.mid.ui.orientation.Orientation;

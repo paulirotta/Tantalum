@@ -4,7 +4,7 @@
  */
 package org.tantalum.s40rssreader;
 
-import org.tantalum.tantalum4.util.ImageUtils;
+import org.tantalum.util.ImageUtils;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 

@@ -1,12 +1,12 @@
 package org.tantalum.s40rssreader;
 
-import org.tantalum.tantalum4.Task;
-import org.tantalum.tantalum4.Worker;
-import org.tantalum.tantalum4.log.L;
-import org.tantalum.tantalum4.net.StaticWebCache;
-import org.tantalum.tantalum4.net.xml.RSSItem;
-import org.tantalum.tantalum4.storage.ImageTypeHandler;
-import org.tantalum.tantalum4.util.StringUtils;
+import org.tantalum.Task;
+import org.tantalum.Worker;
+import org.tantalum.log.L;
+import org.tantalum.net.StaticWebCache;
+import org.tantalum.net.xml.RSSItem;
+import org.tantalum.j2me.ImageTypeHandler;
+import org.tantalum.util.StringUtils;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Command;

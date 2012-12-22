@@ -1,10 +1,10 @@
 package org.tantalum.s40rssreader;
 
-import org.tantalum.tantalum4.TantalumMIDlet;
-import org.tantalum.tantalum4.Task;
-import org.tantalum.tantalum4.TimeoutException;
-import org.tantalum.tantalum4.Worker;
-import org.tantalum.tantalum4.log.L;
+import org.tantalum.j2me.TantalumMIDlet;
+import org.tantalum.Task;
+import org.tantalum.TimeoutException;
+import org.tantalum.Worker;
+import org.tantalum.log.L;
 import javax.microedition.lcdui.*;
 
 /**

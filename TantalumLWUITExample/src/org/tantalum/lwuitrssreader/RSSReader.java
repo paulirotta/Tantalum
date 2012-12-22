@@ -1,6 +1,6 @@
 package org.tantalum.lwuitrssreader;
 
-import org.tantalum.tantalum4.TantalumMIDlet;
+import org.tantalum.j2me.TantalumMIDlet;
 import com.sun.lwuit.Dialog;
 import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;

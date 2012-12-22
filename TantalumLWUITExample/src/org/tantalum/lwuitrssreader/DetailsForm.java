@@ -4,11 +4,11 @@
  */
 package org.tantalum.lwuitrssreader;
 
-import org.tantalum.tantalum4.UITask;
-import org.tantalum.tantalum4.Worker;
-import org.tantalum.tantalum4.log.L;
-import org.tantalum.tantalum4.net.StaticWebCache;
-import org.tantalum.tantalum4.net.xml.RSSItem;
+import org.tantalum.UITask;
+import org.tantalum.Worker;
+import org.tantalum.log.L;
+import org.tantalum.net.StaticWebCache;
+import org.tantalum.net.xml.RSSItem;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Image;

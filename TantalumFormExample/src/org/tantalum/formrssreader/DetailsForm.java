@@ -6,12 +6,12 @@ package org.tantalum.formrssreader;
 
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.*;
-import org.tantalum.tantalum4.UITask;
-import org.tantalum.tantalum4.Worker;
-import org.tantalum.tantalum4.log.L;
-import org.tantalum.tantalum4.net.StaticWebCache;
-import org.tantalum.tantalum4.net.xml.RSSItem;
-import org.tantalum.tantalum4.storage.ImageTypeHandler;
+import org.tantalum.UITask;
+import org.tantalum.Worker;
+import org.tantalum.log.L;
+import org.tantalum.net.StaticWebCache;
+import org.tantalum.net.xml.RSSItem;
+import org.tantalum.j2me.ImageTypeHandler;
 
 /**
  *
