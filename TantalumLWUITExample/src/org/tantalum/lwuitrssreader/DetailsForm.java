@@ -6,7 +6,7 @@ package org.tantalum.lwuitrssreader;
 
 import org.tantalum.UITask;
 import org.tantalum.Worker;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import com.sun.lwuit.Command;

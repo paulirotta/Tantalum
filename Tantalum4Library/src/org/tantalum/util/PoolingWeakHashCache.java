@@ -4,7 +4,6 @@
  */
 package org.tantalum.util;
 
-import org.tantalum.log.L;
 import java.lang.ref.WeakReference;
 import java.util.Vector;
 

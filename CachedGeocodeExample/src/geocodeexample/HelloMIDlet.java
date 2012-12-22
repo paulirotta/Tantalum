@@ -7,17 +7,16 @@ package geocodeexample;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import org.tantalum.j2me.TantalumMIDlet;
-import org.tantalum.UITask;
-import org.tantalum.Worker;
-import org.tantalum.log.L;
-import org.tantalum.net.StaticWebCache;
-import org.tantalum.storage.DataTypeHandler;
-import org.tantalum.util.StringUtils;
 import javax.microedition.lcdui.*;
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
+import org.tantalum.UITask;
+import org.tantalum.Worker;
+import org.tantalum.j2me.TantalumMIDlet;
+import org.tantalum.util.L;
+import org.tantalum.net.StaticWebCache;
+import org.tantalum.storage.DataTypeHandler;
 
 /**
  * Demonstration of a JSON service which returns locally cached values if the
@@ -78,13 +77,6 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     private StringItem locationStringItem;
     private TextField addressTextField;
 //</editor-fold>//GEN-END:|fields|0|
-
-    /**
-     * The HelloMIDlet constructor.
-     */
-    public HelloMIDlet() {
-        super(4);
-    }
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
 //</editor-fold>//GEN-END:|methods|0|

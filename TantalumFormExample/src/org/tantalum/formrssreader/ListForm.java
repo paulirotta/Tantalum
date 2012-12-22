@@ -7,7 +7,7 @@ package org.tantalum.formrssreader;
 import org.tantalum.UITask;
 import org.tantalum.Workable;
 import org.tantalum.Worker;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.net.xml.RSSModel;

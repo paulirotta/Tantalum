@@ -4,7 +4,8 @@
  */
 package org.tantalum.j2me;
 
-import org.tantalum.log.L;
+import java.util.Vector;
+import org.tantalum.util.L;
 import javax.microedition.rms.RecordStoreFullException;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashFullException;
@@ -30,5 +31,9 @@ public final class RMSCache implements FlashCache {
 
     public void removeData(final String key) {
         RMSUtils.cacheDelete(key);
+    }
+
+    public Vector getKeys() {
+        return RMSUtils.getCachedRecordStoreNames();
     }
 }

@@ -8,7 +8,7 @@ import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.tantalum.Workable;
 import org.tantalum.Worker;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.util.LengthLimitedVector;
 
 /**

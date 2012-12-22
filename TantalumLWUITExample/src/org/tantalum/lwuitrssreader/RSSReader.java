@@ -23,10 +23,6 @@ public class RSSReader extends TantalumMIDlet {
     public static Font italicFont;
     public static Font underlinedFont;
 
-    public RSSReader() {
-        super(4);
-    }
-
     public void startApp() {
         Display.init(this);
         UIManager.getInstance().setLookAndFeel(new DefaultLookAndFeel());

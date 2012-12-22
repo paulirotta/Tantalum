@@ -1,6 +1,6 @@
 package org.tantalum.net.xml;
 
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import java.util.Vector;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;

@@ -6,7 +6,7 @@ package org.tantalum.android;
 
 import org.tantalum.storage.DataTypeHandler;
 import android.graphics.BitmapFactory;
-import org.tantalum.t4.log.L;
+import org.tantalum.util.L;
 
 /**
  * This is a helper class for creating an image class. It automatically converts
@@ -27,7 +27,6 @@ public final class AndroidImageTypeHandler implements DataTypeHandler {
          */
     }
 
-    @Override
     public Object convertToUseForm(final byte[] bytes) {
         try {
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);

@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
-import org.tantalum.j2me.PlatformUtils;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 
 /**
  * GET something from a URL on the Worker thread
@@ -150,12 +150,12 @@ public class HttpGetter extends Task {
 // The following are delayed until we can support HTTP DELETE and PUT in J2ME. HttpConnection needs to be replaced.            
 //            
 //            if (this instanceof HttpDeleter) {
-//                httpConn = PlatformUtils.getHttpDeleteConn(url, requestPropertyKeys, requestPropertyValues);
+//                httpConn = J2MEPlatformUtils.getHttpDeleteConn(url, requestPropertyKeys, requestPropertyValues);
 //            } else  if (this instanceof HttpPutter) {
 //                if (postMessage == null) {
 //                    throw new IllegalArgumentException("null HTTP PUT- did you forget to call HttpPutter.this.setMessage(byte[]) ? : " + url);
 //                }
-//                httpConn = PlatformUtils.getHttpPutConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
+//                httpConn = J2MEPlatformUtils.getHttpPutConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
 //            } else 
 
             // ADD THE FOLLOWING AS TOP LEVEL (NOT INNER) CLASSES WHEN HTTP DELETE IS SUPPORTED:

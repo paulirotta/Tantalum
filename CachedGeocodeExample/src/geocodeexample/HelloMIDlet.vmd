@@ -81,8 +81,5 @@
             <Component componentID="21" typeID="C#DatabindingCategory"/>
         </Component>
     </Document>
-    <FlowScene version="1">
-        <Node componentID="2" descriptorID="componentNode2" x="34" y="32"/>
-        <Node componentID="14" descriptorID="componentNode14" x="203" y="137"/>
-    </FlowScene>
+    <FlowScene version="1"/>
 </VisualDesign>

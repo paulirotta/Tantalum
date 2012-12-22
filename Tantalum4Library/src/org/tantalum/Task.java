@@ -4,8 +4,8 @@
  */
 package org.tantalum;
 
-import org.tantalum.j2me.PlatformUtils;
-import org.tantalum.log.L;
+import org.tantalum.j2me.J2MEPlatformUtils;
+import org.tantalum.util.L;
 
 /**
  *
@@ -145,7 +145,7 @@ public abstract class Task implements Workable {
         if (timeout < 0) {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
-        if (PlatformUtils.isUIThread() && timeout > 100) {
+        if (J2MEPlatformUtils.isUIThread() && timeout > 100) {
             //#debug
             L.i("WARNING- slow Task.join() on UI Thread", "timeout=" + timeout + " " + this);
         }
@@ -371,7 +371,7 @@ public abstract class Task implements Workable {
                 t = chainedTask;
             }
             if (this instanceof UITask && doRun) {
-                PlatformUtils.runOnUiThread((UITask) this);
+                J2MEPlatformUtils.runOnUiThread((UITask) this);
             }
             if (t != null) {
                 //#debug

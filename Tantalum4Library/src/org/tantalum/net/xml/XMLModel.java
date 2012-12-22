@@ -5,7 +5,7 @@
 package org.tantalum.net.xml;
 
 import org.tantalum.Worker;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import javax.xml.parsers.SAXParserFactory;

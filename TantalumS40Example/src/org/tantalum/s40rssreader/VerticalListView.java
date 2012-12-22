@@ -3,7 +3,7 @@ package org.tantalum.s40rssreader;
 //#ifndef Profile
 import com.nokia.mid.ui.DirectUtils;
 //#endif
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.util.PoolingWeakImageHashCache;
 import javax.microedition.lcdui.Command;

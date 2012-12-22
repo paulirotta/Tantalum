@@ -2,6 +2,7 @@ package org.tantalum.j2me;
 
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Worker;
 
 /**
@@ -24,9 +25,8 @@ public abstract class TantalumMIDlet extends MIDlet {
      * @param numberOfThreads 
      * 
      */
-    protected TantalumMIDlet(final int numberOfThreads) {
+    protected TantalumMIDlet() {
         PlatformUtils.setProgram(this);
-        Worker.init(numberOfThreads);
     }
 
     /**
@@ -48,7 +48,7 @@ public abstract class TantalumMIDlet extends MIDlet {
      * 
      * If you do for some reason call this directly, realize the MIDlet will
      * exit immediately after the call is complete, rather than wait for you
-     * to call notifyDestroyed() once an ongoing file or RMS write actions are
+     * to call doNotifyDestroyed() once an ongoing file or RMS write actions are
      * completed. Usually, this is not desirable, call exitMidlet() instead
      * and ongoing tasks will complete.
      *

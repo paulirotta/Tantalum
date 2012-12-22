@@ -7,7 +7,7 @@ package org.tantalum.s40rssreader;
 import org.tantalum.Task;
 import org.tantalum.Workable;
 import org.tantalum.Worker;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSModel;
 import org.tantalum.storage.DataTypeHandler;

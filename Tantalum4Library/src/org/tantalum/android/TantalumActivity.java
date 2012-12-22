@@ -4,11 +4,11 @@
  */
 package org.tantalum.android;
 
-import org.tantalum.Worker;
-import org.tantalum.j2me.PlatformUtils;
 import android.app.Activity;
 import android.os.Bundle;
-import org.tantalum.storage.AndroidCache;
+import javax.microedition.midlet.MIDletStateChangeException;
+import org.tantalum.PlatformUtils;
+import org.tantalum.Worker;
 
 /**
  *
@@ -18,7 +18,6 @@ public abstract class TantalumActivity extends Activity {
 
     public TantalumActivity() {
         PlatformUtils.setProgram(this);
-        Worker.init(4);
     }
 
     /**
@@ -34,14 +33,12 @@ public abstract class TantalumActivity extends Activity {
         Worker.shutdown(unconditional);
     }
 
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
         AndroidCache.setContext(((Activity) this).getApplicationContext());
     }
 
-    @Override
     protected void onDestroy() {
         super.onDestroy();
         
@@ -54,7 +51,7 @@ public abstract class TantalumActivity extends Activity {
      *
      * If you do for some reason call this directly, realize the MIDlet will
      * exit immediately after the call is complete, rather than wait for you to
-     * call notifyDestroyed() once an ongoing file or RMS write actions are
+     * call doNotifyDestroyed() once an ongoing file or RMS write actions are
      * completed. Usually, this is not desirable, call exitMidlet() instead and
      * ongoing tasks will complete.
      *

@@ -4,7 +4,7 @@
  */
 package org.tantalum.lwuitrssreader;
 
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.storage.DataTypeHandler;
 import com.sun.lwuit.Image;
 

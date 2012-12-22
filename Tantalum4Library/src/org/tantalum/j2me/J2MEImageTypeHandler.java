@@ -1,7 +1,7 @@
 package org.tantalum.j2me;
 
 import org.tantalum.Worker;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.util.ImageUtils;
 import javax.microedition.lcdui.Image;
 import org.tantalum.storage.DataTypeHandler;
@@ -12,7 +12,7 @@ import org.tantalum.storage.DataTypeHandler;
  *
  * @author tsaa
  */
-public final class ImageTypeHandler implements DataTypeHandler {
+public final class J2MEImageTypeHandler implements DataTypeHandler {
 
     private final int maxWidth;
     private final int maxHeight;
@@ -23,7 +23,7 @@ public final class ImageTypeHandler implements DataTypeHandler {
      * Create a non-scaling image cache
      *
      */
-    public ImageTypeHandler() {
+    public J2MEImageTypeHandler() {
         maxWidth = -1;
         maxHeight = -1;
         this.processAlpha = false;
@@ -38,7 +38,7 @@ public final class ImageTypeHandler implements DataTypeHandler {
      * @param maxWidth
      * @param maxHeight
      */
-    public ImageTypeHandler(final boolean processAlpha, final boolean bestQuality, final int maxWidth, final int maxHeight) {
+    public J2MEImageTypeHandler(final boolean processAlpha, final boolean bestQuality, final int maxWidth, final int maxHeight) {
         this.maxWidth = maxWidth;
         this.maxHeight = maxHeight;
         this.processAlpha = processAlpha;

@@ -51,17 +51,6 @@
                     <property name="config.active">Release</property>
                 </properties>
             </reference>
-            <reference>
-                <foreign-project>Tantalum4Library</foreign-project>
-                <artifact-type>jar</artifact-type>
-                <script>${project.Tantalum4Library}/build.xml</script>
-                <target>jar</target>
-                <clean-target>clean</clean-target>
-                <id>jar.UsbDebug</id>
-                <properties>
-                    <property name="config.active">UsbDebug</property>
-                </properties>
-            </reference>
         </references>
     </configuration>
 </project>

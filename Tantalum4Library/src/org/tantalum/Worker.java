@@ -4,8 +4,8 @@
  */
 package org.tantalum;
 
-import org.tantalum.j2me.PlatformUtils;
-import org.tantalum.log.L;
+import org.tantalum.j2me.J2MEPlatformUtils;
+import org.tantalum.util.L;
 import java.util.Vector;
 
 /**
@@ -61,7 +61,7 @@ public final class Worker extends Thread {
      * @param midlet
      * @param numberOfWorkers
      */
-    public static void init(final int numberOfWorkers) {
+    static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
         createWorker(0); // First worker
         Worker.fork(new Workable() {
@@ -299,13 +299,13 @@ public final class Worker extends Thread {
     }
 
     /**
-     * Call MIDlet.notifyDestroyed() after all current queued and shutdown
+     * Call MIDlet.doNotifyDestroyed() after all current queued and shutdown
      * Workable tasks are completed. Resources held by the system will be closed
      * and queued compute such as writing to the RMS or file system will
      * complete.
      *
      * @param block Block the calling thread up to three seconds to allow
-     * orderly shutdown. This is only needed in MIDlet.notifyDestroyed(true)
+     * orderly shutdown. This is only needed in MIDlet.doNotifyDestroyed(true)
      * which is called for example by the user pressing the red HANGUP button.
      */
     public static void shutdown(final boolean block) {
@@ -404,7 +404,7 @@ public final class Worker extends Thread {
                                         --currentlyIdleCount;
                                     } else {
                                         // PHASE 2: Shutdown actions are all complete
-                                        PlatformUtils.notifyDestroyed("currentlyIdleCount=" + currentlyIdleCount);
+                                        J2MEPlatformUtils.notifyDestroyed("currentlyIdleCount=" + currentlyIdleCount);
                                         //#mdebug
                                         L.i("Log notifyDestroyed", "");
                                         L.shutdown();

@@ -2,10 +2,10 @@ package org.tantalum.s40rssreader;
 
 import org.tantalum.Task;
 import org.tantalum.Worker;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
-import org.tantalum.j2me.ImageTypeHandler;
+import org.tantalum.j2me.J2MEImageTypeHandler;
 import org.tantalum.util.StringUtils;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
@@ -21,7 +21,7 @@ import javax.microedition.lcdui.Image;
  */
 public final class DetailsView extends View {
 
-    public static final StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
+    public static final StaticWebCache imageCache = new StaticWebCache('1', new J2MEImageTypeHandler());
     private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;

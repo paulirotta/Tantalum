@@ -4,7 +4,6 @@
  */
 package org.tantalum.util;
 
-import org.tantalum.log.L;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 

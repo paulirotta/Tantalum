@@ -4,7 +4,7 @@
  *
  * Created on 29-Feb-2012, 15:06:24
  */
-package org.tantalum.log;
+package org.tantalum.util;
 
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;

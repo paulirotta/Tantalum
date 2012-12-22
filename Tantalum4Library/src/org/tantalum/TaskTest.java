@@ -6,7 +6,7 @@
  */
 package org.tantalum;
 
-import org.tantalum.j2me.PlatformUtils;
+import org.tantalum.j2me.J2MEPlatformUtils;
 import java.util.Vector;
 import jmunit.framework.cldc11.*;
 
@@ -19,7 +19,7 @@ public class TaskTest extends TestCase {
         //The first parameter of inherited constructor is the number of test cases
         super(15, "TaskTest");
 
-        PlatformUtils.setProgram(this);
+        J2MEPlatformUtils.setProgram(this);
         Worker.init(2);
     }
 

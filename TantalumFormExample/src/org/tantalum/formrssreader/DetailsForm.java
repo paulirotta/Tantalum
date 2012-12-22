@@ -8,10 +8,10 @@ import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.*;
 import org.tantalum.UITask;
 import org.tantalum.Worker;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
-import org.tantalum.j2me.ImageTypeHandler;
+import org.tantalum.j2me.J2MEImageTypeHandler;
 
 /**
  *
@@ -21,7 +21,7 @@ public final class DetailsForm extends Form implements CommandListener {
 
     private RSSReader rssReader;
     private RSSItem selectedItem;
-    private static StaticWebCache imageCache = new StaticWebCache('1', new ImageTypeHandler());
+    private static StaticWebCache imageCache = new StaticWebCache('1', new J2MEImageTypeHandler());
     private Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private Command backCommand = new Command("Back", Command.BACK, 0);
 

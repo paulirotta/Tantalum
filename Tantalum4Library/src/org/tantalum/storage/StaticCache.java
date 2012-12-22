@@ -1,15 +1,14 @@
 package org.tantalum.storage;
 
-import org.tantalum.j2me.RMSUtils;
-import org.tantalum.j2me.PlatformUtils;
+import java.util.Vector;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.Workable;
 import org.tantalum.Worker;
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
 import org.tantalum.util.WeakHashCache;
-import java.util.Vector;
 
 /**
  * A cache which returns Objects based on a String key asynchronously from RAM,
@@ -283,7 +282,7 @@ public class StaticCache {
     private static boolean clearSpace(final int minSpaceToClear) {
         int spaceCleared = 0;
         //FIXME Not appropriate for Android. Why is there no compilation bad reference error?
-        final Vector rsv = RMSUtils.getCachedRecordStoreNames();
+        final Vector rsv = flashCache.getKeys();
 
         //#debug
         L.i("Clearing RMS space", minSpaceToClear + " bytes");
@@ -363,7 +362,7 @@ public class StaticCache {
                     accessOrder.removeElement(key);
                     cache.remove(key);
                 }
-                RMSUtils.cacheDelete(key);
+                flashCache.removeData(key);
                 //#debug
                 L.i("Cache remove (from RAM and RMS)", key);
             }

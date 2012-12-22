@@ -6,7 +6,7 @@
  */
 package org.tantalum;
 
-import org.tantalum.j2me.PlatformUtils;
+import org.tantalum.j2me.J2MEPlatformUtils;
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
 
@@ -22,7 +22,7 @@ public class WorkerTest extends TestCase {
     }
 
     public void test(int testNumber) throws Throwable {
-        PlatformUtils.setProgram(this);
+        J2MEPlatformUtils.setProgram(this);
         switch (testNumber) {
             case 0:
                 testRun();

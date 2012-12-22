@@ -12,28 +12,23 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.Vector;
-import org.tantalum.storage.FlashCache;
-import org.tantalum.t4.log.L;
-import org.tantalum.storage.AndroidCache;
+import org.tantalum.PlatformUtils;
 
 /**
  * Android-specific support routines for Tantalum
  *
  * @author phou
  */
-public final class PlatformUtils {
+public final class AndroidPlatformUtils extends PlatformUtils {
 
-    private static Activity program;
-    private static FlashCache flashDatabase;
-    private static volatile Thread uiThread = null;
+    private static final int DEFAULT_NUMBER_OF_WORKERS = 8;
 
-    /**
-     * During initialization, the main program is set
-     *
-     * @param program
-     */
-    public static void setProgram(final Object program) {
-        PlatformUtils.program = (Activity) program;
+    protected AndroidPlatformUtils() {
+        super();
+
+        if (PlatformUtils.numberOfWorkers == 0) {
+            PlatformUtils.setNumberOfWorkers(DEFAULT_NUMBER_OF_WORKERS);
+        }
         runOnUiThread(new Runnable() {
             public void run() {
                 uiThread = Thread.currentThread();
@@ -41,62 +36,12 @@ public final class PlatformUtils {
         });
     }
 
-    /**
-     * Return a reference to the main program object appropriate for this phone
-     * platform
-     *
-     * @return
-     */
-    public static Activity getProgram() {
-        return PlatformUtils.program;
+    protected void doRunOnUiThread(final Runnable action) {
+        ((Activity) program).runOnUiThread(action);
     }
 
-    /**
-     * Check if the current execution thread is the user interface thread
-     *
-     * @return
-     */
-    public static boolean isUIThread() {
-        return Thread.currentThread() == uiThread;
-    }
-
-    /**
-     * Add an object to be executed in the foreground on the event dispatch
-     * thread. All popular JavaME applications require UI and input events to be
-     * called serially only from this one thread.
-     *
-     * Note that if you queue too many object on the EDT you risk out of memory
-     * and (more commonly) a temporarily unresponsive user interface.
-     *
-     * @param runnable
-     */
-    public static void runOnUiThread(final Runnable runnable) {
-        program.runOnUiThread(runnable);
-    }
-
-    /**
-     * The application calls this when all Workers have completed shutdown to
-     * inform the phone that the program has closed itself.
-     *
-     * Do not call this directly, call Worker.shutdown() to initiate a close
-     *
-     */
-    public static void notifyDestroyed(final String reasonDestroyed) {
-        L.i("Call to notifyDestroyed", reasonDestroyed);
-        program.finish();
-    }
-
-    /**
-     * Get a persistent cache implementation appropriate for this phone platform
-     *
-     * @return
-     */
-    public static synchronized FlashCache getFlashCache() {
-        if (flashDatabase == null) {
-            flashDatabase = new AndroidCache();
-        }
-
-        return flashDatabase;
+    protected void doNotifyDestroyed() {
+        ((Activity) program).finish();
     }
 
     /**
@@ -107,24 +52,12 @@ public final class PlatformUtils {
      * @throws IOException
      */
     public static HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
-        final HttpConn httpConn = new HttpConn(url, requestPropertyKeys, requestPropertyValues);
+        final AndroidHttpConn httpConn = new AndroidHttpConn(url, requestPropertyKeys, requestPropertyValues);
         httpConn.httpConnection.setDoInput(true);
         httpConn.httpConnection.setRequestMethod("GET");
 
         return httpConn;
     }
-
-    /**
-     * Create an HTTP POST connection appropriate for this phone platform
-     *
-     * @param url
-     * @return
-     * @throws IOException
-     */
-    public static HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
-        return PlatformUtils.doGetHttpPostOrPutConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
-    }
-    
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform
@@ -133,16 +66,18 @@ public final class PlatformUtils {
      * @return
      * @throws IOException
      */
-    private static HttpConn doGetHttpPostOrPutConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
+    protected HttpConn doGetHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
 
         try {
-            final HttpConn httpConn = new HttpConn(url, requestPropertyKeys, requestPropertyValues);
+            final AndroidHttpConn httpConn = new AndroidHttpConn(url, requestPropertyKeys, requestPropertyValues);
             httpConn.httpConnection.setDoOutput(true);
             httpConn.httpConnection.setDoInput(true);
             httpConn.httpConnection.setRequestMethod(requestMethod);
-            out = httpConn.httpConnection.getOutputStream();
-            out.write(bytes);
+            if (bytes != null) {
+                out = httpConn.httpConnection.getOutputStream();
+                out.write(bytes);
+            }
 
             return httpConn;
         } finally {
@@ -156,12 +91,12 @@ public final class PlatformUtils {
      * A convenience class abstracting HTTP connection operations between
      * different platforms
      */
-    public static final class HttpConn {
+    public static final class AndroidHttpConn implements PlatformUtils.HttpConn {
 
         final HttpURLConnection httpConnection;
         InputStream is = null;
 
-        public HttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
+        public AndroidHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
             httpConnection = (HttpURLConnection) new URL(url).openConnection();
             for (int i = 0; i < requestPropertyKeys.size(); i++) {
                 httpConnection.setRequestProperty((String) requestPropertyKeys.elementAt(i), (String) requestPropertyValues.elementAt(i));
@@ -200,7 +135,7 @@ public final class PlatformUtils {
             long length = 0;
 
             if (s != null && s.length() > 0) {
-                length = Long.valueOf(s);
+                length = Long.parseLong(s);
             }
 
             return length;

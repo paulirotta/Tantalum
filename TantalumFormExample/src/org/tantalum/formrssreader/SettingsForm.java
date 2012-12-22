@@ -1,6 +1,6 @@
 package org.tantalum.formrssreader;
 
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.j2me.RMSUtils;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;

@@ -1,11 +1,10 @@
 package org.tantalum.s40rssreader;
 
-import org.tantalum.j2me.TantalumMIDlet;
+import javax.microedition.lcdui.*;
 import org.tantalum.Task;
 import org.tantalum.TimeoutException;
 import org.tantalum.Worker;
-import org.tantalum.log.L;
-import javax.microedition.lcdui.*;
+import org.tantalum.j2me.TantalumMIDlet;
 
 /**
  * @author ssaa
@@ -22,10 +21,6 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     public static int COLOR_HIGHLIGHTED_FOREGROUND;
     public static int COLOR_BORDER;
     public static int COLOR_HIGHLIGHTED_BORDER;
-
-    public RSSReader() {
-        super(4);
-    }
 
     /**
      * Switches a current displayable in a display. The

@@ -21,13 +21,6 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     private SettingsForm settingsForm;
     private ListForm list;
 
-    /**
-     * The RSSReader constructor.
-     */
-    public RSSReader() {
-        super(4);
-    }
-
     //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
     //</editor-fold>//GEN-END:|methods|0|
     //<editor-fold defaultstate="collapsed" desc=" Generated Method: initialize ">//GEN-BEGIN:|0-initialize|0|0-preInitialize

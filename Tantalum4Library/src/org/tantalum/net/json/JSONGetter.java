@@ -22,7 +22,7 @@
  */
 package org.tantalum.net.json;
 
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 import org.tantalum.net.HttpGetter;
 
 /**

@@ -4,7 +4,7 @@
  */
 package org.tantalum;
 
-import org.tantalum.log.L;
+import org.tantalum.util.L;
 
 /**
  *

@@ -1,16 +1,17 @@
-package org.tantalum.storage;
+package org.tantalum.android;
 
-import org.tantalum.storage.FlashCache;
-import org.tantalum.storage.FlashFullException;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteFullException;
 import android.database.sqlite.SQLiteOpenHelper;
+import java.util.Vector;
 import org.tantalum.Workable;
 import org.tantalum.Worker;
-import org.tantalum.t4.log.L;
+import org.tantalum.util.L;
+import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.FlashFullException;
 
 public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
@@ -39,7 +40,6 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
     public AndroidCache() {
         super(context, DB_NAME, null, DB_VERSION);
         Worker.forkShutdownTask(new Workable() {
-            @Override
             public Object exec(final Object in2) {
                 if (db != null) {
                     db.close();
@@ -51,27 +51,26 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
         });
     }
 
-    @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_DB);
     }
 
-    @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         onCreate(db);
     }
 
-    @Override
     public synchronized byte[] getData(final String key) {
+        Cursor cursor = null;
+
+        final String[] fields = new String[]{COL_DATA};
+        L.i("db getData", "1");
+        if (db == null) {
+            db = getWritableDatabase();
+        }
+        L.i("db getData", "2");
         try {
-            final String[] fields = new String[]{COL_DATA};
-            L.i("db getData", "1");
-            if (db == null) {
-                db = getWritableDatabase();
-            }
-            L.i("db getData", "2");
-            final Cursor cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
+            cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
                     new String[]{String.valueOf(key)}, null, null, null, null);
             L.i("db getData", "3");
 
@@ -88,10 +87,12 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
             return null;
         } finally {
             L.i("db getData", "end");
+            if (cursor != null) {
+                cursor.close();
+            }
         }
     }
 
-    @Override
     public synchronized void putData(final String key, final byte[] data) throws FlashFullException {
         final ContentValues values = new ContentValues();
 
@@ -109,7 +110,6 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
         }
     }
 
-    @Override
     public synchronized void removeData(final String key) {
         final String where = COL_KEY + "==\"" + key + "\"";
 
@@ -117,5 +117,30 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
             db = getWritableDatabase();
         }
         db.delete(TABLE_NAME, where, null);
+    }
+
+    public Vector getKeys() {
+        final Vector keys = new Vector();
+
+        if (db == null) {
+            db = getWritableDatabase();
+        }
+        Cursor cursor = null;
+        try {
+            cursor = db.query(TABLE_NAME, new String[]{COL_KEY}, "*",
+                    null, null, null, null, null);
+            if (cursor != null && cursor.getCount() > 0) {
+                cursor.moveToFirst();
+                do {
+                    keys.addElement(new String(cursor.getBlob(0)));
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return keys;
     }
 }
