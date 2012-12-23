@@ -8,6 +8,7 @@ package org.tantalum.util;
 
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
+import org.tantalum.PlatformUtils;
 
 
 /**
@@ -35,7 +36,7 @@ public class LTest extends TestCase {
      */
     public void testLog() throws AssertionFailedException {
         System.out.println("log");
-        L instance = new L();
+        L instance = PlatformUtils.getLog();
         String tag_1 = "";
         String message_1 = "";
         instance.i(tag_1, message_1);

@@ -8,10 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
-import javax.microedition.io.Connector;
-import javax.microedition.io.HttpConnection;
-import org.tantalum.util.L;
 import org.tantalum.storage.FlashCache;
+import org.tantalum.util.L;
 
 /**
  *
@@ -30,43 +28,54 @@ public abstract class PlatformUtils {
     protected static volatile Thread uiThread = null;
     protected static FlashCache flashCache;
 
-    public static synchronized void setNumberOfWorkers(final int numberOfWorkers) {
-        PlatformUtils.numberOfWorkers = numberOfWorkers;
-    }
-
     public static synchronized void setProgram(final Object program) {
+        PlatformUtils.program = program;
+
         try {
-            if (program.getClass().isAssignableFrom(Class.forName("javax.microedition.midlet.MIDlet"))) {
+            System.out.println("" + program.getClass());
+            System.out.println("" + Class.forName("javax.microedition.midlet.MIDlet"));
+            System.out.println("" + Class.forName("org.tantalum.j2me.J2MEPlatformUtils"));
+            if (Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(program.getClass())) {
+                System.out.println("a");
                 PlatformUtils.platform = PLATFORM_J2ME;
-                PlatformUtils.program = program;
-                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("javax.microedition.midlet.MIDlet").newInstance();
+                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantalum.j2me.J2MEPlatformUtils").newInstance();
+                System.out.println("b");
                 Worker.init(numberOfWorkers);
+                System.out.println("c");
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        uiThread = Thread.currentThread();
+                    }
+                });
+                System.out.println("d");
 
                 return;
             }
         } catch (Throwable t) {
+            System.out.println("Can not init J2ME in setProgram(" + program.getClass().getName() + ") : " + t);
         }
         try {
-            if (program.getClass().isAssignableFrom(Class.forName("android.app.Activity"))) {
+            if (Class.forName("android.app.Activity").isAssignableFrom(program.getClass())) {
                 PlatformUtils.platform = PLATFORM_ANDROID;
                 PlatformUtils.program = program;
-                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("android.app.Activity").newInstance();
+                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantlaum.android.AndroidPlatformUtils").newInstance();
                 Worker.init(numberOfWorkers);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        uiThread = Thread.currentThread();
+                    }
+                });
 
                 return;
             }
         } catch (Throwable t) {
         }
 
-        throw new IllegalArgumentException(UNSUPPORTED_PLATFORM_MESSAGE);
+        throw new UnsupportedOperationException("SET PROGRAM: " + UNSUPPORTED_PLATFORM_MESSAGE);
     }
 
-    protected PlatformUtils() {
-        runOnUiThread(new Runnable() {
-            public void run() {
-                uiThread = Thread.currentThread();
-            }
-        });
+    public static synchronized void setNumberOfWorkers(final int numberOfWorkers) {
+        PlatformUtils.numberOfWorkers = numberOfWorkers;
     }
 
     /**
@@ -112,15 +121,15 @@ public abstract class PlatformUtils {
             try {
                 switch (PlatformUtils.platform) {
                     case PLATFORM_J2ME:
-                        flashCache = (FlashCache) Class.forName("org.tantalum.j2me.RMSCache").getClass().newInstance();
+                        flashCache = (FlashCache) Class.forName("org.tantalum.j2me.RMSCache").newInstance();
                         break;
 
                     case PLATFORM_ANDROID:
-                        flashCache = (FlashCache) Class.forName("org.tantalum.android.AndroidCache").getClass().newInstance();
+                        flashCache = (FlashCache) Class.forName("org.tantalum.android.AndroidCache").newInstance();
                         break;
 
                     default:
-                        throw new IllegalArgumentException(UNSUPPORTED_PLATFORM_MESSAGE);
+                        throw new UnsupportedOperationException("GET FLASH CACHE: " + UNSUPPORTED_PLATFORM_MESSAGE);
                 }
             } catch (Exception e) {
                 //#debug
@@ -130,11 +139,42 @@ public abstract class PlatformUtils {
 
         return flashCache;
     }
-    
+
+    /**
+     * This is used during application startup to get a platform-specific
+     * logging helper class.
+     *
+     * Do not call this method directly. Call L.i() and L.e() instead.
+     *
+     * @return
+     */
+    public static synchronized L getLog() {
+        L log = null;
+        try {
+            switch (PlatformUtils.platform) {
+                case PLATFORM_J2ME:
+                    log = (L) Class.forName("org.tantalum.j2me.J2MELog").newInstance();
+                    break;
+
+                case PLATFORM_ANDROID:
+                    log = (L) Class.forName("org.tantalum.android.AndroidLog").newInstance();
+                    break;
+
+                default:
+                    throw new UnsupportedOperationException("LOG: " + UNSUPPORTED_PLATFORM_MESSAGE);
+            }
+        } catch (Exception e) {
+            //#debug
+            System.out.println("Can not init platform log " + platformUtils.toString() + " : " + e);
+        }
+
+        return log;
+    }
+
     public static void runOnUiThread(final Runnable action) {
         PlatformUtils.platformUtils.doRunOnUiThread(action);
     }
-    
+
     protected abstract void doRunOnUiThread(Runnable action);
 
     /**
@@ -176,24 +216,14 @@ public abstract class PlatformUtils {
      * @throws IOException
      */
     protected abstract HttpConn doGetHttpConn(String url, Vector requestPropertyKeys, Vector requestPropertyValues, byte[] bytes, String requestMethod) throws IOException;
-    
+
     /**
-     * Create an HTTP PUT connection appropriate for this phone platform
-     *
-     * @param url
-     * @return
-     * @throws IOException
-     */
-//    public static HttpConn getHttpPutConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
-//        return doGetHttpPostOrPutConn(url, requestPropertyKeys, requestPropertyValues, bytes, "PUT");
-//    }
-    
-     /**
      * A convenience class abstracting HTTP connection operations between
      * different platforms.
-     * 
+     *
      * This is a platform-specific HTTP network connection. It provides access
-     * to response codes and the HTTP header with the corresponding key-value pairs
+     * to response codes and the HTTP header with the corresponding key-value
+     * pairs
      */
     public static interface HttpConn {
 

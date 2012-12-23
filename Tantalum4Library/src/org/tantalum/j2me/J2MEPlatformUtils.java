@@ -14,8 +14,6 @@ import javax.microedition.io.HttpConnection;
 import javax.microedition.lcdui.Display;
 import javax.microedition.midlet.MIDlet;
 import org.tantalum.PlatformUtils;
-import org.tantalum.util.L;
-import org.tantalum.storage.FlashCache;
 
 /**
  * Utilities for support of each specific platform (J2ME, Android, ..)
@@ -28,17 +26,17 @@ import org.tantalum.storage.FlashCache;
 public final class J2MEPlatformUtils extends PlatformUtils {
 
     private static final int DEFAULT_NUMBER_OF_WORKERS = 4;
-    final Display display = Display.getDisplay((MIDlet) program);
+    final Display display;
 
-    protected J2MEPlatformUtils() {
+    public J2MEPlatformUtils() {
+        System.out.println("1");
+        display = Display.getDisplay((MIDlet) PlatformUtils.program);
+        System.out.println("1b");
         if (PlatformUtils.numberOfWorkers == 0) {
+            System.out.println("2");
             PlatformUtils.setNumberOfWorkers(DEFAULT_NUMBER_OF_WORKERS);
         }
-        runOnUiThread(new Runnable() {
-            public void run() {
-                uiThread = Thread.currentThread();
-            }
-        });
+        System.out.println("3");
     }
 
     /**

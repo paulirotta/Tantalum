@@ -4,45 +4,36 @@
  */
 package org.tantalum.util;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Vector;
-import javax.microedition.io.CommConnection;
-import javax.microedition.io.Connector;
+import org.tantalum.PlatformUtils;
 
 /**
  * Utility class for logging.
  *
  * @author mark voit, paul houghton
  */
-public final class L {
+public abstract class L {
 
-//#mdebug
-    private static final byte[] LFCR = "\n\r".getBytes();
-    private static final Vector byteArrayQueue = new Vector();
-    private static final L.UsbWriter usbWriter = new L.UsbWriter();
-    private static OutputStream os = null;
-    private static CommConnection comm = null;
+//#debug
     private static final long startTime = System.currentTimeMillis();
-//#enddebug    
+    private static L log = PlatformUtils.getLog();
 
     /**
-     * Initialize comm port
+     * Start sending debug output to a serial terminal on a PC attached by
+     * Usb cable.
+     * 
+     * This gives you a running list of how long each operation takes which is
+     * helpful for on-device-debug, application profiling and seeing how
+     * concurrency is behaving on device which may be different from the slower
+     * emulator.
      *
      */
     public static void startUsbDebug() {
-//#mdebug
-        try {
-            final String commPort = System.getProperty("microedition.commports");
-            if (commPort != null) {
-                comm = (CommConnection) Connector.open("comm:" + commPort);
-                os = comm.openOutputStream();
-                new Thread(usbWriter).start();
-            }
-        } catch (IOException ex) {
-        }
-//#enddebug
+//#debug
+        L.log.routeDebugOutputToUsbSerialPort();
     }
+
+//#debug   
+    protected abstract void routeDebugOutputToUsbSerialPort();
 
     /**
      * Logs an "information" message.
@@ -52,7 +43,7 @@ public final class L {
      */
     public final static void i(final String tag, final String message) {
 //#debug
-        printMessage(getMessage(tag, message).toString());
+        log.printMessage(getMessage(tag, message).toString(), false);
     }
 
     /**
@@ -69,7 +60,7 @@ public final class L {
         sb.append(th);
 
         synchronized (L.class) {
-            printMessage(sb.toString());
+            log.printMessage(sb.toString(), true);
             if (th != null) {
                 th.printStackTrace();
             }
@@ -83,14 +74,7 @@ public final class L {
      *
      * @param string string to print
      */
-    private synchronized static void printMessage(final String string) {
-        if (os != null) {
-            byteArrayQueue.addElement(string.getBytes());
-            L.class.notifyAll();
-        } else {
-            System.out.println(string);
-        }
-    }
+    protected abstract void printMessage(final String string, final boolean errorMessage);
 
     /**
      * Get formatted message string.
@@ -123,73 +107,20 @@ public final class L {
 
         return sb;
     }
+
+    protected abstract void close();
 //#enddebug
-    
+
     /**
-     * Close any open resources. This is the last action before the MIDlet calls
-     * MIDlet.notifyDestoryed(). This is used by UsbLog.
+     * Close any open resources. This is the last action before the program
+     * calls notifyDestoryed(). This is used primarily by UsbLog to flush and
+     * finalize the outbound message queue.
      *
      */
     public static void shutdown() {
 //#mdebug
-        printMessage("Tantalum log shutdown");
-        if (usbWriter != null) {
-            synchronized (L.class) {
-                usbWriter.shutdownStarted = true;
-                L.class.notifyAll();
-            }
-
-            // Give the queue time to flush final messages
-            synchronized (usbWriter) {
-                try {
-                    if (!usbWriter.shutdownComplete) {
-                        usbWriter.wait(1000);
-                    }
-                } catch (InterruptedException ex) {
-                }
-            }
-        }
+        L.log.printMessage("Tantalum log shutdown", false);
+        L.log.close();
 //#enddebug
-}
-
-//#mdebug
-    private static final class UsbWriter implements Runnable {
-
-        boolean shutdownStarted = false;
-        boolean shutdownComplete = false;
-
-        public void run() {
-            try {
-                while (!shutdownStarted || !byteArrayQueue.isEmpty()) {
-                    synchronized (L.class) {
-                        if (byteArrayQueue.isEmpty()) {
-                            L.class.wait(1000);
-                        }
-                    }
-                    while (!byteArrayQueue.isEmpty()) {
-                        os.write((byte[]) byteArrayQueue.firstElement());
-                        byteArrayQueue.removeElementAt(0);
-                        os.write(LFCR);
-                    }
-                    os.flush();
-                }
-            } catch (Exception e) {
-            } finally {
-                try {
-                    os.close();
-                } catch (IOException ex) {
-                }
-                os = null;
-                try {
-                    comm.close();
-                } catch (IOException ex) {
-                }
-                synchronized (this) {
-                    shutdownComplete = true;
-                    this.notifyAll(); // All done- let shutdown() proceed
-                }
-            }
-        }
     }
-//#enddebug    
 }

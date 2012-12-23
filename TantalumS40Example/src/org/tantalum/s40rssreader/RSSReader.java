@@ -5,6 +5,7 @@ import org.tantalum.Task;
 import org.tantalum.TimeoutException;
 import org.tantalum.Worker;
 import org.tantalum.j2me.TantalumMIDlet;
+import org.tantalum.util.L;
 
 /**
  * @author ssaa
