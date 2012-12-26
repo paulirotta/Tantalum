@@ -4,8 +4,8 @@
  */
 package org.tantalum.android;
 
-import org.tantalum.storage.DataTypeHandler;
 import android.graphics.BitmapFactory;
+import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 
 /**
@@ -14,22 +14,13 @@ import org.tantalum.util.L;
  *
  * @author tsaa
  */
-public final class AndroidImageTypeHandler implements DataTypeHandler {
-
-    public AndroidImageTypeHandler() {
-    }
-
-    public AndroidImageTypeHandler(final boolean processAlpha, final boolean bestQuality, final int width, final int height) {
-        /*
-         * This constructor creates a resizing Image converter on S40, but on Android
-         * we RAM cache the full sime image and let the resize be done at render
-         * time, thus the "side" parameter is ignored.
-         */
-    }
+public final class AndroidImageTypeHandler extends ImageTypeHandler {
 
     public Object convertToUseForm(final byte[] bytes) {
         try {
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            
+            //TODO downscale the image according to ImageTypeHandler parameters. In most cases not needed- Android UI will take care of that
         } catch (IllegalArgumentException e) {
             L.e("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
             throw e;

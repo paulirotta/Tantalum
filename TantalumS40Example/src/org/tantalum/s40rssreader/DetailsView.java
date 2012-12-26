@@ -61,7 +61,7 @@ public final class DetailsView extends View {
         try {
             needsToClose = canvas.getRssReader().platformRequest(url);
             if (needsToClose) {
-                canvas.getRssReader().exitMIDlet(false);
+                canvas.getRssReader().shutdown(false);
             }
         } catch (ConnectionNotFoundException ex) {
             //#debug

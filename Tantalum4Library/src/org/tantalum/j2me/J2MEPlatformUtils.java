@@ -29,14 +29,10 @@ public final class J2MEPlatformUtils extends PlatformUtils {
     final Display display;
 
     public J2MEPlatformUtils() {
-        System.out.println("1");
         display = Display.getDisplay((MIDlet) PlatformUtils.program);
-        System.out.println("1b");
         if (PlatformUtils.numberOfWorkers == 0) {
-            System.out.println("2");
             PlatformUtils.setNumberOfWorkers(DEFAULT_NUMBER_OF_WORKERS);
         }
-        System.out.println("3");
     }
 
     /**

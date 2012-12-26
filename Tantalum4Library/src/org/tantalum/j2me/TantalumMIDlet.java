@@ -26,6 +26,8 @@ public abstract class TantalumMIDlet extends MIDlet {
      * 
      */
     protected TantalumMIDlet() {
+        super();
+        
         PlatformUtils.setProgram(this);
     }
 
@@ -38,28 +40,22 @@ public abstract class TantalumMIDlet extends MIDlet {
      * 
      * @param unconditional 
      */
-    public void exitMIDlet(final boolean unconditional) {
+    public void shutdown(final boolean unconditional) {
         Worker.shutdown(unconditional);        
     }
 
     /**
-     * Do not call this directly. Instead, call exitMidlet(false) to avoid
-     * common errors.
+     * Do not call this directly. Call exitMidlet(false) instead.
      * 
-     * If you do for some reason call this directly, realize the MIDlet will
-     * exit immediately after the call is complete, rather than wait for you
-     * to call doNotifyDestroyed() once an ongoing file or RMS write actions are
-     * completed. Usually, this is not desirable, call exitMidlet() instead
-     * and ongoing tasks will complete.
-     *
-     * If you want something done during shutdown, use
-     * Worker.forkShutdownTask(Workable) and it will be handled for you.
+     * This is part of MIDlet lifecycle model and may be called by the platform,
+     * for example when a users presses and holds the RED button on their phone
+     * to force an application to close.
      *
      * @param unconditional
      * @throws MIDletStateChangeException
      */
     protected final void destroyApp(final boolean unconditional) throws MIDletStateChangeException {
-        exitMIDlet(unconditional);
+        shutdown(unconditional);
     }
 
     /**

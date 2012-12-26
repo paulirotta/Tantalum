@@ -45,7 +45,7 @@ public final class VerticalListView extends RSSListView {
 
     public void commandAction(final Command command, final Displayable d) {
         if (command == exitCommand) {
-            canvas.getRssReader().exitMIDlet(false);
+            canvas.getRssReader().shutdown(false);
         } else if (command == updateCommand) {
             reload(true);
         } else if (command == clearCacheCommand) {

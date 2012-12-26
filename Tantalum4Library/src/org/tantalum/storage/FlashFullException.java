@@ -12,5 +12,8 @@ package org.tantalum.storage;
  * 
  * @author phou
  */
-public final class FlashFullException extends Exception {    
+public final class FlashFullException extends FlashDatabaseException {
+    public FlashFullException(final String message) {
+        super(message);
+    }
 }

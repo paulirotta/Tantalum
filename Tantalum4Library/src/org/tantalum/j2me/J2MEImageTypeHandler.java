@@ -1,10 +1,10 @@
 package org.tantalum.j2me;
 
-import org.tantalum.Worker;
-import org.tantalum.util.L;
-import org.tantalum.util.ImageUtils;
 import javax.microedition.lcdui.Image;
-import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.Worker;
+import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.util.ImageUtils;
+import org.tantalum.util.L;
 
 /**
  * This is a helper class for creating an image class. It automatically converts
@@ -12,56 +12,37 @@ import org.tantalum.storage.DataTypeHandler;
  *
  * @author tsaa
  */
-public final class J2MEImageTypeHandler implements DataTypeHandler {
-
-    private final int maxWidth;
-    private final int maxHeight;
-    private final boolean processAlpha;
-    private final boolean bestQuality;
-
-    /**
-     * Create a non-scaling image cache
-     *
-     */
-    public J2MEImageTypeHandler() {
-        maxWidth = -1;
-        maxHeight = -1;
-        this.processAlpha = false;
-        this.bestQuality = false;
-    }
-
-    /**
-     * Create an image cache which scales images on load into memory
-     *
-     * @param processAlpha
-     * @param bestQuality
-     * @param maxWidth
-     * @param maxHeight
-     */
-    public J2MEImageTypeHandler(final boolean processAlpha, final boolean bestQuality, final int maxWidth, final int maxHeight) {
-        this.maxWidth = maxWidth;
-        this.maxHeight = maxHeight;
-        this.processAlpha = processAlpha;
-        this.bestQuality = bestQuality;
-    }
+public final class J2MEImageTypeHandler extends ImageTypeHandler {
 
     public Object convertToUseForm(final byte[] bytes) {
         final Image img;
+        final boolean quality;
+        final boolean alpha;
+        final boolean aspect;
+        final int w, h;
+        
+        synchronized (this) {
+            quality = this.bestQuality;
+            alpha = this.processAlpha;
+            aspect = this.preserveAspectRatio;
+            w = this.maxWidth;
+            h = this.maxHeight;
+        }
 
         try {
-            if (maxWidth == -1) {
+            if (w == -1) {
                 //#debug
                 L.i("convert image", "length=" + bytes.length);
                 img = Image.createImage(bytes, 0, bytes.length);
             } else {
                 synchronized (Worker.LARGE_MEMORY_MUTEX) {
                     Image temp = Image.createImage(bytes, 0, bytes.length);
-                    final int w = temp.getWidth();
-                    final int h = temp.getHeight();
-                    int[] data = new int[w * h];
-                    temp.getRGB(data, 0, w, 0, 0, w, h);
+                    final int tempW = temp.getWidth();
+                    final int tempH = temp.getHeight();
+                    int[] data = new int[tempW * tempH];
+                    temp.getRGB(data, 0, tempW, 0, 0, tempW, tempH);
                     temp = null;
-                    img = ImageUtils.downscaleImage(data, w, h, maxWidth, maxHeight, true, processAlpha, bestQuality);
+                    img = ImageUtils.downscaleImage(data, tempW, tempH, w, h, aspect, alpha, quality);
                     data = null;
                 }
             }

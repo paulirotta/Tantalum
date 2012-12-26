@@ -8,6 +8,7 @@ import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.tantalum.Workable;
 import org.tantalum.Worker;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 import org.tantalum.util.LengthLimitedVector;
 
@@ -107,7 +108,7 @@ public class RMSUtils {
      * @return
      * @throws RecordStoreFullException
      */
-    public static byte[] cacheRead(final String key) {
+    public static byte[] cacheRead(final String key) throws FlashDatabaseException {
         return read(getRecordStoreCacheName(key));
     }
 
@@ -237,7 +238,7 @@ public class RMSUtils {
      * @param recordStoreName
      * @return byte[]
      */
-    public static byte[] read(String recordStoreName) {
+    public static byte[] read(String recordStoreName) throws FlashDatabaseException {
         RecordStore rs = null;
         byte[] data = null;
 
@@ -257,6 +258,7 @@ public class RMSUtils {
         } catch (Exception e) {
             //#debug
             L.e("Can not read RMS", recordStoreName, e);
+            throw new FlashDatabaseException("Can not read record from RMS: " + recordStoreName + " : " + e);
         }
 
         return data;

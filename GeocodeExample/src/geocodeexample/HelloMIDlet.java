@@ -253,7 +253,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        exitMIDlet(true);
+        shutdown(true);
     }
 
     /**

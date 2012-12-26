@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
+import org.tantalum.storage.DataTypeHandler;
 import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 
 /**
@@ -32,22 +34,15 @@ public abstract class PlatformUtils {
         PlatformUtils.program = program;
 
         try {
-            System.out.println("" + program.getClass());
-            System.out.println("" + Class.forName("javax.microedition.midlet.MIDlet"));
-            System.out.println("" + Class.forName("org.tantalum.j2me.J2MEPlatformUtils"));
             if (Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(program.getClass())) {
-                System.out.println("a");
                 PlatformUtils.platform = PLATFORM_J2ME;
                 PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantalum.j2me.J2MEPlatformUtils").newInstance();
-                System.out.println("b");
                 Worker.init(numberOfWorkers);
-                System.out.println("c");
                 runOnUiThread(new Runnable() {
                     public void run() {
                         uiThread = Thread.currentThread();
                     }
                 });
-                System.out.println("d");
 
                 return;
             }
@@ -58,7 +53,7 @@ public abstract class PlatformUtils {
             if (Class.forName("android.app.Activity").isAssignableFrom(program.getClass())) {
                 PlatformUtils.platform = PLATFORM_ANDROID;
                 PlatformUtils.program = program;
-                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantlaum.android.AndroidPlatformUtils").newInstance();
+                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantalum.android.AndroidPlatformUtils").newInstance();
                 Worker.init(numberOfWorkers);
                 runOnUiThread(new Runnable() {
                     public void run() {
@@ -138,6 +133,30 @@ public abstract class PlatformUtils {
         }
 
         return flashCache;
+    }
+
+    public static synchronized ImageTypeHandler getImageTypeHandler() {
+        ImageTypeHandler imageTypeHandler = null;
+
+        try {
+            switch (PlatformUtils.platform) {
+                case PLATFORM_J2ME:
+                    imageTypeHandler = (ImageTypeHandler) Class.forName("org.tantalum.j2me.J2MEImageTypeHandler").newInstance();
+                    break;
+
+                case PLATFORM_ANDROID:
+                    imageTypeHandler = (ImageTypeHandler) Class.forName("org.tantalum.android.AndroidImageTypeHandler").newInstance();
+                    break;
+
+                default:
+                    throw new UnsupportedOperationException("GET IMAGE TYPE HANDLER: " + UNSUPPORTED_PLATFORM_MESSAGE);
+            }
+        } catch (Exception e) {
+            //#debug
+            L.e("Can not getImageTypeHandler()", platformUtils.toString(), e);
+        }
+
+        return imageTypeHandler;
     }
 
     /**

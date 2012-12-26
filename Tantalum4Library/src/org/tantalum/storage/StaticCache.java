@@ -164,7 +164,7 @@ public class StaticCache {
      * @param key
      * @return 
      */
-    protected Object synchronousGet(final String key) {
+    protected Object synchronousGet(final String key) throws FlashDatabaseException {
         Object o = synchronousRAMCacheGet(key);
 
         //#debug
@@ -279,7 +279,7 @@ public class StaticCache {
      * @param minSpaceToClear - in bytes
      * @return true if the requested amount of space has been cleared
      */
-    private static boolean clearSpace(final int minSpaceToClear) {
+    private static boolean clearSpace(final int minSpaceToClear) throws FlashDatabaseException {
         int spaceCleared = 0;
         //FIXME Not appropriate for Android. Why is there no compilation bad reference error?
         final Vector rsv = flashCache.getKeys();
@@ -318,7 +318,7 @@ public class StaticCache {
         return spaceCleared >= minSpaceToClear;
     }
 
-    private static int getByteSizeByKey(final String key) {
+    private static int getByteSizeByKey(final String key) throws FlashDatabaseException {
         int size = 0;
 
         final byte[] bytes = flashCache.getData(key);

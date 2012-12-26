@@ -20,7 +20,7 @@ public interface FlashCache {
      * @param key
      * @return 
      */
-    public byte[] getData(String key);
+    public byte[] getData(String key) throws FlashDatabaseException;
 
     /**
      * Store the data object to persistent memory
@@ -29,19 +29,19 @@ public interface FlashCache {
      * @param bytes
      * @throws FlashFullException 
      */
-    public void putData(String key, byte[] bytes) throws FlashFullException;
+    public void putData(String key, byte[] bytes) throws FlashFullException, FlashDatabaseException;
 
     /**
      * Remove the data object from persistent memory
      * 
      * @param key 
      */
-    public void removeData(String key);
+    public void removeData(String key) throws FlashDatabaseException;
 
     /**
-     * Provide a list of all keys for objects stored in persisten memory
+     * Provide a list of all keys for objects stored in persistent memory
      * 
      * @return 
      */
-    public Vector getKeys();
+    public Vector getKeys() throws FlashDatabaseException;
 }
