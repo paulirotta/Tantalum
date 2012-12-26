@@ -23,17 +23,10 @@ public final class AndroidPlatformUtils extends PlatformUtils {
 
     private static final int DEFAULT_NUMBER_OF_WORKERS = 8;
 
-    protected AndroidPlatformUtils() {
-        super();
-
+    public AndroidPlatformUtils() {
         if (PlatformUtils.numberOfWorkers == 0) {
             PlatformUtils.setNumberOfWorkers(DEFAULT_NUMBER_OF_WORKERS);
         }
-        runOnUiThread(new Runnable() {
-            public void run() {
-                uiThread = Thread.currentThread();
-            }
-        });
     }
 
     protected void doRunOnUiThread(final Runnable action) {

@@ -7,7 +7,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteFullException;
 import android.database.sqlite.SQLiteOpenHelper;
-import java.io.IOException;
 import java.util.Vector;
 import org.tantalum.Workable;
 import org.tantalum.Worker;

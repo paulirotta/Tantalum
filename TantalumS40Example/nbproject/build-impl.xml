@@ -321,9 +321,6 @@
         <ant target="jar" inheritall="false" antfile="${project.Tantalum4Library}/build.xml">
             <property name="config.active" value="Release"/>
         </ant>
-        <ant target="jar" inheritall="false" antfile="${project.Tantalum4Library}/build.xml">
-            <property name="config.active" value="UsbDebug"/>
-        </ant>
     </target>
     <!--preprocess-->
     <target name="pre-preprocess"/>

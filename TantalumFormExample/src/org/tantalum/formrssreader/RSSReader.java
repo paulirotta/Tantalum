@@ -4,9 +4,9 @@
  */
 package org.tantalum.formrssreader;
 
-import org.tantalum.j2me.TantalumMIDlet;
-import org.tantalum.Worker;
 import javax.microedition.lcdui.*;
+import org.tantalum.Worker;
+import org.tantalum.j2me.TantalumMIDlet;
 
 /**
  * @author vand

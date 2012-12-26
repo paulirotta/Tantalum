@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
-import org.tantalum.storage.DataTypeHandler;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
@@ -34,7 +33,24 @@ public abstract class PlatformUtils {
         PlatformUtils.program = program;
 
         try {
-            if (Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(program.getClass())) {
+            if (Class.forName("org.tantalum.android.TantalumActivity").isAssignableFrom(program.getClass())) {
+                PlatformUtils.platform = PLATFORM_ANDROID;
+                PlatformUtils.program = program;
+                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantalum.android.AndroidPlatformUtils").newInstance();
+                Worker.init(numberOfWorkers);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        uiThread = Thread.currentThread();
+                    }
+                });
+
+                return;
+            }
+        } catch (Throwable t) {
+            System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
+        }
+        try {
+            if (Class.forName("org.tantalum.j2me.TantalumMIDlet").isAssignableFrom(program.getClass())) {
                 PlatformUtils.platform = PLATFORM_J2ME;
                 PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantalum.j2me.J2MEPlatformUtils").newInstance();
                 Worker.init(numberOfWorkers);
@@ -49,24 +65,8 @@ public abstract class PlatformUtils {
         } catch (Throwable t) {
             System.out.println("Can not init J2ME in setProgram(" + program.getClass().getName() + ") : " + t);
         }
-        try {
-            if (Class.forName("android.app.Activity").isAssignableFrom(program.getClass())) {
-                PlatformUtils.platform = PLATFORM_ANDROID;
-                PlatformUtils.program = program;
-                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantalum.android.AndroidPlatformUtils").newInstance();
-                Worker.init(numberOfWorkers);
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        uiThread = Thread.currentThread();
-                    }
-                });
 
-                return;
-            }
-        } catch (Throwable t) {
-        }
-
-        throw new UnsupportedOperationException("SET PROGRAM: " + UNSUPPORTED_PLATFORM_MESSAGE);
+        throw new UnsupportedOperationException("SET PROGRAM: " + UNSUPPORTED_PLATFORM_MESSAGE + " : " + program.getClass().getName());
     }
 
     public static synchronized void setNumberOfWorkers(final int numberOfWorkers) {

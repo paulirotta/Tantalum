@@ -8,10 +8,10 @@ import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.*;
 import org.tantalum.UITask;
 import org.tantalum.Worker;
-import org.tantalum.util.L;
+import org.tantalum.j2me.J2MEImageTypeHandler;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
-import org.tantalum.j2me.J2MEImageTypeHandler;
+import org.tantalum.util.L;
 
 /**
  *
