@@ -430,7 +430,15 @@ public final class Worker extends Thread {
                     if (w != null) {
                         if (w instanceof Task) {
                             final Task t = (Task) w;
-                            if (t.getStatus() < Task.CANCELED) {
+                            boolean e = false;
+                            synchronized (t) {
+                                int s = t.getStatus();
+                                e = s < Task.CANCELED && s != Task.EXEC_STARTED;
+                                if (e) {
+                                    t.setStatus(Task.EXEC_STARTED);
+                                }
+                            }
+                            if (e) {
                                 w.exec(t.getValue()); // Pass in argument
                             } else {
                                 //#debug

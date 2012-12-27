@@ -275,23 +275,28 @@ public abstract class Task implements Workable {
 
     /**
      * Change the status
-     * 
+     *
      * You can only change status CANCELED or EXCEPTION to the READY state to
      * explicitly indicate you are going to re-use this Task. Note that Task
      * re-use is generally not advised, but can be valid if you have a special
-     * need such as performance when re-creating the Task is particularly expensive.
+     * need such as performance when re-creating the Task is particularly
+     * expensive.
      *
      * @param status
      */
-    protected synchronized final void setStatus(final int status) {
-        if ((this.status == CANCELED || this.status == EXCEPTION) && status != READY) {
-            //#debug
-            L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
-            return;
-        }
+    protected final void setStatus(final int status) {
+        final Task t;
+        synchronized (this) {
+            if ((this.status == CANCELED || this.status == EXCEPTION) && status != READY) {
+                //#debug
+                L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
+                return;
+            }
 
-        this.status = status;
-        this.notifyAll();
+            this.status = status;
+            this.notifyAll();
+            t = chainedTask;
+        }
 
         if (status == CANCELED || status == EXCEPTION) {
             PlatformUtils.runOnUiThread(new Runnable() {
@@ -302,10 +307,6 @@ public abstract class Task implements Workable {
                 }
             });
             // Also cancel any chained Tasks expecting the output of this Task
-            final Task t;
-            synchronized (this) {
-                t = chainedTask;
-            }
             if (t != null) {
                 t.cancel(false);
             }
@@ -348,15 +349,16 @@ public abstract class Task implements Workable {
 
         try {
             synchronized (this) {
-                if (status == CANCELED || status == EXCEPTION || status == EXEC_STARTED) {
-                    throw new IllegalStateException("Can not exec() Task: status=" + getStatusString() + " " + this);
-                }
                 if (in == null) {
                     in = value;
                 } else {
                     value = in;
                 }
-                setStatus(EXEC_STARTED);
+                if (status == Task.CANCELED || status == Task.EXCEPTION) {
+                    throw new IllegalStateException(this.getStatusString() + " state can not be executed: " + this);
+                } else if (status != Task.EXEC_STARTED) {
+                    setStatus(Task.EXEC_STARTED);
+                }
             }
             out = doInBackground(in);
 

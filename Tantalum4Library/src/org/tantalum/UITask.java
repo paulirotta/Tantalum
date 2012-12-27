@@ -22,7 +22,10 @@ public abstract class UITask extends Task implements Runnable {
 
     public final void run() {
         try {
-            onPostExecute(getValue());
+            final Object value = getValue();
+            if (value != null) {
+                onPostExecute(value);
+            }
         } catch (Throwable t) {
             L.e("UITask onPostExecute uncaught error", this.toString(), t);
         } finally {
