@@ -20,27 +20,14 @@ public abstract class TantalumActivity extends Activity {
         PlatformUtils.setProgram(this);
     }
 
-    /**
-     * Call this to close your Activity's database and final queued Tasks in an
-     * orderly manner.
-     *
-     * Ongoing Work tasks will complete, or if you set unconditional then they
-     * will complete within 3 seconds.
-     *
-     * @param unconditional
-     */
-    public void shutdown(final boolean unconditional) {
-        Worker.shutdown(unconditional);
-    }
-
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        AndroidCache.setContext(((Activity) this).getApplicationContext());
+        AndroidCache.setContext(getApplicationContext());
     }
 
     protected void onDestroy() {
-        shutdown(true);
+        Worker.shutdown(true); // Closed database and wait for similar orderly exit tasks
         
         super.onDestroy();
     }

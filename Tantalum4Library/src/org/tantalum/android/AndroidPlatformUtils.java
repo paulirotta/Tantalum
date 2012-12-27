@@ -61,16 +61,22 @@ public final class AndroidPlatformUtils extends PlatformUtils {
      */
     protected HttpConn doGetHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
+        final boolean doOutput = bytes != null;
 
         try {
+            System.out.println("1" + url);
             final AndroidHttpConn httpConn = new AndroidHttpConn(url, requestPropertyKeys, requestPropertyValues);
-            httpConn.httpConnection.setDoOutput(true);
+            System.out.println("2" + url);
+            httpConn.httpConnection.setDoOutput(doOutput);
+            System.out.println("3" + url);
             httpConn.httpConnection.setDoInput(true);
+            System.out.println("4" + url);
             httpConn.httpConnection.setRequestMethod(requestMethod);
-            if (bytes != null) {
+            if (doOutput) {
                 out = httpConn.httpConnection.getOutputStream();
                 out.write(bytes);
             }
+            System.out.println("5" + url);
 
             return httpConn;
         } finally {
