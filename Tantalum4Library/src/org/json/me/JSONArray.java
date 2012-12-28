@@ -858,8 +858,9 @@ public class JSONArray {
      * <p>
      * Warning: This method assumes that the data structure is acyclical.
      *
-     * @return The writer.
-     * @throws JSONException
+     * @param writer
+     * @return
+     * @throws JSONException 
      */
     public Writer write(Writer writer) throws JSONException {
         try {

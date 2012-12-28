@@ -1,15 +1,40 @@
+/*
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
 package org.tantalum;
 
 import org.tantalum.j2me.J2MEPlatformUtils;
 
 /**
- * An implementation of Android's AsyncTask pattern for J2ME. This can be used
- * on both J2ME and Android, and on Android it is intended as a drop-in
- * replacement to provide cross platform functionality.
- *
- * Note that if you are not set on using the Android pattern, you may prefer the
- * simpler Task (Java7-like fork-join), UITask (Task with UI thread completion)
- * or basic open loop Workable patterns.
+ * An implementation of Android's AsyncTask pattern for cross platform application
+ * on J2ME and Android. On Android it is intended as a drop-in
+ * replacement for the platform library class. The less commonly used features
+ * of the Android implementation are not supported. Unlike the Android version,
+ * you can join() or jointUI() a Tantalum AsyncTask to trigger out-of-sequence
+ * execution or wait a specified max time interval for the AsyncTask to complete.
+ * This design pattern is from Java 7's fork-join framework, but instead of
+ * using for server scalability we use it here for convenience in improving
+ * client side user experience.
  */
 public abstract class AsyncTask extends UITask {
     /*
@@ -25,7 +50,7 @@ public abstract class AsyncTask extends UITask {
 
     private static volatile boolean agressiveThreading = true;
 
-    /*
+    /**
      * If tasks are called with execute(Params) then they will all execute in
      * guaranteed sequence on one Worker thread. It is generally better to use
      * executeOnExecutor(Params) instead unless
@@ -138,10 +163,6 @@ public abstract class AsyncTask extends UITask {
         return this;
     }
 
-    public final synchronized boolean isCanceled() {
-        return status == AsyncTask.CANCELED || status == EXCEPTION;
-    }
-
     /**
      * Override if needed
      *
@@ -167,7 +188,8 @@ public abstract class AsyncTask extends UITask {
      * This is executed on the UI thread
      *
      * Override if needed and use the volatile variable "progress"
-     *
+     * 
+     * @param progress 
      */
     protected void onProgressUpdate(final Object progress) {
     }
@@ -176,7 +198,8 @@ public abstract class AsyncTask extends UITask {
      * This is executed on the UI thread
      *
      * Override if needed
-     *
+     * 
+     * @param result 
      */
     protected void onPostExecute(Object result) {
     }

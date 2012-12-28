@@ -1,6 +1,25 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum;
 
@@ -8,23 +27,64 @@ import org.tantalum.j2me.J2MEPlatformUtils;
 import org.tantalum.util.L;
 
 /**
+ * A Task is the base unit of work in the Tantalum toolset. Any piece of code
+ * which runs in response to an event and does not explicitly need to be run on
+ * the user interface (UI) thread is usually implemented in an extension of
+ * Task.doInBackground(). It will automatically be executed on a background
+ * worker thread once fork() has been called.
  *
  * @author phou
  */
 public abstract class Task implements Workable {
     // status values
 
-    public static final int MAX_TIMEOUT = 120000; // If not specified, no thread can wait more than 2 minutes
+    /**
+     * For join(), if a timeout is not specified, no thread can wait more than 2 minutes.
+     */
+    public static final int MAX_TIMEOUT = 120000; // 
+    /**
+     * status: created and forked for execution by a background
+     * Worker thread, but no Worker has yet been free to accept this queued Task
+     */
     public static final int EXEC_PENDING = 0;
+    /**
+     * status: doInBackground() has started but not yet finished
+     */
     public static final int EXEC_STARTED = 1;
+    /**
+     * status: doInBackground() has finished. If this is a UI thread there still
+     * may be pending activity for the user interface thread
+     */
     public static final int EXEC_FINISHED = 2;
+    /**
+     * status: both Worker thread doInBackground() and UI thread onPostExecute()
+     * have completed
+     */
     public static final int UI_RUN_FINISHED = 3; // for Closure extension
+    /**
+     * state: cancel() was called
+     */
     public static final int CANCELED = 4;
+    /**
+     * status: an uncaught exception was thrown during execution
+     */
     public static final int EXCEPTION = 5;
+    /**
+     * status: the Task has been created, but fork() has not yet been called to
+     * queue this for execution on a background Worker thread
+     */
     public static final int READY = 6;
     private static final String[] STATUS_STRINGS = {"EXEC_PENDING", "EXEC_STARTED", "EXEC_FINISHED", "UI_RUN_FINISHED", "CANCELED", "EXCEPTION", "READY"};
     private Object value = null; // Always access within a synchronized block
+    /**
+     * The current execution state, one of several predefined constants
+     */
     protected int status = READY; // Always access within a synchronized block
+    /**
+     * The next Task to be executed after this Task completes successfully. If
+     * the current task is canceled or throws an exception, the chainedTask(s)
+     * will have cancel() called to notify that they will not execute.
+     */
     protected volatile Task chainedTask = null; // Run afterwords, passing output as input parameter
 
     /**
@@ -394,7 +454,8 @@ public abstract class Task implements Workable {
     /**
      * Override to implement Worker thread code
      *
-     * @param params
+     * @param in
+     * @return 
      */
     protected abstract Object doInBackground(Object in);
 
@@ -444,6 +505,16 @@ public abstract class Task implements Workable {
     protected void onCanceled() {
         //#debug
         L.i("Task canceled", this.toString());
+    }
+
+    /**
+     * Check of the task has been had cancel() called or has thrown an uncaught
+     * exception while executing.
+     *
+     * @return
+     */
+    public final synchronized boolean isCanceled() {
+        return status == AsyncTask.CANCELED || status == EXCEPTION;
     }
 
     /**

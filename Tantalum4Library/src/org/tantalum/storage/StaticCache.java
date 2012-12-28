@@ -1,3 +1,26 @@
+/*
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
 package org.tantalum.storage;
 
 import java.util.Vector;
@@ -16,7 +39,8 @@ import org.tantalum.util.WeakHashCache;
  *
  * Objects in RAM are kept with WeakReferences so they may be garbage collected.
  *
- * Objects in RMS are managed in a "least recently accessed" form to make space.
+ * Objects in flash memory are managed in a "least recently accessed" form to
+ * garbage collect and make space when persistent storage runs low.
  *
  * Each StaticCache uses a single RMS and may be referred to by name.
  *
@@ -32,10 +56,45 @@ public class StaticCache {
         }
     });
     private static final FlashCache flashCache = PlatformUtils.getFlashCache();
+    /**
+     * A heap memory cache in the form of a Hashtable from which data can be
+     * removed automatically by the virtual machine to free up memory (automatic
+     * memory management).
+     */
     protected final WeakHashCache cache = new WeakHashCache();
+    /**
+     * The order in which object in the cache have been accessed since the
+     * program started. Each time an object is accessed, it moves to the
+     * beginning of the last. Least recently used objects are the ones most
+     * likely to be cleared when additional flash memory is needed. The heap
+     * memory WeakReferenceCache does not make use of this access order.
+     */
     protected final LRUVector accessOrder = new LRUVector();
-    protected final char priority; // Must be unique, preferrably and integer, larger characters get more space when space is limited
+    /**
+     * This character serves as a market tag to distinguish the contents of this
+     * cache from other caches which may also be stored in flash memory in a
+     * flat name space. This must be unique like '0'..'9' or 'a'..'z'. Larger
+     * character values indicate lower priority caches which will be garage
+     * collected first when flash memory is low, so use larger characters for
+     * more transient or less-important-to-persist data.
+     */
+    protected final char priority;
+    /**
+     * This interface gives one method you must provide to convert from the raw
+     * byte[] format received from a web server or similar source into an Object
+     * format such as Image or your own data model. This is usually a parser of
+     * some kind. It will be run both when data first arrives over the network,
+     * and again any time the data is loaded from flash memory. Since the heap
+     * memory cache uses WeakReference, values may be loaded from flash memory
+     * several times. This conversion method should therefore be stateless and
+     * thread safe so it can be run on several threads and possibly multiple
+     * cores at the same time.
+     */
     protected final DataTypeHandler handler;
+    /**
+     * Total size of the cache as it exists in flash memory. This is often
+     * larger than the current heap cache memory consumption.
+     */
     protected int sizeAsBytes = 0;
 
     /**
@@ -44,8 +103,7 @@ public class StaticCache {
      * Caches with higher priority are more likely to keep their data when space
      * is limited.
      *
-     * @param name
-     * @param priority, a character from '0' to '9', higher numbers get a
+     * @param priority - a character from '0' to '9', higher numbers get a
      * preference for space
      * @param handler
      */
@@ -72,7 +130,8 @@ public class StaticCache {
      * If you also want the object stored in RMS, call put()
      *
      * @param key
-     * @param o
+     * @param bytes
+     * @return
      */
     protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         //#debug
@@ -110,14 +169,10 @@ public class StaticCache {
     /**
      * Retrieve an object from RAM or RMS storage.
      *
-     *
      * @param key
-     * @param callback
-     * @param priority - default is Work.NORMAL_PRIORITY set to
-     * Work.HIGH_PRIORITY if you want the results quickly. Note that your
-     * request for priority may be denied if you have recently changed the value
-     * and the value happens to have expired from the RAM cache due to a low
-     * memory condition.
+     * @param getPriority - default is Work.NORMAL_PRIORITY set to
+     * Work.HIGH_PRIORITY if you want the results quickly to update the UI.
+     * @return
      */
     public Task getAsync(final String key, final int getPriority) {
         if (key == null || key.length() == 0) {
@@ -158,11 +213,12 @@ public class StaticCache {
     }
 
     /**
-     * Get the value from local RAM or Flash cache memory. null is returned
-     * if the value is not available locally.
-     * 
+     * Get the value from local RAM or Flash cache memory. null is returned if
+     * the value is not available locally.
+     *
      * @param key
-     * @return 
+     * @return
+     * @throws FlashDatabaseException
      */
     protected Object synchronousGet(final String key) throws FlashDatabaseException {
         Object o = synchronousRAMCacheGet(key);
@@ -459,22 +515,52 @@ public class StaticCache {
         return str.toString();
     }
 
+    /**
+     * A helper class to get data asynchronously from the local cache without
+     * attempting to get data from the web.
+     *
+     * Usually you do not invoke this directly, but rather call
+     * StaticCache.getAsync() or StaticWebCache.get(StaticWebCache.GET_LOCAL) to
+     * invoke this with chain() support. You can use this to build your own
+     * custom asynchronous background processing Task chain.
+     */
     final public class GetLocalTask extends Task {
+
+        /**
+         * Create a new get operation. The url will be supplied as an input to
+         * this chained Task (the output of the previous Task in the chain).
+         */
         public GetLocalTask() {
             super();
         }
-        
+
+        /**
+         * Create a new get operation, specifying the url in advance.
+         *
+         * @param key
+         */
         public GetLocalTask(final String key) {
             super(key);
         }
-        
+
+        /**
+         * Complete the persistent flash storage read operation on a background
+         * Worker thread. Note that although read operations are about 10x
+         * faster than flash write operations, this must still be done on a
+         * background thread because a slower write operation on a different
+         * thread could block this read operation for a significant amount of
+         * time. That would be bad for user experience it it were blocking the UI thread.
+         *
+         * @param in
+         * @return
+         */
         protected Object doInBackground(final Object in) {
             //#debug
             L.i("Async StaticCache get", (String) in);
             if (in == null || !(in instanceof String)) {
                 L.i("ERROR", "StaticCache.GetLocalTask must receive a String url, but got " + in == null ? "null" : in.toString());
                 cancel(false);
-                
+
                 return in;
             }
             try {
@@ -488,19 +574,53 @@ public class StaticCache {
             return in;
         }
     }
-    
+
+    /**
+     * Helper class for storing data to persistent memory.
+     *
+     * Normally you do not use this directly, but rather call the convenience
+     * methods like StaticCache.putAync(). Note that StaticWebCache.get() local
+     * cache miss will also automatically result in a local put operation once
+     * the data is received from the webserver.
+     */
     public class PutLocalTask extends Task {
+
         private final String key;
-        
+
+        /**
+         * Create a new put task. The value to be put will be received as
+         * chained input at or before the time of execution.
+         *
+         * @param key - usually a url, can be any String include a multi-line
+         * String to generate a unique hashcode
+         */
         public PutLocalTask(final String key) {
             this.key = key;
         }
 
+        /**
+         * Create an asynchronous persistent data storage Task and specify the
+         * value to be stored.
+         *
+         * @param key - usually a url, can be any String include a multi-line
+         * String to generate a unique hashcode
+         * @param value
+         */
         public PutLocalTask(final String key, final byte[] value) {
             this.key = key;
             this.setValue(value);
         }
 
+        /**
+         * Complete the flash store event on the background Worker thread. If
+         * you are using the StaticCache.putAsync() convenience directly or
+         * indirectly (StaticWebCache.get() cache miss) then this task will be
+         * executed in guaranteed FIFO order on a single background Worker
+         * thread.
+         *
+         * @param in
+         * @return
+         */
         protected Object doInBackground(Object in) {
             if (in == null) {
                 in = key;
@@ -510,7 +630,7 @@ public class StaticCache {
             }
 
             putAsync(key, (byte[]) in);
-            
+
             return convertAndPutToHeapCache(key, (byte[]) in);
         }
     }

@@ -1,8 +1,25 @@
 /*
- * LRUVectorTest.java
- * JMUnit based test
- *
- * Created on 22-Mar-2012, 14:44:06
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum.util;
 
@@ -10,15 +27,26 @@ import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
 
 /**
+ * LRUVector unit tests.
+ * 
  * @author phou
  */
 public class LRUVectorTest extends TestCase {
 
+    /**
+     * Unit test class
+     */
     public LRUVectorTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(5, "LRUVectorTest");
     }
 
+    /**
+     * Invoke unit tests by number
+     * 
+     * @param testNumber
+     * @throws Throwable 
+     */
     public void test(int testNumber) throws Throwable {
         switch (testNumber) {
             case 0:
@@ -43,6 +71,8 @@ public class LRUVectorTest extends TestCase {
 
     /**
      * Test of testSetElementAt method, of class LRUVector.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testSetElementAt() throws AssertionFailedException {
         System.out.println("setElementAt");
@@ -59,6 +89,8 @@ public class LRUVectorTest extends TestCase {
 
     /**
      * Test of testSetElementAt method, of class LRUVector.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testInsertElementAt() throws AssertionFailedException {
         System.out.println("setElementAt");
@@ -75,6 +107,8 @@ public class LRUVectorTest extends TestCase {
 
     /**
      * Test of testAddElement method, of class LRUVector.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testAddElement() throws AssertionFailedException {
         System.out.println("addElement");
@@ -91,6 +125,8 @@ public class LRUVectorTest extends TestCase {
 
     /**
      * Test of testRemoveLeastRecentlyUsed method, of class LRUVector.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testRemoveLeastRecentlyUsed() throws AssertionFailedException {
         System.out.println("removeLeastRecentlyUsed");
@@ -112,6 +148,8 @@ public class LRUVectorTest extends TestCase {
 
     /**
      * Test of testContains method, of class LRUVector.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testContains() throws AssertionFailedException {
         System.out.println("contains");

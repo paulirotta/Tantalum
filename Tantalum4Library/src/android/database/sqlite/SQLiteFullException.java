@@ -5,9 +5,9 @@
 package android.database.sqlite;
 
 /**
+ * Stub class to aid in cross-platform build and obfuscation
  *
  * @author phou
  */
 public class SQLiteFullException extends SQLiteException {
-    
 }

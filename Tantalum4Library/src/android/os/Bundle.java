@@ -5,9 +5,9 @@
 package android.os;
 
 /**
+ * Stub class to aid in cross-platform build and obfuscation
  *
  * @author phou
  */
 public class Bundle {
-    
 }

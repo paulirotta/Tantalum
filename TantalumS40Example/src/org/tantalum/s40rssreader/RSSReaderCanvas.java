@@ -1,7 +1,28 @@
+/*
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
 package org.tantalum.s40rssreader;
 
-import org.tantalum.util.L;
-import org.tantalum.net.xml.RSSItem;
 import com.nokia.mid.ui.frameanimator.FrameAnimator;
 import com.nokia.mid.ui.frameanimator.FrameAnimatorListener;
 import com.nokia.mid.ui.gestures.GestureEvent;
@@ -11,22 +32,18 @@ import com.nokia.mid.ui.gestures.GestureRegistrationManager;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
+import org.tantalum.net.xml.RSSItem;
+import org.tantalum.util.L;
 
 /**
  * The main canvas for displaying RSS Feed list and item details
  *
  * @author ssaa
  */
-//#ifdef Profile
-//# public final class RSSReaderCanvas extends Canvas {
-//#else    
 public final class RSSReaderCanvas extends Canvas implements GestureListener, FrameAnimatorListener {
-//#endif
 
     private final RSSReader rssReader;
-//#ifndef Profile
     private final FrameAnimator animator;
-//#endif
     private final RSSListView listView;
     private final DetailsView detailsView;
     private View currentView;
@@ -49,7 +66,6 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         listView = new IconListView(this);
         detailsView = new DetailsView(this);
 
-//#ifndef Profile        
         //register frameanimator with default values
         animator = new FrameAnimator();
         short pps = 0;
@@ -60,20 +76,19 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         final GestureInteractiveZone giz;
         GestureInteractiveZone tmp = null;
         try {
-          tmp = new GestureInteractiveZone(
-                GestureInteractiveZone.GESTURE_ALL);
-        } catch (Exception e){
+            tmp = new GestureInteractiveZone(
+                    GestureInteractiveZone.GESTURE_ALL);
+        } catch (Exception e) {
             L.e("Some gesture events not supported.", "", e);
-             tmp = new GestureInteractiveZone(
-                GestureInteractiveZone.GESTURE_DRAG | 
-                GestureInteractiveZone.GESTURE_FLICK | 
-                GestureInteractiveZone.GESTURE_TAP);
+            tmp = new GestureInteractiveZone(
+                    GestureInteractiveZone.GESTURE_DRAG
+                    | GestureInteractiveZone.GESTURE_FLICK
+                    | GestureInteractiveZone.GESTURE_TAP);
         } finally {
             giz = tmp;
         }
         GestureRegistrationManager.register(this, giz);
         GestureRegistrationManager.setListener(this, this);
-//#endif
 
         try {
             Class.forName("org.tantalum.s40rssreader.Orientator").newInstance();
@@ -110,12 +125,8 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
      * Shows the list view
      */
     public void showList() {
-//#ifndef Profile
         animator.stop();
-//#endif        
-//        detailsView.getCurrentItem().setThumbnailImage(null);
         detailsView.hide();
-//        iconListView.rssModel.itemNextTo(selectedItem, true), iconListView.rssModel.itemNextTo(selectedItem, false), 0);
         setCurrentView(listView);
     }
 
@@ -130,14 +141,11 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
             L.i("Show details on null item", "Selected item has been cleared on another thread");
             return;
         }
-//#ifndef Profile
         animator.stop();
-//#endif        
         detailsView.setCurrentItem(selectedItem, listView.rssModel.itemNextTo(selectedItem, true), listView.rssModel.itemNextTo(selectedItem, false), x);
         setCurrentView(detailsView);
     }
 
-//#ifndef Profile    
     /**
      * @see GestureListener.gestureAction(Object o, GestureInteractiveZone giz,
      * GestureEvent ge)
@@ -179,7 +187,6 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
                 break;
         }
     }
-//#endif
 
     protected void pointerPressed(int x, int y) {
         //just paints the highlight on the selected item
@@ -189,18 +196,8 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     protected void pointerReleased(int x, int y) {
         //just paints the highlight on the selected item
         listView.deselectItem();
-        //#ifdef Profile
-//#         if (currentView == listView) {
-//#             //selects the tapped item
-//#             listView.selectItem(x, y, true);
-//#         }
-        //#endif
     }
 
-//    public void sizeChanged(final int widht, final int height) {
-//        verticalListView.canvasSizeChanged();
-//    }
-//#ifndef Profile    
     /*
      * @see FrameAnimatorListener.animate(FrameAnimator fa, int x, int y, short
      * delta, short deltaX, short deltaY, boolean lastFrame)
@@ -209,7 +206,6 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         currentView.setRenderY(y);
         refresh();
     }
-//#endif
 
     public void setCurrentView(final View nextView) {
         if (this.currentView != null) {
@@ -228,7 +224,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     public boolean isPortrait() {
         return getWidth() <= 240;
     }
-    
+
     public void refresh() {
         if (!refreshed) {
             refreshed = true;

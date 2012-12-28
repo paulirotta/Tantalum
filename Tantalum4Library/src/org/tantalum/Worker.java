@@ -1,28 +1,68 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum;
 
+import java.util.Vector;
 import org.tantalum.j2me.J2MEPlatformUtils;
 import org.tantalum.util.L;
-import java.util.Vector;
 
 /**
- * A worker thread. Long-running and background tasks are queued and executed
- * here to keep the user interface thread free to be responsive.
+ * A generic worker thread. Long-running and background tasks are queued and
+ * executed here to keep the user interface thread free to update and respond
+ * to incoming user interface events.
  *
- * @author pahought
+ * @author phou
  */
 public final class Worker extends Thread {
 
+    /**
+     * Start the task as soon as possible. The fork() operation will place this
+     * as the next Workable to be completed unless subsequent HIGH_PRIORITY fork
+     * operations occur before a Worker start execution.
+     * 
+     * This is the normal priority for user interface tasks where the user expects
+     * a fast response regardless of previous incomplete requests they may have made.
+     */
     public static final int HIGH_PRIORITY = 3;
+    /**
+     * Start execution after any previously fork()ed work, first in
+     * is usually first out, however multiple Workers in parallel means that execution
+     * start and completion order is not guaranteed.
+     */
     public static final int NORMAL_PRIORITY = 2;
+    /**
+     * Start execution if there is nothing else for the Workers to do. At least
+     * one Worker will always be left idle for immediate activation if only
+     * LOW_PRIORITY work is queued for execution. This is intended for background
+     * tasks such as pre-fetch and pre-processing of data that doe not affect the
+     * current user view.
+     */
     public static final int LOW_PRIORITY = 1;
-    /*
+    /**
      * Synchronize on the following object if your processing routine will
      * temporarily need a large amount of memory. Only one such activity can be
-     * active at a time
+     * active at a time. 
      */
     public static final Object LARGE_MEMORY_MUTEX = new Object();
     /*
@@ -90,6 +130,13 @@ public final class Worker extends Thread {
         workers[i].start();
     }
 
+    /**
+     * Create a new Thread that will execute tasks in the background.
+     * 
+     * Do not call this directly- an appropriate number of Worker threads will be
+     * created for you automatically when your program extends the platform-specific
+     * base class such as TantalumMIDlet or TantalumActivity.
+     */
     public Worker() {
     }
 
@@ -277,6 +324,20 @@ public final class Worker extends Thread {
         }
     }
 
+    /**
+     * Get the id number for the next available Worker thread that
+     * can be used to a specific application-define type of Worker.forkSerial()
+     * operations. Assuming you have a limited number of types of forkSerial()
+     * operations, this round-robin allocation reduces the number of serialized
+     * operations assigned to any one generic Worker. Note that since forkSerial()
+     * work is done by the specified Worker before general fork() operations, it
+     * is higher priority work than a fork() with HIGH_PRIORITY, but only one
+     * Worker can execute that type of task.
+     * 
+     * You can use this to guarantee the sequence of execution of a given type
+     * of task (such as writing to flash memory or to a server).
+     * @return 
+     */
     public static int nextSerialWorkerIndex() {
         synchronized (q) {
             final int i = nextSerialQWorkerIndex;

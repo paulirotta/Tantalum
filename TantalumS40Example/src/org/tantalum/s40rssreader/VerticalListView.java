@@ -1,15 +1,36 @@
+/*
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
 package org.tantalum.s40rssreader;
 
-//#ifndef Profile
 import com.nokia.mid.ui.DirectUtils;
-//#endif
-import org.tantalum.util.L;
-import org.tantalum.net.xml.RSSItem;
-import org.tantalum.util.PoolingWeakImageHashCache;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+import org.tantalum.net.xml.RSSItem;
+import org.tantalum.util.L;
+import org.tantalum.util.PoolingWeakImageHashCache;
 
 /**
  * View for rendering list of RSS items
@@ -123,32 +144,6 @@ public final class VerticalListView extends RSSListView {
     }
 
     /**
-     * Renders one item at the specified y-position
-     *
-     * @param g
-     * @param curY
-     * @param item
-     * @param selected
-     */
-//    private void renderItem(Graphics g, final int curY, final DeprecatedRSSItem item, final boolean selected) {
-//        if (selected) {
-//            g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_BACKGROUND);
-//            g.fillRect(0, curY, canvas.getWidth(), ITEM_HEIGHT);
-//            g.setColor(RSSReaderCanvas.COLOR_HIGHLIGHTED_FOREGROUND);
-//        } else {
-//            g.setColor(RSSReaderCanvas.COLOR_FOREGROUND);
-//        }
-//
-//        g.setFont(RSSReaderCanvas.FONT_TITLE);
-//        g.drawString(item.getTruncatedTitle(), RSSReaderCanvas.MARGIN, curY + RSSReaderCanvas.MARGIN, Graphics.LEFT | Graphics.TOP);
-//
-//        g.setFont(RSSReaderCanvas.FONT_DATE);
-//        g.drawString(item.getPubDate(), RSSReaderCanvas.MARGIN, curY + RSSReaderCanvas.MARGIN + RSSReaderCanvas.FONT_TITLE.getHeight(), Graphics.LEFT | Graphics.TOP);
-//
-//        g.setColor(RSSReaderCanvas.COLOR_BORDER);
-//        g.drawLine(0, curY + ITEM_HEIGHT, canvas.getWidth(), curY + ROW_HEIGHT);
-//    }
-    /**
      * Get the paint-able image associated with this item. Often, this will come
      * from the cache to speed painting.
      *
@@ -166,11 +161,7 @@ public final class VerticalListView extends RSSListView {
             g.setColor(selected ? RSSReader.COLOR_HIGHLIGHTED_BACKGROUND : RSSReader.COLOR_BACKGROUND);
             g.fillRect(0, 0, width, ROW_HEIGHT);
         } else {
-            //#ifndef Profile
             image = DirectUtils.createImage(width, ROW_HEIGHT, selected ? 0xFF000000 | RSSReader.COLOR_HIGHLIGHTED_BACKGROUND : 0xFF000000 | RSSReader.COLOR_BACKGROUND);
-            //#else
-//#             image = Image.createImage(width, ROW_HEIGHT);
-            //#endif
             g = image.getGraphics();
             this.renderCache.put(item, image);
         }

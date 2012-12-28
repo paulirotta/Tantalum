@@ -1,11 +1,11 @@
 package org.tantalum.lwuitrssreader;
 
-import org.tantalum.j2me.TantalumMIDlet;
 import com.sun.lwuit.Dialog;
 import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
 import com.sun.lwuit.plaf.DefaultLookAndFeel;
 import com.sun.lwuit.plaf.UIManager;
+import org.tantalum.j2me.TantalumMIDlet;
 
 /**
  * @author tsaa

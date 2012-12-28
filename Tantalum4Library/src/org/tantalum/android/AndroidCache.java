@@ -1,3 +1,26 @@
+/*
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
 package org.tantalum.android;
 
 import android.content.ContentValues;
@@ -15,15 +38,43 @@ import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
 import org.tantalum.util.L;
 
+/**
+ * Android implementation of cross-platform persistent storage using an SQLite
+ * database. All web services you access over the net using a StaticWebCache
+ * will be automatically stored here for faster access and offline use.
+ * 
+ * @author phou
+ */
 public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
-    protected static final int DB_VERSION = 1;
-    protected static final String DB_NAME = "TantalumRMS";
-    protected static final String TABLE_NAME = "TantalumRMS_Table";
-    protected static final String COL_ID = "id";
-    protected static final String COL_KEY = "key";
-    protected static final String COL_DATA = "data";
-    protected static final String CREATE_DB = "CREATE TABLE IF NOT EXISTS "
+    /**
+     * Database version number
+     */
+    private static final int DB_VERSION = 2;
+    /**
+     * Database name
+     */
+    private static final String DB_NAME = "Tantalum";
+    /**
+     * Database table name
+     */
+    private static final String TABLE_NAME = "Tantalum_Table";
+    /**
+     * Database id column tag
+     */
+    private static final String COL_ID = "id";
+    /**
+     * Database key column tag
+     */
+    private static final String COL_KEY = "key";
+    /**
+     * Database data column tag
+     */
+    private static final String COL_DATA = "data";
+    /**
+     * SQL to create the database
+     */
+    private static final String CREATE_DB = "CREATE TABLE IF NOT EXISTS "
             + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_KEY
             + " TEXT NOT NULL, " + COL_DATA + " BLOB NOT NULL)";
     private static Context context;
@@ -39,6 +90,10 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
         context = c;
     }
 
+    /**
+     * Create the persistent memory database singleton
+     * 
+     */
     public AndroidCache() {
         super(context, DB_NAME, null, DB_VERSION);
         Worker.forkShutdownTask(new Workable() {
@@ -53,15 +108,34 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
         });
     }
 
+    /**
+     * Execute SQL to create the database
+     * 
+     * @param db 
+     */
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_DB);
     }
 
+    /**
+     * Execute SQL to update the database
+     * 
+     * @param db
+     * @param oldVersion
+     * @param newVersion 
+     */
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         onCreate(db);
     }
 
+    /**
+     * Get the stored byte[] associated with the specified key
+     * 
+     * @param key
+     * @return
+     * @throws FlashDatabaseException 
+     */
     public synchronized byte[] getData(final String key) throws FlashDatabaseException {
         Cursor cursor = null;
 
@@ -84,7 +158,7 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
                 return cursor.getBlob(0);
             }
         } catch (NullPointerException e) {
-            L.e("db not initialized, join then try again", "getData", e);
+            L.e("db not initialized, join() then try again", "getData", e);
             return null;
         } catch (SQLiteException e) {
             L.e("db can not be initialized", "getData, key=" + key, e);
@@ -97,6 +171,14 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
         }
     }
 
+    /**
+     * Store the specified byte[] to flash memory for later retrieval by key
+     * 
+     * @param key
+     * @param data
+     * @throws FlashFullException
+     * @throws FlashDatabaseException 
+     */
     public synchronized void putData(final String key, final byte[] data) throws FlashFullException, FlashDatabaseException {
         final ContentValues values = new ContentValues();
 
@@ -117,6 +199,12 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
         }
     }
 
+    /**
+     * Remove the byte[] associated with this key from the database
+     * 
+     * @param key
+     * @throws FlashDatabaseException 
+     */
     public synchronized void removeData(final String key) throws FlashDatabaseException {
         final String where = COL_KEY + "==\"" + key + "\"";
 
@@ -131,6 +219,12 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
         }
     }
 
+    /**
+     * Get a list of all the keys for data available in this database
+     * 
+     * @return
+     * @throws FlashDatabaseException 
+     */
     public Vector getKeys() throws FlashDatabaseException {
         final Vector keys = new Vector();
         Cursor cursor = null;

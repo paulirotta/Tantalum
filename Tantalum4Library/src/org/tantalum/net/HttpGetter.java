@@ -1,6 +1,25 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum.net;
 
@@ -30,13 +49,34 @@ public class HttpGetter extends Task {
     public static final int HTTP_OPERATION_PENDING = -1;
     private static final int HTTP_GET_RETRIES = 3;
     private static final int HTTP_RETRY_DELAY = 5000; // 5 seconds
+    /**
+     * The url, with optional additional lines to create a unique hash code is
+     * may be needed for HTTP POST.
+     */
     protected String key = null;
+    /**
+     * How many more times will we try to re-connect after a 5 second delay before
+     * giving up. This aids in working with low quality networks and normal HTTP
+     * connection setup errors even on a "good" mobile network.
+     */
     protected int retriesRemaining = HTTP_GET_RETRIES;
+    /**
+     * Data to be sent to the server as part of an HTTP POST operation
+     */
     protected byte[] postMessage = null;
     private int responseCode = HTTP_OPERATION_PENDING;
     private final Hashtable responseHeaders = new Hashtable();
     private Vector requestPropertyKeys = new Vector();
     private Vector requestPropertyValues = new Vector();
+
+    /**
+     * Get the byte[] from the URL specified by the input argument when
+     * exec(url) is called. This may be chained from a previous chain()ed asynchronous
+     * task.
+     */
+    public HttpGetter() {
+        super();
+    }
 
     /**
      * Get the byte[] from a specified web service URL.
@@ -57,18 +97,15 @@ public class HttpGetter extends Task {
         super(key);
     }
 
-    public HttpGetter(final String key, final byte[] postMessage) {
+    /**
+     * HTTP POST the associated message
+     * 
+     * @param key
+     * @param postMessage 
+     */
+    protected HttpGetter(final String key, final byte[] postMessage) {
         super(key);
         this.postMessage = postMessage;
-    }
-
-    /**
-     * Get the byte[] from the URL specified by the input argument when
-     * exec(url) is called. This may be chained from a previous asynchronous
-     * task.
-     */
-    public HttpGetter() {
-        super();
     }
 
     /**
@@ -128,13 +165,13 @@ public class HttpGetter extends Task {
      * Note that your web service should set the HTTP Header field
      * content_length as this makes the phone run slightly faster when we can
      * predict how many bytes to expect.
+     * 
+     * @param url - The url we will HTTP GET from
      *
-     * @param in - The URL we will get from
-     *
-     * @return
+     * @return - a JSONModel of the data provided by the HTTP server
      */
-    public Object doInBackground(final Object in) {
-        this.key = (String) in;
+    public Object doInBackground(final Object url) {
+        this.key = (String) url;
         if (key == null || key.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + key);
         }
@@ -144,18 +181,19 @@ public class HttpGetter extends Task {
         PlatformUtils.HttpConn httpConn = null;
         boolean tryAgain = false;
         boolean success = false;
-        final String url = getUrl();
+        final String url2 = getUrl();
 
         try {
+//TODO support HTTP DELETE and HTTP PUT           
 // The following are delayed until we can support HTTP DELETE and PUT in J2ME. HttpConnection needs to be replaced.            
 //            
 //            if (this instanceof HttpDeleter) {
-//                httpConn = J2MEPlatformUtils.getHttpDeleteConn(url, requestPropertyKeys, requestPropertyValues);
+//                httpConn = J2MEPlatformUtils.getHttpDeleteConn(url2, requestPropertyKeys, requestPropertyValues);
 //            } else  if (this instanceof HttpPutter) {
 //                if (postMessage == null) {
 //                    throw new IllegalArgumentException("null HTTP PUT- did you forget to call HttpPutter.this.setMessage(byte[]) ? : " + url);
 //                }
-//                httpConn = J2MEPlatformUtils.getHttpPutConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
+//                httpConn = J2MEPlatformUtils.getHttpPutConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
 //            } else 
 
             // ADD THE FOLLOWING AS TOP LEVEL (NOT INNER) CLASSES WHEN HTTP DELETE IS SUPPORTED:
@@ -186,9 +224,9 @@ public class HttpGetter extends Task {
                 if (postMessage == null) {
                     throw new IllegalArgumentException("null HTTP POST- did you forget to call HttpPoster.this.setMessage(byte[]) ? : " + key);
                 }
-                httpConn = PlatformUtils.getHttpPostConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
+                httpConn = PlatformUtils.getHttpPostConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
             } else {
-                httpConn = PlatformUtils.getHttpGetConn(url, requestPropertyKeys, requestPropertyValues);
+                httpConn = PlatformUtils.getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
             }
 
             final InputStream inputStream = httpConn.getInputStream();
@@ -268,7 +306,7 @@ public class HttpGetter extends Task {
                     Thread.sleep(HTTP_RETRY_DELAY);
                 } catch (InterruptedException ex) {
                 }
-                doInBackground(in);
+                doInBackground(url);
             } else if (!success) {
                 cancel(false);
             }

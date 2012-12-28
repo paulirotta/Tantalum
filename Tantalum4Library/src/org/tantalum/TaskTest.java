@@ -1,20 +1,42 @@
 /*
- * TaskTest.java
- * JMUnit based test
- *
- * Created on 23-Nov-2012, 09:46:55
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum;
 
-import org.tantalum.j2me.J2MEPlatformUtils;
 import java.util.Vector;
 import jmunit.framework.cldc11.*;
+import org.tantalum.j2me.J2MEPlatformUtils;
 
 /**
+ * Unit tests for the Task class.
+ * 
  * @author phou
  */
 public class TaskTest extends TestCase {
 
+    /**
+     * Unit tests for Task
+     */
     public TaskTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(15, "TaskTest");
@@ -23,6 +45,12 @@ public class TaskTest extends TestCase {
         Worker.init(2);
     }
 
+    /**
+     * Run unit tests by number
+     * 
+     * @param testNumber
+     * @throws Throwable 
+     */
     public void test(int testNumber) throws Throwable {
         switch (testNumber) {
             case 0:
@@ -77,6 +105,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testFork method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testFork() throws AssertionFailedException {
         System.out.println("fork");
@@ -102,6 +132,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testSetStatus method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testSetStatus() throws AssertionFailedException {
         System.out.println("setStatus");
@@ -117,6 +149,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testExec method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testExec() throws AssertionFailedException {
         System.out.println("exec");
@@ -132,6 +166,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testJoin method, of class Task.
+     * 
+     * @throws AssertionFailedException
+     * @throws Exception 
      */
     public void testJoin() throws AssertionFailedException, Exception {
         System.out.println("join");
@@ -232,6 +269,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testGet method, of class Task.
+     * 
+     * @throws AssertionFailedException
+     * @throws Exception 
      */
     public void testGet() throws AssertionFailedException, Exception {
         System.out.println("get");
@@ -268,6 +308,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testSetResult method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testSetResult() throws AssertionFailedException {
         System.out.println("setResult");
@@ -293,6 +335,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testNotifyTaskForked method, of class Task.
+     * 
+     * @throws AssertionFailedException
+     * @throws Exception 
      */
     public void testNotifyTaskForked() throws AssertionFailedException, Exception {
         System.out.println("notifyTaskForked");
@@ -324,6 +369,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testGetResult method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testGetResult() throws AssertionFailedException {
         System.out.println("getResult");
@@ -339,6 +386,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testToString method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testToString() throws AssertionFailedException {
         System.out.println("toString");
@@ -353,6 +402,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testJoinUI method, of class Task.
+     * 
+     * @throws AssertionFailedException
+     * @throws Exception 
      */
     public void testJoinUI() throws AssertionFailedException, Exception {
         System.out.println("joinUI");
@@ -378,6 +430,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testCancel method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testCancel() throws AssertionFailedException {
         final Vector errors = new Vector();
@@ -474,6 +528,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testOnCanceled method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testOnCanceled() throws AssertionFailedException {
         System.out.println("onCanceled");
@@ -509,6 +565,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testDoInBackground method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testDoInBackground() throws AssertionFailedException {
         System.out.println("doInBackground");
@@ -527,6 +585,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testChain method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testChain() throws AssertionFailedException {
         System.out.println("chain");
@@ -560,6 +620,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testGetStatus method, of class Task.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testGetStatus() throws AssertionFailedException {
         System.out.println("getStatus");

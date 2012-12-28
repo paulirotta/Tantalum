@@ -1,6 +1,25 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum.net;
 
@@ -8,9 +27,9 @@ import java.util.Hashtable;
 import org.tantalum.Task;
 import org.tantalum.Workable;
 import org.tantalum.Worker;
-import org.tantalum.util.L;
 import org.tantalum.storage.DataTypeHandler;
 import org.tantalum.storage.StaticCache;
+import org.tantalum.util.L;
 
 /**
  * A cache of remote http contents backed by local flash memory storage
@@ -35,12 +54,30 @@ public class StaticWebCache extends StaticCache {
      */
     public static final int GET_WEB = 2;
 
+    /**
+     * Create a persistent flash memory cache which acts like a Hashtable
+     * 
+     * Items not already in the cache will be requested from the web with HTTP GET
+     * when you request them by url.
+     * 
+     * @param priority
+     * @param handler 
+     */
     public StaticWebCache(final char priority, final DataTypeHandler handler) {
         super(priority, handler);
         
         this.httpTaskFactory = StaticWebCache.defaultHttpGetterFactory;
     }
 
+    /**
+     * Create a persistent flash memory cache, and provide your own class for
+     * creating the HttpGetter or HttpPoster that will be used to get cache-miss
+     * items from the web.
+     * 
+     * @param priority
+     * @param handler
+     * @param httpTaskFactory 
+     */
     public StaticWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) {
         super(priority, handler);
         
@@ -132,7 +169,6 @@ public class StaticWebCache extends StaticCache {
      * Retrieve the object from WEB if it is not already cached locally.
      *
      * @param key
-     * @param updateResult
      */
     public void prefetch(final String key) {
         if (synchronousRAMCacheGet(key) == null) {
@@ -225,6 +261,7 @@ public class StaticWebCache extends StaticCache {
          * <code>fork()</code>ing the Task for background execution.
          *
          * @param key
+         * @param postMessage 
          */
         public GetAnywhereTask(final String key, final byte[] postMessage) {
             super(key);
@@ -315,6 +352,8 @@ public class StaticWebCache extends StaticCache {
          * <code>StaticWebCache.get()</code> to chain your Task after the get
          * operation before
          * <code>fork()</code>ing the Task for background execution.
+         * 
+         * @param postMessage 
          */
         public GetWebTask(final byte[] postMessage) {
             super();
@@ -337,6 +376,7 @@ public class StaticWebCache extends StaticCache {
          * <code>Task</code> for background execution.
          *
          * @param key
+         * @param postMessage 
          */
         public GetWebTask(final String key, final byte[] postMessage) {
             super(key);
@@ -394,8 +434,8 @@ public class StaticWebCache extends StaticCache {
          * usually an HttpGetter, in could be an HttpPoster.
          *
          * @param key
-         * @param params
-         * @return
+         * @param postMessage
+         * @return 
          */
         public HttpGetter getHttpTask(final String key, final byte[] postMessage) {
             if (postMessage == null) {
@@ -422,13 +462,4 @@ public class StaticWebCache extends StaticCache {
             return true;
         }
     }
-    
-//    private int deepHashCode(final byte[] bytes) {
-//        int hashCode = 1;
-//        for (int i = 0; i < bytes.length; i++) {
-//            
-//            hashCode *= 31;
-//            hashCode += bytes[i];
-//        }
-//    }
 }

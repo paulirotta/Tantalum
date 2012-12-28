@@ -1,7 +1,30 @@
+/*
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
 package org.tantalum.net.xml;
 
-import org.tantalum.util.L;
 import java.util.Vector;
+import org.tantalum.util.L;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -12,14 +35,40 @@ import org.xml.sax.SAXException;
  */
 public class RSSModel extends XMLModel {
 
+    /**
+     * The collection of RSSItems parsed from XML
+     */
     protected final Vector items = new Vector(40);
+    /**
+     * The currently-being-parsed RSSItem
+     */
     protected RSSItem currentItem;
+    /**
+     * The maximum length of the model. Items after this length is reached will
+     * not be parsed, thereby limiting the total memory consumption.
+     */
     protected final int maxLength;
 
+    /**
+     * Create a new RSS feed data model which will never parse more than the
+     * specified maxLength items.
+     *
+     * @param maxLength
+     */
     public RSSModel(final int maxLength) {
         this.maxLength = maxLength;
     }
 
+    /**
+     * When parsing this RSS XML document, this indicates the beginning of an
+     * XML tag
+     *
+     * @param uri
+     * @param localName
+     * @param qName
+     * @param attributes
+     * @throws SAXException
+     */
     public synchronized void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
 
@@ -28,6 +77,13 @@ public class RSSModel extends XMLModel {
         }
     }
 
+    /**
+     * When parsing this RSS XML document, this indicates the body of an XML tag
+     *
+     * @param qname
+     * @param chars
+     * @param attributes
+     */
     protected synchronized void parseElement(final String qname, final String chars, final XMLAttributes attributes) {
         try {
             if (currentItem != null) {
@@ -51,6 +107,14 @@ public class RSSModel extends XMLModel {
         }
     }
 
+    /**
+     * When parsing this RSS XML document, this indicates the end of an XML tag
+     *
+     * @param uri
+     * @param localName
+     * @param qname
+     * @throws SAXException
+     */
     public void endElement(final String uri, final String localName, final String qname) throws SAXException {
         super.endElement(uri, localName, qname);
 
@@ -62,15 +126,30 @@ public class RSSModel extends XMLModel {
         }
     }
 
+    /**
+     * Empty the data model
+     *
+     */
     public synchronized void removeAllElements() {
         items.removeAllElements();
     }
 
+    /**
+     * Return the number of RSSItem elements in the model
+     *
+     * @return
+     */
     public synchronized int size() {
         return items.size();
     }
 
-    public synchronized RSSItem elementAt(int i) {
+    /**
+     * Return the RSSItem at the specified position
+     *
+     * @param i
+     * @return
+     */
+    public synchronized RSSItem elementAt(final int i) {
         return (RSSItem) items.elementAt(i);
     }
 

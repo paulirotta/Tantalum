@@ -1,6 +1,25 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum.util;
 
@@ -18,22 +37,28 @@ public abstract class L {
     private static L log = PlatformUtils.getLog();
 
     /**
-     * Start sending debug output to a serial terminal on a PC attached by
-     * Usb cable.
-     * 
+     * To enable logging from a phone connected to a computer by a USB cable,
+     * open a terminal emulator on the window, set the COM port parameters in
+     * Windows Devices, and call L.startUSBDebugging() at program start.
+     *
      * This gives you a running list of how long each operation takes which is
      * helpful for on-device-debug, application profiling and seeing how
      * concurrency is behaving on device which may be different from the slower
      * emulator.
-     *
      */
     public static void startUsbDebug() {
 //#debug
         L.log.routeDebugOutputToUsbSerialPort();
     }
 
-//#debug   
+//#mdebug
+    /**
+     * Start USB debugging mode. Note that Android supports this with the
+     * default debugger through adb so calling this method is not needed and has
+     * no effect on Android.
+     */
     protected abstract void routeDebugOutputToUsbSerialPort();
+//#enddebug
 
     /**
      * Logs an "information" message.
@@ -73,13 +98,16 @@ public abstract class L {
      * Prints given string to system out.
      *
      * @param string string to print
+     * @param errorMessage
      */
     protected abstract void printMessage(final String string, final boolean errorMessage);
 
     /**
      * Get formatted message string.
      *
+     * @param tag
      * @return message string
+     * @return
      */
     private static StringBuffer getMessage(String tag, String message) {
         if (tag == null) {
@@ -108,6 +136,10 @@ public abstract class L {
         return sb;
     }
 
+    /**
+     * End the debugging session, closing any necessary resources such as USB
+     * debug output connections.
+     */
     protected abstract void close();
 //#enddebug
 

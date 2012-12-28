@@ -1,31 +1,56 @@
 /*
- * RSSModelTest.java
- * JMUnit based test
- *
- * Created on 24-Mar-2012, 14:17:12
- */
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
 
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
 package org.tantalum.net.xml;
 
-
-import org.tantalum.util.StringUtils;
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
+import org.tantalum.util.StringUtils;
 import org.xml.sax.SAXException;
 
-
 /**
+ * Unit tests for RSSModel
+ *
  * @author phou
  */
 public class RSSModelTest extends TestCase {
+
     byte[] xml;
 
-    
+    /**
+     * RSSModel unit tests
+     */
     public RSSModelTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(1,"RSSModelTest");
-    }            
+        super(1, "RSSModelTest");
+    }
 
+    /**
+     * Invoke unit tests by number
+     * 
+     * @param testNumber
+     * @throws Throwable 
+     */
     public void test(int testNumber) throws Throwable {
         xml = StringUtils.readBytesFromJAR("/rss.xml");
         switch (testNumber) {
@@ -39,6 +64,8 @@ public class RSSModelTest extends TestCase {
 
     /**
      * Test of testParseElement method, of class RSSModel.
+     *
+     * @throws AssertionFailedException
      */
     public void testParseElement() throws AssertionFailedException {
         System.out.println("parseElement");

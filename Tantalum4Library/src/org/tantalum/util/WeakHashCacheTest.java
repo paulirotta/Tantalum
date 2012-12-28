@@ -1,23 +1,51 @@
 /*
- * WeakHashCacheTest.java
- * JMUnit based test
- *
- * Created on 07-Feb-2012, 16:02:23
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum.util;
 
 import jmunit.framework.cldc11.*;
 
 /**
+ * Unit tests for WeakHashCache
+ * 
  * @author phou
  */
 public class WeakHashCacheTest extends TestCase {
 
+    /**
+     * Create the test harness
+     */
     public WeakHashCacheTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(5, "WeakHashCacheTest");
     }
 
+    /**
+     * Invoke unit tests by number
+     * 
+     * @param testNumber
+     * @throws Throwable 
+     */
     public void test(int testNumber) throws Throwable {
         switch (testNumber) {
             case 0:
@@ -42,6 +70,8 @@ public class WeakHashCacheTest extends TestCase {
 
     /**
      * Test of testRemove method, of class WeakHashCache.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testRemove() throws AssertionFailedException {
         System.out.println("remove");
@@ -59,6 +89,8 @@ public class WeakHashCacheTest extends TestCase {
 
     /**
      * Test of testPut method, of class WeakHashCache.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testPut() throws AssertionFailedException {
         System.out.println("put");
@@ -87,6 +119,8 @@ public class WeakHashCacheTest extends TestCase {
 
     /**
      * Test of testGet method, of class WeakHashCache.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testGet() throws AssertionFailedException {
         System.out.println("get");
@@ -105,6 +139,8 @@ public class WeakHashCacheTest extends TestCase {
 
     /**
      * Test of testContainsKey method, of class WeakHashCache.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testContainsKey() throws AssertionFailedException {
         System.out.println("containsKey");
@@ -126,6 +162,8 @@ public class WeakHashCacheTest extends TestCase {
 
     /**
      * Test of testSize method, of class WeakHashCache.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testSize() throws AssertionFailedException {
         System.out.println("size");

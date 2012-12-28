@@ -1,6 +1,25 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum.android;
 
@@ -21,18 +40,40 @@ import org.tantalum.PlatformUtils;
  */
 public final class AndroidPlatformUtils extends PlatformUtils {
 
-    private static final int DEFAULT_NUMBER_OF_WORKERS = 8;
+    /**
+     * The number of Worker threads initialized on an Android phone. You can
+     * override this behavior by calling PlatformUtils.setNumberOfWorkers() at
+     * program startup.
+     */
+    public static final int DEFAULT_NUMBER_OF_WORKERS = 8;
 
+    /**
+     * Create an Android-specific implementation of the PlatformUtils utility class.
+     * 
+     */
     public AndroidPlatformUtils() {
         if (PlatformUtils.numberOfWorkers == 0) {
             PlatformUtils.setNumberOfWorkers(DEFAULT_NUMBER_OF_WORKERS);
         }
     }
 
+    /**
+     * Queue the action to the Android UI thread
+     * 
+     * @param action 
+     */
     protected void doRunOnUiThread(final Runnable action) {
         ((Activity) program).runOnUiThread(action);
     }
 
+    /**
+     * End the Android Activity class. This will cause the phone to remove the
+     * program from the display and free resources.
+     * 
+     * Do not call this automatically. It is called for you when the user navigates
+     * to another Activity, or asynchronously after a slight delay when 
+     * you call Worker.shutdown() to terminate the program.
+     */
     protected void doNotifyDestroyed() {
         ((Activity) program).finish();
     }
@@ -41,8 +82,10 @@ public final class AndroidPlatformUtils extends PlatformUtils {
      * Create an HTTP GET connection appropriate for this phone platform
      *
      * @param url
+     * @param requestPropertyKeys header tags for the server
+     * @param requestPropertyValues values associated with each header key
      * @return
-     * @throws IOException
+     * @throws IOException 
      */
     public static HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
         final AndroidHttpConn httpConn = new AndroidHttpConn(url, requestPropertyKeys, requestPropertyValues);
@@ -95,6 +138,17 @@ public final class AndroidPlatformUtils extends PlatformUtils {
         final HttpURLConnection httpConnection;
         InputStream is = null;
 
+        /**
+         * Create an Android-specific handler for HttpConnecions
+         * 
+         * This is done for you when you use the HttpGetter and similar utility
+         * classes. You generally do not create this class directly.
+         * 
+         * @param url
+         * @param requestPropertyKeys
+         * @param requestPropertyValues
+         * @throws IOException 
+         */
         public AndroidHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
             httpConnection = (HttpURLConnection) new URL(url).openConnection();
             for (int i = 0; i < requestPropertyKeys.size(); i++) {
@@ -102,6 +156,11 @@ public final class AndroidPlatformUtils extends PlatformUtils {
             }
         }
 
+        /**
+         * Get the InputStream associated with this HTTP connection
+         * @return
+         * @throws IOException 
+         */
         public InputStream getInputStream() throws IOException {
             if (is == null) {
                 is = httpConnection.getInputStream();
@@ -110,10 +169,22 @@ public final class AndroidPlatformUtils extends PlatformUtils {
             return is;
         }
 
+        /**
+         * Get the HTTP response code returned by the server
+         * 
+         * @return
+         * @throws IOException 
+         */
         public int getResponseCode() throws IOException {
             return httpConnection.getResponseCode();
         }
 
+        /**
+         * Get the HTTP headers returned from the server
+         * 
+         * @param headers
+         * @throws IOException 
+         */
         public void getResponseHeaders(final Hashtable headers) throws IOException {
             for (int i = 0; i < 10000; i++) {
                 final String key = httpConnection.getHeaderFieldKey(i);
@@ -125,6 +196,13 @@ public final class AndroidPlatformUtils extends PlatformUtils {
             };
         }
 
+        /**
+         * Add an HTTP header property which will be set to the server
+         * 
+         * @param key
+         * @param value
+         * @throws IOException 
+         */
         public void setRequestProperty(final String key, final String value) throws IOException {
             httpConnection.setRequestProperty(key, value);
         }
@@ -140,10 +218,20 @@ public final class AndroidPlatformUtils extends PlatformUtils {
             return length;
         }
 
+        /**
+         * Close the InputStream associated with this connection.
+         * 
+         * The underlying Android HTTP 1.1 connection implementation probably
+         * remains connected to the server for some time and will be re-used as
+         * on J2ME
+         * 
+         * @throws IOException 
+         */
         public final void close() throws IOException {
             if (is != null) {
                 is.close();
             }
+            httpConnection.disconnect();
         }
     }
 }

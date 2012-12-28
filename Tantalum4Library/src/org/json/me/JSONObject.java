@@ -595,6 +595,9 @@ public class JSONObject {
 
     /**
      * Shave off trailing zeros and decimal point, if possible.
+     * 
+     * @param s
+     * @return 
      */
     static public String trimNumber(String s) {
         if (s.indexOf('.') > 0 && s.indexOf('e') < 0 && s.indexOf('E') < 0) {
@@ -1282,8 +1285,9 @@ public class JSONObject {
       * <p>
       * Warning: This method assumes that the data structure is acyclical.
       *
-      * @return The writer.
-      * @throws JSONException
+      * @param writer
+      * @return
+      * @throws JSONException 
       */
      public Writer write(Writer writer) throws JSONException {
         try {

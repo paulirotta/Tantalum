@@ -1,24 +1,25 @@
 /*
- * Tantalum Mobile Toolset
- * https://projects.forum.nokia.com/Tantalum
- *
- * Special thanks to http://www.futurice.com for support of this project
- * Project lead: paul.houghton@futurice.com
- *
- * Copyright 2010 Paul Eugene Houghton
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- *
- * You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum.net.json;
 
@@ -26,11 +27,15 @@ import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
 /**
+ * A data model (as in MVC) that keeps the data in JSON format
+ *
+ * This model is thread safe and internally synchronized. You can synchronize
+ * off this object to safely access multiple fields at once without interference
+ * from model updates which may come in from other background threads.
  *
  * @author Paul Houghton
  */
 public class JSONModel {
-    private static final Object MUTEX = new Object();
 
     private JSONObject jsonObject = new JSONObject();
 
@@ -40,39 +45,68 @@ public class JSONModel {
     public JSONModel() {
     }
 
-    public void setJSON(String json) throws JSONException {
-        synchronized (MUTEX) {
-            jsonObject = new JSONObject(json);
-        }
+    /**
+     * Update the value of the model
+     *
+     * @param json
+     * @throws JSONException
+     */
+    public synchronized void setJSON(final String json) throws JSONException {
+        jsonObject = new JSONObject(json);
     }
 
-    public boolean getBoolean(String key) throws JSONException {
-        synchronized (MUTEX) {
-            return jsonObject.getBoolean(key);
-        }
+    /**
+     * Get a boolean by key
+     *
+     * @param key
+     * @return
+     * @throws JSONException
+     */
+    public synchronized boolean getBoolean(final String key) throws JSONException {
+        return jsonObject.getBoolean(key);
     }
 
-    public String getString(String key) throws JSONException {
-        synchronized (MUTEX) {
-            return jsonObject.getString(key);
-        }
+    /**
+     * Get a String by key
+     *
+     * @param key
+     * @return
+     * @throws JSONException
+     */
+    public synchronized String getString(String key) throws JSONException {
+        return jsonObject.getString(key);
     }
 
-    public double getDouble(String key) throws JSONException {
-        synchronized (MUTEX) {
-            return jsonObject.getDouble(key);
-        }
+    /**
+     * Get a double by key
+     *
+     * @param key
+     * @return
+     * @throws JSONException
+     */
+    public synchronized double getDouble(String key) throws JSONException {
+        return jsonObject.getDouble(key);
     }
 
-    public int getInt(String key) throws JSONException {
-        synchronized (MUTEX) {
-            return jsonObject.getInt(key);
-        }
+    /**
+     * Get an int by key
+     *
+     * @param key
+     * @return
+     * @throws JSONException
+     */
+    public synchronized int getInt(String key) throws JSONException {
+        return jsonObject.getInt(key);
     }
 
-    public long getLong(String key) throws JSONException {
-        synchronized (MUTEX) {
-            return jsonObject.getLong(key);
-        }
+    /**
+     * Get a long by key
+     *
+     * @param key
+     * @return
+     * @throws JSONException
+     */
+    public synchronized long getLong(String key) throws JSONException {
+        return jsonObject.getLong(key);
     }
 }

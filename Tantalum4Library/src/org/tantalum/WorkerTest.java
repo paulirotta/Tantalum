@@ -1,26 +1,55 @@
 /*
- * WorkerTest.java
- * JMUnit based test
- *
- * Created on 07-Feb-2012, 16:22:57
+ Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ All rights reserved.
+
+ Tantalum software shall be used to make the world a better place for everyone.
+
+ This software is licensed for use under the Apache 2 open source software license,
+ http://www.apache.org/licenses/LICENSE-2.0.html
+
+ You are kindly requested to return your improvements to this library to the
+ open source community at http://projects.developer.nokia.com/Tantalum
+
+ The above copyright and license notice notice shall be included in all copies
+ or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 package org.tantalum;
 
-import org.tantalum.j2me.J2MEPlatformUtils;
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
+import org.tantalum.j2me.J2MEPlatformUtils;
 
 /**
+ * Unit tests for the Worker class
+ * 
  * @author phou
  */
 public class WorkerTest extends TestCase {
 
+    /**
+     * Unit tests for the Worker class
+     * 
+     */
     public WorkerTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(2, "WorkerTest");
         Worker.init(4);
     }
 
+    /**
+     * Perform unit tests by number
+     * 
+     * @param testNumber
+     * @throws Throwable 
+     */
     public void test(int testNumber) throws Throwable {
         J2MEPlatformUtils.setProgram(this);
         switch (testNumber) {
@@ -41,6 +70,8 @@ public class WorkerTest extends TestCase {
     
     /**
      * Test of testRun method, of class Worker.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testRun() throws AssertionFailedException {
         System.out.println("run");
@@ -76,6 +107,8 @@ public class WorkerTest extends TestCase {
 
     /**
      * Test of testQueue method, of class Worker.
+     * 
+     * @throws AssertionFailedException 
      */
     public void testQueue() throws AssertionFailedException {
         System.out.println("queue");
