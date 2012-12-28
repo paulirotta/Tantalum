@@ -126,9 +126,9 @@ public abstract class PlatformUtils {
                     default:
                         throw new UnsupportedOperationException("GET FLASH CACHE: " + UNSUPPORTED_PLATFORM_MESSAGE);
                 }
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 //#debug
-                L.e("Can not getFlashCache", platformUtils.toString(), e);
+                L.e("Can not getFlashCache", platformUtils.toString(), t);
             }
         }
 
@@ -151,9 +151,9 @@ public abstract class PlatformUtils {
                 default:
                     throw new UnsupportedOperationException("GET IMAGE TYPE HANDLER: " + UNSUPPORTED_PLATFORM_MESSAGE);
             }
-        } catch (Exception e) {
+        } catch (Throwable t) {
             //#debug
-            L.e("Can not getImageTypeHandler()", platformUtils.toString(), e);
+            L.e("Can not getImageTypeHandler()", platformUtils.toString(), t);
         }
 
         return imageTypeHandler;
@@ -182,9 +182,9 @@ public abstract class PlatformUtils {
                 default:
                     throw new UnsupportedOperationException("LOG: " + UNSUPPORTED_PLATFORM_MESSAGE);
             }
-        } catch (Exception e) {
+        } catch (Throwable t) {
             //#debug
-            System.out.println("Can not init platform log " + platformUtils.toString() + " : " + e);
+            System.out.println("Can not init platform log " + platformUtils.toString() + " : " + t);
         }
 
         return log;
