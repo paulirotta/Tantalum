@@ -8,7 +8,10 @@ import android.content.Context;
 import android.os.Bundle;
 
 /**
- * Stub class to aid in cross-platform build and obfuscation
+ * Empty stub class to aid in cross-platform build and obfuscation
+ * 
+ * To prevent this compilation stub from interfering with the actual Android
+ * class, make sure Tantalum is at the end of your project's class path
  * 
  * @author phou
  */
