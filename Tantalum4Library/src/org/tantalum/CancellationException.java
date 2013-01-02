@@ -34,4 +34,22 @@ package org.tantalum;
  * @author phou
  */
 public class CancellationException extends Exception {
+    
+    /**
+     * Create an exception indicating the a Task has been explicitly cancel()ed
+     * 
+     */
+    public CancellationException() {
+        super();
+    }
+    
+    /**
+     * Create an exception indicating the a Task has been explicitly cancel()ed
+     * and explain why it was canceled.
+     * 
+     * @param explanation 
+     */
+    public CancellationException(final String explanation) {
+        super(explanation);
+    }
 }

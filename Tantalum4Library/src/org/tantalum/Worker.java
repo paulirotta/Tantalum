@@ -24,7 +24,6 @@
 package org.tantalum;
 
 import java.util.Vector;
-import org.tantalum.j2me.J2MEPlatformUtils;
 import org.tantalum.util.L;
 
 /**
@@ -128,16 +127,6 @@ public final class Worker extends Thread {
     private static void createWorker(final int i) {
         workers[i] = new Worker("Worker" + i);
         workers[i].start();
-    }
-
-    /**
-     * Create a new Thread that will execute tasks in the background.
-     * 
-     * Do not call this directly- an appropriate number of Worker threads will be
-     * created for you automatically when your program extends the platform-specific
-     * base class such as TantalumMIDlet or TantalumActivity.
-     */
-    public Worker() {
     }
 
     /**
@@ -465,7 +454,7 @@ public final class Worker extends Thread {
                                         --currentlyIdleCount;
                                     } else {
                                         // PHASE 2: Shutdown actions are all complete
-                                        J2MEPlatformUtils.notifyDestroyed("currentlyIdleCount=" + currentlyIdleCount);
+                                        PlatformUtils.notifyDestroyed("currentlyIdleCount=" + currentlyIdleCount);
                                         //#mdebug
                                         L.i("Log notifyDestroyed", "");
                                         L.shutdown();

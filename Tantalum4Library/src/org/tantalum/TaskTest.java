@@ -25,7 +25,6 @@ package org.tantalum;
 
 import java.util.Vector;
 import jmunit.framework.cldc11.*;
-import org.tantalum.j2me.J2MEPlatformUtils;
 
 /**
  * Unit tests for the Task class.
@@ -41,8 +40,7 @@ public class TaskTest extends TestCase {
         //The first parameter of inherited constructor is the number of test cases
         super(15, "TaskTest");
 
-        J2MEPlatformUtils.setProgram(this);
-        Worker.init(2);
+        PlatformUtils.setProgram(this);
     }
 
     /**
@@ -484,7 +482,11 @@ public class TaskTest extends TestCase {
             fail("join cleanup between tests: " + ex);
             ex.printStackTrace();
         }
-
+        
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+        }
         final Task instance4 = new Task("instance4") {
             protected Object doInBackground(Object in) {
                 try {
@@ -499,7 +501,7 @@ public class TaskTest extends TestCase {
             protected Object doInBackground(Object in) {
                 try {
                     instance4.join(400);
-                    errors.addElement("Should have canceled doInBackground 4");
+                    errors.addElement("Should have canceled doInBackground 5");
                 } catch (CancellationException ex) {
                 } catch (Exception ex) {
                     errors.addElement("Exception on doInBackground cancel: " + ex);

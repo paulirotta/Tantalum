@@ -25,7 +25,6 @@ package org.tantalum;
 
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
-import org.tantalum.j2me.J2MEPlatformUtils;
 
 /**
  * Unit tests for the Worker class
@@ -41,7 +40,7 @@ public class WorkerTest extends TestCase {
     public WorkerTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(2, "WorkerTest");
-        Worker.init(4);
+        PlatformUtils.setProgram(this);
     }
 
     /**
@@ -51,7 +50,6 @@ public class WorkerTest extends TestCase {
      * @throws Throwable 
      */
     public void test(int testNumber) throws Throwable {
-        J2MEPlatformUtils.setProgram(this);
         switch (testNumber) {
             case 0:
                 testRun();

@@ -35,17 +35,22 @@ package org.tantalum;
 public class ExecutionException extends Exception {
 
     /**
-     *
-     * @param s
-     */
-    public ExecutionException(String s) {
-        super(s);
-    }
-
-    /**
-     *
+     * Create an exception indicating that an uncaught exception was thrown
+     * during the doInBackground() method of a Task
+     * 
      */
     public ExecutionException() {
         super();
+    }
+
+    /**
+     * Create an exception indicating that an uncaught exception was thrown
+     * during the doInBackground() method of a Task and explain what
+     * that runtime error was
+     * 
+     * @param explanation
+     */
+    public ExecutionException(final String explanation) {
+        super(explanation);
     }
 }

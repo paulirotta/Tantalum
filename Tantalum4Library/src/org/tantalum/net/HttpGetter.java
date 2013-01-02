@@ -188,12 +188,12 @@ public class HttpGetter extends Task {
 // The following are delayed until we can support HTTP DELETE and PUT in J2ME. HttpConnection needs to be replaced.            
 //            
 //            if (this instanceof HttpDeleter) {
-//                httpConn = J2MEPlatformUtils.getHttpDeleteConn(url2, requestPropertyKeys, requestPropertyValues);
+//                httpConn = PlatformUtils.getHttpDeleteConn(url2, requestPropertyKeys, requestPropertyValues);
 //            } else  if (this instanceof HttpPutter) {
 //                if (postMessage == null) {
 //                    throw new IllegalArgumentException("null HTTP PUT- did you forget to call HttpPutter.this.setMessage(byte[]) ? : " + url);
 //                }
-//                httpConn = J2MEPlatformUtils.getHttpPutConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
+//                httpConn = PlatformUtils.getHttpPutConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
 //            } else 
 
             // ADD THE FOLLOWING AS TOP LEVEL (NOT INNER) CLASSES WHEN HTTP DELETE IS SUPPORTED:

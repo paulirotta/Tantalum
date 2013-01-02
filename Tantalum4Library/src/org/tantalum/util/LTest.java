@@ -41,6 +41,7 @@ public class LTest extends TestCase {
     public LTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(1, "LogTest");
+        PlatformUtils.setProgram(this);
     }    
 
     /**

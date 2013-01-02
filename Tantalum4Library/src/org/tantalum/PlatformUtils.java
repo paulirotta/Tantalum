@@ -125,7 +125,8 @@ public abstract class PlatformUtils {
             System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
         }
         try {
-            if (Class.forName("org.tantalum.j2me.TantalumMIDlet").isAssignableFrom(program.getClass())) {
+            if (Class.forName("org.tantalum.j2me.TantalumMIDlet").isAssignableFrom(program.getClass()) ||
+                        program.getClass().getName().toLowerCase().indexOf("test") > 0) {
                 PlatformUtils.platform = PLATFORM_J2ME;
                 PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantalum.j2me.J2MEPlatformUtils").newInstance();
                 Worker.init(numberOfWorkers);

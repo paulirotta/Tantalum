@@ -217,8 +217,7 @@ public final class AndroidPlatformUtils extends PlatformUtils {
          * Close the InputStream associated with this connection.
          * 
          * The underlying Android HTTP 1.1 connection implementation probably
-         * remains connected to the server for some time and will be re-used as
-         * on J2ME
+         * remains connected to the server for some time and will be re-used
          * 
          * @throws IOException 
          */

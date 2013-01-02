@@ -23,7 +23,6 @@
  */
 package org.tantalum;
 
-import org.tantalum.j2me.J2MEPlatformUtils;
 import org.tantalum.util.L;
 
 /**
@@ -39,12 +38,13 @@ public abstract class Task implements Workable {
     // status values
 
     /**
-     * For join(), if a timeout is not specified, no thread can wait more than 2 minutes.
+     * For join(), if a timeout is not specified, no thread can wait more than 2
+     * minutes.
      */
     public static final int MAX_TIMEOUT = 120000; // 
     /**
-     * status: created and forked for execution by a background
-     * Worker thread, but no Worker has yet been free to accept this queued Task
+     * status: created and forked for execution by a background Worker thread,
+     * but no Worker has yet been free to accept this queued Task
      */
     public static final int EXEC_PENDING = 0;
     /**
@@ -205,10 +205,11 @@ public abstract class Task implements Workable {
         if (timeout < 0) {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
-        if (J2MEPlatformUtils.isUIThread() && timeout > 100) {
-            //#debug
+        //#mdebug
+        if (PlatformUtils.isUIThread() && timeout > 100) {
             L.i("WARNING- slow Task.join() on UI Thread", "timeout=" + timeout + " " + this);
         }
+        //#enddebug
         boolean doExec = false;
         Object r;
 
@@ -236,8 +237,14 @@ public abstract class Task implements Workable {
                         final long t = System.currentTimeMillis();
 
                         wait(timeout);
-                        if (status >= EXEC_FINISHED) {
+                        if (status == EXEC_FINISHED) {
                             break;
+                        }
+                        if (status == CANCELED) {
+                            throw new CancellationException("join() was to a Task which had already been canceled: " + this);
+                        }
+                        if (status == EXCEPTION) {
+                            throw new ExecutionException("join() was to a Task which had already expereienced an uncaught runtime exception: " + this);
                         }
                         timeout -= System.currentTimeMillis() - t;
                     } while (timeout > 0);
@@ -248,9 +255,9 @@ public abstract class Task implements Workable {
                     }
                     break;
                 case CANCELED:
-                    throw new CancellationException();
+                    throw new CancellationException("join() was to a Task which was running but then canceled: " + this);
                 case EXCEPTION:
-                    throw new ExecutionException();
+                    throw new ExecutionException("join() was to a Task which was running but then had an uncaught exception: " + this);
                 default:
                     ;
             }
@@ -303,7 +310,7 @@ public abstract class Task implements Workable {
                         break;
                     }
                     timeout -= System.currentTimeMillis() - t2;
-                };
+                }
                 //#debug
                 L.i("End joinUI wait", "status=" + getStatusString());
                 if (status < UI_RUN_FINISHED) {
@@ -433,7 +440,7 @@ public abstract class Task implements Workable {
                 t = chainedTask;
             }
             if (this instanceof UITask && doRun) {
-                J2MEPlatformUtils.runOnUiThread((UITask) this);
+                PlatformUtils.runOnUiThread((UITask) this);
             }
             if (t != null) {
                 //#debug
@@ -455,7 +462,7 @@ public abstract class Task implements Workable {
      * Override to implement Worker thread code
      *
      * @param in
-     * @return 
+     * @return
      */
     protected abstract Object doInBackground(Object in);
 

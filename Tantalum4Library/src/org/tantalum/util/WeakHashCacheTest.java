@@ -24,6 +24,7 @@
 package org.tantalum.util;
 
 import jmunit.framework.cldc11.*;
+import org.tantalum.PlatformUtils;
 
 /**
  * Unit tests for WeakHashCache
@@ -38,6 +39,7 @@ public class WeakHashCacheTest extends TestCase {
     public WeakHashCacheTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(5, "WeakHashCacheTest");
+        PlatformUtils.setProgram(this);
     }
 
     /**

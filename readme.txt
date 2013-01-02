@@ -1,31 +1,18 @@
-Netbeans 7.1 Windows 7 project for Tantalum 2 J2ME Library
+Tantalum 4 Library Release Notes
+Jan 1, 2013
 
+You likely need to customize your IDE project properties after checkout. In
+particular, make sure external libraries such as Android.jar are properly referenced
+on your system.
 
+IDEs used:
+- Tantalum4 library and J2ME Examples: Netbeans 4.2.1
+- Other Tantalum examples available may use Nokia SDK (Eclipse with plugins) or
+  Android SDK (Eclipse with plugins).
 
-Pre-built stable versions available from
+The latest source can be pulled from the respository using Mercurial. The
+cross-platform example is released seperately and can be found from the link below.
+For details, see:
+   http://projects.developer.nokia.com/Tantalum
+   http://projects.developer.nokia.com/picasa_viewer
 
-   
-https://developer.forum.nokia.com/Tantalum
-
-
-
-You likely need to customize your Netbeans project properties after checkout.
-
-
-Under Application Descriptor section,
-Add the 3 demo MIDlets
-
-
-Add the following custom JAD properties:
-
-   RSS-Feed-Url: http://feeds.bbci.co.uk/news/rss.xml
-
-   Nokia-UI-Enhancement: CanvasHasBackground
-
-
-
-Individual Netbeans projects for the Tantalum2 library, JSON library tools,
-and example applications are included.
-
-Use Mercurial from the command line since 3 projects are in one repository to
-support Nokia Projects format.
