@@ -315,6 +315,9 @@
         <ant target="jar" inheritall="false" antfile="${project.Tantalum4Library}/build.xml">
             <property name="config.active" value=""/>
         </ant>
+        <ant target="jar" inheritall="false" antfile="${project.Tantalum4Library}/build.xml">
+            <property name="config.active" value="Release"/>
+        </ant>
     </target>
     <!--preprocess-->
     <target name="pre-preprocess"/>
