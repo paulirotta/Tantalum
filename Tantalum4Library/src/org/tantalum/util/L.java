@@ -68,26 +68,26 @@ public abstract class L {
      */
     public final static void i(final String tag, final String message) {
 //#debug
-        log.printMessage(getMessage(tag, message).toString(), false);
+        log.printMessage(getMessage(tag, message), null);
     }
 
     /**
      * Logs an error message and throwable
      *
-     * @param tag name of the class logging this message
-     * @param message message to i
-     * @param th throwable to i
+     * @param tag message category
+     * @param message explanation
+     * @param t exception
      */
-    public final static void e(final String tag, final String message, final Throwable th) {
+    public final static void e(final String tag, final String message, final Throwable t) {
 //#mdebug
         final StringBuffer sb = getMessage(tag, message);
         sb.append(", EXCEPTION: ");
-        sb.append(th);
+        sb.append(t);
 
         synchronized (L.class) {
-            log.printMessage(sb.toString(), true);
-            if (th != null) {
-                th.printStackTrace();
+            log.printMessage(sb, t);
+            if (t != null) {
+                t.printStackTrace();
             }
         }
 //#enddebug
@@ -100,7 +100,7 @@ public abstract class L {
      * @param string string to print
      * @param errorMessage
      */
-    protected abstract void printMessage(final String string, final boolean errorMessage);
+    protected abstract void printMessage(final StringBuffer sb, final Throwable t);
 
     /**
      * Get formatted message string.
@@ -151,7 +151,7 @@ public abstract class L {
      */
     public static void shutdown() {
 //#mdebug
-        L.log.printMessage("Tantalum log shutdown", false);
+        L.log.printMessage(new StringBuffer("Tantalum log shutdown"), null);
         L.log.close();
 //#enddebug
     }

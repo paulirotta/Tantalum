@@ -48,12 +48,11 @@ public final class AndroidLog extends L {
      * @param message information to print for debugging purposes
      * @param errorMessage is this an error or just information
      */
-    protected void printMessage(final String message, final boolean errorMessage) {
-        if (errorMessage) {
-            Log.e(LOG_TANTALUM, message);
-
+    protected void printMessage(final StringBuffer sb, final Throwable t) {
+        if (t == null) {
+            Log.i(LOG_TANTALUM, sb.toString());
         } else {
-            Log.i(LOG_TANTALUM, message);
+            Log.e(LOG_TANTALUM, sb.toString(), t);
         }
     }
 

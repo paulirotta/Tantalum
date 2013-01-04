@@ -49,16 +49,18 @@ public class J2MELog extends L {
     private static CommConnection comm = null;
 //#enddebug    
 
-    protected void printMessage(final String message, final boolean errorMessage) {
-//#mdebug        
+    protected void printMessage(final StringBuffer sb, final Throwable t) {
+//#mdebug
+        sb.append("Exception: ");
+        sb.append(t.toString());
         if (os != null) {
-            byteArrayQueue.addElement(message.getBytes());
+            byteArrayQueue.addElement(sb.toString().getBytes());
             synchronized (L.class) {
                 L.class.notifyAll();
             }
         } else {
             synchronized (L.class) {
-                System.out.println(message);
+                System.out.println(sb.toString());
             }
         }
 //#enddebug        

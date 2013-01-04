@@ -27,8 +27,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-import android.database.sqlite.SQLiteFullException;
 import android.database.sqlite.SQLiteOpenHelper;
 import java.util.Vector;
 import org.tantalum.Workable;
@@ -42,11 +40,12 @@ import org.tantalum.util.L;
  * Android implementation of cross-platform persistent storage using an SQLite
  * database. All web services you access over the net using a StaticWebCache
  * will be automatically stored here for faster access and offline use.
- * 
+ *
  * @author phou
  */
-public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
+public final class AndroidCache implements FlashCache {
 
+    private final SQLiteOpenHelper helper;
     /**
      * Database version number
      */
@@ -92,10 +91,10 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
     /**
      * Create the persistent memory database singleton
-     * 
+     *
      */
     public AndroidCache() {
-        super(context, DB_NAME, null, DB_VERSION);
+        helper = new SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION);
         Worker.forkShutdownTask(new Workable() {
             public Object exec(final Object in2) {
                 if (db != null) {
@@ -110,8 +109,8 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
     /**
      * Execute SQL to create the database
-     * 
-     * @param db 
+     *
+     * @param db
      */
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_DB);
@@ -119,10 +118,10 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
     /**
      * Execute SQL to update the database
-     * 
+     *
      * @param db
      * @param oldVersion
-     * @param newVersion 
+     * @param newVersion
      */
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
@@ -131,10 +130,10 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
     /**
      * Get the stored byte[] associated with the specified key
-     * 
+     *
      * @param key
      * @return
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public synchronized byte[] getData(final String key) throws FlashDatabaseException {
         Cursor cursor = null;
@@ -143,7 +142,7 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
         L.i("db getData", "1");
         try {
             if (db == null) {
-                db = getWritableDatabase();
+                db = helper.getWritableDatabase();
             }
             L.i("db getData", "2");
             cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
@@ -160,7 +159,7 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
         } catch (NullPointerException e) {
             L.e("db not initialized, join() then try again", "getData", e);
             return null;
-        } catch (SQLiteException e) {
+        } catch (Exception e) {
             L.e("db can not be initialized", "getData, key=" + key, e);
             throw new FlashDatabaseException("db init error on getData, key=" + key + " : " + e);
         } finally {
@@ -173,11 +172,11 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
     /**
      * Store the specified byte[] to flash memory for later retrieval by key
-     * 
+     *
      * @param key
      * @param data
      * @throws FlashFullException
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public synchronized void putData(final String key, final byte[] data) throws FlashFullException, FlashDatabaseException {
         final ContentValues values = new ContentValues();
@@ -187,13 +186,18 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
         try {
             if (db == null) {
-                db = getWritableDatabase();
+                db = helper.getWritableDatabase();
             }
             db.insert(TABLE_NAME, null, values);
-        } catch (SQLiteFullException e) {
-            L.e("Android database full, attempting cleanup of old...", key, e);
-            throw new FlashFullException("key = " + key + " : " + e);
-        } catch (SQLiteException e) {
+        } catch (Exception e) {
+            try {
+                if (Class.forName("android.database.sqlite.SQLiteFullException").isAssignableFrom(e.getClass())) {
+                    throw new FlashFullException("Android database full, attempting cleanup of old..." + key + " : " + e);
+                }
+            } catch (ClassNotFoundException e2) {
+                L.e("Introspection error", "android.database.sqlite.SQLiteFullException", e2);
+
+            }
             L.e("Android database error when putting data", key, e);
             throw new FlashDatabaseException("key = " + key + " : " + e);
         }
@@ -201,19 +205,19 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
     /**
      * Remove the byte[] associated with this key from the database
-     * 
+     *
      * @param key
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public synchronized void removeData(final String key) throws FlashDatabaseException {
         final String where = COL_KEY + "==\"" + key + "\"";
 
         try {
             if (db == null) {
-                db = getWritableDatabase();
+                db = helper.getWritableDatabase();
             }
             db.delete(TABLE_NAME, where, null);
-        } catch (SQLiteException e) {
+        } catch (Exception e) {
             L.e("Can not access database on removeData()", key, e);
             throw new FlashDatabaseException("Can not remove data from database: " + e);
         }
@@ -221,9 +225,9 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
     /**
      * Get a list of all the keys for data available in this database
-     * 
+     *
      * @return
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public Vector getKeys() throws FlashDatabaseException {
         final Vector keys = new Vector();
@@ -231,7 +235,7 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
 
         try {
             if (db == null) {
-                db = getWritableDatabase();
+                db = helper.getWritableDatabase();
             }
             cursor = db.query(TABLE_NAME, new String[]{COL_KEY}, "*",
                     null, null, null, null, null);
@@ -241,7 +245,7 @@ public final class AndroidCache extends SQLiteOpenHelper implements FlashCache {
                     keys.addElement(new String(cursor.getBlob(0)));
                 } while (cursor.moveToNext());
             }
-        } catch (SQLiteException e) {
+        } catch (Exception e) {
             L.e("Can not access database on getKeys()", "", e);
             throw new FlashDatabaseException("Can not acccess database on getKeys() : " + e);
         } finally {
