@@ -153,6 +153,29 @@ public abstract class Task implements Workable {
     }
 
     /**
+     * Override the current value of the task with a new value
+     *
+     * Note that this is not used in normal operations. Usually you set the
+     * value when creating the task, or pass in the value as an argument from
+     * the previous Task in a chain. It can be useful to update a Task not yet
+     * forked, or to override the normal result of a Task.
+     *
+     * Because you face a race condition when setting the value on Task which is
+     * currently forked or already running, you will receive an
+     * IllegalStateException. Only use this method before forking and after
+     * execution has completed.
+     *
+     * @param value
+     */
+    public synchronized final void set(final Object value) {
+        if (status < AsyncTask.EXEC_FINISHED) {
+            throw new IllegalStateException("Unpredictable run sequence- can not set Task value when status is " + status);
+        }
+
+        this.value = value;
+    }
+
+    /**
      * Set the return value of this task during or at the end of execution.
      *
      * Note that although you can use this to set or override the initial input
@@ -352,6 +375,9 @@ public abstract class Task implements Workable {
      * @param status
      */
     protected final void setStatus(final int status) {
+        if (status < EXEC_PENDING || status > READY) {
+            throw new IllegalArgumentException("setStatus(" + status + ") not allowed");
+        }
         final Task t;
         synchronized (this) {
             if ((this.status == CANCELED || this.status == EXCEPTION) && status != READY) {
@@ -530,6 +556,6 @@ public abstract class Task implements Workable {
      * @return
      */
     public synchronized String toString() {
-        return super.toString() + " status=" + getStatusString() + " result=" + value + " nextTask=(" + chainedTask + ")";
+        return "TASK: status=" + getStatusString() + " result=" + value + " nextTask=(" + chainedTask + ")";
     }
 }

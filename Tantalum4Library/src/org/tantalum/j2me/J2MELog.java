@@ -32,11 +32,11 @@ import org.tantalum.util.L;
 
 /**
  * Debug-time logging implementation for J2ME
- * 
- * To enable logging from a phone connected to a computer by a USB cable, open
- * a terminal emulator on the window, set the COM port parameters in Windows
+ *
+ * To enable logging from a phone connected to a computer by a USB cable, open a
+ * terminal emulator on the window, set the COM port parameters in Windows
  * Devices, and call L.startUSBDebugging() at program start.
- * 
+ *
  * @author phou
  */
 public class J2MELog extends L {
@@ -51,8 +51,10 @@ public class J2MELog extends L {
 
     protected void printMessage(final StringBuffer sb, final Throwable t) {
 //#mdebug
-        sb.append("Exception: ");
-        sb.append(t.toString());
+        if (t != null) {
+            sb.append("Exception: ");
+            sb.append(t.toString());
+        }
         if (os != null) {
             byteArrayQueue.addElement(sb.toString().getBytes());
             synchronized (L.class) {
@@ -69,7 +71,7 @@ public class J2MELog extends L {
 //#mdebug
     /**
      * Close the J2ME Logging and (if needed) USB serial port resources
-     * 
+     *
      */
     protected void close() {
 

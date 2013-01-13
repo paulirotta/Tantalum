@@ -28,8 +28,8 @@ import org.tantalum.util.L;
 
 /**
  * A generic worker thread. Long-running and background tasks are queued and
- * executed here to keep the user interface thread free to update and respond
- * to incoming user interface events.
+ * executed here to keep the user interface thread free to update and respond to
+ * incoming user interface events.
  *
  * @author phou
  */
@@ -39,29 +39,30 @@ public final class Worker extends Thread {
      * Start the task as soon as possible. The fork() operation will place this
      * as the next Workable to be completed unless subsequent HIGH_PRIORITY fork
      * operations occur before a Worker start execution.
-     * 
-     * This is the normal priority for user interface tasks where the user expects
-     * a fast response regardless of previous incomplete requests they may have made.
+     *
+     * This is the normal priority for user interface tasks where the user
+     * expects a fast response regardless of previous incomplete requests they
+     * may have made.
      */
     public static final int HIGH_PRIORITY = 3;
     /**
-     * Start execution after any previously fork()ed work, first in
-     * is usually first out, however multiple Workers in parallel means that execution
+     * Start execution after any previously fork()ed work, first in is usually
+     * first out, however multiple Workers in parallel means that execution
      * start and completion order is not guaranteed.
      */
     public static final int NORMAL_PRIORITY = 2;
     /**
      * Start execution if there is nothing else for the Workers to do. At least
      * one Worker will always be left idle for immediate activation if only
-     * LOW_PRIORITY work is queued for execution. This is intended for background
-     * tasks such as pre-fetch and pre-processing of data that doe not affect the
-     * current user view.
+     * LOW_PRIORITY work is queued for execution. This is intended for
+     * background tasks such as pre-fetch and pre-processing of data that doe
+     * not affect the current user view.
      */
     public static final int LOW_PRIORITY = 1;
     /**
      * Synchronize on the following object if your processing routine will
      * temporarily need a large amount of memory. Only one such activity can be
-     * active at a time. 
+     * active at a time.
      */
     public static final Object LARGE_MEMORY_MUTEX = new Object();
     /*
@@ -314,18 +315,19 @@ public final class Worker extends Thread {
     }
 
     /**
-     * Get the id number for the next available Worker thread that
-     * can be used to a specific application-define type of Worker.forkSerial()
-     * operations. Assuming you have a limited number of types of forkSerial()
-     * operations, this round-robin allocation reduces the number of serialized
-     * operations assigned to any one generic Worker. Note that since forkSerial()
-     * work is done by the specified Worker before general fork() operations, it
-     * is higher priority work than a fork() with HIGH_PRIORITY, but only one
+     * Get the id number for the next available Worker thread that can be used
+     * to a specific application-define type of Worker.forkSerial() operations.
+     * Assuming you have a limited number of types of forkSerial() operations,
+     * this round-robin allocation reduces the number of serialized operations
+     * assigned to any one generic Worker. Note that since forkSerial() work is
+     * done by the specified Worker before general fork() operations, it is
+     * higher priority work than a fork() with HIGH_PRIORITY, but only one
      * Worker can execute that type of task.
-     * 
+     *
      * You can use this to guarantee the sequence of execution of a given type
      * of task (such as writing to flash memory or to a server).
-     * @return 
+     *
+     * @return
      */
     public static int nextSerialWorkerIndex() {
         synchronized (q) {
@@ -383,8 +385,6 @@ public final class Worker extends Thread {
             }
         } catch (InterruptedException ex) {
         }
-        //#debug
-        L.i("Shutdown exit", "currentlyIdleCount=" + currentlyIdleCount);
     }
 
     /**
@@ -510,5 +510,7 @@ public final class Worker extends Thread {
             //#debug
             L.e("Fatal worker error", "workable=" + workable, t);
         }
+        //#debug
+        L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);
     }
 }

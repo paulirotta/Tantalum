@@ -67,8 +67,11 @@ public abstract class L {
      * @param message message to i
      */
     public final static void i(final String tag, final String message) {
-//#debug
-        log.printMessage(getMessage(tag, message), null);
+//#mdebug
+        final StringBuffer sb = getMessage(tag, message);
+        System.out.println("SB " + sb);
+        log.printMessage(sb, null);
+//#enddebug
     }
 
     /**
