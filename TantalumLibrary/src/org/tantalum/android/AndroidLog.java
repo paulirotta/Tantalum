@@ -50,9 +50,9 @@ public final class AndroidLog extends L {
      */
     protected void printMessage(final StringBuffer stringBuffer, final Throwable t) {
         if (t == null) {
-//            Log.i(LOG_TANTALUM, stringBuffer.toString());
+            Log.i(LOG_TANTALUM, stringBuffer.toString());
         } else {
-//            Log.e(LOG_TANTALUM, stringBuffer.toString());//, t);
+            Log.e(LOG_TANTALUM, stringBuffer.toString());//, t);
         }
     }
 
