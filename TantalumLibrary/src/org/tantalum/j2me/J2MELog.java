@@ -62,7 +62,7 @@ public class J2MELog extends L {
             }
         } else {
             synchronized (L.class) {
-//                System.out.println(sb.toString());
+                System.out.println(sb.toString());
             }
         }
 //#enddebug        
@@ -109,7 +109,7 @@ public class J2MELog extends L {
                 new Thread(usbWriter).start();
             }
         } catch (IOException ex) {
-//            System.out.println("Usb debug output error: " + ex);
+            System.out.println("Usb debug output error: " + ex);
         }
 //#enddebug
     }
