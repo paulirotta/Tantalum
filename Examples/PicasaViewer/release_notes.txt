@@ -1,0 +1,192 @@
+Picasa Viewer 1.0
+=================
+
+PicasaViewer is a cross platform app that shows the top featured images on the
+Picasa web gallery and allows the user to search for specific images on the
+service. The application has been implemented so that the S40 and Android
+versions share common engine code. The user interface implementations are
+different (LCDUI in Series 40 and Android UI library in Android). The project
+utilises Tantalum4 cross platform development library in the implementation of
+the common functionality.
+
+This example application demonstrates adaptive design, performance, JSON
+parsing, advanced caching and cross-platform techniques on Java applications.
+
+This example application is hosted in Nokia Developer Projects:
+- http://projects.developer.nokia.com/picasa_viewer
+
+For more information on the implementation, visit the wiki pages:
+- http://projects.developer.nokia.com/picasa_viewer/wiki
+
+
+1. Usage
+-------------------------------------------------------------------------------
+
+The application displays a grid of images downloaded from Picasa. The user can 
+tap an image to display it in full screen. The full screen view also shows
+the image title and the author of the image. The full screen view can be
+dismissed by tapping the screen or by selecting Back.
+
+By default the application displays Picasa featured images. In Category Bar
+(S40) or Menu (Android) there's option to search images. When user types the
+search terms the displayed images are refreshed on fly. An efficient cache is
+utilised to restore the previously downloaded images.
+
+
+2. Prerequisites
+-------------------------------------------------------------------------------
+
+- Java ME basics
+- Android basics
+
+
+3. Project structure and implementation
+-------------------------------------------------------------------------------
+
+3.1 Folders
+-----------
+
+The root folder contains the project subfolders, the license information, and
+this file (release notes).
+
+|- PicasaViewer         Contains project files of the S40 version of the 
+|  |                    application. 
+|  |
+|  |- src               Contains the Java source code files.
+|  |- res               Contains the resource files.
+|
+|- PicasaViewerAndroid  Contains project files of the Android version of the 
+|  |                    application.
+|  |
+|  |- src               Contains the Java source code files.
+|  |- res               Contains the resource files.
+|  |- gen               Contains the generated source code files.
+|  |- libs              Contains library files.
+|
+|- PicasaViewerCommon   Contains source code common to both S40 and Android
+   |                    versions of the application
+   |
+   |- src               Contains the Java source code files.
+
+   
+3.2 Important files and classes
+-------------------------------
+
+3.2.1 PicasaViewer
+
+- PicasaViewer.java      The MIDlet main class
+- FeaturedCanvas.java    Class for displaying a grid of Picasa featured images
+- SearchCanvas.java      Class for displaying Picasa search dialog and search 
+                         results
+- DetailCanvas.java      Class for displaying full screen image with details
+
+3.2.2 PicasaViewerAndroid
+
+- ImageGridView.java     Class for displaying the grid of images.
+- ImageAdapter.java      Class for setting the image inside the grid-layout.
+- DetailedView.java      Class for displaying full screen image with details.
+
+3.2.3 PicasaViewerCommon
+
+- PicasaImageObject.java Class for storing information about a Picasa image
+- PicasaStorage.java     Class for accessing cached data like thumbnails,
+                         images and feeds.
+
+
+4. Compatibility
+-------------------------------------------------------------------------------
+
+Series 40 touch platforms with CLDC 1.1 and MIDP 2.0.
+
+Android API level 14 (Ice Cream Sandwich)
+
+Tested to work on the Nokia Asha 311, Nokia Asha 303, and Nokia X3-02. 
+Developed with NetBeans 7.0.1 and Nokia SDK 2.0 for Java.
+
+4.1 Required capabilities
+-------------------------
+
+CLDC 1.1, MIDP 2.0, Nokia User Interface 1.6
+
+Android API level 14
+
+4.2 Known issues
+----------------
+
+The Tantalum4 S40 image scaling has some minor glitches seen in bottom of the
+scaled images.
+
+
+5. Building, installing, and running the S40 application
+-------------------------------------------------------------------------------
+
+5.1 Preparations
+----------------
+
+Install Nokia SDK 2.0 with the bundled Nokia IDE for Java ME v1
+
+5.2 Building
+------------
+
+The project can be opened from the Nokia IDE for Java ME v1 by selecting Import
+Existing Code Into Workspace. Click Browse next to the Root Directory and select
+the PicasaViewer folder. Eclipse should automatically build the project. You can
+build the project manually by selecting Project | Build All.
+
+5.3 Deployment
+--------------
+
+Click the "play" icon in the IDE toolbar. If you want to change the target
+configuration select Run Configurations from the drop down menu next to the
+play button.
+
+
+6. Building, installing, and running the Android application
+-------------------------------------------------------------------------------
+
+6.1 Preparations
+----------------
+
+Install the Android SDK and the bundled developer tools.
+
+6.2 Building
+------------
+
+The project can be opened from the ADT Eclipse by selecting Import | Existing
+Android Code Into Workspace. Click Browse next to the Root Directory and select
+the PicasaViewerAndroid folder. Eclipse should automatically build the project.
+You can build the project manually by selecting Project | Build All.
+
+6.3 Deployment
+--------------
+
+Click the "play" icon in ADT toolbar. If you want to change the target
+configuration select Run Configurations from the drop down menu next to the
+play button.
+
+
+7. Licence
+-------------------------------------------------------------------------------
+
+See the licence text file delivered with this project. The licence file is also
+available online at
+http://projects.developer.nokia.com/picasa_viewer/browser/LICENSE.TXT
+
+
+8. Related documentation
+-------------------------------------------------------------------------------
+
+Nokia SDK for Java
+- http://www.developer.nokia.com/Develop/Java/Tools/
+
+Android SDK
+- http://developer.android.com/sdk/
+
+The Tantalum API is open source and freely available in
+https://projects.developer.nokia.com/Tantalum
+
+
+9. Version history
+-------------------------------------------------------------------------------
+
+1.0 Initial release
