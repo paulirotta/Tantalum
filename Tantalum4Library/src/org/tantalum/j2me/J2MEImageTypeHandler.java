@@ -39,14 +39,12 @@ public final class J2MEImageTypeHandler extends ImageTypeHandler {
 
     public Object convertToUseForm(final byte[] bytes) {
         final Image img;
-        final boolean quality;
-        final boolean alpha;
+        final int algorithm;
         final boolean aspect;
         final int w, h;
         
         synchronized (this) {
-            quality = this.bestQuality;
-            alpha = this.processAlpha;
+            algorithm = this.algorithm;
             aspect = this.preserveAspectRatio;
             w = this.maxWidth;
             h = this.maxHeight;
@@ -62,11 +60,11 @@ public final class J2MEImageTypeHandler extends ImageTypeHandler {
                     Image temp = Image.createImage(bytes, 0, bytes.length);
                     final int tempW = temp.getWidth();
                     final int tempH = temp.getHeight();
-                    int[] data = new int[tempW * tempH];
-                    temp.getRGB(data, 0, tempW, 0, 0, tempW, tempH);
+                    int[] argbIn = new int[tempW * tempH];
+                    temp.getRGB(argbIn, 0, tempW, 0, 0, tempW, tempH);                    
                     temp = null;
-                    img = ImageUtils.downscaleImage(data, tempW, tempH, w, h, aspect, alpha, quality);
-                    data = null;
+                    img = ImageUtils.scaleImage(argbIn, argbIn, tempW, tempH, w, h, aspect, algorithm);
+                    argbIn = null;
                 }
             }
         } catch (IllegalArgumentException e) {

@@ -56,16 +56,16 @@ public class StaticWebCache extends StaticCache {
 
     /**
      * Create a persistent flash memory cache which acts like a Hashtable
-     * 
-     * Items not already in the cache will be requested from the web with HTTP GET
-     * when you request them by url.
-     * 
+     *
+     * Items not already in the cache will be requested from the web with HTTP
+     * GET when you request them by url.
+     *
      * @param priority
-     * @param handler 
+     * @param handler
      */
     public StaticWebCache(final char priority, final DataTypeHandler handler) {
         super(priority, handler);
-        
+
         this.httpTaskFactory = StaticWebCache.defaultHttpGetterFactory;
     }
 
@@ -73,30 +73,30 @@ public class StaticWebCache extends StaticCache {
      * Create a persistent flash memory cache, and provide your own class for
      * creating the HttpGetter or HttpPoster that will be used to get cache-miss
      * items from the web.
-     * 
+     *
      * @param priority
      * @param handler
-     * @param httpTaskFactory 
+     * @param httpTaskFactory
      */
     public StaticWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) {
         super(priority, handler);
-        
+
         this.httpTaskFactory = httpTaskFactory;
     }
 
     /**
      * Get without the HTTP POST option (HTTP GET only)
-     * 
+     *
      * @param key
      * @param priority
      * @param getType
      * @param chainedTask
-     * @return 
+     * @return
      */
     public Task get(final String key, final int priority, final int getType, final Task chainedTask) {
         return get(key, null, priority, getType, chainedTask);
     }
-    
+
     /**
      * Retrieve one item from the cache using the method specified in the
      * getType parameter. The call returns immediately, is executed concurrently
@@ -226,6 +226,7 @@ public class StaticWebCache extends StaticCache {
      * </code></pre>
      */
     final public class GetAnywhereTask extends Task {
+
         final byte[] postMessage;
 
         /**
@@ -261,7 +262,7 @@ public class StaticWebCache extends StaticCache {
          * <code>fork()</code>ing the Task for background execution.
          *
          * @param key
-         * @param postMessage 
+         * @param postMessage
          */
         public GetAnywhereTask(final String key, final byte[] postMessage) {
             super(key);
@@ -271,10 +272,13 @@ public class StaticWebCache extends StaticCache {
         protected Object doInBackground(final Object in) {
             Object out = in;
 
+            //#debug
+            L.i("GETANYWHERE", ((in == null) ? "null" : in.toString()));
+
             if (in == null || !(in instanceof String)) {
                 //#debug
-                L.i("ERROR", "StaticWebCache.GetAnywhereTask must receive a String url, but got " + in == null ? "null" : in.toString());
-                cancel(false);
+                L.i("ERROR", "StaticWebCache.GetAnywhereTask must receive a String url, but got " + ((in == null) ? "null" : in.toString()));
+                //cancel(false);
             } else {
                 //#debug
                 L.i("Async StaticCache.GET_ANYWHERE get", (String) in);
@@ -291,7 +295,7 @@ public class StaticWebCache extends StaticCache {
                 }
             }
             //#debug
-            L.i("End GetAnywhereTask " + in.toString(), out.toString());
+            L.i("End GetAnywhereTask, in=" + ((in == null) ? "null" : in.toString()), "out=" + ((out == null) ? "null" : out.toString()));
 
             return out;
         }
@@ -341,8 +345,9 @@ public class StaticWebCache extends StaticCache {
      * getTask.fork();
      */
     final public class GetWebTask extends Task {
+
         final byte[] postMessage;
-        
+
         /**
          * Create a
          * <code>StaticWebCache.GET_WEB</code> actor which will execute on the
@@ -352,12 +357,12 @@ public class StaticWebCache extends StaticCache {
          * <code>StaticWebCache.get()</code> to chain your Task after the get
          * operation before
          * <code>fork()</code>ing the Task for background execution.
-         * 
-         * @param postMessage 
+         *
+         * @param postMessage
          */
         public GetWebTask(final byte[] postMessage) {
             super();
-            
+
             this.postMessage = postMessage;
         }
 
@@ -376,11 +381,11 @@ public class StaticWebCache extends StaticCache {
          * <code>Task</code> for background execution.
          *
          * @param key
-         * @param postMessage 
+         * @param postMessage
          */
         public GetWebTask(final String key, final byte[] postMessage) {
             super(key);
-            
+
             this.postMessage = postMessage;
         }
 
@@ -435,7 +440,7 @@ public class StaticWebCache extends StaticCache {
          *
          * @param key
          * @param postMessage
-         * @return 
+         * @return
          */
         public HttpGetter getHttpTask(final String key, final byte[] postMessage) {
             if (postMessage == null) {
@@ -443,14 +448,14 @@ public class StaticWebCache extends StaticCache {
             } else {
                 final HttpPoster poster = new HttpPoster(key);
                 poster.setMessage(postMessage);
-                
+
                 return poster;
             }
         }
 
         /**
          * Check the servers response.
-         * 
+         *
          * This is also where you can check, store and otherwise process cookies
          * and custom security tags from the server.
          *

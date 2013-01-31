@@ -71,9 +71,8 @@ public abstract class TantalumMIDlet extends MIDlet {
      * to force an application to close.
      *
      * @param unconditional
-     * @throws MIDletStateChangeException
      */
-    protected final void destroyApp(final boolean unconditional) throws MIDletStateChangeException {
+    protected final void destroyApp(final boolean unconditional) {
         shutdown(unconditional);
     }
 

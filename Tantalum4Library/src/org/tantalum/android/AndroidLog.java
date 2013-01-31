@@ -45,14 +45,14 @@ public final class AndroidLog extends L {
     /**
      * Prints given string to Android logging.
      *
-     * @param message information to print for debugging purposes
-     * @param errorMessage is this an error or just information
+     * @param stringBuffer information to print for debugging purposes
+     * @param t is this an error or just information
      */
-    protected void printMessage(final StringBuffer sb, final Throwable t) {
+    protected void printMessage(final StringBuffer stringBuffer, final Throwable t) {
         if (t == null) {
-            Log.i(LOG_TANTALUM, sb.toString());
+            Log.i(LOG_TANTALUM, stringBuffer.toString());
         } else {
-            Log.e(LOG_TANTALUM, sb.toString(), t);
+            Log.e(LOG_TANTALUM, stringBuffer.toString(), t);
         }
     }
 

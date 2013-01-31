@@ -23,6 +23,8 @@
  */
 package org.tantalum.storage;
 
+import org.tantalum.util.ImageUtils;
+
 /**
  * This DataTypeHandler for use with a StaticCache converts from compressed
  * byte[] format (JPG, PNG, etc) to the platform-specific Image class.
@@ -49,20 +51,13 @@ public abstract class ImageTypeHandler implements DataTypeHandler {
      */
     public static final int SCALING_DISABLED = -1;
     /**
-     * Should any image resizing event also handle the alpha (transparency)
-     * channel. This makes resizing slightly slower with opaque JPG images which
-     * do not support transparency, but may be valuable for translucent PNGs
-     * depending on how you use them in your views. The default value is false.
+     * Select the image resize algorithm from among the cross-platform algorithms
+     * available in ImageUtils. Some produce faster results, some sharper, some
+     * smoother, some support alpha blending. The default value is
+     * ImageUtils.FIVE_POINT_BLEND which is fast and smooth and supports alpha
+     * translucency.
      */
-    protected boolean processAlpha = false;
-    /**
-     * Should any image resizing use the best possible resize algorithm, which
-     * produces less visible artifacts but runs about 4x longer than the fast,
-     * lossy algorithm. For most cases, the fast algorithm is the better choice.
-     * Neither algorithm is particularly good at shrinking text in an image and
-     * keeping that readable. The default value is false.
-     */
-    protected boolean bestQuality = false;
+    protected int algorithm = ImageUtils.FIVE_POINT_BLEND;
     /**
      * If the source image is larger than maxWidith and/or maxHeight, should the
      * image keep the same width/height ratio after resizing. The default value
@@ -84,44 +79,16 @@ public abstract class ImageTypeHandler implements DataTypeHandler {
     protected int maxHeight = SCALING_DISABLED;
 
     /**
-     * Set if the translucency channel should be processed. Otherwise the image
-     * is treated as opaque by default.
+     * Set the scaling algorithm to be used. Choose from among the public
+     * constants in ImageUtils. If you want to use native or other scaling
+     * not included in Tantalum, you should extend
+     * DataTypeHandler directly rather than modify the cross-platform
+     * ImageTypeHandler.
      *
-     * @param processAlpha
+     * @param algorithm
      */
-    public synchronized void setProcessAlpha(final boolean processAlpha) {
-        this.processAlpha = processAlpha;
-    }
-
-    /**
-     * Indicates if translucency is currently being processed when images are
-     * resized.
-     *
-     * @return
-     */
-    public synchronized boolean getProcessAlpha() {
-        return this.processAlpha;
-    }
-
-    /**
-     * Indicate if the fast image resize algorithm that uses a weighted average
-     * of 5 pixels in the source image, or the slower but less lossy algorithm
-     * should be used for shrinking images when necessary. The default is false,
-     * which triggers the faster image resize methods.
-     *
-     * @param bestQuality
-     */
-    public synchronized void setBestQuality(final boolean bestQuality) {
-        this.bestQuality = bestQuality;
-    }
-
-    /**
-     * Return the current image scaling quality mode.
-     *
-     * @return
-     */
-    public synchronized boolean getBestQuality() {
-        return this.bestQuality;
+    public synchronized void setAlgorithm(final int algorithm) {
+        this.algorithm = algorithm;
     }
 
     /**

@@ -410,13 +410,15 @@ public final class Worker extends Thread {
 
         for (int i = 0; i < workers.length; i++) {
             final Worker w = workers[i];
-            sb.append(" [");
-            sb.append(w.getName());
-            sb.append(" serialQsize=");
-            sb.append(w.serialQ.size());
-            sb.append(" currentWorkable=");
-            sb.append(w.workable);
-            sb.append("] ");
+            if (w != null) {
+                sb.append(" [");
+                sb.append(w.getName());
+                sb.append(" serialQsize=");
+                sb.append(w.serialQ.size());
+                sb.append(" currentWorkable=");
+                sb.append(w.workable);
+                sb.append("] ");
+            }
         }
 
         return sb.toString();

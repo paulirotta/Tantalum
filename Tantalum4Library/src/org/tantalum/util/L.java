@@ -69,7 +69,6 @@ public abstract class L {
     public final static void i(final String tag, final String message) {
 //#mdebug
         final StringBuffer sb = getMessage(tag, message);
-        System.out.println("SB " + sb);
         log.printMessage(sb, null);
 //#enddebug
     }
@@ -100,8 +99,8 @@ public abstract class L {
     /**
      * Prints given string to system out.
      *
-     * @param string string to print
-     * @param errorMessage
+     * @param sb - String to print
+     * @param t - Exception or Error to print
      */
     protected abstract void printMessage(final StringBuffer sb, final Throwable t);
 
