@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="res"/>
+	<classpathentry kind="con" path="org.elipse.mtj.JavaMEContainer/Nokia SDK 2.0 for Java/Nokia_SDK_2_0_Java"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/TantalumLibrary"/>
+	<classpathentry exported="true" kind="lib" path="C:/Nokia/lwuit/LWUIT-for-Series-40-0.9.0-beta/bin/sdk2.0/S40-full-touch.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

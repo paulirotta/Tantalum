@@ -1,0 +1,5 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/refresh" android:title="Refresh" android:orderInCategory="3" android:alphabeticShortcut="r"></item>
+    <item android:id="@+id/search" android:title="Search" android:alphabeticShortcut="s" android:orderInCategory="1"></item>
+    <item android:id="@+id/featured" android:orderInCategory="2" android:title="Featured" android:alphabeticShortcut="f" android:menuCategory="container"></item>
+</menu>

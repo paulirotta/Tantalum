@@ -1,0 +1,11 @@
+RSS-Feed-Url: http://feeds.bbci.co.uk/news/rss.xml
+Nokia-MIDlet-Splash-Screen-Image: initial_screen_splash.png
+MIDlet-2: RSSReader Form,/icon.png,org.tantalum.formrssreader.FormRSSReader
+MIDlet-1: RSSReader Canvas,/icon.png,org.tantalum.canvasrssreader.RSSReader
+MIDlet-Jar-URL: TantalumS40BBCReader.jar
+MicroEdition-Configuration: CLDC-1.1
+MIDlet-Version: 1.0.0
+MIDlet-Vendor: Tantalum Project
+MIDlet-Name: BBC Reader
+Nokia-MIDlet-App-Orientation: manual
+MicroEdition-Profile: MIDP-2.1
