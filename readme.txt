@@ -15,4 +15,3 @@ cross-platform example is released seperately and can be found from the link bel
 For details, see:
    http://projects.developer.nokia.com/Tantalum
    http://projects.developer.nokia.com/picasa_viewer
-
