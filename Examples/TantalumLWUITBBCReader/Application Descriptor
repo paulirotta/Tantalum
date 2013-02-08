@@ -1,8 +1,8 @@
-MIDlet-Version: 1.0.0
-MIDlet-Vendor: MIDlet Suite Vendor
+MIDlet-1: LWUIT BBCReader,/icon.png,org.tantalum.lwuitrssreader.RSSReader
 MIDlet-Jar-URL: TantalumLWUITBBCReader.jar
+MIDlet-Name: TantalumLWUITBBCReader MIDlet Suite
+MIDlet-Vendor: MIDlet Suite Vendor
+MIDlet-Version: 1.0.2
 MicroEdition-Configuration: CLDC-1.1
 MicroEdition-Profile: MIDP-2.1
-MIDlet-1: LWUIT BBCReader,/icon.png,org.tantalum.lwuitrssreader.RSSReader
 RSS-Feed-Url: http://feeds.bbci.co.uk/news/rss.xml
-MIDlet-Name: TantalumLWUITBBCReader MIDlet Suite
