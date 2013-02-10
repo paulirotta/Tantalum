@@ -32,26 +32,31 @@ import jmunit.framework.cldc11.TestCase;
 
 /**
  * Unit tests for the Worker class
- * 
+ *
  * @author phou
  */
 public class WorkerTest extends TestCase {
 
+    static {
+        PlatformUtils.setNumberOfWorkers(5); // We must call this first
+    }
+
     /**
      * Unit tests for the Worker class
-     * 
+     *
      */
     public WorkerTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(2, "WorkerTest");
+        super(3, "WorkerTest");
+
         PlatformUtils.setProgram(this);
     }
 
     /**
      * Perform unit tests by number
-     * 
+     *
      * @param testNumber
-     * @throws Throwable 
+     * @throws Throwable
      */
     public void test(int testNumber) throws Throwable {
         switch (testNumber) {
@@ -59,7 +64,10 @@ public class WorkerTest extends TestCase {
                 testRun();
                 break;
             case 1:
-                testQueue();
+                testFork();
+                break;
+            case 2:
+                testSetNumberOfWorkers();
                 break;
             default:
                 break;
@@ -67,26 +75,27 @@ public class WorkerTest extends TestCase {
     }
 
     private interface WorkableResult extends Workable {
+
         Object getResult();
     }
-    
+
     /**
      * Test of testRun method, of class Worker.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testRun() throws AssertionFailedException {
         System.out.println("run");
         final Object mutex = new Object();
         WorkableResult wr = new WorkableResult() {
             private Object o;
-            
+
             public Object exec(final Object in) {
                 synchronized (mutex) {
                     o = "yes";
                     mutex.notifyAll();
                 }
-                
+
                 return in;
             }
 
@@ -94,7 +103,7 @@ public class WorkerTest extends TestCase {
                 return o;
             }
         };
-        
+
         Worker.fork(wr);
         synchronized (mutex) {
             try {
@@ -102,30 +111,39 @@ public class WorkerTest extends TestCase {
             } catch (InterruptedException ex) {
             }
         }
-        
+
         assertEquals("yes", (String) wr.getResult());
-        assertEquals(4, Worker.getNumberOfWorkers());
+        assertEquals(5, Worker.getNumberOfWorkers());
     }
 
     /**
-     * Test of testQueue method, of class Worker.
-     * 
-     * @throws AssertionFailedException 
+     * Test of testFork method, of class Worker.
+     *
+     * @throws AssertionFailedException
      */
-    public void testQueue() throws AssertionFailedException {
+    public void testFork() throws AssertionFailedException {
         System.out.println("queue");
         Worker.fork(null);
         Worker.fork(new Workable() {
-
             public Object exec(final Object in) {
                 return in;
-            }            
+            }
         });
         Worker.fork(new Workable() {
-
             public Object exec(final Object in) {
                 return in;
-            }            
+            }
         });
+    }
+
+    public void testSetNumberOfWorkers() throws AssertionFailedException {
+        System.out.println("setNumberOfWorkers");
+        assertEquals(5, Worker.getNumberOfWorkers());
+        try {
+            PlatformUtils.setNumberOfWorkers(8);
+            fail("PlatformUtils.setNumberOfWorkers(8) should not be allowed, app has already started and num workers was fixed");
+        } catch (IllegalArgumentException e) {
+            // Correct execution path
+        }
     }
 }

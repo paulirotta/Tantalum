@@ -296,7 +296,47 @@ public abstract class Task implements Workable {
         return r;
     }
 
-    public static void joinAll(final Task[] tasks, long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    /**
+     * Wait up to a maximum specified timeout for all tasks in the list to
+     * complete execution. If any or all of them have any problem, the first
+     * associated Exception to occur will be thrown.
+     *
+     * @param tasks - list of Tasks to wait for
+     * @param timeout - milliseconds, max total time from for all Tasks to
+     * complete
+     * @throws InterruptedException
+     * @throws CancellationException
+     * @throws ExecutionException
+     * @throws TimeoutException
+     */
+    public static void joinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+        doJoinAll(tasks, timeout, false);
+    }
+
+    /**
+     * Wait up to a maximum specified timeout for all tasks in the list to
+     * complete execution including any follow up tasks on the UI thread. If any
+     * or all of them have any problem, the first associated Exception to occur
+     * will be thrown.
+     * 
+     * Note that unlike joinUI(), it is legal to call joinUI() with some, or all,
+     * of the Tasks being of type Task, not type UITask. This allows easier mixing
+     * of Task and UITask in the list for convenience, where joinUI() calls to
+     * a Task that is not a UITask() would be a logical error.
+     *
+     * @param tasks - list of Tasks to wait for
+     * @param timeout - milliseconds, max total time from for all Tasks to
+     * complete
+     * @throws InterruptedException
+     * @throws CancellationException
+     * @throws ExecutionException
+     * @throws TimeoutException
+     */
+    public static void joinAllUI(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+        doJoinAll(tasks, timeout, true);
+    }
+
+    private static void doJoinAll(final Task[] tasks, final long timeout, final boolean joinUI) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (tasks == null) {
             throw new IllegalArgumentException("Can not joinAll(), list of tasks to join is null");
         }
@@ -317,11 +357,15 @@ public abstract class Task implements Workable {
             for (int i = 0; i < tasks.length; i++) {
                 final Task task = tasks[i];
                 timeLeft = startTime + timeout - System.currentTimeMillis();
-                
+
                 if (timeLeft <= 0) {
                     throw new TimeoutException("joinAll(" + timeout + ") timout exceeded (" + timeLeft + ")");
                 }
-                task.join(timeout);
+                if (joinUI && task instanceof UITask) {
+                    task.joinUI(timeout);
+                } else {
+                    task.join(timeout);
+                }
             }
         } finally {
             //#debug
@@ -549,6 +593,12 @@ public abstract class Task implements Workable {
                     setStatus(CANCELED);
                     canceled = true;
                 }
+                break;
+                
+            case EXEC_FINISHED:
+            case UI_RUN_FINISHED:
+                //#debug
+                L.i("Attempt to cancel Task after run completes, suspicious but may be normal", this.toString());
                 break;
 
             default:

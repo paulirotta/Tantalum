@@ -24,15 +24,14 @@
 package org.tantalum.tests;
 
 import java.util.Vector;
-
+import jmunit.framework.cldc11.*;
 import org.tantalum.CancellationException;
+import org.tantalum.ExecutionException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.UITask;
-
-import jmunit.framework.cldc11.*;
-import org.tantalum.ExecutionException;
 import org.tantalum.TimeoutException;
+import org.tantalum.UITask;
+import org.tantalum.util.L;
 
 /**
  * Unit tests for the Task class.
@@ -46,8 +45,9 @@ public class TaskTest extends TestCase {
      */
     public TaskTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(16, "TaskTest");
+        super(17, "TaskTest");
 
+        PlatformUtils.setNumberOfWorkers(2);
         PlatformUtils.setProgram(this);
     }
 
@@ -106,6 +106,9 @@ public class TaskTest extends TestCase {
                 break;
             case 15:
                 testJoinAll();
+                break;
+            case 16:
+                testJoinAllUI();
                 break;
             default:
                 break;
@@ -445,6 +448,11 @@ public class TaskTest extends TestCase {
     public void testCancel() throws AssertionFailedException {
         final Vector errors = new Vector();
         System.out.println("cancel");
+        final Task testCancelRunsToEnd = new Task("I AM") {
+            protected Object doInBackground(Object in) {
+                return in + " DONE";
+            }
+        };
         final Task testCancelInstance = new Task("test_cancel_instance") {
             protected Object doInBackground(Object in) {
                 try {
@@ -473,6 +481,7 @@ public class TaskTest extends TestCase {
         testCancelInstance.fork();
         testCancelInstance2.fork();
         testCancelInstance3.fork();
+        testCancelRunsToEnd.fork();
         try {
             Thread.sleep(100);
         } catch (InterruptedException ex) {
@@ -534,6 +543,9 @@ public class TaskTest extends TestCase {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
+        assertEquals("I AM DONE", testCancelRunsToEnd.getValue());
+        assertEquals(false, testCancelRunsToEnd.cancel(true));        
+        assertEquals(false, testCancelRunsToEnd.cancel(false));        
         for (int i = 0; i < errors.size(); i++) {
             fail((String) errors.elementAt(i));
         }
@@ -711,19 +723,22 @@ public class TaskTest extends TestCase {
         };
         final Task task5 = new Task("fail") {
             protected Object doInBackground(Object in) {
-                throw new IllegalArgumentException();
+                this.cancel(true);
+
+                return in + "fail";
             }
         };
         final Task task6 = new Task("slow") {
             protected Object doInBackground(Object in) {
-                try {
-                    Thread.sleep(101);
-                } catch (Exception e) {
+                double j = Double.MIN_VALUE;
+                for (int i = 0; i < 1000000; i++) {
+                    j = j + i * 1.01;
                 }
 
-                return in;
+                return "" + j;
             }
         };
+
         try {
             task3.fork();
             Task[] tasks = {task1, task2};
@@ -737,22 +752,22 @@ public class TaskTest extends TestCase {
             Task[] exceptionTasks = {task1, task2, task3, task4, task5};
             try {
                 Task.joinAll(exceptionTasks, 104);
-                fail("joinAll() should have thown an ExecutionException, but did not");
-            } catch (ExecutionException e) {
+                fail("joinAll() should have thrown an CancellationException, but did not");
+            } catch (CancellationException e) {
                 // Correct execution path
             }
 
             Task[] slowTasks = {task1, task6, task3};
             try {
                 Task.joinAll(slowTasks, 9);
-                fail("joinAll() should have thown a TimeoutException, but did not");
+                fail("joinAll() should have thrown a TimeoutException, but did not");
             } catch (TimeoutException e) {
                 // Correct execution path                
             }
 
             try {
                 Task.joinAll(null, 10);
-                fail("joinAll() should have thown an IllegalArgumentException for null, but did not");
+                fail("joinAll() should have thrown an IllegalArgumentException for null, but did not");
             } catch (IllegalArgumentException e) {
                 // Correct execution path                
             }
@@ -760,7 +775,7 @@ public class TaskTest extends TestCase {
 
             try {
                 Task.joinAll(tasks, -1);
-                fail("joinAll() should have thown an IllegalArgumentException for negative timeout, but did not");
+                fail("joinAll() should have thrown an IllegalArgumentException for negative timeout, but did not");
             } catch (IllegalArgumentException e) {
                 // Correct execution path                
             }
@@ -768,5 +783,129 @@ public class TaskTest extends TestCase {
             ex.printStackTrace();
             fail("Can not joinAll: " + ex);
         }
+    }
+
+    /**
+     * Test joinAll().
+     *
+     * @throws AssertionFailedException
+     */
+    public void testJoinAllUI() throws AssertionFailedException {
+        System.out.println("joinAllUI");
+        final UITask task1 = new UITask("1") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "2";
+            }
+
+            protected void onPostExecute(Object result) {
+                setValue(result + "UI");
+            }
+        };
+        final UITask task2 = new UITask("3") {
+            protected Object doInBackground(Object in) {
+                return in + "4";
+            }
+
+            protected void onPostExecute(Object result) {
+                setValue(result + "UI");
+            }
+        };
+        final UITask task3 = new UITask("A") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "2";
+            }
+
+            protected void onPostExecute(Object result) {
+                setValue(result + "UI");
+            }
+        };
+        final Task task4 = new Task("B") {
+            protected Object doInBackground(Object in) {
+                return in + "3";
+            }
+        };
+        final UITask task5 = new UITask("fail") {
+            protected Object doInBackground(Object in) {
+                return in;
+            }
+
+            protected void onPostExecute(Object result) {
+                L.i("UI thread BEFORE call to cancel", "" + result);
+                this.cancel(true);
+                L.i("UI thread AFTER call to cancel", "" + result);
+            }
+        };
+        final UITask task6 = new UITask("slow") {
+            protected Object doInBackground(Object in) {
+                return in;
+            }
+
+            protected void onPostExecute(Object result) {
+                try {
+                    Thread.sleep(101);
+                } catch (Exception e) {
+                }
+            }
+        };
+
+        Runnable runnable = new Runnable() {
+            public void run() {
+                try {
+                    task3.fork();
+                    Task[] tasks = {task1, task2};
+                    Task.joinAllUI(tasks, 505);
+                    assertEquals("12UI34UI", (String) task1.getValue() + (String) task2.getValue());
+
+                    Task[] moreTasks = {task3, task4};
+                    Task.joinAllUI(moreTasks, 106);
+                    assertEquals("A2UIB3", (String) task3.getValue() + (String) task4.getValue());
+
+                    Task[] exceptionTasks = {task1, task2, task3, task4, task5};
+                    try {
+                        Task.joinAllUI(exceptionTasks, 107);
+                        // Correct execution path
+                    } catch (CancellationException e) {
+                        fail("joinAllUI() should not throw an CancellationException from the UI thread, but it did not");
+                    }
+
+                    Task[] slowTasks = {task1, task6, task3};
+                    try {
+                        Task.joinAllUI(slowTasks, 11);
+                        fail("joinAllUI() should have thrown a TimeoutException, but did not");
+                    } catch (TimeoutException e) {
+                        // Correct execution path                
+                    }
+
+                    try {
+                        Task.joinAllUI(null, 12);
+                        fail("joinAllUI() should have thrown an IllegalArgumentException for null, but did not");
+                    } catch (IllegalArgumentException e) {
+                        // Correct execution path                
+                    }
+
+
+                    try {
+                        Task.joinAllUI(tasks, -2);
+                        fail("joinAllUI() should have thrown an IllegalArgumentException for negative timeout, but did not");
+                    } catch (IllegalArgumentException e) {
+                        // Correct execution path                
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    fail("Can not joinAllUI: " + ex);
+                }
+            }
+        };
+
+        /*
+         * We can't run UI tests from the UI thread, so make a clean thread
+         * 
+         * FIXME With this crap test framework, we can't test threading stuff.
+         * It seems we would need to wait() for the test to finish, but waiting
+         * for the UI thread would ruin some of the tests.
+         */
+        runnable.run();
+//        Thread thread = new Thread(runnable);
+//        thread.start();
     }
 }
