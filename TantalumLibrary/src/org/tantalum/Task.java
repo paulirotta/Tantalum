@@ -23,6 +23,7 @@
  */
 package org.tantalum;
 
+import java.util.Vector;
 import org.tantalum.util.L;
 
 /**
@@ -274,13 +275,13 @@ public abstract class Task implements Workable {
                     //#debug
                     L.i("End join wait()", "status=" + getStatusString());
                     if (status == EXEC_STARTED) {
-                        throw new TimeoutException();
+                        throw new TimeoutException("Task was already started when join() was call and did not complete during " + timeout + " milliseconds");
                     }
                     break;
                 case CANCELED:
                     throw new CancellationException("join() was to a Task which was running but then canceled: " + this);
                 case EXCEPTION:
-                    throw new ExecutionException("join() was to a Task which was running but then had an uncaught exception: " + this);
+                    throw new ExecutionException("join() was to a Task which had an uncaught exception: " + this);
                 default:
                     ;
             }
@@ -293,6 +294,39 @@ public abstract class Task implements Workable {
         }
 
         return r;
+    }
+
+    public static void joinAll(final Task[] tasks, long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+        if (tasks == null) {
+            throw new IllegalArgumentException("Can not joinAll(), list of tasks to join is null");
+        }
+        if (timeout < 0) {
+            throw new IllegalArgumentException("Can not joinAll() with timeout < 0: timeout=" + timeout);
+        }
+        //#mdebug
+        if (PlatformUtils.isUIThread() && timeout > 100) {
+            L.i("WARNING- slow Task.joinAll() on UI Thread", "timeout=" + timeout);
+        }
+        //#enddebug
+
+        //#debug
+        L.i("Start joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length);
+        long timeLeft = Long.MAX_VALUE;
+        try {
+            final long startTime = System.currentTimeMillis();
+            for (int i = 0; i < tasks.length; i++) {
+                final Task task = tasks[i];
+                timeLeft = startTime + timeout - System.currentTimeMillis();
+                
+                if (timeLeft <= 0) {
+                    throw new TimeoutException("joinAll(" + timeout + ") timout exceeded (" + timeLeft + ")");
+                }
+                task.join(timeout);
+            }
+        } finally {
+            //#debug
+            L.i("End joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length + " timeElapsed=" + (timeout - timeLeft));
+        }
     }
 
     /**
@@ -337,7 +371,7 @@ public abstract class Task implements Workable {
                 //#debug
                 L.i("End joinUI wait", "status=" + getStatusString());
                 if (status < UI_RUN_FINISHED) {
-                    throw new TimeoutException();
+                    throw new TimeoutException("JoinUI(" + timeout + ") failed to complete quickly enough");
                 }
             }
 
