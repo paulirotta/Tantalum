@@ -69,8 +69,7 @@ public abstract class L {
     public final static void i(final String tag, final String message) {
 //#mdebug
         final StringBuffer sb = getMessage(tag, message);
-//        System.out.println("SB " + sb);
-//        log.printMessage(sb, null);
+        log.printMessage(sb, null);
 //#enddebug
     }
 
@@ -88,7 +87,7 @@ public abstract class L {
         sb.append(t);
 
         synchronized (L.class) {
-//            log.printMessage(sb, t);
+            log.printMessage(sb, t);
             if (t != null) {
                 t.printStackTrace();
             }
@@ -154,7 +153,7 @@ public abstract class L {
      */
     public static void shutdown() {
 //#mdebug
-//        L.log.printMessage(new StringBuffer("Tantalum log shutdown"), null);
+        L.log.printMessage(new StringBuffer("Tantalum log shutdown"), null);
         L.log.close();
 //#enddebug
     }

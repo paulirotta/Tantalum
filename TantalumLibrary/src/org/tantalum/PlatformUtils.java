@@ -92,6 +92,9 @@ public abstract class PlatformUtils {
      * @param numberOfWorkers
      */
     public static synchronized void setNumberOfWorkers(final int numberOfWorkers) {
+        if (PlatformUtils.numberOfWorkers != 0) {
+            throw new IllegalArgumentException("Move your call to setNumberOfWorkers(" + numberOfWorkers + ") earlier in the boostrap process. It can only be set once, but was already defaulted to " + PlatformUtils.numberOfWorkers +". It must be set BEFORE the application is initialized.");
+        }
         PlatformUtils.numberOfWorkers = numberOfWorkers;
     }
 

@@ -30,4 +30,15 @@ package org.tantalum;
  * @author phou
  */
 public class TimeoutException extends Exception {
+    
+    /**
+     * Create a TimeoutException indicating a Task failed to complete as quickly
+     * as join(timeout) specified. An explanation of the reason for the exception
+     * must be provided.
+     * 
+     * @param explanation 
+     */
+    public TimeoutException(final String explanation) {
+        super(explanation);
+    }
 }

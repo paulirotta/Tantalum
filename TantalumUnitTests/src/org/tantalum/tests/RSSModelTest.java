@@ -25,6 +25,7 @@ package org.tantalum.tests;
 
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
+import org.tantalum.PlatformUtils;
 
 import org.tantalum.net.xml.RSSModel;
 import org.tantalum.util.StringUtils;
@@ -45,13 +46,15 @@ public class RSSModelTest extends TestCase {
     public RSSModelTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(1, "RSSModelTest");
+
+        PlatformUtils.setProgram(this); // Init debug
     }
 
     /**
      * Invoke unit tests by number
-     * 
+     *
      * @param testNumber
-     * @throws Throwable 
+     * @throws Throwable
      */
     public void test(int testNumber) throws Throwable {
         xml = StringUtils.readBytesFromJAR("/rss.xml");

@@ -24,17 +24,18 @@
 package org.tantalum.tests;
 
 import java.util.Vector;
-
+import jmunit.framework.cldc11.*;
 import org.tantalum.CancellationException;
+import org.tantalum.ExecutionException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.TimeoutException;
 import org.tantalum.UITask;
-
-import jmunit.framework.cldc11.*;
+import org.tantalum.util.L;
 
 /**
  * Unit tests for the Task class.
- * 
+ *
  * @author phou
  */
 public class TaskTest extends TestCase {
@@ -44,16 +45,17 @@ public class TaskTest extends TestCase {
      */
     public TaskTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(15, "TaskTest");
+        super(17, "TaskTest");
 
+        PlatformUtils.setNumberOfWorkers(2);
         PlatformUtils.setProgram(this);
     }
 
     /**
      * Run unit tests by number
-     * 
+     *
      * @param testNumber
-     * @throws Throwable 
+     * @throws Throwable
      */
     public void test(int testNumber) throws Throwable {
         switch (testNumber) {
@@ -102,6 +104,12 @@ public class TaskTest extends TestCase {
             case 14:
                 testGetStatus();
                 break;
+            case 15:
+                testJoinAll();
+                break;
+            case 16:
+                testJoinAllUI();
+                break;
             default:
                 break;
         }
@@ -109,8 +117,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testFork method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testFork() throws AssertionFailedException {
         System.out.println("fork");
@@ -136,8 +144,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testSetStatus method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testSetStatus() throws AssertionFailedException {
         System.out.println("setStatus");
@@ -153,8 +161,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testExec method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testExec() throws AssertionFailedException {
         System.out.println("exec");
@@ -170,9 +178,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testJoin method, of class Task.
-     * 
+     *
      * @throws AssertionFailedException
-     * @throws Exception 
+     * @throws Exception
      */
     public void testJoin() throws AssertionFailedException, Exception {
         System.out.println("join");
@@ -182,11 +190,11 @@ public class TaskTest extends TestCase {
             }
         };
         instance.fork();
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
         String result_1 = (String) instance.join(1000);
         assertEquals("run", result_1);
 
@@ -273,9 +281,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testGet method, of class Task.
-     * 
+     *
      * @throws AssertionFailedException
-     * @throws Exception 
+     * @throws Exception
      */
     public void testGet() throws AssertionFailedException, Exception {
         System.out.println("get");
@@ -312,8 +320,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testSetResult method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testSetResult() throws AssertionFailedException {
         System.out.println("setResult");
@@ -339,9 +347,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testNotifyTaskForked method, of class Task.
-     * 
+     *
      * @throws AssertionFailedException
-     * @throws Exception 
+     * @throws Exception
      */
     public void testNotifyTaskForked() throws AssertionFailedException, Exception {
         System.out.println("notifyTaskForked");
@@ -373,8 +381,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testGetResult method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testGetResult() throws AssertionFailedException {
         System.out.println("getResult");
@@ -390,8 +398,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testToString method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testToString() throws AssertionFailedException {
         System.out.println("toString");
@@ -406,9 +414,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testJoinUI method, of class Task.
-     * 
+     *
      * @throws AssertionFailedException
-     * @throws Exception 
+     * @throws Exception
      */
     public void testJoinUI() throws AssertionFailedException, Exception {
         System.out.println("joinUI");
@@ -434,12 +442,17 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testCancel method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testCancel() throws AssertionFailedException {
         final Vector errors = new Vector();
         System.out.println("cancel");
+        final Task testCancelRunsToEnd = new Task("I AM") {
+            protected Object doInBackground(Object in) {
+                return in + " DONE";
+            }
+        };
         final Task testCancelInstance = new Task("test_cancel_instance") {
             protected Object doInBackground(Object in) {
                 try {
@@ -468,6 +481,7 @@ public class TaskTest extends TestCase {
         testCancelInstance.fork();
         testCancelInstance2.fork();
         testCancelInstance3.fork();
+        testCancelRunsToEnd.fork();
         try {
             Thread.sleep(100);
         } catch (InterruptedException ex) {
@@ -488,7 +502,7 @@ public class TaskTest extends TestCase {
             fail("join cleanup between tests: " + ex);
             ex.printStackTrace();
         }
-        
+
         try {
             Thread.sleep(1000);
         } catch (Exception e) {
@@ -529,6 +543,9 @@ public class TaskTest extends TestCase {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
+        assertEquals("I AM DONE", testCancelRunsToEnd.getValue());
+        assertEquals(false, testCancelRunsToEnd.cancel(true));        
+        assertEquals(false, testCancelRunsToEnd.cancel(false));        
         for (int i = 0; i < errors.size(); i++) {
             fail((String) errors.elementAt(i));
         }
@@ -536,8 +553,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testOnCanceled method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testOnCanceled() throws AssertionFailedException {
         System.out.println("onCanceled");
@@ -573,8 +590,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testDoInBackground method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testDoInBackground() throws AssertionFailedException {
         System.out.println("doInBackground");
@@ -593,8 +610,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testChain method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testChain() throws AssertionFailedException {
         System.out.println("chain");
@@ -628,8 +645,8 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testGetStatus method, of class Task.
-     * 
-     * @throws AssertionFailedException 
+     *
+     * @throws AssertionFailedException
      */
     public void testGetStatus() throws AssertionFailedException {
         System.out.println("getStatus");
@@ -639,7 +656,6 @@ public class TaskTest extends TestCase {
             }
         };
         final Task instanceB = new UITask() {
-
             protected void onPostExecute(Object result) {
                 ;
             }
@@ -674,7 +690,222 @@ public class TaskTest extends TestCase {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        assertEquals(Task.EXEC_FINISHED, instanceA.getStatus());        
-        assertEquals(Task.UI_RUN_FINISHED, instanceB.getStatus());        
+        assertEquals(Task.EXEC_FINISHED, instanceA.getStatus());
+        assertEquals(Task.UI_RUN_FINISHED, instanceB.getStatus());
+    }
+
+    /**
+     * Test joinAll().
+     *
+     * @throws AssertionFailedException
+     */
+    public void testJoinAll() throws AssertionFailedException {
+        System.out.println("joinAll");
+        final Task task1 = new Task("1") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "2";
+            }
+        };
+        final Task task2 = new Task("3") {
+            protected Object doInBackground(Object in) {
+                return in + "4";
+            }
+        };
+        final Task task3 = new Task("A") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "2";
+            }
+        };
+        final Task task4 = new Task("B") {
+            protected Object doInBackground(Object in) {
+                return in + "3";
+            }
+        };
+        final Task task5 = new Task("fail") {
+            protected Object doInBackground(Object in) {
+                this.cancel(true);
+
+                return in + "fail";
+            }
+        };
+        final Task task6 = new Task("slow") {
+            protected Object doInBackground(Object in) {
+                double j = Double.MIN_VALUE;
+                for (int i = 0; i < 1000000; i++) {
+                    j = j + i * 1.01;
+                }
+
+                return "" + j;
+            }
+        };
+
+        try {
+            task3.fork();
+            Task[] tasks = {task1, task2};
+            Task.joinAll(tasks, 102);
+            assertEquals("1234", (String) task1.getValue() + (String) task2.getValue());
+
+            Task[] moreTasks = {task3, task4};
+            Task.joinAll(moreTasks, 102);
+            assertEquals("A2B3", (String) task3.getValue() + (String) task4.getValue());
+
+            Task[] exceptionTasks = {task1, task2, task3, task4, task5};
+            try {
+                Task.joinAll(exceptionTasks, 104);
+                fail("joinAll() should have thrown an CancellationException, but did not");
+            } catch (CancellationException e) {
+                // Correct execution path
+            }
+
+            Task[] slowTasks = {task1, task6, task3};
+            try {
+                Task.joinAll(slowTasks, 9);
+                fail("joinAll() should have thrown a TimeoutException, but did not");
+            } catch (TimeoutException e) {
+                // Correct execution path                
+            }
+
+            try {
+                Task.joinAll(null, 10);
+                fail("joinAll() should have thrown an IllegalArgumentException for null, but did not");
+            } catch (IllegalArgumentException e) {
+                // Correct execution path                
+            }
+
+
+            try {
+                Task.joinAll(tasks, -1);
+                fail("joinAll() should have thrown an IllegalArgumentException for negative timeout, but did not");
+            } catch (IllegalArgumentException e) {
+                // Correct execution path                
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            fail("Can not joinAll: " + ex);
+        }
+    }
+
+    /**
+     * Test joinAll().
+     *
+     * @throws AssertionFailedException
+     */
+    public void testJoinAllUI() throws AssertionFailedException {
+        System.out.println("joinAllUI");
+        final UITask task1 = new UITask("1") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "2";
+            }
+
+            protected void onPostExecute(Object result) {
+                setValue(result + "UI");
+            }
+        };
+        final UITask task2 = new UITask("3") {
+            protected Object doInBackground(Object in) {
+                return in + "4";
+            }
+
+            protected void onPostExecute(Object result) {
+                setValue(result + "UI");
+            }
+        };
+        final UITask task3 = new UITask("A") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "2";
+            }
+
+            protected void onPostExecute(Object result) {
+                setValue(result + "UI");
+            }
+        };
+        final Task task4 = new Task("B") {
+            protected Object doInBackground(Object in) {
+                return in + "3";
+            }
+        };
+        final UITask task5 = new UITask("fail") {
+            protected Object doInBackground(Object in) {
+                return in;
+            }
+
+            protected void onPostExecute(Object result) {
+                L.i("UI thread BEFORE call to cancel", "" + result);
+                this.cancel(true);
+                L.i("UI thread AFTER call to cancel", "" + result);
+            }
+        };
+        final UITask task6 = new UITask("slow") {
+            protected Object doInBackground(Object in) {
+                return in;
+            }
+
+            protected void onPostExecute(Object result) {
+                try {
+                    Thread.sleep(101);
+                } catch (Exception e) {
+                }
+            }
+        };
+
+        Runnable runnable = new Runnable() {
+            public void run() {
+                try {
+                    task3.fork();
+                    Task[] tasks = {task1, task2};
+                    Task.joinAllUI(tasks, 505);
+                    assertEquals("12UI34UI", (String) task1.getValue() + (String) task2.getValue());
+
+                    Task[] moreTasks = {task3, task4};
+                    Task.joinAllUI(moreTasks, 106);
+                    assertEquals("A2UIB3", (String) task3.getValue() + (String) task4.getValue());
+
+                    Task[] exceptionTasks = {task1, task2, task3, task4, task5};
+                    try {
+                        Task.joinAllUI(exceptionTasks, 107);
+                        // Correct execution path
+                    } catch (CancellationException e) {
+                        fail("joinAllUI() should not throw an CancellationException from the UI thread, but it did not");
+                    }
+
+                    Task[] slowTasks = {task1, task6, task3};
+                    try {
+                        Task.joinAllUI(slowTasks, 11);
+                        fail("joinAllUI() should have thrown a TimeoutException, but did not");
+                    } catch (TimeoutException e) {
+                        // Correct execution path                
+                    }
+
+                    try {
+                        Task.joinAllUI(null, 12);
+                        fail("joinAllUI() should have thrown an IllegalArgumentException for null, but did not");
+                    } catch (IllegalArgumentException e) {
+                        // Correct execution path                
+                    }
+
+
+                    try {
+                        Task.joinAllUI(tasks, -2);
+                        fail("joinAllUI() should have thrown an IllegalArgumentException for negative timeout, but did not");
+                    } catch (IllegalArgumentException e) {
+                        // Correct execution path                
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    fail("Can not joinAllUI: " + ex);
+                }
+            }
+        };
+
+        /*
+         * We can't run UI tests from the UI thread, so make a clean thread
+         * 
+         * FIXME With this crap test framework, we can't test threading stuff.
+         * It seems we would need to wait() for the test to finish, but waiting
+         * for the UI thread would ruin some of the tests.
+         */
+        runnable.run();
+//        Thread thread = new Thread(runnable);
+//        thread.start();
     }
 }

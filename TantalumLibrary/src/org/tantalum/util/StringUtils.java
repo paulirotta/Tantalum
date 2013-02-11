@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 import javax.microedition.lcdui.Font;
+import org.tantalum.PlatformUtils;
 
 /**
  * Utility methods for String handling
@@ -76,11 +77,11 @@ public class StringUtils {
     /**
      * Split a string in to several lines of text which will display within a
      * maximum width.
-     * 
+     *
      * @param vector
      * @param text
      * @param font
-     * @param maxWidth 
+     * @param maxWidth
      */
     public static void splitToLines(final Vector vector, final String text, final Font font, final int maxWidth) {
         int lastSpace = 0;
@@ -111,6 +112,8 @@ public class StringUtils {
         final InputStream in = getClass().getResourceAsStream(name);
         final byte[] bytes;
 
+        //#debug
+        L.i("Read bytes from jar, file", name);
         try {
             bytes = new byte[in.available()];
             in.read(bytes);
@@ -142,6 +145,5 @@ public class StringUtils {
     public static String readStringFromJAR(final String name) throws IOException {
         return new String(readBytesFromJAR(name));
     }
-    
     //TODO Add clean implementations of uuencode and uudecode
 }
