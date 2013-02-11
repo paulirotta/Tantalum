@@ -32,7 +32,7 @@ import org.tantalum.j2me.TantalumMIDlet;
  */
 public class FormRSSReader extends TantalumMIDlet implements CommandListener {
 
-    public static String INITIAL_FEED_URL = null;
+    public static final String INITIAL_FEED_URL = "http://feeds.bbci.co.uk/news/rss.xml";
     private boolean midletPaused = false;
     //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
     //</editor-fold>//GEN-END:|fields|0|
@@ -49,7 +49,6 @@ public class FormRSSReader extends TantalumMIDlet implements CommandListener {
      */
     private void initialize() {//GEN-END:|0-initialize|0|0-preInitialize
         // write pre-initialize user code here
-        INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
 //GEN-LINE:|0-initialize|1|0-postInitialize
         // write post-initialize user code here
     }//GEN-BEGIN:|0-initialize|2|
