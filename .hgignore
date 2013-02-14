@@ -7,8 +7,10 @@ syntax: glob
 tests/*.err
 dist/*
 build/*
+bin/*
+deployed/*
 nbproject/private/*
-
+.mtj*
 syntax: regexp
 .*\#.*\#$
 \.orig\..*$

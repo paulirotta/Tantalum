@@ -61,7 +61,7 @@ public final class IconListView extends RSSListView {
         super(canvas);
 
         try {
-            updateCommand = (Command) Class.forName("org.tantalum.s40rssreader.UpdateIconCommand").newInstance();
+            updateCommand = (Command) Class.forName("org.tantalum.canvasrssreader.UpdateIconCommand").newInstance();
             iconSupport = true;
         } catch (Throwable t) {
             L.e("IconCommand not supported", "Update", t);

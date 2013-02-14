@@ -36,7 +36,7 @@ import org.tantalum.util.L;
 public class RSSReader extends TantalumMIDlet implements CommandListener {
 
     // This is read from the JAD-file
-    public static String INITIAL_FEED_URL = null;
+    public static final String INITIAL_FEED_URL = "http://feeds.bbci.co.uk/news/rss.xml";
     private RSSReaderCanvas canvas;
     private Displayable currentDisplayable;
     public static int COLOR_BACKGROUND;
@@ -119,7 +119,6 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
      * already started and initialize/starts or resumes the MIDlet.
      */
     public void startApp() {
-        INITIAL_FEED_URL = getAppProperty("RSS-Feed-Url");
         try {
             final Task reloadTask = new Task() {
                 public Object doInBackground(final Object params) {

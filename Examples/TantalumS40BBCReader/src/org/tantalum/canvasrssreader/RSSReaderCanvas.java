@@ -91,7 +91,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         GestureRegistrationManager.setListener(this, this);
 
         try {
-            Class.forName("org.tantalum.s40rssreader.Orientator").newInstance();
+            Class.forName("org.tantalum.canvasrssreader.Orientator").newInstance();
         } catch (Throwable t) {
             //#debug
             L.e("Orientation changes not supported", "", t);
@@ -151,40 +151,45 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
      * GestureEvent ge)
      */
     public void gestureAction(Object o, GestureInteractiveZone giz, GestureEvent ge) {
-        switch (ge.getType()) {
-            case GestureInteractiveZone.GESTURE_DRAG:
-                if (currentView == listView) {
-                    listView.setSelectedIndex(-1);
-                }
-                currentView.setRenderY(currentView.getRenderY() + ge.getDragDistanceY());
-                animator.drag(0, currentView.getRenderY() + ge.getDragDistanceY());
-                break;
-            case GestureInteractiveZone.GESTURE_DROP:
-                //no-op
-                break;
-            case GestureInteractiveZone.GESTURE_FLICK:
-                boolean scroll = true;
-                if (currentView == listView) {
-                    listView.setSelectedIndex(-1);
-                } else if (currentView == detailsView) {
-                    scroll = !detailsView.horizontalFlick(ge.getFlickDirection());
-                }
-                if (scroll) {
-                    animator.kineticScroll(ge.getFlickSpeed(), FrameAnimator.FRAME_ANIMATOR_FREE_ANGLE, FrameAnimator.FRAME_ANIMATOR_FRICTION_LOW, ge.getFlickDirection());
-                }
-                break;
-            case GestureInteractiveZone.GESTURE_LONG_PRESS:
-                //no-op
-                break;
-            case GestureInteractiveZone.GESTURE_LONG_PRESS_REPEATED:
-                //no-op
-                break;
-            case GestureInteractiveZone.GESTURE_TAP:
-                if (currentView == listView) {
-                    //selects the tapped item
-                    listView.selectItem(ge.getStartX(), ge.getStartY(), true);
-                }
-                break;
+        try {
+            switch (ge.getType()) {
+                case GestureInteractiveZone.GESTURE_DRAG:
+                    if (currentView == listView) {
+                        listView.setSelectedIndex(-1);
+                    }
+                    currentView.setRenderY(currentView.getRenderY() + ge.getDragDistanceY());
+                    animator.drag(0, currentView.getRenderY() + ge.getDragDistanceY());
+                    break;
+                case GestureInteractiveZone.GESTURE_DROP:
+                    //no-op
+                    break;
+                case GestureInteractiveZone.GESTURE_FLICK:
+                    boolean scroll = true;
+                    if (currentView == listView) {
+                        listView.setSelectedIndex(-1);
+                    } else if (currentView == detailsView) {
+                        scroll = !detailsView.horizontalFlick(ge.getFlickDirection());
+                    }
+                    if (scroll) {
+                        animator.kineticScroll(ge.getFlickSpeed(), FrameAnimator.FRAME_ANIMATOR_FREE_ANGLE, FrameAnimator.FRAME_ANIMATOR_FRICTION_LOW, ge.getFlickDirection());
+                    }
+                    break;
+                case GestureInteractiveZone.GESTURE_LONG_PRESS:
+                    //no-op
+                    break;
+                case GestureInteractiveZone.GESTURE_LONG_PRESS_REPEATED:
+                    //no-op
+                    break;
+                case GestureInteractiveZone.GESTURE_TAP:
+                    if (currentView == listView) {
+                        //selects the tapped item
+                        listView.selectItem(ge.getStartX(), ge.getStartY(), true);
+                    }
+                    break;
+            }
+        } catch (Exception e) {
+            //#debug
+            L.e("Can not complete gesture action", "gesture- " + ge, e);
         }
     }
 
