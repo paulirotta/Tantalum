@@ -71,7 +71,7 @@ public class StaticWebCache extends StaticCache {
 
     /**
      * Create a persistent flash memory cache, and provide your own class for
-     * creating the HttpGetter or HttpPoster that will be used to get cache-miss
+     * creating the HttpGetter or HttpPoster that will be used to getAsync cache-miss
      * items from the web.
      * 
      * @param priority
@@ -93,19 +93,19 @@ public class StaticWebCache extends StaticCache {
      * @param chainedTask
      * @return 
      */
-    public Task get(final String key, final int priority, final int getType, final Task chainedTask) {
-        return get(key, null, priority, getType, chainedTask);
+    public Task getAsync(final String key, final int priority, final int getType, final Task chainedTask) {
+        return getAsync(key, null, priority, getType, chainedTask);
     }
     
     /**
      * Retrieve one item from the cache using the method specified in the
      * getType parameter. The call returns immediately, is executed concurrently
      * on a worker thread, and code in the Task will be executed automatically
-     * on a Worker and optionally also the UI thread after the get operation
+     * on a Worker and optionally also the UI thread after the getAsync operation
      * completes.
      *
      * Normal use case is to specify the method StaticWebCache.GET_ANYWHERE.
-     * This attempts get in the following order:
+     * This attempts getAsync in the following order:
      *
      * 1. RAM if available: Task return is fast but still asynchronous
      *
@@ -116,9 +116,9 @@ public class StaticWebCache extends StaticCache {
      * 3. web: may take several seconds for a HTTP response which is then cached
      * locally automatically.
      *
-     * The get() call returns immediately, is executed concurrently on a worker
+     * The getAsync() call returns immediately, is executed concurrently on a worker
      * thread, and code in the Task will be executed automatically on a Worker
-     * and optionally also the UI thread if UITask after the get operation
+     * and optionally also the UI thread if UITask after the getAsync operation
      * completes.
      *
      * @param key - The web service location to HTTP_GET the cacheable data
@@ -128,12 +128,12 @@ public class StaticWebCache extends StaticCache {
      * @param getType - StaticWebCache.GET_ANYWHERE, StaticWebCache.GET_WEB, or
      * StaticWebCache.GET_LOCAL
      * @param chainedTask - your Task, UITask, or AsyncTask which is executed
-     * after the get operation using the data retrieved.
+     * after the getAsync operation using the data retrieved.
      *
      * @return a new Task containing the result
      */
-    public Task get(final String key, final byte[] postMessage, final int priority, final int getType, final Task chainedTask) {
-        final Task t;
+    public Task getAsync(final String key, final byte[] postMessage, final int priority, final int getType, final Task chainedTask) {
+        final Task getTask;
 
         //#debug
         L.i("StaticWebCache get:" + getType + " : " + chainedTask, key);
@@ -141,28 +141,28 @@ public class StaticWebCache extends StaticCache {
             case GET_LOCAL:
                 //#debug
                 L.i("GET_LOCAL", key);
-                t = new StaticCache.GetLocalTask(key);
+                getTask = new StaticCache.GetLocalTask(key);
                 break;
 
             case GET_ANYWHERE:
                 //#debug
                 L.i("GET_ANYWHERE", key);
-                t = new StaticWebCache.GetAnywhereTask(key, postMessage);
+                getTask = new StaticWebCache.GetAnywhereTask(key, postMessage);
                 break;
 
             case GET_WEB:
                 //#debug
                 L.i("GET_WEB", key);
-                t = new StaticWebCache.GetWebTask(key, postMessage);
+                getTask = new StaticWebCache.GetWebTask(key, postMessage);
                 break;
 
             default:
                 throw new IllegalArgumentException("StaticWebCache get type not supported: " + getType);
         }
-        t.chain(chainedTask);
-        Worker.fork(t, priority);
+        getTask.chain(chainedTask);
+        Worker.fork(getTask, priority);
 
-        return t;
+        return getTask;
     }
 
     /**
@@ -175,7 +175,7 @@ public class StaticWebCache extends StaticCache {
             Worker.fork(new Workable() {
                 public Object exec(final Object in) {
                     try {
-                        get(key, Worker.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
+                        getAsync(key, Worker.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
                     } catch (Exception e) {
                         //#debug
                         L.e("Can not prefetch", key, e);
@@ -191,10 +191,10 @@ public class StaticWebCache extends StaticCache {
      * This Task performs a StaticWebCache.GET_ANYWHERE operation on a Worker
      * thread in the background.
      *
-     * For convenience, you normally call StaticWebCache.get(String url, int
+     * For convenience, you normally call StaticWebCache.getAsync(String url, int
      * priority, int getType, Task task) where getType is
      * StaticWebCache.GET_ANYWHERE and task is some operation you supply which
-     * you would like to act on the result of the get(). You can, if you prefer,
+     * you would like to act on the result of the getAsync(). You can, if you prefer,
      * invoke this class directly to tailor how it operates or set parameters.
      *
      * The pattern for synchronous use when on a background Worker thread is:
@@ -237,8 +237,8 @@ public class StaticWebCache extends StaticCache {
          * <code>Task</code>.
          *
          * For most purposes, it is easier to use the convenience method
-         * <code>StaticWebCache.get()</code> to chain your
-         * <code>Task</code> after the get operation before
+         * <code>StaticWebCache.getAsync()</code> to chain your
+         * <code>Task</code> after the getAsync operation before
          * <code>fork()</code>ing the Task for background execution.
          */
         public GetAnywhereTask() {
@@ -256,7 +256,7 @@ public class StaticWebCache extends StaticCache {
          * <code>Task</code> to operate properly.
          *
          * For most purposes, it is easier to use the convenience method
-         * <code>StaticWebCache.get()</code> to chain your Task after the get
+         * <code>StaticWebCache.getAsync()</code> to chain your Task after the getAsync
          * operation before
          * <code>fork()</code>ing the Task for background execution.
          *
@@ -304,13 +304,13 @@ public class StaticWebCache extends StaticCache {
      * <code>Worker</code> thread in the background.
      *
      * For convenience, you normally call
-     * <code>StaticWebCache.get(String url,
+     * <code>StaticWebCache.getAsync(String url,
      * int priority, int getType, Task task)</code> where
      * <code>getType</code> is
      * <code>StaticWebCache.GET_WEB</code> and
      * <code>task</code> is some operation you supply which you would like to
      * act on the result of the
-     * <code>get()</code>. You can, if you prefer, invoke this class directly to
+     * <code>getAsync()</code>. You can, if you prefer, invoke this class directly to
      * tailor how it operates or set parameters.
      *
      * The pattern for synchronous use when on a background Worker thread is:
@@ -349,7 +349,7 @@ public class StaticWebCache extends StaticCache {
          * Worker thread using as input the chained output from a previous Task.
          *
          * For most purposes, it is easier to use the convenience method
-         * <code>StaticWebCache.get()</code> to chain your Task after the get
+         * <code>StaticWebCache.getAsync()</code> to chain your Task after the getAsync
          * operation before
          * <code>fork()</code>ing the Task for background execution.
          * 
@@ -370,7 +370,7 @@ public class StaticWebCache extends StaticCache {
          * <code>Task</code> to operate properly.
          *
          * For most purposes, it is easier to use the convenience method
-         * <code>StaticWebCache.get()</code> to chain your Task after the get
+         * <code>StaticWebCache.getAsync()</code> to chain your Task after the getAsync
          * operation before
          * <code>fork()</code>ing the
          * <code>Task</code> for background execution.

@@ -24,6 +24,7 @@
 package org.tantalum.storage;
 
 import java.util.Vector;
+import org.tantalum.ExecutionException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.Workable;
@@ -491,6 +492,24 @@ public class StaticCache {
         return handler;
     }
 
+    public Task getKeysAsync() {
+        return (new Task() {
+            protected Object doInBackground(Object in) {
+                Object out = in;
+                
+                try {
+                    out = flashCache.getKeys();
+                } catch (Exception e) {
+                    //#debug
+                    L.e("Can not complete", "getKeysTask", e);
+                    cancel(true);
+                }
+                
+                return out;
+            }
+        }).fork();
+    }
+
     /**
      * For debugging use
      *
@@ -524,7 +543,7 @@ public class StaticCache {
      * invoke this with chain() support. You can use this to build your own
      * custom asynchronous background processing Task chain.
      */
-    final public class GetLocalTask extends Task {
+    protected final class GetLocalTask extends Task {
 
         /**
          * Create a new get operation. The url will be supplied as an input to
@@ -549,7 +568,8 @@ public class StaticCache {
          * faster than flash write operations, this must still be done on a
          * background thread because a slower write operation on a different
          * thread could block this read operation for a significant amount of
-         * time. That would be bad for user experience it it were blocking the UI thread.
+         * time. That would be bad for user experience it it were blocking the
+         * UI thread.
          *
          * @param in
          * @return
@@ -575,63 +595,63 @@ public class StaticCache {
         }
     }
 
-    /**
-     * Helper class for storing data to persistent memory.
-     *
-     * Normally you do not use this directly, but rather call the convenience
-     * methods like StaticCache.putAync(). Note that StaticWebCache.get() local
-     * cache miss will also automatically result in a local put operation once
-     * the data is received from the webserver.
-     */
-    public class PutLocalTask extends Task {
-
-        private final String key;
-
-        /**
-         * Create a new put task. The value to be put will be received as
-         * chained input at or before the time of execution.
-         *
-         * @param key - usually a url, can be any String include a multi-line
-         * String to generate a unique hashcode
-         */
-        public PutLocalTask(final String key) {
-            this.key = key;
-        }
-
-        /**
-         * Create an asynchronous persistent data storage Task and specify the
-         * value to be stored.
-         *
-         * @param key - usually a url, can be any String include a multi-line
-         * String to generate a unique hashcode
-         * @param value
-         */
-        public PutLocalTask(final String key, final byte[] value) {
-            this.key = key;
-            this.setValue(value);
-        }
-
-        /**
-         * Complete the flash store event on the background Worker thread. If
-         * you are using the StaticCache.putAsync() convenience directly or
-         * indirectly (StaticWebCache.get() cache miss) then this task will be
-         * executed in guaranteed FIFO order on a single background Worker
-         * thread.
-         *
-         * @param in
-         * @return
-         */
-        protected Object doInBackground(Object in) {
-            if (in == null) {
-                in = key;
-            }
-            if (in == null || !(in instanceof byte[])) {
-                throw new IllegalArgumentException("null put to Flash cache: " + key);
-            }
-
-            putAsync(key, (byte[]) in);
-
-            return convertAndPutToHeapCache(key, (byte[]) in);
-        }
-    }
+//    /**
+//     * Helper class for storing data to persistent memory.
+//     *
+//     * Normally you do not use this directly, but rather call the convenience
+//     * methods like StaticCache.putAync(). Note that StaticWebCache.get() local
+//     * cache miss will also automatically result in a local put operation once
+//     * the data is received from the webserver.
+//     */
+//    public final class PutLocalTask extends Task {
+//
+//        private final String key;
+//
+//        /**
+//         * Create a new put task. The value to be put will be received as
+//         * chained input at or before the time of execution.
+//         *
+//         * @param key - usually a url, can be any String include a multi-line
+//         * String to generate a unique hashcode
+//         */
+//        public PutLocalTask(final String key) {
+//            this.key = key;
+//        }
+//
+//        /**
+//         * Create an asynchronous persistent data storage Task and specify the
+//         * value to be stored.
+//         *
+//         * @param key - usually a url, can be any String include a multi-line
+//         * String to generate a unique hashcode
+//         * @param value
+//         */
+//        public PutLocalTask(final String key, final byte[] value) {
+//            this.key = key;
+//            this.setValue(value);
+//        }
+//
+//        /**
+//         * Complete the flash store event on the background Worker thread. If
+//         * you are using the StaticCache.putAsync() convenience directly or
+//         * indirectly (StaticWebCache.get() cache miss) then this task will be
+//         * executed in guaranteed FIFO order on a single background Worker
+//         * thread.
+//         *
+//         * @param in
+//         * @return
+//         */
+//        protected Object doInBackground(Object in) {
+//            if (in == null) {
+//                in = key;
+//            }
+//            if (in == null || !(in instanceof byte[])) {
+//                throw new IllegalArgumentException("null put to Flash cache: " + key);
+//            }
+//
+//            putAsync(key, (byte[]) in);
+//
+//            return convertAndPutToHeapCache(key, (byte[]) in);
+//        }
+//    }
 }
