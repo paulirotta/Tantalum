@@ -1,0 +1,12 @@
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+}
+
+
+task compileJava(overwrite: true, dependsOn: wtkpackage) << {
+}
+

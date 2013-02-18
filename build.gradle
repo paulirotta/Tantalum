@@ -1,0 +1,144 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+//        classpath "net.saliman:gradle-cobertura-plugin:1.1.1"
+        classpath files(antennaDir)
+    }
+}
+
+// antenna ant tasks
+ant.taskdef(resource: 'antenna.properties') {
+    classpath {
+        pathElement(path: buildscript.configurations.classpath.asPath)
+    }
+}
+
+allprojects {
+
+}
+
+subprojects {
+    repositories {
+        mavenCentral()
+    }
+
+    apply plugin: 'java'
+
+    configurations {
+        bootclasspath
+    }
+
+    dependencies {
+        compile files(wtkHome + '/lib/midp_2.1.jar')
+        compile files(wtkHome + '/lib/cldc_1.1.jar')
+        testCompile "junit:junit:4.11"
+        testCompile 'net.sourceforge.cobertura:cobertura:1.9.4.1'
+        testCompile "org.mockito:mockito-all:1.9.5"
+        testCompile "org.powermock:powermock-api-mockito:1.5"
+        testCompile "org.powermock:powermock-module-junit4:1.5"
+
+        testCompile "org.microemu:microemulator:2.0.4"
+        testCompile "org.microemu:microemu-midp:2.0.4"
+        testCompile "org.microemu:microemu-cldc:2.0.4"
+        testCompile "org.microemu:microemu-jsr-75:2.0.4"
+        testCompile("org.microemu:microemu-jsr-135:2.0.4") {
+            exclude module: 'microemu-midp'
+            exclude module: 'microemu-cldc'
+        }
+    }
+
+    compileJava.options.bootClasspath = files(wtkHome + '/lib/midp_2.1.jar') + files(wtkHome + '/lib/cldc_1.1.jar')
+
+    test.bootstrapClasspath = files(rtjar) + files(wtkHome + '/lib/midp_2.1.jar') + files(wtkHome + '/lib/cldc_1.1.jar')
+    //+ compileJava.options.bootClasspath.asPath()
+
+    project.ext.target = buildDir.toString()
+
+
+    buildscript {
+        dependencies {
+            classpath files('../' + antennaDir)
+        }
+    }
+
+    // antenna ant tasks
+    ant.taskdef(resource: 'antenna.properties') {
+        classpath {
+            pathElement(path: buildscript.configurations.classpath.asPath)
+        }
+    }
+
+    // file names
+    project.ext.jadFile = target + '/' + jadFileName
+    project.ext.jarFile = target + '/' + jarFileName
+    project.ext.jarFilenameTests = target + '/' + jarFileTests
+
+    // wtk properties
+    ant.property(name: 'wtk.home', value: wtkHome)
+    ant.property(name: 'wtk.cldc.version', value: cldcVersion)
+    ant.property(name: 'wtk.midp.version', value: midpVersion)
+
+
+    task init << {
+        if (wtkHome == null || ''.equals(wtkHome)) {
+            println('wtkHome was not set, edit the wtkHome property in gradle.properties')
+            System.exit(1)
+        } else if (antennaDir == null || ''.equals(antennaDir)) {
+            println('antennaDir was not set, edit the antennaDir property in gradle.properties')
+            System.exit(1)
+        }
+
+        if (buildDir.isDirectory()) {
+            ant.delete(dir: sourceSets.main.output.classesDir)
+        }
+
+        ant.copy(file: projectDir.toString() + "/Application Descriptor",
+                tofile: jadFile)
+
+        buildDir.mkdirs()
+    }
+
+    task wtkbuild(dependsOn: init) << {
+        sourceSets.main.output.classesDir.mkdirs()
+        sourceSets.main.output.resourcesDir.mkdirs()
+
+        ant.wtkbuild(
+                destdir: sourceSets.main.output.classesDir,
+                encoding: 'UTF-8',
+                source: javaVersion,
+                srcDir: 'src', // TODO: Change this to a variable that's used to define the sourceSet
+                includeantruntime: false,
+                preverify: false) {
+            bootclasspath {
+                pathElement(path: configurations.bootclasspath.asPath)
+            }
+            classpath {
+                pathElement(path: configurations.compile.asPath)
+            }
+        }
+    }
+
+    task wtkpackage(dependsOn: wtkbuild) << {
+
+        ant.wtkpackage(
+                jadFile: jadFile,
+                jarFile: jarFile,
+                autoversion: doAutoversion,
+                obfuscate: doObfuscate,
+                preverify: false) {
+            bootclasspath {
+                pathElement(path: configurations.bootclasspath.asPath)
+            }
+            classpath {
+                pathElement(path: configurations.compile.asPath)
+            }
+            ant.fileSet(dir: sourceSets.main.output.classesDir.toString())
+            ant.fileSet(dir: sourceSets.main.output.resourcesDir.toString())
+        }
+    }
+
+}
+
+
