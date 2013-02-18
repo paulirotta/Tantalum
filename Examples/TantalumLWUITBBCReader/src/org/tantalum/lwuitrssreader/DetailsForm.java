@@ -105,7 +105,7 @@ public class DetailsForm extends Form implements ActionListener {
         addLabels(descriptionLabels);
         addComponent(imgLabel);
 
-        imageCache.get(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
+        imageCache.getAsync(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
                                                                protected void onPostExecute(final Object result) {
                                                                    try {
                                                                        imgLabel.setIcon((Image) result);

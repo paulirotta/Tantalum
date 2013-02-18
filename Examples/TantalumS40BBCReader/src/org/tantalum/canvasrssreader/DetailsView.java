@@ -45,7 +45,7 @@ import org.tantalum.util.StringUtils;
 public final class DetailsView extends View {
 
     public static final StaticWebCache imageCache = new StaticWebCache('1', new J2MEImageTypeHandler());
-    private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
+   // private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
     private volatile RSSItem currentItem; // Current article
@@ -62,13 +62,14 @@ public final class DetailsView extends View {
     }
 
     public Command[] getCommands() {
-        return new Command[]{openLinkCommand, backCommand};
+        return new Command[]{/*openLinkCommand,*/ backCommand};
     }
 
     public void commandAction(Command command, Displayable d) {
-        if (command == openLinkCommand) {
+/*        if (command == openLinkCommand) {
             openLink();
-        } else if (command == backCommand) {
+        } else*/
+        if (command == backCommand) {
             canvas.showList();
         }
     }
@@ -148,7 +149,7 @@ public final class DetailsView extends View {
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
-                imageCache.get(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
+                imageCache.getAsync(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
                     public Object doInBackground(final Object in) {
                         item.setLoadingImage(false);
                         if (currentItem == item) {
@@ -205,7 +206,7 @@ public final class DetailsView extends View {
         this.leftItem = leftItem;
         this.rightItem = rightItem;
         if (leftItem != null) {
-            imageCache.get(leftItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
+            imageCache.getAsync(leftItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
                 public Object doInBackground(final Object params) {
                     final Object r = getValue();
 
@@ -218,7 +219,7 @@ public final class DetailsView extends View {
             });
         }
         if (rightItem != null) {
-            imageCache.get(rightItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
+            imageCache.getAsync(rightItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
                 public Object doInBackground(final Object params) {
                     final Object r = getValue();
 

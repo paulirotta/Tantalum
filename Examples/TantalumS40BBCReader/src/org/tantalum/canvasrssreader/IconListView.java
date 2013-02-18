@@ -80,7 +80,7 @@ public final class IconListView extends RSSListView {
         if (command == exitCommand) {
             canvas.getRssReader().shutdown(false);
         } else if (command == updateCommand) {
-            reload(true);
+            reloadAsync(true);
         } else if (command == clearCacheCommand) {
             clearCache();
         } else if (command == prefetchImagesCommand) {
@@ -154,13 +154,13 @@ public final class IconListView extends RSSListView {
                             }
                         }
                     } else if (!item.isLoadingImage()) {
-                        // Shrunken image not available in RAM cache, get and create it
+                        // Shrunken image not available in RAM cache, getAsync and create it
                         item.setLoadingImage(true);
                         if (item.getThumbnail() == null || item.getThumbnail().length() == 0) {
                             //#debug
                             L.i("Trivial thumbnail link in RSS feed", item.getTitle());
                         } else {
-                            DetailsView.imageCache.get(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
+                            DetailsView.imageCache.getAsync(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
                                 public Object doInBackground(final Object o) {
                                     try {
                                         //#debug

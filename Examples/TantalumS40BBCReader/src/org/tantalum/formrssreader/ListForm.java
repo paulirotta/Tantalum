@@ -174,7 +174,7 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
             };
-            feedCache.get(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
+            feedCache.getAsync(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
             uiTask = new UITask() {
                 public void onPostExecute(final Object result) {
@@ -186,7 +186,7 @@ public final class ListForm extends Form implements CommandListener {
 
                 public boolean cancel(final boolean mayInterruptIfNeeded) {
                     //#debug
-                    L.i("reload canceled, not found locally, try again to get from net", "model length=" + rssModel.size());
+                    L.i("reload canceled, not found locally, try again to getAsync from net", "model length=" + rssModel.size());
                     loading = false;
                     reload(true);
                     paint();
@@ -194,7 +194,7 @@ public final class ListForm extends Form implements CommandListener {
                     return false;
                 }
             };
-            feedCache.get(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
+            feedCache.getAsync(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
         }
 
         return uiTask;
