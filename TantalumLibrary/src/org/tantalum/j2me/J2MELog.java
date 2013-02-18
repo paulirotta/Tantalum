@@ -68,13 +68,12 @@ public class J2MELog extends L {
 //#enddebug        
     }
 
-//#mdebug
     /**
      * Close the J2ME Logging and (if needed) USB serial port resources
      *
      */
     protected void close() {
-
+//#mdebug
         if (usbWriter != null) {
             synchronized (L.class) {
                 usbWriter.shutdownStarted = true;
@@ -91,8 +90,8 @@ public class J2MELog extends L {
                 }
             }
         }
+//#enddebug        
     }
-//#enddebug
 
     /**
      * Open a serial port debug connection through the USB cable to an attached
