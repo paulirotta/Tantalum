@@ -45,7 +45,7 @@ public class TaskTest extends TestCase {
      */
     public TaskTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(17, "TaskTest");
+        super(18, "TaskTest");
 
         PlatformUtils.setNumberOfWorkers(2);
         PlatformUtils.setProgram(this);
@@ -109,6 +109,9 @@ public class TaskTest extends TestCase {
                 break;
             case 16:
                 testJoinAllUI();
+                break;
+            case 17:
+                testCancelSelf();
                 break;
             default:
                 break;
@@ -544,8 +547,8 @@ public class TaskTest extends TestCase {
             ex.printStackTrace();
         }
         assertEquals("I AM DONE", testCancelRunsToEnd.getValue());
-        assertEquals(false, testCancelRunsToEnd.cancel(true));        
-        assertEquals(false, testCancelRunsToEnd.cancel(false));        
+        assertEquals(false, testCancelRunsToEnd.cancel(true));
+        assertEquals(false, testCancelRunsToEnd.cancel(false));
         for (int i = 0; i < errors.size(); i++) {
             fail((String) errors.elementAt(i));
         }
@@ -721,9 +724,16 @@ public class TaskTest extends TestCase {
                 return in + "3";
             }
         };
-        final Task task5 = new Task("fail") {
+        final Task task5a = new Task("fail_a") {
             protected Object doInBackground(Object in) {
-                this.cancel(true);
+                this.cancel(false);
+
+                return in + "fail";
+            }
+        };
+        final Task task5b = new Task("fail_b") {
+            protected Object doInBackground(Object in) {
+                this.cancel(false);
 
                 return in + "fail";
             }
@@ -749,10 +759,18 @@ public class TaskTest extends TestCase {
             Task.joinAll(moreTasks, 102);
             assertEquals("A2B3", (String) task3.getValue() + (String) task4.getValue());
 
-            Task[] exceptionTasks = {task1, task2, task3, task4, task5};
+            Task[] exceptionTasks1 = {task1, task2, task3, task4, task5a};
             try {
-                Task.joinAll(exceptionTasks, 104);
-                fail("joinAll() should have thrown an CancellationException, but did not");
+                Task.joinAll(exceptionTasks1, 104);
+                fail("joinAll() exceptoinTasks1 should have thrown an CancellationException, but did not");
+            } catch (CancellationException e) {
+                // Correct execution path
+            }
+
+            Task[] exceptionTasks2 = {task1, task2, task3, task4, task5b};
+            try {
+                Task.joinAll(exceptionTasks2, 105);
+                fail("joinAll() exceptoinTasks2 should have thrown an CancellationException, but did not");
             } catch (CancellationException e) {
                 // Correct execution path
             }
@@ -907,5 +925,117 @@ public class TaskTest extends TestCase {
         runnable.run();
 //        Thread thread = new Thread(runnable);
 //        thread.start();
+    }
+
+    /**
+     * Test joinAll().
+     *
+     * @throws AssertionFailedException
+     */
+    public void testCancelSelf() throws AssertionFailedException {
+        System.out.println("cancelSelf");
+        final UITask task1a = new UITask("1") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "2";
+            }
+
+            protected void onPostExecute(Object result) {
+                setValue(result + "UI");
+                // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
+                cancel(true);
+            }
+        };
+        final UITask task1b = new UITask("3") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "4";
+            }
+
+            protected void onPostExecute(Object result) {
+                // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
+                setValue(result + "UI");
+                cancel(true);
+            }
+        };
+        final UITask task2 = new UITask("5") {
+            protected Object doInBackground(Object in) {
+                cancel(true);
+
+                return in + "6";
+            }
+
+            protected void onPostExecute(Object result) {
+                setValue(result + "UI");
+            }
+        };
+        final UITask task3a = new UITask("7") {
+            protected Object doInBackground(Object in) {
+                try {
+                    Thread.sleep(200);
+                } catch (Exception e) {
+                }
+                return (String) in + "8";
+            }
+
+            protected void onPostExecute(Object result) {
+                // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
+                cancel(false);
+                setValue(result + "UI");
+            }
+        };
+        final UITask task3b = new UITask("9") {
+            protected Object doInBackground(Object in) {
+                try {
+                    Thread.sleep(200);
+                } catch (Exception e) {
+                }
+                return (String) in + "A";
+            }
+
+            protected void onPostExecute(Object result) {
+                // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
+                cancel(false);
+                setValue(result + "UI");
+            }
+        };
+        final Task task4a = new Task("B") {
+            protected Object doInBackground(Object in) {
+                cancel(false);
+
+                return in + "C";
+            }
+        };
+        final Task task4b = new Task("D") {
+            protected Object doInBackground(Object in) {
+                cancel(false);
+
+                return in + "E";
+            }
+        };
+
+        try {
+            task1a.fork().join();
+            assertEquals("task1a was not EXEC_FINISHED", Task.EXEC_FINISHED, task1a.getStatus());
+
+            task1b.fork().joinUI();
+            assertEquals("task1b was not UI_RUN_FINISHED", Task.UI_RUN_FINISHED, task1b.getStatus());
+
+            task2.fork().join();
+            assertEquals("task2 was not CANCELED", Task.CANCELED, task2.getStatus());
+
+            task3a.fork().join();
+            assertNotEquals("task3a was not CANCELED", Task.EXEC_FINISHED, task3a.getStatus());
+
+            task3b.fork().joinUI();
+            assertNotEquals("task3b was not CANCELED", Task.UI_RUN_FINISHED, task3b.getStatus());
+
+            task4a.fork().join();
+            assertEquals("task4a was not CANCELED", Task.CANCELED, task4a.getStatus());
+
+            task4b.fork().joinUI();
+            assertEquals("task4b was not CANCELED", Task.CANCELED, task4b.getStatus());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            fail("Can not testCancelSelf: " + ex);
+        }
     }
 }

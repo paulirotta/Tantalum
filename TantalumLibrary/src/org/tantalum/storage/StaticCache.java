@@ -492,11 +492,18 @@ public class StaticCache {
         return handler;
     }
 
+    /**
+     * Get a Vector of all keys for key-value pairs currently in the local cache
+     * at the flash memory level. The value may or may not be in heap memory at
+     * the current time.
+     *
+     * @return
+     */
     public Task getKeysAsync() {
         return (new Task() {
             protected Object doInBackground(Object in) {
                 Object out = in;
-                
+
                 try {
                     out = flashCache.getKeys();
                 } catch (Exception e) {
@@ -504,7 +511,7 @@ public class StaticCache {
                     L.e("Can not complete", "getKeysTask", e);
                     cancel(true);
                 }
-                
+
                 return out;
             }
         }).fork();
@@ -594,64 +601,4 @@ public class StaticCache {
             return in;
         }
     }
-
-//    /**
-//     * Helper class for storing data to persistent memory.
-//     *
-//     * Normally you do not use this directly, but rather call the convenience
-//     * methods like StaticCache.putAync(). Note that StaticWebCache.get() local
-//     * cache miss will also automatically result in a local put operation once
-//     * the data is received from the webserver.
-//     */
-//    public final class PutLocalTask extends Task {
-//
-//        private final String key;
-//
-//        /**
-//         * Create a new put task. The value to be put will be received as
-//         * chained input at or before the time of execution.
-//         *
-//         * @param key - usually a url, can be any String include a multi-line
-//         * String to generate a unique hashcode
-//         */
-//        public PutLocalTask(final String key) {
-//            this.key = key;
-//        }
-//
-//        /**
-//         * Create an asynchronous persistent data storage Task and specify the
-//         * value to be stored.
-//         *
-//         * @param key - usually a url, can be any String include a multi-line
-//         * String to generate a unique hashcode
-//         * @param value
-//         */
-//        public PutLocalTask(final String key, final byte[] value) {
-//            this.key = key;
-//            this.setValue(value);
-//        }
-//
-//        /**
-//         * Complete the flash store event on the background Worker thread. If
-//         * you are using the StaticCache.putAsync() convenience directly or
-//         * indirectly (StaticWebCache.get() cache miss) then this task will be
-//         * executed in guaranteed FIFO order on a single background Worker
-//         * thread.
-//         *
-//         * @param in
-//         * @return
-//         */
-//        protected Object doInBackground(Object in) {
-//            if (in == null) {
-//                in = key;
-//            }
-//            if (in == null || !(in instanceof byte[])) {
-//                throw new IllegalArgumentException("null put to Flash cache: " + key);
-//            }
-//
-//            putAsync(key, (byte[]) in);
-//
-//            return convertAndPutToHeapCache(key, (byte[]) in);
-//        }
-//    }
 }

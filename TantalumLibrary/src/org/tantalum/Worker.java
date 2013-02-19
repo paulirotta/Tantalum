@@ -266,9 +266,10 @@ public final class Worker extends Thread {
         }
         synchronized (q) {
             boolean interrupted = false;
+            final Thread currentThread = Thread.currentThread();
 
             for (int i = 0; i < workers.length; i++) {
-                if (task.equals(workers[i].workable)) {
+                if (task.equals(workers[i].workable) && currentThread != workers[i]) {
                     //#debug
                     L.i("Sending interrupt signal", "thread=" + workers[i].getName() + " workable=" + task);
                     interrupted = task == workers[i].workable;

@@ -191,7 +191,7 @@ public abstract class Task implements Workable {
     }
 
     /**
-     * Execute this task asynchronously on a Worker thread as soon as possible.
+     * Execute this task asynchronously on a Worker thread.
      *
      * This will queue the Task with Worker.NORMAL_PRIORITY
      *
@@ -201,6 +201,32 @@ public abstract class Task implements Workable {
         Worker.fork(this);
 
         return this;
+    }
+
+    /**
+     * Execute this task asynchronously on a Worker thread at the specified
+     * priority.
+     *
+     * @param priority
+     * @return
+     */
+    public final Task fork(final int priority) {
+        Worker.fork(this, priority);
+
+        return this;
+    }
+
+    /**
+     * Wait for up to MAX_TIMEOUT milliseconds for the Task to complete.
+     *
+     * @return
+     * @throws InterruptedException
+     * @throws CancellationException
+     * @throws ExecutionException
+     * @throws TimeoutException
+     */
+    public final Object join() throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+        return join(MAX_TIMEOUT);
     }
 
     /**
@@ -318,11 +344,11 @@ public abstract class Task implements Workable {
      * complete execution including any follow up tasks on the UI thread. If any
      * or all of them have any problem, the first associated Exception to occur
      * will be thrown.
-     * 
-     * Note that unlike joinUI(), it is legal to call joinUI() with some, or all,
-     * of the Tasks being of type Task, not type UITask. This allows easier mixing
-     * of Task and UITask in the list for convenience, where joinUI() calls to
-     * a Task that is not a UITask() would be a logical error.
+     *
+     * Note that unlike joinUI(), it is legal to call joinUI() with some, or
+     * all, of the Tasks being of type Task, not type UITask. This allows easier
+     * mixing of Task and UITask in the list for convenience, where joinUI()
+     * calls to a Task that is not a UITask() would be a logical error.
      *
      * @param tasks - list of Tasks to wait for
      * @param timeout - milliseconds, max total time from for all Tasks to
@@ -371,6 +397,20 @@ public abstract class Task implements Workable {
             //#debug
             L.i("End joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length + " timeElapsed=" + (timeout - timeLeft));
         }
+    }
+
+    /**
+     * Wait up to MAX_TIMEOUT milliseconds for the UI thread to complete the
+     * Task
+     *
+     * @return
+     * @throws InterruptedException
+     * @throws CancellationException
+     * @throws ExecutionException
+     * @throws TimeoutException
+     */
+    public final Object joinUI() throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+        return joinUI(MAX_TIMEOUT);
     }
 
     /**
@@ -588,13 +628,12 @@ public abstract class Task implements Workable {
         L.i("Begin explicit cancel task", "status=" + this.getStatusString() + " " + this);
         switch (status) {
             case EXEC_STARTED:
-                if (mayInterruptIfRunning) {
-                    Worker.interruptWorkable(this);
+                if (mayInterruptIfRunning && Worker.interruptWorkable(this)) {
                     setStatus(CANCELED);
                     canceled = true;
                 }
                 break;
-                
+
             case EXEC_FINISHED:
             case UI_RUN_FINISHED:
                 //#debug

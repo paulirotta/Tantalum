@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
+import javax.microedition.io.ConnectionNotFoundException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.L;
@@ -184,42 +185,6 @@ public class HttpGetter extends Task {
         final String url2 = getUrl();
 
         try {
-//TODO support HTTP DELETE and HTTP PUT           
-// The following are delayed until we can support HTTP DELETE and PUT in J2ME. HttpConnection needs to be replaced.            
-//            
-//            if (this instanceof HttpDeleter) {
-//                httpConn = PlatformUtils.getHttpDeleteConn(url2, requestPropertyKeys, requestPropertyValues);
-//            } else  if (this instanceof HttpPutter) {
-//                if (postMessage == null) {
-//                    throw new IllegalArgumentException("null HTTP PUT- did you forget to call HttpPutter.this.setMessage(byte[]) ? : " + url);
-//                }
-//                httpConn = PlatformUtils.getHttpPutConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
-//            } else 
-
-            // ADD THE FOLLOWING AS TOP LEVEL (NOT INNER) CLASSES WHEN HTTP DELETE IS SUPPORTED:
-//public class HttpDeleter extends HttpGetter {
-//    public HttpDeleter(final String url) {
-//        super(url);
-//    }
-//}
-//public class HttpPutter extends HttpPoster {
-//
-//    /**
-//     * PUT data to a web REST service
-//     *
-//     * HTTP PUT is structurally very similar to HTTP POST, but can be used for
-//     * different purposes by some servers.
-//     *
-//     * Make sure you call setMessage(byte[]) to specify what you want to PUT or
-//     * you will get an IllegalArgumentException
-//     *
-//     * @param url
-//     */
-//    public HttpPutter(final String url) {
-//        super(url);
-//    }
-//}
-
             if (this instanceof HttpPoster) {
                 if (postMessage == null) {
                     throw new IllegalArgumentException("null HTTP POST- did you forget to call HttpPoster.this.setMessage(byte[]) ? : " + key);
@@ -270,11 +235,16 @@ public class HttpGetter extends Task {
 
             //#debug
             L.i(this.getClass().getName() + " complete", ((byte[]) getValue()).length + " bytes, " + key);
-            success = true;
+
+            success = checkResponseCode(responseCode, responseHeaders);
         } catch (IllegalArgumentException e) {
             //#debug
             L.e(this.getClass().getName() + " HttpGetter has illegal argument", key, e);
             throw e;
+        } catch (ConnectionNotFoundException e) {
+            //#debug
+            L.e(this.getClass().getName() + " HttpGetter can not open a connection right now", key, e);
+            cancel(false);
         } catch (IOException e) {
             //#debug
             L.e(this.getClass().getName() + " retries remaining", key + ", retries=" + retriesRemaining, e);
@@ -315,6 +285,28 @@ public class HttpGetter extends Task {
 
             return getValue();
         }
+    }
+    
+    /**
+     * Check headers and HTTP response code as needed for your web service
+     * to see if this is a valid response. Override if needed.
+     * 
+     * @param responseCode
+     * @param headers
+     * @return 
+     */
+    protected boolean checkResponseCode(final int responseCode, final Hashtable headers) {
+        boolean ok = false;
+        
+        if (responseCode >= 400) {
+            //#debug
+            L.i("Bad response code (" + responseCode + ")", "" + getValue());
+            cancel(true);
+        } else {
+            ok = true;
+        }
+        
+        return ok;
     }
 
     /**
