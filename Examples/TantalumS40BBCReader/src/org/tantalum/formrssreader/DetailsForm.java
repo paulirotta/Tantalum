@@ -107,7 +107,7 @@ public final class DetailsForm extends Form implements CommandListener {
             } else if (!selectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
-                imageCache.get(selectedItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
+                imageCache.getAsync(selectedItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
                                                                        int count = 0;
 
                                                                        public void onPostExecute(final Object result) {

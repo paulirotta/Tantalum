@@ -122,7 +122,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
         try {
             final Task reloadTask = new Task() {
                 public Object doInBackground(final Object params) {
-                    getCanvas().getListView().reload(false);
+                    getCanvas().getListView().reloadAsync(false);
                     
                     return null;
                 }
@@ -138,7 +138,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
                 reloadTask.fork().join(200);
             } catch (TimeoutException ex) {
                 //#debug
-                L.e("Startup reload timeout", "This is normal if loading from the net", ex);
+                L.e("Startup reloadAsync timeout", "This is normal if loading from the net", ex);
             }
             switchDisplayable(null, canvas);
         } catch (Exception ex) {
