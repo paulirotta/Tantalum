@@ -39,14 +39,13 @@ subprojects {
         testCompile "org.powermock:powermock-api-mockito:1.5"
         testCompile "org.powermock:powermock-module-junit4:1.5"
 
-        testCompile "org.microemu:microemulator:2.0.4"
-        testCompile "org.microemu:microemu-midp:2.0.4"
-        testCompile "org.microemu:microemu-cldc:2.0.4"
-        testCompile "org.microemu:microemu-jsr-75:2.0.4"
-        testCompile("org.microemu:microemu-jsr-135:2.0.4") {
-            exclude module: 'microemu-midp'
-            exclude module: 'microemu-cldc'
-        }
+
+    /**
+     * Don't scan for test classes, as there will be an error with JavaME compiled classes
+     */
+    tasks.withType(Test) {
+        scanForTestClasses = false
+        include "**/*Test.class" // whatever Ant pattern matches your test class files
     }
 
     compileJava.options.bootClasspath = files(wtkHome + '/lib/midp_2.1.jar') + files(wtkHome + '/lib/cldc_1.1.jar')
