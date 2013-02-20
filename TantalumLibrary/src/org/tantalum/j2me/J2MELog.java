@@ -49,6 +49,13 @@ public class J2MELog extends L {
     private static CommConnection comm = null;
 //#enddebug    
 
+    /**
+     * Add to the log a messsage stored in a StringBuffer with optional error
+     * or exception (use null if information only)
+     * 
+     * @param sb
+     * @param t 
+     */
     protected void printMessage(final StringBuffer sb, final Throwable t) {
 //#mdebug
         if (t != null) {
