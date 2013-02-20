@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-//        classpath "net.saliman:gradle-cobertura-plugin:1.1.1"
+        classpath "net.saliman:gradle-cobertura-plugin:1.1.1"
         classpath files(antennaDir)
     }
 }
@@ -25,6 +25,10 @@ subprojects {
     }
 
     apply plugin: 'java'
+    apply plugin: 'findbugs'
+    apply plugin: 'jdepend'
+    apply plugin: 'pmd'
+    //apply plugin: 'cobertura'
 
     configurations {
         bootclasspath
@@ -33,11 +37,13 @@ subprojects {
     dependencies {
         compile files(wtkHome + '/lib/midp_2.1.jar')
         compile files(wtkHome + '/lib/cldc_1.1.jar')
+
         testCompile "junit:junit:4.11"
         testCompile 'net.sourceforge.cobertura:cobertura:1.9.4.1'
         testCompile "org.mockito:mockito-all:1.9.5"
         testCompile "org.powermock:powermock-api-mockito:1.5"
         testCompile "org.powermock:powermock-module-junit4:1.5"
+    }
 
 
     /**
@@ -51,10 +57,12 @@ subprojects {
     compileJava.options.bootClasspath = files(wtkHome + '/lib/midp_2.1.jar') + files(wtkHome + '/lib/cldc_1.1.jar')
 
     test.bootstrapClasspath = files(rtjar) + files(wtkHome + '/lib/midp_2.1.jar') + files(wtkHome + '/lib/cldc_1.1.jar')
-    //+ compileJava.options.bootClasspath.asPath()
 
     project.ext.target = buildDir.toString()
 
+
+    project.findbugs.ignoreFailures = true
+    project.pmd.ignoreFailures = true
 
     buildscript {
         dependencies {
@@ -62,19 +70,19 @@ subprojects {
         }
     }
 
-    // antenna ant tasks
+// antenna ant tasks
     ant.taskdef(resource: 'antenna.properties') {
         classpath {
             pathElement(path: buildscript.configurations.classpath.asPath)
         }
     }
 
-    // file names
+// file names
     project.ext.jadFile = target + '/' + jadFileName
     project.ext.jarFile = target + '/' + jarFileName
     project.ext.jarFilenameTests = target + '/' + jarFileTests
 
-    // wtk properties
+// wtk properties
     ant.property(name: 'wtk.home', value: wtkHome)
     ant.property(name: 'wtk.cldc.version', value: cldcVersion)
     ant.property(name: 'wtk.midp.version', value: midpVersion)
