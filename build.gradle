@@ -46,6 +46,9 @@ subprojects {
     }
 
 
+    project.findbugs.ignoreFailures = true
+    project.pmd.ignoreFailures = true
+
     /**
      * Don't scan for test classes, as there will be an error with JavaME compiled classes
      */
@@ -60,9 +63,6 @@ subprojects {
 
     project.ext.target = buildDir.toString()
 
-
-    project.findbugs.ignoreFailures = true
-    project.pmd.ignoreFailures = true
 
     buildscript {
         dependencies {

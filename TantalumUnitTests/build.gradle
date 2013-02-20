@@ -1,7 +1,7 @@
 apply plugin: 'java'
 
 sourceSets {
-    test {
+    main {
         java {
             srcDir 'src'
         }
@@ -11,8 +11,18 @@ sourceSets {
 dependencies {
     compile project(':TantalumLibrary')
     compile files('../Tantalum4Library/dist/Release/lib/jmunit4cldc11-1.2.1.jar')
+
+    testCompile "org.microemu:microemulator:2.0.4"
+    testCompile "org.microemu:microemu-midp:2.0.4"
+    testCompile "org.microemu:microemu-cldc:2.0.4"
+    testCompile "org.microemu:microemu-jsr-75:2.0.4"
+    testCompile("org.microemu:microemu-jsr-135:2.0.4") {
+        exclude module: 'microemu-midp'
+        exclude module: 'microemu-cldc'
+    }
+
 }
 
-task compileTestJava(overwrite: true, dependsOn: wtkpackage) << {
+task compileJava(overwrite: true, dependsOn: wtkpackage) << {
 }
 
