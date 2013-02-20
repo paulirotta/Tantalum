@@ -97,6 +97,10 @@ public class StaticCache {
      * larger than the current heap cache memory consumption.
      */
     protected int sizeAsBytes = 0;
+    /*
+     *  For testing and performance comparison
+     */
+    private volatile boolean flashCacheDisabled = false;
 
     /**
      * Create a named cache
@@ -123,6 +127,17 @@ public class StaticCache {
             }
             caches.addElement(this);
         }
+    }
+
+    /**
+     * Turn of persistent local storage use for read and write to see what
+     * happens to the application performance. This is most useful for
+     * StaticWebCache but may be useful in other test cases.
+     *
+     * @param disabled
+     */
+    public void setFlashCacheDisabled(final boolean disabled) {
+        this.flashCacheDisabled = disabled;
     }
 
     /**
@@ -228,7 +243,10 @@ public class StaticCache {
         L.i("StaticCache RAM result", "(" + priority + ") " + key + " : " + o);
         if (o == null) {
             // Load from flash memory
-            byte[] bytes = flashCache.getData(key);
+            byte[] bytes = null;
+            if (!flashCacheDisabled) {
+                bytes = flashCache.getData(key);
+            }
 
             //#debug
             L.i("StaticCache flash intermediate result", "(" + priority + ") " + key + " : " + bytes);
@@ -269,18 +287,20 @@ public class StaticCache {
         if (bytes == null || bytes.length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
-        Worker.forkSerial(new Workable() {
-            public Object exec(final Object in) {
-                try {
-                    synchronousFlashPut(key, bytes);
-                } catch (Exception e) {
-                    //#debug
-                    L.e("Can not synch write to RMS", key, e);
-                }
+        if (!flashCacheDisabled) {
+            Worker.forkSerial(new Workable() {
+                public Object exec(final Object in) {
+                    try {
+                        synchronousFlashPut(key, bytes);
+                    } catch (Exception e) {
+                        //#debug
+                        L.e("Can not synch write to RMS", key, e);
+                    }
 
-                return in;
-            }
-        }, RMS_WORKER_INDEX);
+                    return in;
+                }
+            }, RMS_WORKER_INDEX);
+        }
 
         return convertAndPutToHeapCache(key, bytes);
     }

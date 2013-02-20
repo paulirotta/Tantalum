@@ -53,7 +53,7 @@ public class StaticWebCache extends StaticCache {
      * the local cache
      */
     public static final int GET_WEB = 2;
-
+    
     /**
      * Create a persistent flash memory cache which acts like a Hashtable
      * 
@@ -83,7 +83,7 @@ public class StaticWebCache extends StaticCache {
         
         this.httpTaskFactory = httpTaskFactory;
     }
-
+    
     /**
      * Get without the HTTP POST option (HTTP GET only)
      * 
