@@ -43,6 +43,7 @@ import org.tantalum.util.L;
  */
 public class HttpGetter extends Task {
 
+    private static final Hashtable inFlightGets = new Hashtable();
     /**
      * The HTTP server has not yet been contacted, so no response code is yet
      * available
@@ -56,9 +57,9 @@ public class HttpGetter extends Task {
      */
     protected String key = null;
     /**
-     * How many more times will we try to re-connect after a 5 second delay before
-     * giving up. This aids in working with low quality networks and normal HTTP
-     * connection setup errors even on a "good" mobile network.
+     * How many more times will we try to re-connect after a 5 second delay
+     * before giving up. This aids in working with low quality networks and
+     * normal HTTP connection setup errors even on a "good" mobile network.
      */
     protected int retriesRemaining = HTTP_GET_RETRIES;
     /**
@@ -69,11 +70,12 @@ public class HttpGetter extends Task {
     private final Hashtable responseHeaders = new Hashtable();
     private Vector requestPropertyKeys = new Vector();
     private Vector requestPropertyValues = new Vector();
+    private HttpGetter duplicateTaskWeShouldJoinInsteadOfReGetting = null;
 
     /**
      * Get the byte[] from the URL specified by the input argument when
-     * exec(url) is called. This may be chained from a previous chain()ed asynchronous
-     * task.
+     * exec(url) is called. This may be chained from a previous chain()ed
+     * asynchronous task.
      */
     public HttpGetter() {
         super();
@@ -86,27 +88,37 @@ public class HttpGetter extends Task {
      * service does not respond on the first attempt (happens frequently with
      * the mobile web...). You can disable this by calling
      * setRetriesRemaining(0).
-     * 
+     *
      * The "key" is a url. You can optionally attach additional information to
-     * the key after \n (newline) to create a unique hashcode for cache management
-     * purposes. This is sometimes needed for example with HTTP POST where the
-     * url does not alone indicate a unique cachable entity- the post parameters do.
+     * the key after \n (newline) to create a unique hashcode for cache
+     * management purposes. This is sometimes needed for example with HTTP POST
+     * where the url does not alone indicate a unique cachable entity- the post
+     * parameters do.
      *
      * @param key
      */
     public HttpGetter(final String key) {
         super(key);
+
+        duplicateTaskWeShouldJoinInsteadOfReGetting = checkForDuplicateNetworkTasks();
     }
 
     /**
      * HTTP POST the associated message
-     * 
+     *
      * @param key
-     * @param postMessage 
+     * @param postMessage
      */
     protected HttpGetter(final String key, final byte[] postMessage) {
-        super(key);
+        this(key);
         this.postMessage = postMessage;
+    }
+
+    private HttpGetter checkForDuplicateNetworkTasks() {
+        if (key == null) {
+            return null;
+        }
+        return (HttpGetter) HttpGetter.inFlightGets.get(key);
     }
 
     /**
@@ -166,7 +178,7 @@ public class HttpGetter extends Task {
      * Note that your web service should set the HTTP Header field
      * content_length as this makes the phone run slightly faster when we can
      * predict how many bytes to expect.
-     * 
+     *
      * @param url - The url we will HTTP GET from
      *
      * @return - a JSONModel of the data provided by the HTTP server
@@ -178,6 +190,19 @@ public class HttpGetter extends Task {
         }
         //#debug
         L.i(this.getClass().getName() + " start", key);
+        if (duplicateTaskWeShouldJoinInsteadOfReGetting == null) {
+            duplicateTaskWeShouldJoinInsteadOfReGetting = checkForDuplicateNetworkTasks();
+        }
+        if (duplicateTaskWeShouldJoinInsteadOfReGetting != null) {
+            //#debug
+            L.i("Noticed a duplicate HttpGetter Task: join()ing that result rather than re-getting from web server", key);
+            try {
+                return duplicateTaskWeShouldJoinInsteadOfReGetting.get();
+            } catch (Exception e) {
+                //#debug
+                L.e("Can not join duplicate HttpGetter Task", key, e);
+            }
+        }
         ByteArrayOutputStream bos = null;
         PlatformUtils.HttpConn httpConn = null;
         boolean tryAgain = false;
@@ -280,24 +305,25 @@ public class HttpGetter extends Task {
             } else if (!success) {
                 cancel(false);
             }
+            HttpGetter.inFlightGets.remove(key);
             //#debug
             L.i("End " + this.getClass().getName(), key);
 
             return getValue();
         }
     }
-    
+
     /**
-     * Check headers and HTTP response code as needed for your web service
-     * to see if this is a valid response. Override if needed.
-     * 
+     * Check headers and HTTP response code as needed for your web service to
+     * see if this is a valid response. Override if needed.
+     *
      * @param responseCode
      * @param headers
-     * @return 
+     * @return
      */
     protected boolean checkResponseCode(final int responseCode, final Hashtable headers) {
         boolean ok = false;
-        
+
         if (responseCode >= 400) {
             //#debug
             L.i("Bad response code (" + responseCode + ")", "" + getValue());
@@ -305,7 +331,7 @@ public class HttpGetter extends Task {
         } else {
             ok = true;
         }
-        
+
         return ok;
     }
 
@@ -313,16 +339,16 @@ public class HttpGetter extends Task {
      * Strip additional (optional) lines from the key to create a URL. The key
      * may contain this data to create several unique hashcodes for cache
      * management purposes.
-     * 
-     * @return 
+     *
+     * @return
      */
     private String getUrl() {
         final int i = key.indexOf('\n');
-        
+
         if (i < 0) {
             return key;
         }
-        
+
         return key.substring(0, i);
     }
 }
