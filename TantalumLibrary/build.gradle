@@ -1,9 +1,29 @@
+/**
+ * TantalumLibrary/build.gradle
+ *
+ * Builds the TantalumLibrary-project. The project contains an extra config, called 'codeCoverageJar', which
+ * packages and exposes the cobertura-instrumented classes as a jar file.
+ */
+
 sourceSets {
     main {
         java {
             srcDir 'src'
         }
     }
+}
+
+configurations {
+    codeCoverageJar
+}
+
+task jarInstrumented(type: Jar) {
+    baseName = project.name + '-instrumented'
+    dependsOn coberturaInstrumentMain
+    from sourceSets.main.cobertura.output
+}
+artifacts {
+    codeCoverageJar jarInstrumented
 }
 
 
