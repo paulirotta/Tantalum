@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
  * Date: 2013.02.19
  * Time: 00:09
  */
-public class SortedVectorTest {
+public class SortedVectorTest extends MockedStaticInitializers {
 
     private SortedVector collection;
 
@@ -53,4 +53,24 @@ public class SortedVectorTest {
 
         assertEquals(2, collection.size());
     }
+
+    @Test
+    public void integerSequenceOrderIsCorrect() {
+        Object o_1 = new Integer(10);
+        Object o_2 = new Integer(20);
+        Object o_3 = new Integer(50);
+        Object o_4 = new Integer(40);
+        Object o_5 = new Integer(30);
+        collection.addElement(o_1);
+        collection.addElement(o_2);
+        collection.addElement(o_3);
+        collection.addElement(o_4);
+        collection.addElement(o_5);
+
+        Integer[] expected = {new Integer(10), new Integer(20), new Integer(30), new Integer(40), new Integer(50)};
+        for (int i = 0; i < collection.size(); i++) {
+            assertEquals("sequence test " + (i + 1), expected[i], (Integer) collection.elementAt(i));
+        }
+    }
+
 }
