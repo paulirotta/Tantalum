@@ -49,18 +49,21 @@ public class SortedVector extends Vector {
      * @param o
      */
     public synchronized void addElement(final Object o) {
-        int i;
-
-        for (i = size() - 1; i >= 0; i--) {
+        int insertIndex = size(); /* Future index of o in the SortedVector? */
+        /* Finding the index */
+        for (int i = size() - 1; i >= 0; i--) {
             if (comparator.before(o, elementAt(i))) {
+                insertIndex--;
+            } else {
                 break;
             }
         }
 
-        if (i < 0) {
+        /* Inserting the object */
+        if (insertIndex == size()) {
             super.addElement(o);
         } else {
-            super.insertElementAt(o, i);
+            super.insertElementAt(o, insertIndex);
         }
     }
 
