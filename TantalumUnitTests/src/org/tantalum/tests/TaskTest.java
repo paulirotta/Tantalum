@@ -26,7 +26,6 @@ package org.tantalum.tests;
 import java.util.Vector;
 import jmunit.framework.cldc11.*;
 import org.tantalum.CancellationException;
-import org.tantalum.ExecutionException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.TimeoutException;
@@ -633,6 +632,21 @@ public class TaskTest extends TestCase {
                 return in + "4";
             }
         };
+        final Task instanceA = new Task("A") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "B";
+            }
+        };
+        final Task instance4 = new Task("5") {
+            protected Object doInBackground(Object in) {
+                return (String) in + "6";
+            }
+        };
+        final Task instance5 = new Task("BAD") {
+            protected Object doInBackground(Object in) {
+                return in + "7";
+            }
+        };
         try {
             assertEquals("bad", (String) instance2.getValue());
             instance.chain(instance2).chain(instance3);
@@ -640,6 +654,13 @@ public class TaskTest extends TestCase {
             assertEquals("12", (String) instance.get());
             assertEquals("123", (String) instance2.get());
             assertEquals("1234", (String) instance3.get());
+
+            instanceA.chain(instance4);
+            instanceA.chain(null);
+            instanceA.chain(instance5);
+            instanceA.fork();
+            assertEquals("AB6", (String) instance4.get());
+            assertEquals("AB67", (String) instance5.get());
         } catch (Exception ex) {
             ex.printStackTrace();
             fail("Can not chain: " + ex);
@@ -762,17 +783,17 @@ public class TaskTest extends TestCase {
             Task[] exceptionTasks1 = {task1, task2, task3, task4, task5a};
             try {
                 Task.joinAll(exceptionTasks1, 104);
-                fail("joinAll() exceptoinTasks1 should have thrown an CancellationException, but did not");
-            } catch (CancellationException e) {
                 // Correct execution path
+            } catch (CancellationException e) {
+                fail("joinAll() exceptoinTasks1 should not have thrown an CancellationException, but did");
             }
 
             Task[] exceptionTasks2 = {task1, task2, task3, task4, task5b};
             try {
                 Task.joinAll(exceptionTasks2, 105);
-                fail("joinAll() exceptoinTasks2 should have thrown an CancellationException, but did not");
-            } catch (CancellationException e) {
                 // Correct execution path
+            } catch (CancellationException e) {
+                fail("joinAll() exceptoinTasks2 should have thrown an CancellationException, but did not");
             }
 
             Task[] slowTasks = {task1, task6, task3};
@@ -1020,19 +1041,23 @@ public class TaskTest extends TestCase {
             assertEquals("task1b was not UI_RUN_FINISHED", Task.UI_RUN_FINISHED, task1b.getStatus());
 
             task2.fork().join();
-            assertEquals("task2 was not CANCELED", Task.CANCELED, task2.getStatus());
+            assertEquals("task2 should not have been CANCELED- you can not cancel() yourself", Task.EXEC_FINISHED, task2.getStatus());
 
             task3a.fork().join();
-            assertNotEquals("task3a was not CANCELED", Task.EXEC_FINISHED, task3a.getStatus());
+            assertEquals("task3a should not have been CANCELED- you can not cancel() yourself", Task.EXEC_FINISHED, task3a.getStatus());
 
             task3b.fork().joinUI();
-            assertNotEquals("task3b was not CANCELED", Task.UI_RUN_FINISHED, task3b.getStatus());
+            assertEquals("task3b should not have been CANCELED- you can not cancel() yourself", Task.UI_RUN_FINISHED, task3b.getStatus());
 
             task4a.fork().join();
-            assertEquals("task4a was not CANCELED", Task.CANCELED, task4a.getStatus());
+            assertNotEquals("task4a should not have been CANCELED", Task.CANCELED, task4a.getStatus());
 
-            task4b.fork().joinUI();
-            assertEquals("task4b was not CANCELED", Task.CANCELED, task4b.getStatus());
+            try {
+                task4b.fork().joinUI();
+                fail("Task 4b- joinUI() should throw ClassCastException if Task (not UITask)");
+            } catch (ClassCastException e) {
+                // Normal execution path
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             fail("Can not testCancelSelf: " + ex);

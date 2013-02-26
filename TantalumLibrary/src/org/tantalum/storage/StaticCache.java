@@ -101,6 +101,12 @@ public class StaticCache {
      *  For testing and performance comparison
      */
     private volatile boolean flashCacheDisabled = false;
+    /*
+     * All sychronization is not on "this", but on the mutex Object to encapsulate
+     * synch and dis-allow the bad practice of externally sychronizing on the
+     * cache object itself.
+     */
+    protected final Object mutex = new Object();
 
     /**
      * Create a named cache
@@ -154,7 +160,7 @@ public class StaticCache {
         L.i("Start to convert", key + " bytes length=" + bytes.length);
         final Object o = handler.convertToUseForm(bytes);
 
-        synchronized (this) {
+        synchronized (mutex) {
             accessOrder.addElement(key);
             cache.put(key, o);
         }
@@ -170,16 +176,18 @@ public class StaticCache {
      * @param key
      * @return
      */
-    public synchronized Object synchronousRAMCacheGet(final String key) {
-        Object o = cache.get(key);
+    public Object synchronousRAMCacheGet(final String key) {
+        synchronized (mutex) {
+            Object o = cache.get(key);
 
-        if (o != null) {
-            //#debug            
-            L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
-            this.accessOrder.addElement(key);
+            if (o != null) {
+                //#debug            
+                L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
+                this.accessOrder.addElement(key);
+            }
+
+            return o;
         }
-
-        return o;
     }
 
     /**
@@ -190,34 +198,39 @@ public class StaticCache {
      * Work.HIGH_PRIORITY if you want the results quickly to update the UI.
      * @return
      */
-    public Task getAsync(final String key, final int getPriority) {
+    public Task getAsync(final String key, final int getPriority, final Task chainedTask) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
 
-        final Task task = new Task(key) {
-            protected Object doInBackground(final Object in) {
-                //#debug
-                L.i("Async StaticCache get", (String) in);
-                if (in == key) {
-                    try {
-                        return synchronousGet(key);
-                    } catch (Exception e) {
-                        //#debug
-                        L.e("Can not async StaticCache get", key, e);
-                        this.cancel(false);
-                    }
-                }
-
-                return in;
-            }
-        };
+//        final Task task = new Task(key) {
+//            protected Object doInBackground(final Object in) {
+//                //#debug
+//                L.i("Async StaticCache get", (String) in);
+//                if (in == key) {
+//                    try {
+//                        return synchronousGet(key);
+//                    } catch (Exception e) {
+//                        //#debug
+//                        L.e("Can not async StaticCache get", key, e);
+//                        this.cancel(false);
+//                    }
+//                }
+//
+//                return in;
+//            }
+//        };
+        final Task task = new GetLocalTask(key);
+        task.chain(chainedTask);
         final Object fromRamCache = synchronousRAMCacheGet(key);
 
         if (fromRamCache != null) {
             //#debug
             L.i("RAM cache hit", "(" + priority + ") " + key);
-            // We must exec() the task to change state
+            /* 
+             * We must exec() the task to change state and complete any chained
+             * logic
+             */
             task.exec(fromRamCache);
         } else {
             //#debug
@@ -435,7 +448,7 @@ public class StaticCache {
     protected void remove(final String key) {
         try {
             if (containsKey(key)) {
-                synchronized (this) {
+                synchronized (mutex) {
                     accessOrder.removeElement(key);
                     cache.remove(key);
                 }
@@ -458,7 +471,7 @@ public class StaticCache {
         L.i("Start Cache Clear", "ID=" + priority);
         final String[] keys;
 
-        synchronized (this) {
+        synchronized (mutex) {
             keys = new String[accessOrder.size()];
             accessOrder.copyInto(keys);
         }
@@ -475,12 +488,14 @@ public class StaticCache {
      * @param key
      * @return
      */
-    public synchronized boolean containsKey(final String key) {
-        if (key == null) {
-            throw new IllegalArgumentException("containsKey was passed null");
-        }
+    public boolean containsKey(final String key) {
+        synchronized (mutex) {
+            if (key == null) {
+                throw new IllegalArgumentException("containsKey was passed null");
+            }
 
-        return cache.containsKey(key);
+            return cache.containsKey(key);
+        }
     }
 
     /**
@@ -488,8 +503,10 @@ public class StaticCache {
      *
      * @return
      */
-    public synchronized int getSize() {
-        return this.cache.size();
+    public int getSize() {
+        synchronized (mutex) {
+            return this.cache.size();
+        }
     }
 
     /**
@@ -498,8 +515,10 @@ public class StaticCache {
      *
      * @return
      */
-    public synchronized int getPriority() {
-        return priority;
+    public int getPriority() {
+        synchronized (mutex) {
+            return priority;
+        }
     }
 
     /**
@@ -542,23 +561,25 @@ public class StaticCache {
      *
      * @return
      */
-    public synchronized String toString() {
-        StringBuffer str = new StringBuffer();
+    public String toString() {
+        synchronized (mutex) {
+            StringBuffer str = new StringBuffer();
 
-        str.append("StaticCache --- priority: ");
-        str.append(priority);
-        str.append(" size: ");
-        str.append(getSize());
-        str.append(" size (bytes): ");
-        str.append(sizeAsBytes);
-        str.append("\n");
-
-        for (int i = 0; i < accessOrder.size(); i++) {
-            str.append(accessOrder.elementAt(i));
+            str.append("StaticCache --- priority: ");
+            str.append(priority);
+            str.append(" size: ");
+            str.append(getSize());
+            str.append(" size (bytes): ");
+            str.append(sizeAsBytes);
             str.append("\n");
-        }
 
-        return str.toString();
+            for (int i = 0; i < accessOrder.size(); i++) {
+                str.append(accessOrder.elementAt(i));
+                str.append("\n");
+            }
+
+            return str.toString();
+        }
     }
 
     /**

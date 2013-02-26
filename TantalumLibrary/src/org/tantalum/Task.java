@@ -23,7 +23,6 @@
  */
 package org.tantalum;
 
-import java.util.Vector;
 import org.tantalum.util.L;
 
 /**
@@ -535,16 +534,43 @@ public abstract class Task implements Workable {
      * default receives "null" as the input argument unless setValue() is called
      * before fork()ing the first task in the chain.
      *
+     * Note that if the Task is already chained, the new additional nextTask
+     * will be added after the last existing link in the chain.
+     *
+     * Note that you can not unchain. Do not start chaining until you know that
+     * you really do want to chain. If you change your mind later before you
+     * fork(), make a new Task. If you change your mind later after you fork(),
+     * you may want to cancel() the Task already running, but cancel() for
+     * simple logic reasons is usually indicative of a design problem, is bad
+     * practice and constructing and starting then stopping Task chains will
+     * decrease performance.
+     *
+     * Setting nextTask to null is treated as an application logic error and
+     * will throw an IllegalArgumentException
+     *
      * @param nextTask
      * @return nextTask
      */
-    public final synchronized Task chain(final Task nextTask) {
-        //#mdebug
-        if (nextTask == null) {
-            L.i("WARNING", "chain(null) is probably a mistake- no effect");
+    public final Task chain(final Task nextTask) {
+        if (nextTask != null) {
+            final Task multiLinkChain;
+            synchronized (this) {
+                if (this.chainedTask == null) {
+                    this.chainedTask = nextTask;
+                    multiLinkChain = null;
+                } else {
+                    // Already chained- we must add to the end of the chain
+                    multiLinkChain = this.chainedTask;
+                }
+            }
+            if (multiLinkChain != null) {
+                /*
+                 * Call this outside the above synchronized block so that we are not
+                 * holding multiple locks for Tasks at the same time
+                 */
+                multiLinkChain.chain(nextTask);
+            }
         }
-        //#enddebug
-        this.chainedTask = nextTask;
 
         return nextTask;
     }
@@ -628,16 +654,21 @@ public abstract class Task implements Workable {
         L.i("Begin explicit cancel task", "status=" + this.getStatusString() + " " + this);
         switch (status) {
             case EXEC_STARTED:
-                if (mayInterruptIfRunning && Worker.interruptWorkable(this)) {
+                if (mayInterruptIfRunning && (Worker.interruptWorkable(this))) {
                     setStatus(CANCELED);
                     canceled = true;
                 }
                 break;
 
             case EXEC_FINISHED:
+                if (this instanceof UITask && mayInterruptIfRunning) {
+                    if (Worker.interruptWorkable(this)) {
+                        break;
+                    }
+                }
             case UI_RUN_FINISHED:
                 //#debug
-                L.i("Attempt to cancel Task after run completes, suspicious but may be normal", this.toString());
+                L.i("Attempt to cancel Task after EXEC_FINISHED. Suspicious but may be normal due to race-to-cancel condition", this.toString());
                 break;
 
             default:
