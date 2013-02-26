@@ -28,10 +28,11 @@ import org.tantalum.PlatformUtils;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({L.class, PlatformUtils.class})
-@SuppressStaticInitializationFor({"org.tantalum.util.L",
-        "org.tantalum.PlatformUtils",
-        "org.tantalum.storage.StaticCache",
-        "org.tantalum.net.StaticWebCache"})
+@SuppressStaticInitializationFor(
+        {"org.tantalum.util.L",
+                "org.tantalum.PlatformUtils",
+                "org.tantalum.storage.StaticCache",
+                "org.tantalum.net.StaticWebCache"})
 public abstract class MockedStaticInitializers {
 
     @Before

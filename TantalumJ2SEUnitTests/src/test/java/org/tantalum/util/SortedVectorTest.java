@@ -61,11 +61,18 @@ public class SortedVectorTest extends MockedStaticInitializers {
         Object o_3 = new Integer(50);
         Object o_4 = new Integer(40);
         Object o_5 = new Integer(30);
+
+        System.out.println("Collection now " + collection);
         collection.addElement(o_1);
+        System.out.println("Collection now " + collection);
         collection.addElement(o_2);
+        System.out.println("Collection now " + collection);
         collection.addElement(o_3);
+        System.out.println("Collection now " + collection);
         collection.addElement(o_4);
+        System.out.println("Collection now " + collection);
         collection.addElement(o_5);
+        System.out.println("Collection now " + collection);
 
         Integer[] expected = {new Integer(10), new Integer(20), new Integer(30), new Integer(40), new Integer(50)};
         for (int i = 0; i < collection.size(); i++) {

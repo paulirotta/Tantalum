@@ -20,6 +20,7 @@ configurations {
 task jarInstrumented(type: Jar) {
     baseName = project.name + '-instrumented'
     dependsOn coberturaInstrumentMain
+    from sourceSets.main.output
     from sourceSets.main.cobertura.output
 }
 artifacts {
