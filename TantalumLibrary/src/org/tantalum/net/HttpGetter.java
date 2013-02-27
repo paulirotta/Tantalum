@@ -303,7 +303,7 @@ public class HttpGetter extends Task {
                 }
                 doInBackground(url);
             } else if (!success) {
-                cancel(false);
+                setStatus(Task.CANCELED);
             }
             HttpGetter.inFlightGets.remove(key);
             //#debug

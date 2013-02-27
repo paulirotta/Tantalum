@@ -44,7 +44,7 @@ public class TaskTest extends TestCase {
      */
     public TaskTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(18, "TaskTest");
+        super(19, "TaskTest");
 
         PlatformUtils.setNumberOfWorkers(2);
         PlatformUtils.setProgram(this);
@@ -111,6 +111,9 @@ public class TaskTest extends TestCase {
                 break;
             case 17:
                 testCancelSelf();
+                break;
+            case 18:
+                testCancelThread();
                 break;
             default:
                 break;
@@ -1061,6 +1064,31 @@ public class TaskTest extends TestCase {
         } catch (Exception ex) {
             ex.printStackTrace();
             fail("Can not testCancelSelf: " + ex);
+        }
+    }
+
+    public void testCancelThread() throws AssertionFailedException {
+        System.out.println("cancelSelf");
+        final Task task1 = new Task("1") {
+            protected Object doInBackground(Object in) {
+                assertNotEquals("doInBackground() blue must not run on UI thread", true, PlatformUtils.isUIThread());
+                setStatus(Task.CANCELED);
+                return (String) in + "2";
+            }
+
+            protected void onCanceled() {
+                assertEquals("onCanceld() blue must run on UI thread", true, PlatformUtils.isUIThread());
+                setValue("blue");
+            }
+        };
+
+        try {
+            task1.fork();
+            Thread.sleep(200);
+            assertEquals("fork()ed task setStatus(Task.CANCELED) did not run onCanceled()", "blue", task1.getValue());
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Can not testCancelThread()" + e);
         }
     }
 }
