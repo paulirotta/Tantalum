@@ -100,7 +100,7 @@ public class StaticCache {
     /*
      *  For testing and performance comparison
      */
-    private volatile boolean flashCacheDisabled = false;
+    private volatile boolean flashCacheEnabled = true;
     /*
      * All sychronization is not on "this", but on the mutex Object to encapsulate
      * synch and dis-allow the bad practice of externally sychronizing on the
@@ -136,14 +136,16 @@ public class StaticCache {
     }
 
     /**
-     * Turn of persistent local storage use for read and write to see what
+     * Turn off persistent local storage use for read and write to see what
      * happens to the application performance. This is most useful for
      * StaticWebCache but may be useful in other test cases.
+     * 
+     * The default is enabled
      *
-     * @param disabled
+     * @param enabled
      */
-    public void setFlashCacheDisabled(final boolean disabled) {
-        this.flashCacheDisabled = disabled;
+    public void setFlashCacheEnabled(final boolean enabled) {
+        this.flashCacheEnabled = enabled;
     }
 
     /**
@@ -257,7 +259,7 @@ public class StaticCache {
         if (o == null) {
             // Load from flash memory
             byte[] bytes = null;
-            if (!flashCacheDisabled) {
+            if (flashCacheEnabled) {
                 bytes = flashCache.getData(key);
             }
 
@@ -300,7 +302,7 @@ public class StaticCache {
         if (bytes == null || bytes.length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
-        if (!flashCacheDisabled) {
+        if (flashCacheEnabled) {
             Worker.forkSerial(new Workable() {
                 public Object exec(final Object in) {
                     try {
