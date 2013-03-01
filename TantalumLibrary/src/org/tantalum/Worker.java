@@ -519,4 +519,47 @@ public final class Worker extends Thread {
         //#debug
         L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);
     }
+
+//#mdebug    
+    /**
+     * When debugging, show what each Worker is doing and the queue length
+     *
+     * @return One ore more lines of text depending on the number of active
+     * Workers
+     */
+    public static Vector getCurrentState() {
+        final StringBuffer sb = new StringBuffer();
+        final int n = Worker.getNumberOfWorkers();
+        final Vector lines = new Vector(n + 1);
+
+        sb.append('q');
+        sb.append(Worker.q.size());
+        sb.append('-');
+        for (int i = 0; i < n; i++) {
+            final Worker w = workers[i];
+            if (w != null) {
+                final Workable workable = w.workable;
+                sb.append(workable != null ? "W" : "w");
+                sb.append(i);
+                sb.append(':');
+                if (workable != null) {
+                    lines.addElement(trimmedNameNoPackage(workable.getClass().getName()));
+                }
+            }
+        }
+        lines.insertElementAt(sb.toString(), 0);
+
+        return lines;
+    }
+
+    private static String trimmedNameNoPackage(String className) {
+        final int i = className.lastIndexOf('.');
+
+        if (i >= 0) {
+            className = className.substring(i+1);
+        }
+
+        return className;
+    }
+//#enddebug
 }
