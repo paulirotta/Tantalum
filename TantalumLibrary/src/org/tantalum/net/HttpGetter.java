@@ -79,6 +79,8 @@ public class HttpGetter extends Task {
      */
     public HttpGetter() {
         super();
+
+        setShutdownBehaviour(Task.CANCEL_ON_SHUTDOWN);
     }
 
     /**
@@ -100,6 +102,7 @@ public class HttpGetter extends Task {
     public HttpGetter(final String key) {
         super(key);
 
+        setShutdownBehaviour(Task.CANCEL_ON_SHUTDOWN);
         duplicateTaskWeShouldJoinInsteadOfReGetting = checkForDuplicateNetworkTasks();
     }
 
@@ -111,6 +114,7 @@ public class HttpGetter extends Task {
      */
     protected HttpGetter(final String key, final byte[] postMessage) {
         this(key);
+        
         this.postMessage = postMessage;
     }
 

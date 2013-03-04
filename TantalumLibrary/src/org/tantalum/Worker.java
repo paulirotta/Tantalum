@@ -353,6 +353,14 @@ public final class Worker extends Thread {
         try {
             synchronized (q) {
                 shuttingDown = true;
+                dequeueOrCancelOnShutdown(q);
+                for (int i = 0; i < workers.length; i++) {
+                    workers[i].dequeueOrCancelOnShutdown(workers[i].serialQ);
+                    Workable w = workers[i].workable;
+                    if (w instanceof Task) {
+                        ((Task) w).cancel(true);
+                    }
+                }
                 q.notifyAll();
             }
             if (block) {
@@ -373,6 +381,29 @@ public final class Worker extends Thread {
                 }
             }
         } catch (InterruptedException ex) {
+        }
+    }
+
+    private static void dequeueOrCancelOnShutdown(final Vector queue) {
+        for (int i = queue.size() - 1; i >= 0; i--) {
+            final Workable w = (Workable) queue.elementAt(i);
+            if (w instanceof Task) {
+                final Task t = (Task) w;
+                switch (t.getShutdownBehaviour()) {
+                    case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
+                        break;
+                        
+                    case Task.CANCEL_ON_SHUTDOWN:
+                    case Task.CANCEL_FROM_QUEUE_BUT_LEAVE_RUNNING_IF_STARTED_ON_SHUTDOWN:
+                        t.cancel(false);
+                        queue.removeElementAt(i);
+                        break;
+
+                    case Task.SILENT_DEQUEUE_ON_SHUTDOWN:
+                        queue.removeElementAt(i);
+                        break;
+                }
+            }
         }
     }
 

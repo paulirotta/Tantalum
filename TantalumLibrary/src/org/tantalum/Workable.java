@@ -44,6 +44,11 @@ public interface Workable {
      * Do a task on a background thread, possibly returning a result for
      * asynchronous pipeline operations.
      * 
+     * Note that unlike a Task, a Workable is never canceled even during
+     * shutdown. Thus a Workable will always complete its work and application
+     * shutdown will need to wait for it to complete, must like a Task which is
+     * set to Task.EXECUTE_NORMALLY_ON_SHUTDOWN.
+     * 
      * @param in 
      * @return the output result of the work, used for chain()ing one Task to
      * another Task in overriding classes. If you are implementing a Workable

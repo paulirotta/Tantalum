@@ -75,11 +75,45 @@ public abstract class Task implements Workable {
      */
     public static final int READY = 6;
     private static final String[] STATUS_STRINGS = {"EXEC_PENDING", "EXEC_STARTED", "EXEC_FINISHED", "UI_RUN_FINISHED", "CANCELED", "EXCEPTION", "READY"};
+    public static final int EXECUTE_NORMALLY_ON_SHUTDOWN = 0;
+    /**
+     * By default, Tasks which have not yet started are removed from the task
+     * queue when an application shutdown begins.
+     */
+    public static final int SILENT_DEQUEUE_ON_SHUTDOWN = 1;
+    /**
+     * If a Task is still queued but not yet started, you can request
+     * notification of the shutdown in order to complete some cleanup activity.
+     * Note that you should usually not be holding resources when queued, so
+     * cleanup of that form is probably a design error. You may however want to
+     * briefly notify the user.
+     *
+     * An alternative to this is to create a Task that is run at shutdown time
+     * using Worker.queueShutdownTask(Task).
+     */
+    public static final int CANCEL_FROM_QUEUE_BUT_LEAVE_RUNNING_IF_STARTED_ON_SHUTDOWN = 2;
+    /**
+     * If you explicitly do not want your Task to be cancel(true)ed during
+     * shutdown or silently cancel(false)ed when it is queued, use this shutdown
+     * behavior. This is useful for example if you need to complete an ongoing
+     * Flash memory write operation.
+     *
+     * An alternative to this is to create a Task that is run at shutdown time
+     * using Worker.queueShutdownTask(Task).
+     */
+    public static final int CANCEL_ON_SHUTDOWN = 3;
     private Object value = null; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants
      */
     protected int status = READY; // Always access within a synchronized block
+    /**
+     * All tasks are removed from the queue without notice automatically on
+     * shutdown unless specifically marked. For example, writing to flash memory
+     * may be required during shutdown, but HttpGetter could block or a long
+     * time and should be cancel()ed during shutdown to speed application close.
+     */
+    private int shutdownBehaviour = SILENT_DEQUEUE_ON_SHUTDOWN;
     /**
      * The next Task to be executed after this Task completes successfully. If
      * the current task is canceled or throws an exception, the chainedTask(s)
@@ -107,6 +141,28 @@ public abstract class Task implements Workable {
      */
     public Task(final Object in) {
         this.value = in;
+    }
+
+    /**
+     * Return the currently set shutdown behavior
+     * 
+     * @return 
+     */
+    public synchronized int getShutdownBehaviour() {
+        return shutdownBehaviour;
+    }
+
+    /**
+     * Override the default shutdown behavior
+     * 
+     * @param shutdownBehaviour 
+     */
+    public synchronized void setShutdownBehaviour(int shutdownBehaviour) {
+        if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.CANCEL_ON_SHUTDOWN) {
+            throw new IllegalArgumentException("Invalid shutdownBehaviour value: " + shutdownBehaviour);
+        }
+        
+        this.shutdownBehaviour = shutdownBehaviour;
     }
 
     /**
