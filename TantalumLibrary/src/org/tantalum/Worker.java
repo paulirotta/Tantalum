@@ -103,31 +103,10 @@ public final class Worker extends Thread {
      */
     static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
-        createWorker(0); // First worker
-        Worker.fork(new Workable() {
-            /**
-             * The first worker creates the others in the background
-             */
-            public Object exec(final Object in) {
-                int i = 1;
-
-                try {
-                    for (; i < numberOfWorkers; i++) {
-                        createWorker(i);
-                    }
-                } catch (Exception e) {
-                    //#debug
-                    L.e("Can not create worker", "i=" + i, e);
-                }
-
-                return in;
-            }
-        });
-    }
-
-    private static void createWorker(final int i) {
-        workers[i] = new Worker("Worker" + i);
-        workers[i].start();
+        for (int i = 0; i < numberOfWorkers; i++) {
+            workers[i] = new Worker("Worker" + i);
+            workers[i].start();
+        }
     }
 
     /**
@@ -239,10 +218,16 @@ public final class Worker extends Thread {
     public static boolean tryUnfork(final Workable workable) {
         boolean success;
 
+        if (workable == null) {
+            throw new IllegalArgumentException("Can not tryUnfork(null), probable application logic error");
+        }
+
         synchronized (q) {
             //#debug
             L.i("Unfork start", workable.toString());
             success = q.removeElement(workable);
+            //#debug
+            L.i("Unfork continues", "success=" + success + " - " + workable.toString());
             int i = 0;
             while (!success && i < workers.length) {
                 success = workers[i++].serialQ.removeElement(workable);
@@ -520,7 +505,6 @@ public final class Worker extends Thread {
         L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);
     }
 
-//#mdebug    
     /**
      * When debugging, show what each Worker is doing and the queue length
      *
@@ -556,10 +540,9 @@ public final class Worker extends Thread {
         final int i = className.lastIndexOf('.');
 
         if (i >= 0) {
-            className = className.substring(i+1);
+            className = className.substring(i + 1);
         }
 
         return className;
     }
-//#enddebug
 }
