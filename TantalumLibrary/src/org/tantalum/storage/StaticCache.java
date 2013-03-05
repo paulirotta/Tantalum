@@ -23,8 +23,8 @@
  */
 package org.tantalum.storage;
 
+import java.util.Hashtable;
 import java.util.Vector;
-import org.tantalum.ExecutionException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.Workable;
@@ -50,6 +50,7 @@ import org.tantalum.util.WeakHashCache;
  */
 public class StaticCache {
 
+    private static final Hashtable priorities = new Hashtable();
     private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
     private static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
         public boolean before(final Object o1, final Object o2) {
@@ -102,11 +103,11 @@ public class StaticCache {
      */
     private volatile boolean flashCacheEnabled = true;
     /*
-     * All sychronization is not on "this", but on the mutex Object to encapsulate
+     * All sychronization is not on "this", but on the MUTEX Object to encapsulate
      * synch and dis-allow the bad practice of externally sychronizing on the
      * cache object itself.
      */
-    protected final Object mutex = new Object();
+    protected final Object MUTEX = new Object();
 
     /**
      * Create a named cache
@@ -114,11 +115,20 @@ public class StaticCache {
      * Caches with higher priority are more likely to keep their data when space
      * is limited.
      *
+     * You will get IllegalArgumentException if you try to
+     *
      * @param priority - a character from '0' to '9', higher numbers get a
-     * preference for space
-     * @param handler
+     * preference for space. Letters are also allowed.
+     * @param handler - a routine to convert from byte[] to Object form when
+     * loading into the RAM cache.
      */
     public StaticCache(final char priority, final DataTypeHandler handler) {
+        final Character c = new Character(priority);
+        if (priorities.contains(c)) {
+            throw new IllegalArgumentException("Duplicate priority database '" + priority + "' has already been created");
+        }
+        priorities.put(c, c);
+
         this.priority = priority;
         this.handler = handler;
 
@@ -133,13 +143,33 @@ public class StaticCache {
             }
             caches.addElement(this);
         }
+        init();
+    }
+
+    /**
+     * Load the keys from flash memory
+     * 
+     * We want to use the RAM Hashtable to know what the cache contains, even
+     * though we do not pre-load from flash all the values
+     */
+    private void init() {
+        try {
+            Vector keys = flashCache.getKeys();
+            for (int i = 0; i < keys.size(); i++) {
+                String key = (String) keys.elementAt(i);
+                this.cache.put(key, null);
+            }
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e("Can not load keys to RAM during init() cache", "cache priority=" + priority, ex);
+        }
     }
 
     /**
      * Turn off persistent local storage use for read and write to see what
      * happens to the application performance. This is most useful for
      * StaticWebCache but may be useful in other test cases.
-     * 
+     *
      * The default is enabled
      *
      * @param enabled
@@ -162,7 +192,7 @@ public class StaticCache {
         L.i("Start to convert", key + " bytes length=" + bytes.length);
         final Object o = handler.convertToUseForm(bytes);
 
-        synchronized (mutex) {
+        synchronized (MUTEX) {
             accessOrder.addElement(key);
             cache.put(key, o);
         }
@@ -179,7 +209,7 @@ public class StaticCache {
      * @return
      */
     public Object synchronousRAMCacheGet(final String key) {
-        synchronized (mutex) {
+        synchronized (MUTEX) {
             Object o = cache.get(key);
 
             if (o != null) {
@@ -205,23 +235,6 @@ public class StaticCache {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
 
-//        final Task task = new Task(key) {
-//            protected Object doInBackground(final Object in) {
-//                //#debug
-//                L.i("Async StaticCache get", (String) in);
-//                if (in == key) {
-//                    try {
-//                        return synchronousGet(key);
-//                    } catch (Exception e) {
-//                        //#debug
-//                        L.e("Can not async StaticCache get", key, e);
-//                        this.cancel(false);
-//                    }
-//                }
-//
-//                return in;
-//            }
-//        };
         final Task task = new GetLocalTask(key);
         task.chain(chainedTask);
         final Object fromRamCache = synchronousRAMCacheGet(key);
@@ -450,7 +463,7 @@ public class StaticCache {
     protected void remove(final String key) {
         try {
             if (containsKey(key)) {
-                synchronized (mutex) {
+                synchronized (MUTEX) {
                     accessOrder.removeElement(key);
                     cache.remove(key);
                 }
@@ -473,7 +486,7 @@ public class StaticCache {
         L.i("Start Cache Clear", "ID=" + priority);
         final String[] keys;
 
-        synchronized (mutex) {
+        synchronized (MUTEX) {
             keys = new String[accessOrder.size()];
             accessOrder.copyInto(keys);
         }
@@ -485,19 +498,47 @@ public class StaticCache {
     }
 
     /**
+     * Note that if the conversion in the DataTypeHandler changes due to
+     * application logic requirements, you can at any time use this to force
+     * as-needed re-conversion. This affects queued conversions but does not
+     * affect conversions already in progress. Therefore you may want to chain()
+     * to the Task returned and continue your code after this clear completes
+     * after other queued tasks.
+     */
+    public Task clearHeapCacheAsync(final Task chainedTask) {
+        final Task task = new Task() {
+            protected Object doInBackground(final Object in) {
+                synchronized (MUTEX) {
+                    cache.clear();
+                    init();
+                }
+                
+                return in;
+            }
+        };
+        task.chain(chainedTask);
+        task.fork();
+        
+        return task;
+    }
+
+    /**
      * Does this cache contain an object matching the key?
      *
      * @param key
      * @return
      */
     public boolean containsKey(final String key) {
-        synchronized (mutex) {
-            if (key == null) {
-                throw new IllegalArgumentException("containsKey was passed null");
-            }
-
-            return cache.containsKey(key);
+        if (key == null) {
+            throw new IllegalArgumentException("containsKey was passed null");
         }
+
+        boolean contained;
+        synchronized (MUTEX) {
+            contained = cache.containsKey(key);
+        }
+        
+        return contained;
     }
 
     /**
@@ -506,7 +547,7 @@ public class StaticCache {
      * @return
      */
     public int getSize() {
-        synchronized (mutex) {
+        synchronized (MUTEX) {
             return this.cache.size();
         }
     }
@@ -518,7 +559,7 @@ public class StaticCache {
      * @return
      */
     public int getPriority() {
-        synchronized (mutex) {
+        synchronized (MUTEX) {
             return priority;
         }
     }
@@ -540,22 +581,25 @@ public class StaticCache {
      *
      * @return
      */
-    public Task getKeysAsync() {
-        return (new Task() {
+    public Task getKeysAsync(final Task chainedTask) {
+        final Task task = new Task() {
             protected Object doInBackground(Object in) {
-                Object out = in;
-
                 try {
-                    out = flashCache.getKeys();
+                    return flashCache.getKeys();
                 } catch (Exception e) {
                     //#debug
                     L.e("Can not complete", "getKeysTask", e);
-                    cancel(true);
+                    this.setStatus(Task.CANCELED);
+                    flashCache.clear();
+                    
+                    return new Vector();
                 }
-
-                return out;
             }
-        }).fork();
+        };
+        task.chain(chainedTask);
+        task.fork();
+        
+        return task;
     }
 
     /**
@@ -564,7 +608,7 @@ public class StaticCache {
      * @return
      */
     public String toString() {
-        synchronized (mutex) {
+        synchronized (MUTEX) {
             StringBuffer str = new StringBuffer();
 
             str.append("StaticCache --- priority: ");

@@ -43,9 +43,9 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public final class AndroidCache implements FlashCache {
+public final class AndroidCache extends FlashCache {
 
-    private final SQLiteOpenHelper helper;
+    private SQLiteOpenHelper helper;
     /**
      * Database version number
      */
@@ -53,11 +53,11 @@ public final class AndroidCache implements FlashCache {
     /**
      * Database name
      */
-    private static final String DB_NAME = "Tantalum";
+    private static final String databaseName = "Tantalum";
     /**
      * Database table name
      */
-    private static final String TABLE_NAME = "Tantalum_Table";
+    private final String TABLE_NAME = "Tantalum_Table" +  + priority;
     /**
      * Database id column tag
      */
@@ -73,9 +73,10 @@ public final class AndroidCache implements FlashCache {
     /**
      * SQL to create the database
      */
-    private static final String CREATE_DB = "CREATE TABLE IF NOT EXISTS "
+    private final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS "
             + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_KEY
             + " TEXT NOT NULL, " + COL_DATA + " BLOB NOT NULL)";
+    private final String CLEAR_TABLE = "DROP TABLE " + TABLE_NAME;
     private static Context context;
     private volatile SQLiteDatabase db = null;
 
@@ -93,8 +94,10 @@ public final class AndroidCache implements FlashCache {
      * Create the persistent memory database singleton
      *
      */
-    public AndroidCache() {
-        helper = new SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION);
+    public void init(final char priority) {
+        super.init(priority);
+        
+        helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION);
         Worker.forkShutdownTask(new Workable() {
             public Object exec(final Object in2) {
                 if (db != null) {
@@ -113,7 +116,7 @@ public final class AndroidCache implements FlashCache {
      * @param db
      */
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(CREATE_DB);
+        db.execSQL(CREATE_TABLE);
     }
 
     /**
@@ -255,5 +258,14 @@ public final class AndroidCache implements FlashCache {
         }
 
         return keys;
+    }
+
+    /**
+     * Remove all elements from this cache. Since there is a different table
+     * for each cache, other caches still contain values.
+     * 
+     */
+    public void clear() {
+        db.execSQL(CLEAR_TABLE);
     }
 }

@@ -27,44 +27,71 @@ import java.util.Vector;
 
 /**
  * A Hashtable-style interface for persistent data.
- * 
+ *
  * Each implementation is platform-specific (J2ME, Android, ...)
- * 
+ *
  * @author phou
  */
-public interface FlashCache {
+public abstract class FlashCache {
+
+    /**
+     * A unique local identifier for the cache.
+     */
+    public char priority = Character.MIN_VALUE;
+
+    /**
+     * The priority must be unique in the application.
+     *
+     * Caches with lower priority are garbage collected to save space before
+     * caches with higher priority.
+     *
+     * @param priority
+     */
+    public void init(final char priority) {
+        if (this.priority != Character.MIN_VALUE) {
+            throw new IllegalStateException("FlashCache.init() can only be called once");
+        }
+        this.priority = priority;
+    }
+    
     /**
      * Get the data object associated with the key from persistent memory
-     * 
+     *
      * @param key
      * @return
-     * @throws FlashDatabaseException 
-     */       
-    public byte[] getData(String key) throws FlashDatabaseException;
+     * @throws FlashDatabaseException
+     */
+    public abstract byte[] getData(String key) throws FlashDatabaseException;
 
     /**
      * Store the data object to persistent memory
-     * 
+     *
      * @param key
      * @param bytes
      * @throws FlashFullException
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
-    public void putData(String key, byte[] bytes) throws FlashFullException, FlashDatabaseException;
+    public abstract void putData(String key, byte[] bytes) throws FlashFullException, FlashDatabaseException;
 
     /**
      * Remove the data object from persistent memory
-     * 
+     *
      * @param key
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
-    public void removeData(String key) throws FlashDatabaseException;
+    public abstract void removeData(String key) throws FlashDatabaseException;
 
     /**
      * Provide a list of all keys for objects stored in persistent memory
-     * 
+     *
      * @return
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
-    public Vector getKeys() throws FlashDatabaseException;
+    public abstract Vector getKeys() throws FlashDatabaseException;
+    
+    /**
+     * Remove all items from this flash cache
+     * 
+     */
+    public abstract void clear();
 }

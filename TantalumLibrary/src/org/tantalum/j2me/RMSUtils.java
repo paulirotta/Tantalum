@@ -46,7 +46,16 @@ public class RMSUtils {
     private static final int MAX_OPEN_RECORD_STORES = 10;
     private static final String RECORD_HASH_PREFIX = "@";
     private static final LengthLimitedVector openRecordStores = new LengthLimitedVector(MAX_OPEN_RECORD_STORES) {
-        protected void lengthExceeded(final Object extra) {
+        protected synchronized void lengthExceeded(final Object extra) {
+            /**
+             * We exceeded the maximum number of open record stores specified as
+             * a constant. Close the least-recently-used record store.
+             *
+             * TODO Although this works under must circumstances, under extreme
+             * conditions it may be that even the 10th least recently used
+             * record store is still in use. Look for a more positive-proof way
+             * to ensure we don't close anything we are still using.
+             */
             final RecordStore rs = (RecordStore) extra;
             String rsName = "";
 
@@ -57,6 +66,7 @@ public class RMSUtils {
                 rs.closeRecordStore();
                 //#debug
                 L.i("LRU record store closed", rsName + " open=" + openRecordStores.size());
+                removeElement(rs);
             } catch (Exception ex) {
                 //#debug
                 L.e("Can not close extra record store", rsName, ex);
@@ -83,21 +93,63 @@ public class RMSUtils {
     }
 
     /**
-     * Return of a list of record stores whose name indiates that they are caches
-     * 
-     * @return 
+     * Return of a list of record stores whose name indiates that they are
+     * caches
+     *
+     * @return
      */
     public static Vector getCachedRecordStoreNames() {
         final String[] rs = RecordStore.listRecordStores();
         final Vector v = new Vector(rs.length);
 
         for (int i = 0; i < rs.length; i++) {
-            if (rs[i].startsWith(RECORD_HASH_PREFIX)) {
-                v.addElement(rs[i]);
+            String name = rs[i];
+            if (name.startsWith(RECORD_HASH_PREFIX)) {
+                name = name.substring(1); // Cut off initial '@'
+                v.addElement(name);
             }
         }
 
         return v;
+    }
+
+    /**
+     * Remove all record stores
+     *
+     * This is rather violent. Use only as a last resort, for example when
+     * corruption is detected.
+     */
+    public static void wipeRMS() {
+        synchronized (openRecordStores) {
+            while (!openRecordStores.isEmpty()) {
+                final RecordStore rs = (RecordStore) openRecordStores.firstElement();
+                String rsName = "";
+
+                try {
+                    rsName = rs.getName();
+                    //#debug
+                    L.i("Closing record store before wipeRMS", rsName + " open=" + openRecordStores.size());
+                    rs.closeRecordStore();
+                    //#debug
+                    L.i("Record store closed before wipeRMS", rsName + " open=" + openRecordStores.size());
+                    openRecordStores.removeElement(rs);
+                } catch (Exception ex) {
+                    //#debug
+                    L.e("Can not close record store before wipeRMS", rsName, ex);
+                }
+            }
+        }
+
+        final String[] rs = RecordStore.listRecordStores();
+
+        for (int i = 0; i < rs.length; i++) {
+            try {
+                RecordStore.deleteRecordStore(rs[i]);
+            } catch (Exception ex) {
+                //#debug
+                L.e("wipeRMS(), problem deleting record store", rs[i], ex);
+            }
+        }
     }
 
     private static String getRecordStoreCacheName(final String key) {
@@ -121,7 +173,7 @@ public class RMSUtils {
      *
      * @param key
      * @param data
-     * @throws RecordStoreFullException 
+     * @throws RecordStoreFullException
      */
     public static void cacheWrite(final String key, final byte[] data) throws RecordStoreFullException {
         write(getRecordStoreCacheName(key), data);
@@ -133,7 +185,7 @@ public class RMSUtils {
      *
      * @param key
      * @return
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public static byte[] cacheRead(final String key) throws FlashDatabaseException {
         return read(getRecordStoreCacheName(key));
@@ -141,8 +193,8 @@ public class RMSUtils {
 
     /**
      * Delete one item from a cache
-     * 
-     * @param key 
+     *
+     * @param key
      */
     public static void cacheDelete(final String key) {
         delete(getRecordStoreCacheName(key));
@@ -153,7 +205,7 @@ public class RMSUtils {
      *
      * @param recordStoreName
      * @param data
-     * @throws RecordStoreFullException 
+     * @throws RecordStoreFullException
      */
     public static void write(String recordStoreName, final byte[] data) throws RecordStoreFullException {
         RecordStore rs = null;
@@ -215,8 +267,8 @@ public class RMSUtils {
 
     /**
      * Delete one item
-     * 
-     * @param recordStoreName 
+     *
+     * @param recordStoreName
      */
     public static void delete(String recordStoreName) {
         try {
@@ -230,18 +282,18 @@ public class RMSUtils {
 
             /**
              * Close existing references to the record store
-             * 
+             *
              * NOTE: This does not absolutely guarantee that there is no other
              * thread accessing this record store at this exact moment. If that
              * happens, you will be prevented from deleting the record store and
              * "RMS delete problem" message will show up in your debug. For this
              * reason, your application's logic may need to take into account
              * that a delete might not be completed.
-             * 
+             *
              * TODO Without adding complexity, a file locking mechanism or other
-             * solution may be added in future. Another solution might be to read
-             * and remember the RMS contents on startup, use that as an in-memory
-             * index... Still expensive. -paul
+             * solution may be added in future. Another solution might be to
+             * read and remember the RMS contents on startup, use that as an
+             * in-memory index... Still expensive. -paul
              */
             for (int i = 0; i < recordStores.length; i++) {
                 try {
@@ -264,9 +316,9 @@ public class RMSUtils {
 
     /**
      * Shorten the name to fit within the 32 character limit imposed by RMS.
-     * 
+     *
      * @param recordStoreName
-     * @return 
+     * @return
      */
     public static String truncateRecordStoreName(String recordStoreName) {
         if (recordStoreName.length() > MAX_RECORD_NAME_LENGTH) {
@@ -281,7 +333,7 @@ public class RMSUtils {
      *
      * @param recordStoreName
      * @return
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public static byte[] read(String recordStoreName) throws FlashDatabaseException {
         RecordStore rs = null;

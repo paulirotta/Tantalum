@@ -32,16 +32,59 @@ import org.tantalum.util.L;
 
 /**
  * Persistent storage implementation for J2ME
- * 
+ *
  * @author phou
  */
-public final class RMSCache implements FlashCache {
+public final class RMSCache extends FlashCache {
+    /**
+     * Get the key with the priority prepended to create a key that is uniquely
+     * stamped as belonging to this cache.
+     *
+     * The cache implementation is a flat hashtable structure. The key must thus
+     * be marked to indicate the "path" of the specific cache to which it
+     * belongs.
+     *
+     * @param key
+     * @return
+     */
+    private String getPriorityKey(final String key) {
+        return priority + key;
+    }
 
-    public byte[] getData(final String key) throws FlashDatabaseException {
+    /**
+     * Remove the priority from the beginning of the key
+     *
+     * @param priorityKey
+     * @return
+     */
+    private String getKeyPriorityStripped(final String priorityKey) {
+        return priorityKey.substring(1);
+    }
+
+    /**
+     * Get one item from flash memory
+     *
+     * @param key
+     * @return
+     * @throws FlashDatabaseException
+     */
+    public byte[] getData(String key) throws FlashDatabaseException {
+        key = getPriorityKey(key);
+
         return RMSUtils.cacheRead(key);
     }
 
-    public void putData(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException {
+    /**
+     * Add one item to flash memory
+     *
+     * @param key
+     * @param bytes
+     * @throws FlashFullException
+     * @throws FlashDatabaseException
+     */
+    public void putData(String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException {
+        key = getPriorityKey(key);
+
         try {
             RMSUtils.cacheWrite(key, bytes);
         } catch (RecordStoreFullException ex) {
@@ -50,11 +93,69 @@ public final class RMSCache implements FlashCache {
         }
     }
 
-    public void removeData(final String key) {
+    /**
+     * Remove one item from flash memory
+     *
+     * @param key
+     */
+    public void removeData(String key) {
+        key = getPriorityKey(key);
+
         RMSUtils.cacheDelete(key);
     }
 
+    /**
+     * Get a list of flash memory cache contents
+     *
+     * @return
+     * @throws FlashDatabaseException
+     */
     public Vector getKeys() throws FlashDatabaseException {
-        return RMSUtils.getCachedRecordStoreNames();
+        final Vector keys = RMSUtils.getCachedRecordStoreNames();
+        final String prefix = String.valueOf(priority);
+
+        for (int i = keys.size() - 1; i >= 0; i--) {
+            final String key = (String) keys.elementAt(i);
+
+            if (key.startsWith(prefix)) {
+                keys.setElementAt(getKeyPriorityStripped(key), i);
+            } else {
+                /**
+                 * From some other RMS cache, but not the same priority tag
+                 */
+                keys.removeElementAt(i);
+            }
+        }
+
+        return keys;
+    }
+
+    /**
+     * Clear everything from flash memory for this specific cache
+     */
+    public void clear() {
+        try {
+            //#debug
+            L.i("Clear RMS cache", "" + priority);
+
+            final Vector keys = getKeys();
+
+            for (int i = keys.size() - 1; i >= 0; i--) {
+                final String key = (String) keys.elementAt(i);
+
+                try {
+                    //#debug
+                    L.i("Clear RMS, remove one item, cache priority=" + priority, "key=" + key);
+                    removeData(key);
+                } catch (Exception e) {
+                    //#debug
+                    L.e("Problem during clear() of RMSCache, will continue to try next item", key, e);
+                }
+            }
+        } catch (FlashDatabaseException e) {
+            //#debug
+            L.e("Problem during clear() of RMSCache- aborting clear()", "cache priority=" + priority, e);
+            RMSUtils.wipeRMS();
+        }
     }
 }
