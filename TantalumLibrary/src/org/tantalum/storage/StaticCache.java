@@ -509,8 +509,12 @@ public class StaticCache {
         final Task task = new Task() {
             protected Object doInBackground(final Object in) {
                 synchronized (MUTEX) {
+                    //#debug
+                    L.i("Heap cached clear start", "" + priority);
                     cache.clear();
                     init();
+                    //#debug
+                    L.i("Heap cached cleared", "" + priority);
                 }
                 
                 return in;
