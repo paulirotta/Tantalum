@@ -24,7 +24,6 @@
 package org.tantalum.j2me;
 
 import javax.microedition.midlet.MIDlet;
-import javax.microedition.midlet.MIDletStateChangeException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Worker;
 
@@ -37,17 +36,32 @@ import org.tantalum.Worker;
  * @author phou
  */
 public abstract class TantalumMIDlet extends MIDlet {
+    /**
+     * A suggested number of background Worker threads for this platform. Use
+     * this if you do not have a specific reason to increase or decrease it.
+     * More threads means more concurrent operations such as HTTP GET, but can
+     * increase context switching overhead and contention for scarce bandwidth
+     * under poor network conditions. More threads is more useful on multi-core
+     * hardware.
+     *
+     * Series40 phones have one core, but fairly low context switching overhead
+     * so concurrency works well. If you find foreground tasks bogging down or
+     * too much network contention when there are parallel HTTP GET operations,
+     * try reducing the number of threads to 2.
+     */
+    protected static final int DEFAULT_NUMBER_OF_WORKER_THREADS = 4;
 
     /**
      * If you create a MIDlet constructor, you must call super() as the first
      * line of your MIDlet's constructor. Alternatively, you can call
      * Worker.init() yourself with custom parameters for special needs.
      *
+     * @param numberOfWorkerThreads
      */
-    protected TantalumMIDlet() {
+    protected TantalumMIDlet(int numberOfWorkerThreads) {
         super();
 
-        PlatformUtils.setProgram(this);
+        PlatformUtils.getInstance().setProgram(this, numberOfWorkerThreads);
     }
 
     /**

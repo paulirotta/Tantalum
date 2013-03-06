@@ -40,7 +40,7 @@ public class WeakHashCacheTest extends TestCase {
     public WeakHashCacheTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(5, "WeakHashCacheTest");
-        PlatformUtils.setProgram(this);
+        PlatformUtils.getInstance().setProgram(this, 4);
     }
 
     /**

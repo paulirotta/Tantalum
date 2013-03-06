@@ -108,6 +108,10 @@ public final class RMSUtils {
      */
     public Vector getCachedRecordStoreNames() {
         final String[] rs = RecordStore.listRecordStores();
+        
+        if (rs == null) {
+            return new Vector();
+        }
         final Vector v = new Vector(rs.length);
 
         for (int i = 0; i < rs.length; i++) {

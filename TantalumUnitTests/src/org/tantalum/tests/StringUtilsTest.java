@@ -45,7 +45,7 @@ public class StringUtilsTest extends TestCase {
         //The first parameter of inherited constructor is the number of test cases
         super(4, "StringUtilsTest");
 
-        PlatformUtils.setProgram(this); // Init debug
+        PlatformUtils.getInstance().setProgram(this, 4); // Init debug
     }
 
     /**

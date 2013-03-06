@@ -311,7 +311,7 @@ public abstract class Task implements Workable {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
         //#mdebug
-        if (PlatformUtils.isUIThread() && timeout > 100) {
+        if (PlatformUtils.getInstance().isUIThread() && timeout > 100) {
             L.i("WARNING- slow Task.join() on UI Thread", "timeout=" + timeout + " " + this);
         }
         //#enddebug
@@ -425,7 +425,7 @@ public abstract class Task implements Workable {
             throw new IllegalArgumentException("Can not joinAll() with timeout < 0: timeout=" + timeout);
         }
         //#mdebug
-        if (PlatformUtils.isUIThread() && timeout > 100) {
+        if (PlatformUtils.getInstance().isUIThread() && timeout > 100) {
             L.i("WARNING- slow Task.joinAll() on UI Thread", "timeout=" + timeout);
         }
         //#enddebug
@@ -565,7 +565,7 @@ public abstract class Task implements Workable {
         }
 
         if (status == CANCELED || status == EXCEPTION) {
-            PlatformUtils.runOnUiThread(new Runnable() {
+            PlatformUtils.getInstance().runOnUiThread(new Runnable() {
                 public void run() {
                     //#debug
                     L.i("Task onCanceled()", Task.this.toString());
@@ -666,7 +666,7 @@ public abstract class Task implements Workable {
                 t = chainedTask;
             }
             if (this instanceof UITask && doRun) {
-                PlatformUtils.runOnUiThread((UITask) this);
+                PlatformUtils.getInstance().runOnUiThread((UITask) this);
             }
             if (t != null) {
                 //#debug

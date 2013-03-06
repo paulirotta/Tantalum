@@ -46,8 +46,7 @@ public class TaskTest extends TestCase {
         //The first parameter of inherited constructor is the number of test cases
         super(19, "TaskTest");
 
-        PlatformUtils.setNumberOfWorkers(2);
-        PlatformUtils.setProgram(this);
+        PlatformUtils.getInstance().setProgram(this, 2);
     }
 
     /**
@@ -1071,13 +1070,13 @@ public class TaskTest extends TestCase {
         System.out.println("cancelSelf");
         final Task task1 = new Task("1") {
             protected Object doInBackground(Object in) {
-                assertNotEquals("doInBackground() blue must not run on UI thread", true, PlatformUtils.isUIThread());
+                assertNotEquals("doInBackground() blue must not run on UI thread", true, PlatformUtils.getInstance().isUIThread());
                 setStatus(Task.CANCELED);
                 return (String) in + "2";
             }
 
             protected void onCanceled() {
-                assertEquals("onCanceld() blue must run on UI thread", true, PlatformUtils.isUIThread());
+                assertEquals("onCanceld() blue must run on UI thread", true, PlatformUtils.getInstance().isUIThread());
                 setValue("blue");
             }
         };

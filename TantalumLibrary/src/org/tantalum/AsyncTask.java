@@ -108,7 +108,7 @@ public abstract class AsyncTask extends UITask {
             }
             setStatus(EXEC_PENDING);
         }
-        PlatformUtils.runOnUiThread(new Runnable() {
+        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
                 Worker.forkSerial(AsyncTask.this, ASYNC_TASK_WORKER_INDEX);
@@ -140,7 +140,7 @@ public abstract class AsyncTask extends UITask {
         final boolean agressive = AsyncTask.agressiveThreading;
         this.params = params;
 
-        PlatformUtils.runOnUiThread(
+        PlatformUtils.getInstance().runOnUiThread(
                 new Runnable() {
                     public void run() {
                         onPreExecute();
@@ -175,7 +175,7 @@ public abstract class AsyncTask extends UITask {
      * @param progress
      */
     protected void publishProgress(final Object progress) {
-        PlatformUtils.runOnUiThread(new Runnable() {
+        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 onProgressUpdate(progress);
             }

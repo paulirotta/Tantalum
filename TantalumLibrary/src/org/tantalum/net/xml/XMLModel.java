@@ -67,7 +67,8 @@ public abstract class XMLModel extends DefaultHandler {
      * we enter each tag, and decreases as we leave.
      */
     protected int currentDepth;
-    private final Object mutex = PlatformUtils.isSingleCore() ? Worker.LARGE_MEMORY_MUTEX : new Object();
+    //TODO The following is a bit unelegant. Make it more clear.
+    private final Object MUTEX = PlatformUtils.getInstance().isSingleCore() ? Worker.LARGE_MEMORY_MUTEX : new Object();
 
     /**
      * Parse the XML document using a SAX parser.
@@ -80,7 +81,7 @@ public abstract class XMLModel extends DefaultHandler {
         if (xml == null || xml.length == 0) {
             throw new IllegalArgumentException("Attempt to XML parse a null or zero byte value");
         }
-        synchronized (mutex) {
+        synchronized (MUTEX) {
             final InputStream in = new ByteArrayInputStream(xml);
 
             qnameStack = new String[100];

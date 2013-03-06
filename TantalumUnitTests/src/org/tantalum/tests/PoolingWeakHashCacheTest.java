@@ -41,7 +41,7 @@ public class PoolingWeakHashCacheTest extends TestCase {
     public PoolingWeakHashCacheTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(3, "PoolingWeakHashCacheTest");
-        PlatformUtils.setProgram(this);
+        PlatformUtils.getInstance().setProgram(this, 4);
     }
 
     /**

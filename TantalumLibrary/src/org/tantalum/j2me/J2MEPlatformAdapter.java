@@ -33,6 +33,11 @@ import javax.microedition.io.HttpConnection;
 import javax.microedition.lcdui.Display;
 import javax.microedition.midlet.MIDlet;
 import org.tantalum.PlatformUtils;
+import org.tantalum.PlatformUtils.HttpConn;
+import org.tantalum.PlatformAdapter;
+import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.util.L;
 
 /**
  * Utilities for support of each specific platform (J2ME, Android, ..)
@@ -42,22 +47,24 @@ import org.tantalum.PlatformUtils;
  *
  * @author phou
  */
-public final class J2MEPlatformUtils extends PlatformUtils {
+public final class J2MEPlatformAdapter implements PlatformAdapter {
 
-    private static final int DEFAULT_NUMBER_OF_WORKERS = 4;
-    final Display display;
+    /**
+     * There is only one Display per application
+     *
+     */
+    public final Display display;
+    private final L log;
 
     /**
      * Create a new instance of the J2ME platform port helper class.
-     * 
+     *
      * This is created for you when your MIDlet extends AndroidMIDlet and calls
      * the super() constructor.
      */
-    public J2MEPlatformUtils() {
-        display = Display.getDisplay((MIDlet) PlatformUtils.program);
-        if (PlatformUtils.numberOfWorkers == 0) {
-            PlatformUtils.setNumberOfWorkers(DEFAULT_NUMBER_OF_WORKERS);
-        }
+    public J2MEPlatformAdapter() {
+        display = Display.getDisplay((MIDlet) PlatformUtils.getInstance().getProgram());
+        log = new J2MELog();
     }
 
     /**
@@ -70,7 +77,7 @@ public final class J2MEPlatformUtils extends PlatformUtils {
      *
      * @param action
      */
-    protected void doRunOnUiThread(final Runnable action) {
+    public void doRunOnUiThread(final Runnable action) {
         display.callSerially(action);
     }
 
@@ -81,8 +88,16 @@ public final class J2MEPlatformUtils extends PlatformUtils {
      * Do not call this directly, call Worker.shutdown() to initiate a close
      *
      */
-    protected void doNotifyDestroyed() {
-        ((MIDlet) program).notifyDestroyed();
+    public void doNotifyDestroyed() {
+        ((MIDlet) PlatformUtils.getInstance().getProgram()).notifyDestroyed();
+    }
+
+    public ImageTypeHandler doGetImageTypeHandler() {
+        return new J2MEImageTypeHandler();
+    }
+
+    public FlashCache doGetFlashCache(final char priority) {
+        return new RMSCache(priority);
     }
 
     /**
@@ -96,7 +111,7 @@ public final class J2MEPlatformUtils extends PlatformUtils {
      * @return
      * @throws IOException
      */
-    protected HttpConn doGetHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
+    public HttpConn doGetHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
 
         try {
@@ -113,6 +128,10 @@ public final class J2MEPlatformUtils extends PlatformUtils {
                 out.close();
             }
         }
+    }
+
+    public L doGetLog() {
+        return log;
     }
 
     /**

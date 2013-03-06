@@ -36,6 +36,10 @@ import org.tantalum.util.L;
  * @author phou
  */
 public final class RMSCache extends FlashCache {
+    public RMSCache(final char priority) {
+        super(priority);
+    }
+    
     /**
      * Get the key with the priority prepended to create a key that is uniquely
      * stamped as belonging to this cache.

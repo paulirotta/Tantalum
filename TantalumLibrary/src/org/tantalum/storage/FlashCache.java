@@ -23,6 +23,7 @@
  */
 package org.tantalum.storage;
 
+import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -33,11 +34,12 @@ import java.util.Vector;
  * @author phou
  */
 public abstract class FlashCache {
+    private static final Hashtable priorities = new Hashtable();
 
     /**
      * A unique local identifier for the cache.
      */
-    public char priority = Character.MIN_VALUE;
+    public final char priority;
 
     /**
      * The priority must be unique in the application.
@@ -47,10 +49,13 @@ public abstract class FlashCache {
      *
      * @param priority
      */
-    public void init(final char priority) {
-        if (this.priority != Character.MIN_VALUE) {
-            throw new IllegalStateException("FlashCache.init() can only be called once");
+    public FlashCache(final char priority) {
+        final Character c = new Character(priority);
+        if (priorities.contains(c)) {
+            throw new IllegalArgumentException("Duplicate FlashCache priority '" + priority + "' has already been created by your application. Keep a reference to this object or use a different priority");
         }
+        priorities.put(c, c);
+        
         this.priority = priority;
     }
     

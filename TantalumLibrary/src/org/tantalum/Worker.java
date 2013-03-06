@@ -476,7 +476,7 @@ public final class Worker extends Thread {
                                         --currentlyIdleCount;
                                     } else {
                                         // PHASE 2: Shutdown actions are all complete
-                                        PlatformUtils.notifyDestroyed("currentlyIdleCount=" + currentlyIdleCount);
+                                        PlatformUtils.getInstance().notifyDestroyed("currentlyIdleCount=" + currentlyIdleCount);
                                         //#mdebug
                                         L.i("Log notifyDestroyed", "");
                                         L.shutdown();

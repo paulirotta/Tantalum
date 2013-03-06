@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
+import org.tantalum.android.AndroidPlatformAdapter;
+import org.tantalum.j2me.J2MEPlatformAdapter;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
@@ -40,7 +42,7 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public abstract class PlatformUtils {
+public final class PlatformUtils {
 
     private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be J2ME MIDlet or Android Activity";
     /**
@@ -57,45 +59,40 @@ public abstract class PlatformUtils {
      * Automatically detected that we are in an Android phone
      */
     public static final int PLATFORM_ANDROID = 2;
-    private static int platform = PLATFORM_NOT_INITIALIZED;
+    private int platform = PLATFORM_NOT_INITIALIZED;
+    private PlatformAdapter platformAdapter = null;
     /**
      * How many Worker threads have been started
      */
-    protected static int numberOfWorkers = 0;
-    /**
-     * Once PlatformUtils.setProgram() has been called at startup, you can
-     * access the platform-specific platformUtils object here.
-     */
-    public static PlatformUtils platformUtils = null;
+    protected int numberOfWorkers = 0;
     /**
      * The base class for the application on this platform. On J2ME this is a
      * MIDlet, on Android this is an Activity
      */
-    protected static Object program;
+    protected Object program;
     /**
      * The user interface thread for this program. This is initialized shortly
      * after application startup.
      */
-    protected static volatile Thread uiThread = null;
+    protected volatile Thread uiThread = null;
     /**
      * The platform-specific persistent memory handler
      */
-    protected static FlashCache flashCache;
+    protected FlashCache flashCache;
 
     /**
-     * Call this at program startup before calling PlatformUtils.setProgram()
-     *
-     * If you do not explicitly call this, a default number of workers
-     * appropriate for the platform will be used. This is currently 4 generic
-     * worker threads on J2ME and 8 generic worker threads on Android.
-     *
-     * @param numberOfWorkers
+     * Singleton constructor
      */
-    public static synchronized void setNumberOfWorkers(final int numberOfWorkers) {
-        if (PlatformUtils.numberOfWorkers != 0) {
-            throw new IllegalArgumentException("Move your call to setNumberOfWorkers(" + numberOfWorkers + ") earlier in the boostrap process. It can only be set once, but was already defaulted to " + PlatformUtils.numberOfWorkers +". It must be set BEFORE the application is initialized.");
-        }
-        PlatformUtils.numberOfWorkers = numberOfWorkers;
+    private PlatformUtils() {
+    }
+
+    private static final class PlatformUtilsHolder {
+
+        private static final PlatformUtils instance = new PlatformUtils();
+    }
+
+    public static PlatformUtils getInstance() {
+        return PlatformUtils.PlatformUtilsHolder.instance;
     }
 
     /**
@@ -107,38 +104,33 @@ public abstract class PlatformUtils {
      *
      * @param program
      */
-    public static synchronized void setProgram(final Object program) {
-        PlatformUtils.program = program;
+    public void setProgram(final Object program, final int numberOfWorkers) {
+        if (this.numberOfWorkers != 0) {
+            throw new UnsupportedOperationException("You can only call PlatformUtils.getInstance().setProgram() one time per application");
+        }
+        if (numberOfWorkers < 2 || numberOfWorkers > 16) {
+            throw new IllegalArgumentException("Less than 2 or more than 16 workers threads is not supported: " + numberOfWorkers);
+        }
+
+        this.program = program;
+        this.numberOfWorkers = numberOfWorkers;
 
         try {
             if (Class.forName("org.tantalum.android.TantalumActivity").isAssignableFrom(program.getClass())) {
-                PlatformUtils.platform = PLATFORM_ANDROID;
-                PlatformUtils.program = program;
-                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantalum.android.AndroidPlatformUtils").newInstance();
-                Worker.init(numberOfWorkers);
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        uiThread = Thread.currentThread();
-                    }
-                });
-
+                platform = PLATFORM_ANDROID;
+                platformAdapter = new AndroidPlatformAdapter();
+                init();
                 return;
             }
         } catch (Throwable t) {
             System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
         }
         try {
-            if (Class.forName("org.tantalum.j2me.TantalumMIDlet").isAssignableFrom(program.getClass()) ||
-                        program.getClass().getName().toLowerCase().indexOf("test") > 0) {
-                PlatformUtils.platform = PLATFORM_J2ME;
-                PlatformUtils.platformUtils = (PlatformUtils) Class.forName("org.tantalum.j2me.J2MEPlatformUtils").newInstance();
-                Worker.init(numberOfWorkers);
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        uiThread = Thread.currentThread();
-                    }
-                });
-
+            if (Class.forName("org.tantalum.j2me.TantalumMIDlet").isAssignableFrom(program.getClass())
+                    || program.getClass().getName().toLowerCase().indexOf("test") > 0) {
+                platform = PLATFORM_J2ME;
+                platformAdapter = new J2MEPlatformAdapter();
+                init();
                 return;
             }
         } catch (Throwable t) {
@@ -154,8 +146,17 @@ public abstract class PlatformUtils {
      *
      * @return
      */
-    public static Object getProgram() {
+    public Object getProgram() {
         return program;
+    }
+
+    protected void init() {
+        Worker.init(numberOfWorkers);
+        runOnUiThread(new Runnable() {
+            public void run() {
+                uiThread = Thread.currentThread();
+            }
+        });
     }
 
     /**
@@ -163,19 +164,20 @@ public abstract class PlatformUtils {
      *
      * @return
      */
-    public static boolean isUIThread() {
+    public boolean isUIThread() {
         return Thread.currentThread() == uiThread;
     }
 
     /**
-     * Indicate if this is probably a single core device and a hence parallel fork()
-     * of CPU-intensive code is unlikely to lead to a speedup and may lead to temporarily
-     * increased memory consumption.
-     * 
-     * @return 
+     * Indicate if this is probably a single core device and a hence parallel
+     * fork() of CPU-intensive code is unlikely to lead to a speedup and may
+     * lead to temporarily increased memory consumption.
+     *
+     * @return
      */
-    public static boolean isSingleCore() {
-        return PlatformUtils.platform == PLATFORM_J2ME;
+    public boolean isSingleCore() {
+        //TODO check Android devices for number of cores at start time
+        return PlatformUtils.getInstance().platform == PLATFORM_J2ME;
     }
 
     /**
@@ -186,44 +188,19 @@ public abstract class PlatformUtils {
      *
      * @param reasonDestroyed
      */
-    public static void notifyDestroyed(final String reasonDestroyed) {
+    public void notifyDestroyed(final String reasonDestroyed) {
+        //#debug
         L.i("Call to notifyDestroyed", reasonDestroyed);
-        platformUtils.doNotifyDestroyed();
+        platformAdapter.doNotifyDestroyed();
     }
-
-    /**
-     * The platform-specific life cycle implementation of telling the phone the
-     * application is ready to terminate.
-     */
-    protected abstract void doNotifyDestroyed();
 
     /**
      * Get a persistent cache implementation appropriate for this phone platform
      *
      * @return
      */
-    public static synchronized FlashCache getFlashCache() {
-        if (flashCache == null) {
-            try {
-                switch (PlatformUtils.platform) {
-                    case PLATFORM_J2ME:
-                        flashCache = (FlashCache) Class.forName("org.tantalum.j2me.RMSCache").newInstance();
-                        break;
-
-                    case PLATFORM_ANDROID:
-                        flashCache = (FlashCache) Class.forName("org.tantalum.android.AndroidCache").newInstance();
-                        break;
-
-                    default:
-                        throw new UnsupportedOperationException("GET FLASH CACHE: " + UNSUPPORTED_PLATFORM_MESSAGE);
-                }
-            } catch (Throwable t) {
-                //#debug
-                L.e("Can not getFlashCache", platformUtils.toString(), t);
-            }
-        }
-
-        return flashCache;
+    public FlashCache getFlashCache(final char priority) {
+        return platformAdapter.doGetFlashCache(priority);
     }
 
     /**
@@ -235,28 +212,8 @@ public abstract class PlatformUtils {
      *
      * @return
      */
-    public static synchronized ImageTypeHandler getImageTypeHandler() {
-        ImageTypeHandler imageTypeHandler = null;
-
-        try {
-            switch (PlatformUtils.platform) {
-                case PLATFORM_J2ME:
-                    imageTypeHandler = (ImageTypeHandler) Class.forName("org.tantalum.j2me.J2MEImageTypeHandler").newInstance();
-                    break;
-
-                case PLATFORM_ANDROID:
-                    imageTypeHandler = (ImageTypeHandler) Class.forName("org.tantalum.android.AndroidImageTypeHandler").newInstance();
-                    break;
-
-                default:
-                    throw new UnsupportedOperationException("GET IMAGE TYPE HANDLER: " + UNSUPPORTED_PLATFORM_MESSAGE);
-            }
-        } catch (Throwable t) {
-            //#debug
-            L.e("Can not getImageTypeHandler()", platformUtils.toString(), t);
-        }
-
-        return imageTypeHandler;
+    public ImageTypeHandler getImageTypeHandler() {
+        return platformAdapter.doGetImageTypeHandler();
     }
 
     /**
@@ -267,27 +224,8 @@ public abstract class PlatformUtils {
      *
      * @return
      */
-    public static synchronized L getLog() {
-        L log = null;
-        try {
-            switch (PlatformUtils.platform) {
-                case PLATFORM_J2ME:
-                    log = (L) Class.forName("org.tantalum.j2me.J2MELog").newInstance();
-                    break;
-
-                case PLATFORM_ANDROID:
-                    log = (L) Class.forName("org.tantalum.android.AndroidLog").newInstance();
-                    break;
-
-                default:
-                    throw new UnsupportedOperationException("LOG: " + UNSUPPORTED_PLATFORM_MESSAGE);
-            }
-        } catch (Throwable t) {
-            //#debug
-            System.out.println("Can not init platform log " + platformUtils.toString() + " : " + t);
-        }
-
-        return log;
+    public L getLog() {
+        return platformAdapter.doGetLog();
     }
 
     /**
@@ -305,16 +243,9 @@ public abstract class PlatformUtils {
      *
      * @param action
      */
-    public static void runOnUiThread(final Runnable action) {
-        PlatformUtils.platformUtils.doRunOnUiThread(action);
+    public void runOnUiThread(final Runnable action) {
+        platformAdapter.doRunOnUiThread(action);
     }
-
-    /**
-     * Platform-specific implementation of runOnUiThread
-     *
-     * @param action
-     */
-    protected abstract void doRunOnUiThread(Runnable action);
 
     /**
      * Create an HTTP GET connection appropriate for this phone platform
@@ -325,8 +256,8 @@ public abstract class PlatformUtils {
      * @return
      * @throws IOException
      */
-    public static HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
-        return PlatformUtils.platformUtils.doGetHttpConn(url, requestPropertyKeys, requestPropertyValues, null, "GET");
+    public HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
+        return platformAdapter.doGetHttpConn(url, requestPropertyKeys, requestPropertyValues, null, "GET");
     }
 
     /**
@@ -339,22 +270,9 @@ public abstract class PlatformUtils {
      * @return
      * @throws IOException
      */
-    public static HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
-        return PlatformUtils.platformUtils.doGetHttpConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
+    public  HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
+        return PlatformUtils.getInstance().platformAdapter.doGetHttpConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
     }
-
-    /**
-     * Create an HTTP PUT connection appropriate for this phone platform
-     *
-     * @param url
-     * @param requestPropertyKeys
-     * @param requestPropertyValues
-     * @param bytes
-     * @param requestMethod
-     * @return
-     * @throws IOException
-     */
-    protected abstract HttpConn doGetHttpConn(String url, Vector requestPropertyKeys, Vector requestPropertyValues, byte[] bytes, String requestMethod) throws IOException;
 
     /**
      * A convenience class abstracting HTTP connection operations between

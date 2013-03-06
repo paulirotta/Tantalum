@@ -23,6 +23,7 @@
  */
 package org.tantalum.android;
 
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
@@ -37,9 +38,11 @@ public final class AndroidImageTypeHandler extends ImageTypeHandler {
 
     public Object convertToUseForm(final byte[] bytes) {
         try {
-            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            
-            //TODO downscale the image according to ImageTypeHandler parameters. In most cases not needed- Android UI will take care of that
+            Bitmap b = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            if (maxWidth == SCALING_DISABLED || maxHeight == SCALING_DISABLED) {
+                return b;
+            }
+            return Bitmap.createScaledBitmap(b, maxWidth, maxHeight, true);
         } catch (IllegalArgumentException e) {
             L.e("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
             throw e;

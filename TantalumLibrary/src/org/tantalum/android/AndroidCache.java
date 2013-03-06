@@ -45,6 +45,21 @@ import org.tantalum.util.L;
  */
 public final class AndroidCache extends FlashCache {
 
+    public AndroidCache(final char priority) {
+        super(priority);
+
+        helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION);
+        Worker.forkShutdownTask(new Workable() {
+            public Object exec(final Object in2) {
+                if (db != null) {
+                    db.close();
+                }
+                db = null;
+
+                return in2;
+            }
+        });
+    }
     private SQLiteOpenHelper helper;
     /**
      * Database version number
@@ -57,7 +72,7 @@ public final class AndroidCache extends FlashCache {
     /**
      * Database table name
      */
-    private final String TABLE_NAME = "Tantalum_Table" +  + priority;
+    private final String TABLE_NAME = "Tantalum_Table" + +priority;
     /**
      * Database id column tag
      */
@@ -88,26 +103,6 @@ public final class AndroidCache extends FlashCache {
      */
     public static void setContext(final Context c) {
         context = c;
-    }
-
-    /**
-     * Create the persistent memory database singleton
-     *
-     */
-    public void init(final char priority) {
-        super.init(priority);
-        
-        helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION);
-        Worker.forkShutdownTask(new Workable() {
-            public Object exec(final Object in2) {
-                if (db != null) {
-                    db.close();
-                }
-                db = null;
-
-                return in2;
-            }
-        });
     }
 
     /**
@@ -261,9 +256,9 @@ public final class AndroidCache extends FlashCache {
     }
 
     /**
-     * Remove all elements from this cache. Since there is a different table
-     * for each cache, other caches still contain values.
-     * 
+     * Remove all elements from this cache. Since there is a different table for
+     * each cache, other caches still contain values.
+     *
      */
     public void clear() {
         db.execSQL(CLEAR_TABLE);

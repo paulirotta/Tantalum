@@ -218,9 +218,9 @@ public class HttpGetter extends Task {
                 if (postMessage == null) {
                     throw new IllegalArgumentException("null HTTP POST- did you forget to call HttpPoster.this.setMessage(byte[]) ? : " + key);
                 }
-                httpConn = PlatformUtils.getHttpPostConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
+                httpConn = PlatformUtils.getInstance().getHttpPostConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
             } else {
-                httpConn = PlatformUtils.getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
+                httpConn = PlatformUtils.getInstance().getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
             }
 
             final InputStream inputStream = httpConn.getInputStream();

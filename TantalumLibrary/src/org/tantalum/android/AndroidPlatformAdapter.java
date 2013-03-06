@@ -23,6 +23,7 @@
  */
 package org.tantalum.android;
 
+import org.tantalum.PlatformAdapter;
 import android.app.Activity;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,50 +33,43 @@ import java.net.URL;
 import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.PlatformUtils;
+import org.tantalum.PlatformUtils.HttpConn;
+import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.util.L;
 
 /**
  * Android-specific support routines for Tantalum
  *
  * @author phou
  */
-public final class AndroidPlatformUtils extends PlatformUtils {
+public final class AndroidPlatformAdapter implements PlatformAdapter {
 
-    /**
-     * The number of Worker threads initialized on an Android phone. You can
-     * override this behavior by calling PlatformUtils.setNumberOfWorkers() at
-     * program startup.
-     */
-    public static final int DEFAULT_NUMBER_OF_WORKERS = 8;
+    private final L log;
 
-    /**
-     * Create an Android-specific implementation of the PlatformUtils utility class.
-     * 
-     */
-    public AndroidPlatformUtils() {
-        if (PlatformUtils.numberOfWorkers == 0) {
-            PlatformUtils.setNumberOfWorkers(DEFAULT_NUMBER_OF_WORKERS);
-        }
+    public AndroidPlatformAdapter() {
+        log = new AndroidLog();
     }
 
     /**
      * Queue the action to the Android UI thread
-     * 
-     * @param action 
+     *
+     * @param action
      */
-    protected void doRunOnUiThread(final Runnable action) {
-        ((Activity) program).runOnUiThread(action);
+    public void doRunOnUiThread(final Runnable action) {
+        ((Activity) PlatformUtils.getInstance().getProgram()).runOnUiThread(action);
     }
 
     /**
      * End the Android Activity class. This will cause the phone to remove the
      * program from the display and free resources.
-     * 
-     * Do not call this automatically. It is called for you when the user navigates
-     * to another Activity, or asynchronously after a slight delay when 
-     * you call Worker.shutdown() to terminate the program.
+     *
+     * Do not call this automatically. It is called for you when the user
+     * navigates to another Activity, or asynchronously after a slight delay
+     * when you call Worker.shutdown() to terminate the program.
      */
-    protected void doNotifyDestroyed() {
-        ((Activity) program).finish();
+    public void doNotifyDestroyed() {
+        ((Activity) PlatformUtils.getInstance().getProgram()).finish();
     }
 
     /**
@@ -85,7 +79,7 @@ public final class AndroidPlatformUtils extends PlatformUtils {
      * @param requestPropertyKeys header tags for the server
      * @param requestPropertyValues values associated with each header key
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public static HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
         final AndroidHttpConn httpConn = new AndroidHttpConn(url, requestPropertyKeys, requestPropertyValues);
@@ -102,7 +96,7 @@ public final class AndroidPlatformUtils extends PlatformUtils {
      * @return
      * @throws IOException
      */
-    protected HttpConn doGetHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
+    public HttpConn doGetHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
         final boolean doOutput = bytes != null;
 
@@ -124,6 +118,18 @@ public final class AndroidPlatformUtils extends PlatformUtils {
         }
     }
 
+    public L doGetLog() {
+        return log;
+    }
+
+    public FlashCache doGetFlashCache(final char priority) {
+        return new AndroidCache(priority);
+    }
+
+    public ImageTypeHandler doGetImageTypeHandler() {
+        return new AndroidImageTypeHandler();
+    }
+
     /**
      * A convenience class abstracting HTTP connection operations between
      * different platforms
@@ -135,14 +141,14 @@ public final class AndroidPlatformUtils extends PlatformUtils {
 
         /**
          * Create an Android-specific handler for HttpConnecions
-         * 
+         *
          * This is done for you when you use the HttpGetter and similar utility
          * classes. You generally do not create this class directly.
-         * 
+         *
          * @param url
          * @param requestPropertyKeys
          * @param requestPropertyValues
-         * @throws IOException 
+         * @throws IOException
          */
         public AndroidHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
             httpConnection = (HttpURLConnection) new URL(url).openConnection();
@@ -153,8 +159,9 @@ public final class AndroidPlatformUtils extends PlatformUtils {
 
         /**
          * Get the InputStream associated with this HTTP connection
+         *
          * @return
-         * @throws IOException 
+         * @throws IOException
          */
         public InputStream getInputStream() throws IOException {
             if (is == null) {
@@ -166,9 +173,9 @@ public final class AndroidPlatformUtils extends PlatformUtils {
 
         /**
          * Get the HTTP response code returned by the server
-         * 
+         *
          * @return
-         * @throws IOException 
+         * @throws IOException
          */
         public int getResponseCode() throws IOException {
             return httpConnection.getResponseCode();
@@ -176,9 +183,9 @@ public final class AndroidPlatformUtils extends PlatformUtils {
 
         /**
          * Get the HTTP headers returned from the server
-         * 
+         *
          * @param headers
-         * @throws IOException 
+         * @throws IOException
          */
         public void getResponseHeaders(final Hashtable headers) throws IOException {
             for (int i = 0; i < 10000; i++) {
@@ -193,10 +200,10 @@ public final class AndroidPlatformUtils extends PlatformUtils {
 
         /**
          * Add an HTTP header property which will be set to the server
-         * 
+         *
          * @param key
          * @param value
-         * @throws IOException 
+         * @throws IOException
          */
         public void setRequestProperty(final String key, final String value) throws IOException {
             httpConnection.setRequestProperty(key, value);
@@ -215,11 +222,11 @@ public final class AndroidPlatformUtils extends PlatformUtils {
 
         /**
          * Close the InputStream associated with this connection.
-         * 
+         *
          * The underlying Android HTTP 1.1 connection implementation probably
          * remains connected to the server for some time and will be re-used
-         * 
-         * @throws IOException 
+         *
+         * @throws IOException
          */
         public final void close() throws IOException {
             if (is != null) {

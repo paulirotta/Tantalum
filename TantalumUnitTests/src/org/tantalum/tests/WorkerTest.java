@@ -36,20 +36,15 @@ import jmunit.framework.cldc11.TestCase;
  * @author phou
  */
 public class WorkerTest extends TestCase {
-
-    static {
-        PlatformUtils.setNumberOfWorkers(5); // We must call this first
-    }
-
     /**
      * Unit tests for the Worker class
      *
      */
     public WorkerTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(3, "WorkerTest");
+        super(2, "WorkerTest");
 
-        PlatformUtils.setProgram(this);
+        PlatformUtils.getInstance().setProgram(this, 5);
     }
 
     /**
@@ -65,9 +60,6 @@ public class WorkerTest extends TestCase {
                 break;
             case 1:
                 testFork();
-                break;
-            case 2:
-                testSetNumberOfWorkers();
                 break;
             default:
                 break;
@@ -134,16 +126,5 @@ public class WorkerTest extends TestCase {
                 return in;
             }
         });
-    }
-
-    public void testSetNumberOfWorkers() throws AssertionFailedException {
-        System.out.println("setNumberOfWorkers");
-        assertEquals(5, Worker.getNumberOfWorkers());
-        try {
-            PlatformUtils.setNumberOfWorkers(8);
-            fail("PlatformUtils.setNumberOfWorkers(8) should not be allowed, app has already started and num workers was fixed");
-        } catch (IllegalArgumentException e) {
-            // Correct execution path
-        }
     }
 }

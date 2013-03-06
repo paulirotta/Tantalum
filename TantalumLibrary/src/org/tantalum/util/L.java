@@ -34,7 +34,6 @@ public abstract class L {
 
 //#debug
     private static final long startTime = System.currentTimeMillis();
-    private static L log = PlatformUtils.getLog();
 
     /**
      * To enable logging from a phone connected to a computer by a USB cable,
@@ -48,7 +47,7 @@ public abstract class L {
      */
     public static void startUsbDebug() {
 //#debug
-        L.log.routeDebugOutputToUsbSerialPort();
+        PlatformUtils.getInstance().getLog().routeDebugOutputToUsbSerialPort();
     }
 
 //#mdebug
@@ -69,7 +68,7 @@ public abstract class L {
     public final static void i(final String tag, final String message) {
 //#mdebug
         final StringBuffer sb = getMessage(tag, message);
-        log.printMessage(sb, null);
+        PlatformUtils.getInstance().getLog().printMessage(sb, null);
 //#enddebug
     }
 
@@ -87,7 +86,7 @@ public abstract class L {
         sb.append(t);
 
         synchronized (L.class) {
-            log.printMessage(sb, t);
+            PlatformUtils.getInstance().getLog().printMessage(sb, t);
             if (t != null) {
                 t.printStackTrace();
             }
@@ -153,8 +152,8 @@ public abstract class L {
      */
     public static void shutdown() {
 //#mdebug
-        L.log.printMessage(new StringBuffer("Tantalum log shutdown"), null);
-        L.log.close();
+        PlatformUtils.getInstance().getLog().printMessage(new StringBuffer("Tantalum log shutdown"), null);
+        PlatformUtils.getInstance().getLog().close();
 //#enddebug
     }
 }

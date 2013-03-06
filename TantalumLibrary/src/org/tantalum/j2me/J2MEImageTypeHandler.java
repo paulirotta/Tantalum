@@ -60,11 +60,10 @@ public final class J2MEImageTypeHandler extends ImageTypeHandler {
                     Image temp = Image.createImage(bytes, 0, bytes.length);
                     final int tempW = temp.getWidth();
                     final int tempH = temp.getHeight();
-                    int[] argbIn = new int[tempW * tempH];
+                    final int[] argbIn = new int[tempW * tempH];
                     temp.getRGB(argbIn, 0, tempW, 0, 0, tempW, tempH);                    
                     temp = null;
                     img = ImageUtils.scaleImage(argbIn, argbIn, tempW, tempH, w, h, aspect, algorithm);
-                    argbIn = null;
                 }
             }
         } catch (IllegalArgumentException e) {

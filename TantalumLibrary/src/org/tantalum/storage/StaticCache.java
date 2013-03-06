@@ -50,14 +50,13 @@ import org.tantalum.util.WeakHashCache;
  */
 public class StaticCache {
 
-    private static final Hashtable priorities = new Hashtable();
     private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
     private static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
         public boolean before(final Object o1, final Object o2) {
             return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
         }
     });
-    private static final FlashCache flashCache = PlatformUtils.getFlashCache();
+    private final FlashCache flashCache;
     /**
      * A heap memory cache in the form of a Hashtable from which data can be
      * removed automatically by the virtual machine to free up memory (automatic
@@ -123,12 +122,7 @@ public class StaticCache {
      * loading into the RAM cache.
      */
     public StaticCache(final char priority, final DataTypeHandler handler) {
-        final Character c = new Character(priority);
-        if (priorities.contains(c)) {
-            throw new IllegalArgumentException("Duplicate priority database '" + priority + "' has already been created");
-        }
-        priorities.put(c, c);
-
+        flashCache = PlatformUtils.getInstance().getFlashCache(priority);
         this.priority = priority;
         this.handler = handler;
 
@@ -148,7 +142,7 @@ public class StaticCache {
 
     /**
      * Load the keys from flash memory
-     * 
+     *
      * We want to use the RAM Hashtable to know what the cache contains, even
      * though we do not pre-load from flash all the values
      */
@@ -384,7 +378,7 @@ public class StaticCache {
      * @param minSpaceToClear - in bytes
      * @return true if the requested amount of space has been cleared
      */
-    private static boolean clearSpace(final int minSpaceToClear) throws FlashDatabaseException {
+    private boolean clearSpace(final int minSpaceToClear) throws FlashDatabaseException {
         int spaceCleared = 0;
         //FIXME Not appropriate for Android. Why is there no compilation bad reference error?
         final Vector rsv = flashCache.getKeys();
@@ -423,7 +417,7 @@ public class StaticCache {
         return spaceCleared >= minSpaceToClear;
     }
 
-    private static int getByteSizeByKey(final String key) throws FlashDatabaseException {
+    private int getByteSizeByKey(final String key) throws FlashDatabaseException {
         int size = 0;
 
         final byte[] bytes = flashCache.getData(key);
@@ -516,13 +510,13 @@ public class StaticCache {
                     //#debug
                     L.i("Heap cached cleared", "" + priority);
                 }
-                
+
                 return in;
             }
         };
         task.chain(chainedTask);
         task.fork();
-        
+
         return task;
     }
 
@@ -541,7 +535,7 @@ public class StaticCache {
         synchronized (MUTEX) {
             contained = cache.containsKey(key);
         }
-        
+
         return contained;
     }
 
@@ -595,14 +589,14 @@ public class StaticCache {
                     L.e("Can not complete", "getKeysTask", e);
                     this.setStatus(Task.CANCELED);
                     flashCache.clear();
-                    
+
                     return new Vector();
                 }
             }
         };
         task.chain(chainedTask);
         task.fork();
-        
+
         return task;
     }
 
