@@ -71,7 +71,7 @@ public final class RMSCache extends FlashCache {
     public byte[] getData(String key) throws FlashDatabaseException {
         key = getPriorityKey(key);
 
-        return RMSUtils.cacheRead(key);
+        return RMSUtils.getInstance().cacheRead(key);
     }
 
     /**
@@ -86,7 +86,7 @@ public final class RMSCache extends FlashCache {
         key = getPriorityKey(key);
 
         try {
-            RMSUtils.cacheWrite(key, bytes);
+            RMSUtils.getInstance().cacheWrite(key, bytes);
         } catch (RecordStoreFullException ex) {
             L.e("RMS Full", key, ex);
             throw new FlashFullException("key = " + key + " : " + ex);
@@ -101,7 +101,7 @@ public final class RMSCache extends FlashCache {
     public void removeData(String key) {
         key = getPriorityKey(key);
 
-        RMSUtils.cacheDelete(key);
+        RMSUtils.getInstance().cacheDelete(key);
     }
 
     /**
@@ -111,7 +111,7 @@ public final class RMSCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public Vector getKeys() throws FlashDatabaseException {
-        final Vector keys = RMSUtils.getCachedRecordStoreNames();
+        final Vector keys = RMSUtils.getInstance().getCachedRecordStoreNames();
         final String prefix = String.valueOf(priority);
 
         for (int i = keys.size() - 1; i >= 0; i--) {
@@ -155,7 +155,7 @@ public final class RMSCache extends FlashCache {
         } catch (FlashDatabaseException e) {
             //#debug
             L.e("Problem during clear() of RMSCache- aborting clear()", "cache priority=" + priority, e);
-            RMSUtils.wipeRMS();
+            RMSUtils.getInstance().wipeRMS();
         }
     }
 }

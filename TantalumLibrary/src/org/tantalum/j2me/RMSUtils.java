@@ -40,7 +40,7 @@ import org.tantalum.util.LengthLimitedVector;
  *
  * @author ssaa
  */
-public class RMSUtils {
+public final class RMSUtils {
 
     private static final int MAX_RECORD_NAME_LENGTH = 32;
     private static final int MAX_OPEN_RECORD_STORES = 10;
@@ -74,11 +74,11 @@ public class RMSUtils {
         }
     };
 
-    static {
-        /**
-         * Close all open record stores during shutdown
-         *
-         */
+    /**
+     * Singleton constructor
+     * 
+     */
+    private RMSUtils() {
         Worker.forkShutdownTask(new Workable() {
             public Object exec(final Object in) {
                 //#debug
@@ -91,6 +91,14 @@ public class RMSUtils {
             }
         });
     }
+    
+    private static class RMSUtilsHolder {
+        private static RMSUtils instance = new RMSUtils();
+    }
+    
+    public static RMSUtils getInstance() {
+        return RMSUtilsHolder.instance;
+    }
 
     /**
      * Return of a list of record stores whose name indiates that they are
@@ -98,7 +106,7 @@ public class RMSUtils {
      *
      * @return
      */
-    public static Vector getCachedRecordStoreNames() {
+    public Vector getCachedRecordStoreNames() {
         final String[] rs = RecordStore.listRecordStores();
         final Vector v = new Vector(rs.length);
 
@@ -119,7 +127,7 @@ public class RMSUtils {
      * This is rather violent. Use only as a last resort, for example when
      * corruption is detected.
      */
-    public static void wipeRMS() {
+    public void wipeRMS() {
         synchronized (openRecordStores) {
             while (!openRecordStores.isEmpty()) {
                 final RecordStore rs = (RecordStore) openRecordStores.firstElement();
@@ -152,7 +160,7 @@ public class RMSUtils {
         }
     }
 
-    private static String getRecordStoreCacheName(final String key) {
+    private String getRecordStoreCacheName(final String key) {
         final StringBuffer sb = new StringBuffer(MAX_RECORD_NAME_LENGTH);
 
         sb.append(RECORD_HASH_PREFIX);
@@ -175,7 +183,7 @@ public class RMSUtils {
      * @param data
      * @throws RecordStoreFullException
      */
-    public static void cacheWrite(final String key, final byte[] data) throws RecordStoreFullException {
+    public void cacheWrite(final String key, final byte[] data) throws RecordStoreFullException {
         write(getRecordStoreCacheName(key), data);
     }
 
@@ -187,7 +195,7 @@ public class RMSUtils {
      * @return
      * @throws FlashDatabaseException
      */
-    public static byte[] cacheRead(final String key) throws FlashDatabaseException {
+    public byte[] cacheRead(final String key) throws FlashDatabaseException {
         return read(getRecordStoreCacheName(key));
     }
 
@@ -196,7 +204,7 @@ public class RMSUtils {
      *
      * @param key
      */
-    public static void cacheDelete(final String key) {
+    public void cacheDelete(final String key) {
         delete(getRecordStoreCacheName(key));
     }
 
@@ -207,7 +215,7 @@ public class RMSUtils {
      * @param data
      * @throws RecordStoreFullException
      */
-    public static void write(String recordStoreName, final byte[] data) throws RecordStoreFullException {
+    public void write(String recordStoreName, final byte[] data) throws RecordStoreFullException {
         RecordStore rs = null;
 
         try {
@@ -243,7 +251,7 @@ public class RMSUtils {
      * @return null if the record store does not exist
      * @throws RecordStoreException
      */
-    public static RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws RecordStoreException {
+    public RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws RecordStoreException {
         RecordStore rs = null;
         boolean success = false;
 
@@ -270,7 +278,7 @@ public class RMSUtils {
      *
      * @param recordStoreName
      */
-    public static void delete(String recordStoreName) {
+    public void delete(String recordStoreName) {
         try {
             final RecordStore[] recordStores;
             recordStoreName = truncateRecordStoreName(recordStoreName);
@@ -320,7 +328,7 @@ public class RMSUtils {
      * @param recordStoreName
      * @return
      */
-    public static String truncateRecordStoreName(String recordStoreName) {
+    public String truncateRecordStoreName(String recordStoreName) {
         if (recordStoreName.length() > MAX_RECORD_NAME_LENGTH) {
             recordStoreName = recordStoreName.substring(0, MAX_RECORD_NAME_LENGTH);
         }
@@ -335,7 +343,7 @@ public class RMSUtils {
      * @return
      * @throws FlashDatabaseException
      */
-    public static byte[] read(String recordStoreName) throws FlashDatabaseException {
+    public byte[] read(String recordStoreName) throws FlashDatabaseException {
         RecordStore rs = null;
         byte[] data = null;
 
