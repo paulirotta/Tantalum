@@ -146,11 +146,11 @@ subprojects {
        
         ant.wtkbuild(
             destdir: sourceSets.main.output.classesDir,
-            encoding: 'UTF-8',
+            encoding: sourceEncoding,
             source: javaVersion,
             srcDir: 'src', // TODO: Change this to a variable that's used to define the sourceSet
             includeantruntime: false,
-            preverify: false) {
+            preverify: doPreverify) {
             bootclasspath {
                 pathElement(path: configurations.bootClasspath.asPath)
             }

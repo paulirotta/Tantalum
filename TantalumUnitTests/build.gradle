@@ -28,7 +28,6 @@ task wtkpackage << {
     project.ext.jadFile = target + '/wtk/' + project.name + '.jad'
     project.ext.jarFile = target + '/wtk/' + project.name + '.jar'
 
-    println("Copying " + projectDir.toString() + "/Application Descriptor to " + project.ext.jadFile)
     ant.copy(file: projectDir.toString() + "/Application Descriptor",
         tofile: project.ext.jadFile)
 
