@@ -41,11 +41,14 @@ project.tasks["compileTestJava"].dependsOn {
 final def mainProjectCoberturaDir = mainProject.buildDir.toString() + coberturaDirectory
 final def thisProjectCoberturaDir = project.buildDir.toString() + coberturaDirectory
 
+
 /**
  * Amend the task with a pre- and a post-processsor steps, where we copy the required
  * cobertura files here and back, once finished.
  */
 def runTestsTask = project.tasks["test"]
+project.tasks['test'].bootstrapClasspath = configurations.testBootClasspath
+
 runTestsTask.doFirst {
     // Copy the coverage serialization data, as else Cobertura will create a new report file
     copy {
@@ -56,7 +59,8 @@ runTestsTask.doFirst {
 }
 
 runTestsTask.doLast {
-    // Copy the coverage serialization data back, so Cobertura report will be written based on the actual test coverage
+    // Copy the coverage serialization data back, so Cobertura 
+    // report will be written based on the actual test coverage
     copy {
         into mainProjectCoberturaDir
         from thisProjectCoberturaDir

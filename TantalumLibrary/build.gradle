@@ -27,7 +27,6 @@ artifacts {
     codeCoverageJar jarInstrumented
 }
 
-
-task compileJava(overwrite: true, dependsOn: wtkpackage) << {
+task compileJava(overwrite: true, dependsOn: wtkbuild) << {
 }
 

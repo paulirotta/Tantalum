@@ -32,12 +32,23 @@ subprojects {
 
 
     configurations {
-        bootclasspath
+        bootClasspath
+        testBootClasspath
     }
 
     dependencies {
-        compile files(wtkHome + '/lib/midp_2.1.jar')
-        compile files(wtkHome + '/lib/cldc_1.1.jar')
+        bootClasspath files(wtkHome + '/lib/midp_2.1.jar')
+        bootClasspath files(wtkHome + '/lib/cldc_1.1.jar')
+
+	testBootClasspath files(rtjar)
+	testBootClasspath files(jssejar)
+	testBootClasspath configurations.bootClasspath
+
+	compile configurations.bootClasspath 
+	// These are now valid for windows. Check Mac+Linux as well
+        compile files(wtkHome + '/lib/cdc_1.1.jar')
+        compile files(wtkHome + '/lib/jsr172_1.0.jar')
+        compile files(wtkHome + '/lib/jsr_280_1.0.jar')
 
         testCompile "junit:junit:4.11"
         testCompile 'net.sourceforge.cobertura:cobertura:1.9.4.1'
@@ -46,7 +57,7 @@ subprojects {
         testCompile "org.powermock:powermock-module-junit4:1.5"
     }
 
-
+    // Don't fail the build for static analysis warnings
     project.findbugs.ignoreFailures = true
     project.pmd.ignoreFailures = true
 
@@ -55,12 +66,8 @@ subprojects {
      */
     tasks.withType(Test) {
         scanForTestClasses = false
-        include "**/*Test.class" // whatever Ant pattern matches your test class files
+        include "**/*Test.class" // whatever Ant pattern matches the test class files
     }
-
-    compileJava.options.bootClasspath = files(wtkHome + '/lib/midp_2.1.jar') + files(wtkHome + '/lib/cldc_1.1.jar')
-
-    test.bootstrapClasspath = files(rtjar) + files(wtkHome + '/lib/midp_2.1.jar') + files(wtkHome + '/lib/cldc_1.1.jar')
 
     project.ext.target = buildDir.toString()
 
@@ -71,39 +78,64 @@ subprojects {
         }
     }
 
-// antenna ant tasks
+    // antenna ant tasks
     ant.taskdef(resource: 'antenna.properties') {
         classpath {
             pathElement(path: buildscript.configurations.classpath.asPath)
         }
     }
 
-// file names
-    project.ext.jadFile = target + '/' + jadFileName
+    // file names
     project.ext.jarFile = target + '/' + jarFileName
-    project.ext.jarFilenameTests = target + '/' + jarFileTests
 
-// wtk properties
+    // wtk properties
     ant.property(name: 'wtk.home', value: wtkHome)
     ant.property(name: 'wtk.cldc.version', value: cldcVersion)
     ant.property(name: 'wtk.midp.version', value: midpVersion)
 
-
-    task init << {
+    
+    task preverify << {
+        project.ext.errors = false
         if (wtkHome == null || ''.equals(wtkHome)) {
             println('wtkHome was not set, edit the wtkHome property in gradle.properties')
-            System.exit(1)
-        } else if (antennaDir == null || ''.equals(antennaDir)) {
+            project.ext.errors = true
+        } else if (!file(wtkHome).exists() || !file(wtkHome).isDirectory()) {
+            println('wtkHome variable must point to the installatio of the Java ME SDK')
+            project.ext.errors = true
+        }
+        
+        if (antennaDir == null || ''.equals(antennaDir)) {
             println('antennaDir was not set, edit the antennaDir property in gradle.properties')
-            System.exit(1)
+            project.ext.errors = true
         }
 
+        if (rtjar == null || ''.equals(rtjar)) {
+            println("Variable 'rtjar' is not set. You will need to point this variable on the JRE rt.jar")
+            project.ext.errors = true
+        } else if (!file(rtjar).exists() || !file(rtjar).isFile()) {       
+            println("Variable 'rtjar' must point to the runtime jar in the JRE installation")
+            project.ext.errors = true
+        }
+        
+        if (jssejar == null || ''.equals(jssejar)) {
+            println("Variable 'jssejar' is not set. You will need to point this variable on security extensions in the JRE installation")
+            project.ext.errors = true
+        } else if (!file(jssejar).exists() || !file(jssejar).isFile()) {
+            println("Variable 'jssejar' must point to the security extensions ir in the JRE installation")
+            project.ext.errors = true
+        }
+        
+        if (project.ext.errors) {
+            println("Error: Missing variables. Failing build")
+            System.exit(1)
+        }
+        
+    }
+
+    task init(dependsOn: preverify) << {
         if (buildDir.isDirectory()) {
             ant.delete(dir: sourceSets.main.output.classesDir)
         }
-
-        ant.copy(file: projectDir.toString() + "/Application Descriptor",
-                tofile: jadFile)
 
         buildDir.mkdirs()
     }
@@ -111,42 +143,20 @@ subprojects {
     task wtkbuild(dependsOn: init) << {
         sourceSets.main.output.classesDir.mkdirs()
         sourceSets.main.output.resourcesDir.mkdirs()
-
+       
         ant.wtkbuild(
-                destdir: sourceSets.main.output.classesDir,
-                encoding: 'UTF-8',
-                source: javaVersion,
-                srcDir: 'src', // TODO: Change this to a variable that's used to define the sourceSet
-                includeantruntime: false,
-                preverify: false) {
+            destdir: sourceSets.main.output.classesDir,
+            encoding: 'UTF-8',
+            source: javaVersion,
+            srcDir: 'src', // TODO: Change this to a variable that's used to define the sourceSet
+            includeantruntime: false,
+            preverify: false) {
             bootclasspath {
-                pathElement(path: configurations.bootclasspath.asPath)
+                pathElement(path: configurations.bootClasspath.asPath)
             }
             classpath {
                 pathElement(path: configurations.compile.asPath)
             }
         }
     }
-
-    task wtkpackage(dependsOn: wtkbuild) << {
-
-        ant.wtkpackage(
-                jadFile: jadFile,
-                jarFile: jarFile,
-                autoversion: doAutoversion,
-                obfuscate: doObfuscate,
-                preverify: false) {
-            bootclasspath {
-                pathElement(path: configurations.bootclasspath.asPath)
-            }
-            classpath {
-                pathElement(path: configurations.compile.asPath)
-            }
-            ant.fileSet(dir: sourceSets.main.output.classesDir.toString())
-            ant.fileSet(dir: sourceSets.main.output.resourcesDir.toString())
-        }
-    }
-
 }
-
-
