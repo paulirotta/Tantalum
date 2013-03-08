@@ -24,9 +24,9 @@ dependencies {
 /**
  * Package the MIDlet package containing the unit tests to run on a device/emulator
  */
-task wtkpackage(dependsOn: wtkbuild) {
-    project.ext.jadFile = target + '/' + project.name + '.jad'
-    project.ext.jarFile = target + '/' + project.name + '.jar'
+task wtkpackage << {
+    project.ext.jadFile = target + '/wtk/' + project.name + '.jad'
+    project.ext.jarFile = target + '/wtk/' + project.name + '.jar'
 
     println("Copying " + projectDir.toString() + "/Application Descriptor to " + project.ext.jadFile)
     ant.copy(file: projectDir.toString() + "/Application Descriptor",
@@ -50,6 +50,12 @@ task wtkpackage(dependsOn: wtkbuild) {
    
 }
 
-task compileJava(overwrite: true, dependsOn: wtkpackage) << {
+task compileJava(overwrite: true, dependsOn: wtkbuild) << {
+}
+
+project.tasks["assemble"].dependsOn {
+    [
+            wtkpackage
+    ]
 }
 
