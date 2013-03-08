@@ -25,9 +25,6 @@ subprojects {
     }
 
     apply plugin: 'java'
-    apply plugin: 'findbugs'
-    apply plugin: 'jdepend'
-    apply plugin: 'pmd'
     apply plugin: 'cobertura'
 
 
@@ -56,10 +53,6 @@ subprojects {
         testCompile "org.powermock:powermock-api-mockito:1.5"
         testCompile "org.powermock:powermock-module-junit4:1.5"
     }
-
-    // Don't fail the build for static analysis warnings
-    project.findbugs.ignoreFailures = true
-    project.pmd.ignoreFailures = true
 
     /**
      * Don't scan for test classes, as there will be an error with JavaME compiled classes

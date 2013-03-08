@@ -13,6 +13,15 @@ sourceSets {
     }
 }
 
+// Run static checks on the library code
+apply plugin: 'findbugs'
+apply plugin: 'jdepend'
+apply plugin: 'pmd'
+
+// Don't fail the build for static analysis warnings
+project.findbugs.ignoreFailures = true
+project.pmd.ignoreFailures = true
+
 configurations {
     codeCoverageJar
 }
