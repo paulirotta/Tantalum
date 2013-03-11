@@ -1,17 +1,19 @@
-Tantalum 4 Library Release Notes
-Jan 1, 2013
+Tantalum 5 Library Release Notes
+March 15, 2013
 
-You likely need to customize your IDE project properties after checkout. In
-particular, make sure external libraries such as Android.jar are properly referenced
-on your system.
+You need to create an IDE project after checkout. Since IDEs include user-specific
+settings in project files, we can not provide one directly. Note that is is strongly
+advised you create this project in a different directory than your git checkout.
+For example, if you did git clone into directory <myhomedir>/Tantalum you might want
+to have the project in the default directory for projects for your IDE such as 
+<myhomedir>/nokia_eclipse or <myhomedir>/NetBeansProjects.
 
-IDEs used:
-- Tantalum4 library and J2ME Examples: Netbeans 4.2.1
-- Other Tantalum examples available may use Nokia SDK (Eclipse with plugins) or
-  Android SDK (Eclipse with plugins).
-
-The latest source can be pulled from the respository using Mercurial. The
+The latest source can be pulled from the respository using git. The
 cross-platform example is released seperately and can be found from the link below.
-For details, see:
+
+For additional setup details, see:
+   https://github.com/TantalumMobile/Tantalum
    http://projects.developer.nokia.com/Tantalum
+
+For a good cross-platform sample project, see:
    http://projects.developer.nokia.com/picasa_viewer
