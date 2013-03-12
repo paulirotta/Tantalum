@@ -739,7 +739,7 @@ public abstract class Task {
         L.i("Begin explicit cancel task", "status=" + this.getStatusString() + " " + this);
         switch (status) {
             case EXEC_STARTED:
-                if (mayInterruptIfRunning && (Worker.interruptWorkable(this))) {
+                if (mayInterruptIfRunning && (Worker.interruptTask(this))) {
                     setStatus(CANCELED);
                     canceled = true;
                 }
@@ -747,7 +747,7 @@ public abstract class Task {
 
             case EXEC_FINISHED:
                 if (this instanceof UITask && mayInterruptIfRunning) {
-                    if (Worker.interruptWorkable(this)) {
+                    if (Worker.interruptTask(this)) {
                         break;
                     }
                 }

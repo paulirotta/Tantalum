@@ -37,7 +37,7 @@ public final class Worker extends Thread {
 
     /**
      * Start the task as soon as possible. The fork() operation will place this
-     * as the next Workable to be completed unless subsequent HIGH_PRIORITY fork
+     * as the next Task to be completed unless subsequent HIGH_PRIORITY fork
      * operations occur before a Worker start execution.
      *
      * This is the normal priority for user interface tasks where the user
@@ -157,7 +157,7 @@ public final class Worker extends Thread {
      * Worker.LOW_PRIORITY : Add an object to be executed at low priority in the
      * background on the worker thread. Execution will only begin when there are
      * no foreground tasks, and only if at least 1 Worker thread is left ready
-     * for immediate execution of normal priority Workable tasks.
+     * for immediate execution of normal priority Tasks.
      *
      * Items in the idleQueue will not be executed if shutdown() is called
      * before they begin.
@@ -245,9 +245,9 @@ public final class Worker extends Thread {
      * @param task
      * @return
      */
-    static boolean interruptWorkable(final Task task) {
+    static boolean interruptTask(final Task task) {
         if (task == null) {
-            throw new IllegalArgumentException("interruptWorkable(null) not allowed");
+            throw new IllegalArgumentException("interruptTask(null) not allowed");
         }
         synchronized (q) {
             boolean interrupted = false;
@@ -256,10 +256,10 @@ public final class Worker extends Thread {
             for (int i = 0; i < workers.length; i++) {
                 if (task.equals(workers[i].currentTask)) {
                     if (currentThread == workers[i]) {
-                        throw new IllegalArgumentException("myTask.doInBackground()...interruptWorkable(myTask): a Task can not interrupt() itself- cancel your task with normal logic, it will run faster and cleaner");
+                        throw new IllegalArgumentException("myTask.doInBackground()...interruptTask(myTask): a Task can not interrupt() itself- cancel your task with normal logic, it will run faster and cleaner");
                     }
                     //#debug
-                    L.i("Sending interrupt signal", "thread=" + workers[i].getName() + " workable=" + task);
+                    L.i("Sending interrupt signal", "thread=" + workers[i].getName() + " task=" + task);
                     interrupted = task == workers[i].currentTask;
                     if (interrupted) {
                         workers[i].interrupt();
@@ -341,7 +341,7 @@ public final class Worker extends Thread {
 
     /**
      * Call MIDlet.doNotifyDestroyed() after all current queued and shutdown
-     * Workable tasks are completed. Resources held by the system will be closed
+     * Tasks are completed. Resources held by the system will be closed
      * and queued compute such as writing to the RMS or file system will
      * complete.
      *
@@ -433,7 +433,7 @@ public final class Worker extends Thread {
                 sb.append(w.getName());
                 sb.append(" serialQsize=");
                 sb.append(w.serialQ.size());
-                sb.append(" currentWorkable=");
+                sb.append(" currentTask=");
                 sb.append(w.currentTask);
                 sb.append("] ");
             }
@@ -518,15 +518,15 @@ public final class Worker extends Thread {
                     }
                 } catch (InterruptedException e) {
                     //#debug
-                    L.i("Worker interrupted", "workable=" + currentTask);
+                    L.i("Worker interrupted", "task=" + currentTask);
                 } catch (Exception e) {
                     //#debug
-                    L.e("Uncaught worker error", "workable=" + currentTask, e);
+                    L.e("Uncaught worker error", "task=" + currentTask, e);
                 }
             }
         } catch (Throwable t) {
             //#debug
-            L.e("Fatal worker error", "workable=" + currentTask, t);
+            L.e("Fatal worker error", "task=" + currentTask, t);
         }
         //#debug
         L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);

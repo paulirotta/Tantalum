@@ -75,10 +75,6 @@ public abstract class AsyncTask extends UITask {
      * background thread. Execution is guaranteed to be in the same order
      * objects are queued.
      *
-     * NOTE: This Android use of "Runnable" is not consistent with the Tantalum
-     * standard the "Workable.exec()" is performed on a background Worker thread
-     * and "Runnable.run()" is performed on the EDT.
-     *
      * @param runnable
      */
     public static void execute(final Runnable runnable) {
