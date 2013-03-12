@@ -63,7 +63,6 @@ public abstract class JSONPoster extends HttpPoster {
                 value = "{\"base:\"" + value + "}";
             }
             jsonModel.setJSON(value);
-            setValue(jsonModel);
         } catch (Exception e) {
             //#debug
             L.e("JSONPoster HTTP response problem", key + " : " + value, e);

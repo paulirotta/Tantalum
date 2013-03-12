@@ -114,7 +114,7 @@ public class HttpGetter extends Task {
      */
     protected HttpGetter(final String key, final byte[] postMessage) {
         this(key);
-        
+
         this.postMessage = postMessage;
     }
 
@@ -122,7 +122,7 @@ public class HttpGetter extends Task {
         if (key == null) {
             return null;
         }
-        
+
         return (HttpGetter) HttpGetter.inFlightGets.get(key);
     }
 
@@ -189,10 +189,13 @@ public class HttpGetter extends Task {
      * @return - a JSONModel of the data provided by the HTTP server
      */
     public Object doInBackground(final Object url) {
+        Object out = url;
+
         this.key = (String) url;
         if (key == null || key.indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + key);
         }
+
         //#debug
         L.i(this.getClass().getName() + " start", key);
         if (duplicateTaskWeShouldJoinInsteadOfReGetting == null) {
@@ -233,7 +236,7 @@ public class HttpGetter extends Task {
                 //#debug
                 L.i(this.getClass().getName() + " start fixed_length read", key + " content_length=" + length);
                 int bytesRead = 0;
-                byte[] bytes = new byte[(int) length];
+                final byte[] bytes = new byte[(int) length];
                 while (bytesRead < bytes.length) {
                     final int br = inputStream.read(bytes, bytesRead, bytes.length - bytesRead);
                     if (br > 0) {
@@ -244,13 +247,13 @@ public class HttpGetter extends Task {
                         break;
                     }
                 }
-                setValue(bytes);
-                bytes = null;
+                out = bytes;
             } else {
                 //#debug
                 L.i(this.getClass().getName() + " start variable length read", key);
                 bos = new ByteArrayOutputStream();
-                byte[] readBuffer = new byte[16384];
+                final byte[] readBuffer = new byte[16384];
+
                 while (true) {
                     final int bytesRead = inputStream.read(readBuffer);
                     if (bytesRead > 0) {
@@ -259,8 +262,7 @@ public class HttpGetter extends Task {
                         break;
                     }
                 }
-                setValue(bos.toByteArray());
-                readBuffer = null;
+                out = bos.toByteArray();
             }
 
             //#debug
@@ -306,7 +308,7 @@ public class HttpGetter extends Task {
                     Thread.sleep(HTTP_RETRY_DELAY);
                 } catch (InterruptedException ex) {
                 }
-                doInBackground(url);
+                out = doInBackground(url);
             } else if (!success) {
                 setStatus(Task.CANCELED);
             }
@@ -314,7 +316,7 @@ public class HttpGetter extends Task {
             //#debug
             L.i("End " + this.getClass().getName(), key);
 
-            return getValue();
+            return out;
         }
     }
 
