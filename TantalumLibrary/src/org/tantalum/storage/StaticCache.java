@@ -229,21 +229,7 @@ public class StaticCache {
 
         final Task task = new GetLocalTask(key);
         task.chain(chainedTask);
-        final Object fromRamCache = synchronousRAMCacheGet(key);
-
-        if (fromRamCache != null) {
-            //#debug
-            L.i("RAM cache hit", "(" + priority + ") " + key);
-            /* 
-             * We must exec() the task to change state and complete any chained
-             * logic
-             */
-            task.exec(fromRamCache);
-        } else {
-            //#debug
-            L.i("RAM cache miss", "(" + priority + ") " + key);
-            Worker.fork(task, getPriority);
-        }
+        task.fork(getPriority);
 
         return task;
     }
@@ -388,11 +374,11 @@ public class StaticCache {
         // First: clear cached objects not currently appearing in any open cache
         for (int i = rsv.size() - 1; i >= 0; i--) {
             final String key = (String) rsv.elementAt(i);
-            final StaticCache cache = getCacheContainingKey(key);
+            final StaticCache sc = getCacheContainingKey(key);
 
-            if (cache != null) {
+            if (sc != null) {
                 spaceCleared += getByteSizeByKey(key);
-                cache.remove(key);
+                sc.remove(key);
             }
         }
         //#debug
@@ -401,12 +387,12 @@ public class StaticCache {
         // Second: remove currently cached items, first from low priority caches
         while (spaceCleared < minSpaceToClear && rsv.size() > 0) {
             for (int i = 0; i < caches.size(); i++) {
-                final StaticCache cache = (StaticCache) caches.elementAt(i);
+                final StaticCache sc = (StaticCache) caches.elementAt(i);
 
-                while (!cache.accessOrder.isEmpty() && spaceCleared < minSpaceToClear) {
-                    final String key = (String) cache.accessOrder.removeLeastRecentlyUsed();
+                while (!sc.accessOrder.isEmpty() && spaceCleared < minSpaceToClear) {
+                    final String key = (String) sc.accessOrder.removeLeastRecentlyUsed();
                     spaceCleared += getByteSizeByKey(key);
-                    cache.remove(key);
+                    sc.remove(key);
                 }
             }
         }

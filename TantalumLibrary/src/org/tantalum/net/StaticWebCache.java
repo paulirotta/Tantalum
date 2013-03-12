@@ -282,7 +282,7 @@ public class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i("StaticWebCache: not found locally, get from the web", (String) in);
-                        out = new GetWebTask((String) in, postMessage).exec(in);
+                        out = new GetWebTask((String) in, postMessage).get();
                     }
                 } catch (Exception e) {
                     //#debug
@@ -390,7 +390,7 @@ public class StaticWebCache extends StaticCache {
 
             try {
                 final HttpGetter httpGetter = httpTaskFactory.getHttpTask((String) in, postMessage);
-                out = httpGetter.exec(null);
+                out = httpGetter.get();
                 if (!httpTaskFactory.checkHttpResponse(httpGetter.getResponseCode(), httpGetter.getResponseHeaders())) {
                     //#debug
                     L.i("staticwebcache task factory rejected server response", httpGetter.toString());
