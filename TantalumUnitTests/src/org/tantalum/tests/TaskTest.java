@@ -65,7 +65,7 @@ public class TaskTest extends TestCase {
                 testSetStatus();
                 break;
             case 2:
-                testExec();
+                testDoGet();
                 break;
             case 3:
                 testJoin();
@@ -131,7 +131,7 @@ public class TaskTest extends TestCase {
     public void testFork() throws AssertionFailedException {
         System.out.println("fork");
         Task instance = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return "run";
             }
         };
@@ -158,7 +158,7 @@ public class TaskTest extends TestCase {
     public void testSetStatus() throws AssertionFailedException {
         System.out.println("setStatus");
         Task instance = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return "run";
             }
         };
@@ -168,14 +168,14 @@ public class TaskTest extends TestCase {
     }
 
     /**
-     * Test of testExec method, of class Task.
+     * Test of testDoGet method, of class Task.
      *
      * @throws AssertionFailedException
      */
-    public void testExec() throws AssertionFailedException {
-        System.out.println("exec");
+    public void testDoGet() throws AssertionFailedException {
+        System.out.println("doGet");
         Task instance = new Task("white") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + " rabbit";
             }
         };
@@ -197,7 +197,7 @@ public class TaskTest extends TestCase {
     public void testJoin() throws AssertionFailedException, Exception {
         System.out.println("join");
         Task instance = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return "run";
             }
         };
@@ -211,7 +211,7 @@ public class TaskTest extends TestCase {
         assertEquals("run", result_1);
 
         Task instance_2 = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ex) {
@@ -230,7 +230,7 @@ public class TaskTest extends TestCase {
         assertEquals("run2", result_2);
 
         Task instance_3 = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException ex) {
@@ -252,7 +252,7 @@ public class TaskTest extends TestCase {
         }
 
         Task blocker = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException ex) {
@@ -262,7 +262,7 @@ public class TaskTest extends TestCase {
             }
         };
         Task blocker2 = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException ex) {
@@ -272,7 +272,7 @@ public class TaskTest extends TestCase {
             }
         };
         Task instance_4 = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException ex) {
@@ -300,7 +300,7 @@ public class TaskTest extends TestCase {
     public void testGet() throws AssertionFailedException, Exception {
         System.out.println("get");
         Task instance = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return "result";
             }
         };
@@ -310,7 +310,7 @@ public class TaskTest extends TestCase {
         assertEquals(expResult_1, result_1);
 
         Task instance2 = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return "result2";
             }
         };
@@ -319,7 +319,7 @@ public class TaskTest extends TestCase {
         assertEquals(expResult_2, result_2);
 
         Task instance3 = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return "result3";
             }
         };
@@ -338,7 +338,7 @@ public class TaskTest extends TestCase {
     public void testSetResult() throws AssertionFailedException {
         System.out.println("setResult");
         Task instance = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return "result";
             }
         };
@@ -366,12 +366,12 @@ public class TaskTest extends TestCase {
     public void testNotifyTaskForked() throws AssertionFailedException, Exception {
         System.out.println("notifyTaskForked");
         final Task instance = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return "result";
             }
         };
         final Task t2 = (new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 synchronized (instance) {
                     try {
                         instance.wait(200);
@@ -399,7 +399,7 @@ public class TaskTest extends TestCase {
     public void testGetResult() throws AssertionFailedException {
         System.out.println("getResult");
         final Task instance = new Task("start") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in;
             }
         };
@@ -421,7 +421,7 @@ public class TaskTest extends TestCase {
     public void testToString() throws AssertionFailedException {
         System.out.println("toString");
         final Task instance = new Task("start") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in;
             }
         };
@@ -438,7 +438,7 @@ public class TaskTest extends TestCase {
     public void testJoinUI() throws AssertionFailedException, Exception {
         System.out.println("joinUI");
         final Task instance = new UITask("big") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException ex) {
@@ -466,12 +466,12 @@ public class TaskTest extends TestCase {
         final Vector errors = new Vector();
         System.out.println("cancel");
         final Task testCancelRunsToEnd = new Task("I AM") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in + " DONE";
             }
         };
         final Task testCancelInstance = new Task("test_cancel_instance") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(400);
                 } catch (InterruptedException ex) {
@@ -481,7 +481,7 @@ public class TaskTest extends TestCase {
             }
         };
         final Task testCancelInstance2 = new Task("test_cancel_instance2") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(400);
                     errors.addElement("testCancel() Task instance2 should have been interrupted");
@@ -491,7 +491,7 @@ public class TaskTest extends TestCase {
             }
         };
         final Task testCancelInstance3 = new Task("test_cancel_instance3") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in;
             }
         };
@@ -525,7 +525,7 @@ public class TaskTest extends TestCase {
         } catch (Exception e) {
         }
         final Task instance4 = new Task("instance4") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                     errors.addElement("testCancel() Task instance4 should have been interrupted 4");
@@ -535,7 +535,7 @@ public class TaskTest extends TestCase {
             }
         };
         final Task instance5 = new Task("instance5") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     instance4.join(400);
                     errors.addElement("Should have canceled doInBackground 5");
@@ -577,7 +577,7 @@ public class TaskTest extends TestCase {
         System.out.println("onCanceled");
         final Vector v = new Vector();
         final Task instance = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                     fail("testOnCanceled() Task instance should have been interrupted");
@@ -613,7 +613,7 @@ public class TaskTest extends TestCase {
     public void testDoInBackground() throws AssertionFailedException {
         System.out.println("doInBackground");
         final Task instance = new Task("ca") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "tty";
             }
         };
@@ -633,32 +633,32 @@ public class TaskTest extends TestCase {
     public void testChain() throws AssertionFailedException {
         System.out.println("chain");
         final Task instance = new Task("1") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "2";
             }
         };
         final Task instance2 = new Task("bad") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in + "3";
             }
         };
         final Task instance3 = new Task("ugly") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in + "4";
             }
         };
         final Task instanceA = new Task("A") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "B";
             }
         };
         final Task instance5 = new Task("5") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "6";
             }
         };
         final Task instance6 = new Task("BAD") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in + "7";
             }
         };
@@ -690,7 +690,7 @@ public class TaskTest extends TestCase {
     public void testGetStatus() throws AssertionFailedException {
         System.out.println("getStatus");
         final Task instanceA = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in;
             }
         };
@@ -700,7 +700,7 @@ public class TaskTest extends TestCase {
             }
         };
         final Task instance2 = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException ex) {
@@ -709,7 +709,7 @@ public class TaskTest extends TestCase {
             }
         };
         final Task instance3 = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException ex) {
@@ -741,41 +741,41 @@ public class TaskTest extends TestCase {
     public void testJoinAll() throws AssertionFailedException {
         System.out.println("joinAll");
         final Task task1 = new Task("1") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "2";
             }
         };
         final Task task2 = new Task("3") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in + "4";
             }
         };
         final Task task3 = new Task("A") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "2";
             }
         };
         final Task task4 = new Task("B") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in + "3";
             }
         };
         final Task task5a = new Task("fail_a") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 this.cancel(false);
 
                 return in + "fail";
             }
         };
         final Task task5b = new Task("fail_b") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 this.cancel(false);
 
                 return in + "fail";
             }
         };
         final Task task6 = new Task("slow") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 double j = Double.MIN_VALUE;
                 for (int i = 0; i < 1000000; i++) {
                     j = j + i * 1.01;
@@ -847,7 +847,7 @@ public class TaskTest extends TestCase {
     public void testJoinAllUI() throws AssertionFailedException {
         System.out.println("joinAllUI");
         final UITask task1 = new UITask("1") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "2";
             }
 
@@ -856,7 +856,7 @@ public class TaskTest extends TestCase {
             }
         };
         final UITask task2 = new UITask("3") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in + "4";
             }
 
@@ -865,7 +865,7 @@ public class TaskTest extends TestCase {
             }
         };
         final UITask task3 = new UITask("A") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "2";
             }
 
@@ -874,12 +874,12 @@ public class TaskTest extends TestCase {
             }
         };
         final Task task4 = new Task("B") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in + "3";
             }
         };
         final UITask task5 = new UITask("fail") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in;
             }
 
@@ -890,7 +890,7 @@ public class TaskTest extends TestCase {
             }
         };
         final UITask task6 = new UITask("slow") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return in;
             }
 
@@ -971,7 +971,7 @@ public class TaskTest extends TestCase {
     public void testCancelSelf() throws AssertionFailedException {
         System.out.println("cancelSelf");
         final UITask task1a = new UITask("1") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "2";
             }
 
@@ -982,7 +982,7 @@ public class TaskTest extends TestCase {
             }
         };
         final UITask task1b = new UITask("3") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 return (String) in + "4";
             }
 
@@ -993,7 +993,7 @@ public class TaskTest extends TestCase {
             }
         };
         final UITask task2 = new UITask("5") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 cancel(true);
 
                 return in + "6";
@@ -1004,7 +1004,7 @@ public class TaskTest extends TestCase {
             }
         };
         final UITask task3a = new UITask("7") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                 } catch (Exception e) {
@@ -1019,7 +1019,7 @@ public class TaskTest extends TestCase {
             }
         };
         final UITask task3b = new UITask("9") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
                 } catch (Exception e) {
@@ -1034,14 +1034,14 @@ public class TaskTest extends TestCase {
             }
         };
         final Task task4a = new Task("B") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 cancel(false);
 
                 return in + "C";
             }
         };
         final Task task4b = new Task("D") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 cancel(false);
 
                 return in + "E";
@@ -1082,7 +1082,7 @@ public class TaskTest extends TestCase {
     public void testCancelThread() throws AssertionFailedException {
         System.out.println("cancelSelf");
         final Task task1 = new Task("1") {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 assertNotEquals("doInBackground() blue must not run on UI thread", true, PlatformUtils.getInstance().isUIThread());
                 setStatus(Task.CANCELED);
                 return (String) in + "2";
@@ -1108,7 +1108,7 @@ public class TaskTest extends TestCase {
         final long t = System.currentTimeMillis();
 
         Task sleeper3sec = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     L.i("sleeper3", "start sleep");
                     Thread.sleep(3000);
@@ -1121,13 +1121,13 @@ public class TaskTest extends TestCase {
             }
         };
         Task sleeper3chain = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 L.i("getter3sec", "completed");
                 return new Long(System.currentTimeMillis() - t);
             }
         };
         Task sleeper4sec = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     L.i("sleeper4", "start sleep");
                     Thread.sleep(4000);
@@ -1140,7 +1140,7 @@ public class TaskTest extends TestCase {
             }
         };
         Task sleeper4chain = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 L.i("getter10sec", "completed");
                 in = new Long(System.currentTimeMillis() - t);
 

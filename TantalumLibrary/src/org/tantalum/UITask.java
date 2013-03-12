@@ -26,7 +26,7 @@ package org.tantalum;
 import org.tantalum.util.L;
 
 /**
- * A unit of work which, once the Task.doInBackground() is completed on a
+ * A unit of work which, once the Task.exec() is completed on a
  * background Worker thread, should update the user interface from the UI
  * Thread in onPostExecute().
  * 
@@ -40,7 +40,7 @@ public abstract class UITask extends Task implements Runnable {
 
     /**
      * Create a Task which will also run onPostExecute() on the user interface
-     * (UI) thread after doInBackground() completes on a Worker thread
+     * (UI) thread after exec() completes on a Worker thread
      * 
      * The initial input value of the Task is null and may be set by a previous
      * Task if this is chain()ed to another Task.
@@ -66,7 +66,7 @@ public abstract class UITask extends Task implements Runnable {
      * Task state.
      * 
      * Do not call this directly. It will be called automatically on the UI thread
-     * after doInBackground() completes successfully on a background Worker thread.
+     * after exec() completes successfully on a background Worker thread.
      */
     public final void run() {
         try {
@@ -90,7 +90,7 @@ public abstract class UITask extends Task implements Runnable {
      * @param in
      * @return
      */
-    protected Object doInBackground(final Object in) {
+    protected Object exec(final Object in) {
         return in;
     }
 

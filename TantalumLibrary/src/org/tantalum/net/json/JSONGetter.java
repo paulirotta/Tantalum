@@ -51,10 +51,10 @@ public class JSONGetter extends HttpGetter {
      * @param in
      * @return 
      */
-    public Object doInBackground(final Object in) {
+    public Object exec(final Object in) {
         String value = null;
         try {
-            value = new String((byte[]) super.doInBackground(in), "UTF8").trim();
+            value = new String((byte[]) super.exec(in), "UTF8").trim();
             if (value.startsWith("[")) {
                 // Parser expects non-array base object- add one
                 value = "{\"base:\"" + value + "}";

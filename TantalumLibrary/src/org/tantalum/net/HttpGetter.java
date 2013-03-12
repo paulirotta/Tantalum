@@ -188,7 +188,7 @@ public class HttpGetter extends Task {
      *
      * @return - a JSONModel of the data provided by the HTTP server
      */
-    public Object doInBackground(final Object url) {
+    public Object exec(final Object url) {
         Object out = url;
 
         this.key = (String) url;
@@ -308,7 +308,7 @@ public class HttpGetter extends Task {
                     Thread.sleep(HTTP_RETRY_DELAY);
                 } catch (InterruptedException ex) {
                 }
-                out = doInBackground(url);
+                out = exec(url);
             } else if (!success) {
                 setStatus(Task.CANCELED);
             }

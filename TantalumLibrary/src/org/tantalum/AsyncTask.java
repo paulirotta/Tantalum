@@ -79,7 +79,7 @@ public abstract class AsyncTask extends UITask {
      */
     public static void execute(final Runnable runnable) {
         Worker.forkSerial(new Task() {
-            public Object doInBackground(final Object in) {
+            public Object exec(final Object in) {
                 runnable.run();
                 
                 return in;

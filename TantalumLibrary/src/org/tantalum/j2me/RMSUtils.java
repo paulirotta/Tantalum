@@ -80,7 +80,7 @@ public final class RMSUtils {
      */
     private RMSUtils() {
         Worker.forkShutdownTask(new Task() {
-            public Object doInBackground(final Object in) {
+            public Object exec(final Object in) {
                 //#debug
                 L.i("Closing record stores during shutdown", "open=" + openRecordStores.size());
                 openRecordStores.setMaxLength(0);

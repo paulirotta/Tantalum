@@ -50,7 +50,7 @@ public final class AndroidCache extends FlashCache {
 
         helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION);
         Worker.forkShutdownTask(new Task() {
-            public Object doInBackground(final Object in2) {
+            public Object exec(final Object in2) {
                 if (db != null) {
                     db.close();
                 }

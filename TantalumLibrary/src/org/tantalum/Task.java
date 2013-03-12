@@ -29,7 +29,7 @@ import org.tantalum.util.L;
  * A Task is the base unit of work in the Tantalum toolset. Any piece of code
  * which runs in response to an event and does not explicitly need to be run on
  * the user interface (UI) thread is usually implemented in an extension of
- * Task.doInBackground(). It will automatically be executed on a background
+ * Task.exec(). It will automatically be executed on a background
  * worker thread once fork() has been called.
  *
  * @author phou
@@ -48,16 +48,16 @@ public abstract class Task {
      */
     public static final int EXEC_PENDING = 0;
     /**
-     * status: doInBackground() has started but not yet finished
+     * status: exec() has started but not yet finished
      */
     public static final int EXEC_STARTED = 1;
     /**
-     * status: doInBackground() has finished. If this is a UI thread there still
+     * status: exec() has finished. If this is a UI thread there still
      * may be pending activity for the user interface thread
      */
     public static final int EXEC_FINISHED = 2;
     /**
-     * status: both Worker thread doInBackground() and UI thread onPostExecute()
+     * status: both Worker thread exec() and UI thread onPostExecute()
      * have completed
      */
     public static final int UI_RUN_FINISHED = 3;
@@ -371,7 +371,7 @@ public abstract class Task {
         if (doExec) {
             //#debug
             L.i("Start exec() out-of-sequence exec() after join() and successful unfork()", this.toString());
-            out = exec(out);
+            out = executeTask(out);
         }
 
         return out;
@@ -613,7 +613,7 @@ public abstract class Task {
      * Task and on the same Worker thread.
      *
      * The output result of the present task is fed as the input to
-     * doInBackground() on the nextTask, so any processing changes can
+     * exec() on the nextTask, so any processing changes can
      * propagated forward if the nextTask is so designed. This Task behavior may
      * thus be slightly different from the first Task in the chain, which by
      * default receives "null" as the input argument unless setValue() is called
@@ -666,7 +666,7 @@ public abstract class Task {
      *
      * @return
      */
-    final Object exec(Object in) {
+    final Object executeTask(Object in) {
         Object out = in;
 
         try {
@@ -682,7 +682,7 @@ public abstract class Task {
                     setStatus(Task.EXEC_STARTED);
                 }
             }
-            out = doInBackground(in);
+            out = exec(in);
 
             final boolean doRun;
             final Task t;
@@ -700,7 +700,7 @@ public abstract class Task {
             if (t != null) {
                 //#debug
                 L.i("Begin exec chained task", chainedTask.toString() + " INPUT: " + out);
-                t.exec(out);
+                t.executeTask(out);
                 //#debug
                 L.i("End exec chained task", chainedTask.toString());
             }
@@ -719,7 +719,7 @@ public abstract class Task {
      * @param in
      * @return
      */
-    protected abstract Object doInBackground(Object in);
+    protected abstract Object exec(Object in);
 
     /**
      * Cancel execution if possible. This is called on the Worker thread

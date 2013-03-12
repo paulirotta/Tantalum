@@ -296,7 +296,7 @@ public class StaticCache {
         }
         if (flashCacheEnabled) {
             Worker.forkSerial(new Task() {
-                public Object doInBackground(final Object in) {
+                public Object exec(final Object in) {
                     try {
                         synchronousFlashPut(key, bytes);
                     } catch (Exception e) {
@@ -486,7 +486,7 @@ public class StaticCache {
      */
     public Task clearHeapCacheAsync(final Task chainedTask) {
         final Task task = new Task() {
-            protected Object doInBackground(final Object in) {
+            protected Object exec(final Object in) {
                 synchronized (MUTEX) {
                     //#debug
                     L.i("Heap cached clear start", "" + priority);
@@ -566,7 +566,7 @@ public class StaticCache {
      */
     public Task getKeysAsync(final Task chainedTask) {
         final Task task = new Task() {
-            protected Object doInBackground(Object in) {
+            protected Object exec(Object in) {
                 try {
                     return flashCache.getKeys();
                 } catch (Exception e) {
@@ -651,7 +651,7 @@ public class StaticCache {
          * @param in
          * @return
          */
-        protected Object doInBackground(final Object in) {
+        protected Object exec(final Object in) {
             //#debug
             L.i("Async StaticCache get", (String) in);
             if (in == null || !(in instanceof String)) {

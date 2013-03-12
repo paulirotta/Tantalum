@@ -510,7 +510,7 @@ public final class Worker extends Thread {
                             }
                         }
                         if (exec) {
-                            t.exec(t.getValue()); // Pass in argument
+                            t.executeTask(t.getValue()); // Pass in argument
                         } else {
                             //#debug
                             L.i("Worker will not execute canceled task", t.toString());

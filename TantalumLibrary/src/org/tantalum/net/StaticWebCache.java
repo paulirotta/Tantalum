@@ -172,7 +172,7 @@ public class StaticWebCache extends StaticCache {
     public void prefetch(final String key) {
         if (synchronousRAMCacheGet(key) == null) {
             Worker.fork(new Task() {
-                public Object doInBackground(final Object in) {
+                public Object exec(final Object in) {
                     try {
                         getAsync(key, Worker.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
                     } catch (Exception e) {
@@ -198,13 +198,13 @@ public class StaticWebCache extends StaticCache {
      *
      * The pattern for synchronous use when on a background Worker thread is:
      * <pre><code>
-     * Object out = new GetAnywhereTask().exec(String url);
+     * Object out = new GetAnywhereTask(url).get();
      * </code></pre>
      *
      * The pattern for asynchronous use from the UI thread is:
      * <pre><code>
      * UITask uiTask = new UITask() {
-     *    protected Object doInBackground(final Object in) {
+     *    protected Object exec(final Object in) {
      *       Object out = in;
      *       // Do something on the Worker thread with the fetched data
      *       return out;
@@ -215,7 +215,7 @@ public class StaticWebCache extends StaticCache {
      *    }
      *
      *    protected void onPostExecute(Object result) {
-     *       // Do something on the UI Thread with the result from doInBackground() above
+     *       // Do something on the UI Thread with the result from exec() above
      *    }
      * };
      *
@@ -267,7 +267,7 @@ public class StaticWebCache extends StaticCache {
             this.postMessage = postMessage;
         }
 
-        protected Object doInBackground(final Object in) {
+        protected Object exec(final Object in) {
             Object out = in;
 
             if (in == null || !(in instanceof String)) {
@@ -314,13 +314,13 @@ public class StaticWebCache extends StaticCache {
      *
      * The pattern for synchronous use when on a background Worker thread is:
      * <pre><code>
-     * Object out = new GetWebTask().exec(String url);
+     * Object out = new GetWebTask(url).get();
      * </code></pre>
      *
      * The pattern for asynchronous use from the UI thread is:
      * <pre><code>
      * UITask uiTask = new UITask() {
-     *    protected Object doInBackground(final Object in) {
+     *    protected Object exec(final Object in) {
      *       Object out = in;
      *       // Do something on the Worker thread with the fetched data
      *       return out;
@@ -331,7 +331,7 @@ public class StaticWebCache extends StaticCache {
      *    }
      *
      *    protected void onPostExecute(Object result) {
-     *       // Do something on the UI Thread with the result from doInBackground() above
+     *       // Do something on the UI Thread with the result from exec() above
      *    }
      * };
      *
@@ -383,7 +383,7 @@ public class StaticWebCache extends StaticCache {
             this.postMessage = postMessage;
         }
 
-        protected Object doInBackground(final Object in) {
+        protected Object exec(final Object in) {
             //#debug
             L.i("Async StaticCache web get", (String) in);
             Object out = in;

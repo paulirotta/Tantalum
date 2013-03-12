@@ -53,11 +53,11 @@ public abstract class JSONPoster extends HttpPoster {
      * @param key
      * @return 
      */
-    public Object doInBackground(final Object key) {
+    public Object exec(final Object key) {
         String value = null;
         
         try {
-            value = new String((byte[]) super.doInBackground(key), "UTF8").trim();
+            value = new String((byte[]) super.exec(key), "UTF8").trim();
             if (value.startsWith("[")) {
                 // Parser expects non-array base object- add one
                 value = "{\"base:\"" + value + "}";
