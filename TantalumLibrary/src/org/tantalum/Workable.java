@@ -25,31 +25,36 @@ package org.tantalum;
 
 /**
  * A task to be completed on the Worker thread
- * 
+ *
  * Conceptually this is the same as the Runnable interface, but helps to keep
  * clear which objects objects are intended for Worker threads and which for
  * other threads such as the event dispatch thread.
+ *
+ * You can make your own raw Workable object or use one of the various Objects
+ * available that implements Workable. Task is the most common and adds state,
+ * error handling, join() and chain() capabilities.
  * 
- * An object may implement both Workable and Closure to provide automatic passage
- * to the UI thread after completing a task on a Worker thread. This is used to
- * perform any UI cleanup. AsyncTask provides additional support for this
- * using a Java7-like fork-join pattern and an Android-like asynchronous
- * thread hand-off pattern and progress update pattern.
- * 
+ * UITask is another implementation of Workable extending Task. Use this when
+ * an object that want to also provide updates to the UI thread after completing
+ * possibly slow actions on a Worker thread. This is used to perform
+ * any UI cleanup. AsyncTask provides additional support for this using a
+ * Java7-like fork-join pattern and an Android-like asynchronous thread hand-off
+ * pattern and progress update pattern.
+ *
  * @author phou
  */
 public interface Workable {
-    
+
     /**
      * Do a task on a background thread, possibly returning a result for
      * asynchronous pipeline operations.
-     * 
+     *
      * Note that unlike a Task, a Workable is never canceled even during
      * shutdown. Thus a Workable will always complete its work and application
      * shutdown will need to wait for it to complete, must like a Task which is
      * set to Task.EXECUTE_NORMALLY_ON_SHUTDOWN.
-     * 
-     * @param in 
+     *
+     * @param in
      * @return the output result of the work, used for chain()ing one Task to
      * another Task in overriding classes. If you are implementing a Workable
      * directly instead of a Task, this return value is usually not used since

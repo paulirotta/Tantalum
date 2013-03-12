@@ -30,6 +30,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.TimeoutException;
 import org.tantalum.UITask;
+import org.tantalum.Worker;
 import org.tantalum.util.L;
 
 /**
@@ -44,7 +45,7 @@ public class TaskTest extends TestCase {
      */
     public TaskTest() {
         //The first parameter of inherited constructor is the number of test cases
-        super(19, "TaskTest");
+        super(20, "TaskTest");
 
         PlatformUtils.getInstance().setProgram(this, 2);
     }
@@ -113,6 +114,9 @@ public class TaskTest extends TestCase {
                 break;
             case 18:
                 testCancelThread();
+                break;
+            case 19:
+                taskChainDelayTest();
                 break;
             default:
                 break;
@@ -639,12 +643,12 @@ public class TaskTest extends TestCase {
                 return (String) in + "B";
             }
         };
-        final Task instance4 = new Task("5") {
+        final Task instance5 = new Task("5") {
             protected Object doInBackground(Object in) {
                 return (String) in + "6";
             }
         };
-        final Task instance5 = new Task("BAD") {
+        final Task instance6 = new Task("BAD") {
             protected Object doInBackground(Object in) {
                 return in + "7";
             }
@@ -657,12 +661,12 @@ public class TaskTest extends TestCase {
             assertEquals("123", (String) instance2.get());
             assertEquals("1234", (String) instance3.get());
 
-            instanceA.chain(instance4);
-            instanceA.chain(null);
             instanceA.chain(instance5);
+            instanceA.chain(null);
+            instanceA.chain(instance6);
             instanceA.fork();
-            assertEquals("AB6", (String) instance4.get());
-            assertEquals("AB67", (String) instance5.get());
+            assertEquals("AB", (String) instanceA.get());
+            assertEquals("AB67", (String) instance6.get());
         } catch (Exception ex) {
             ex.printStackTrace();
             fail("Can not chain: " + ex);
@@ -1088,6 +1092,73 @@ public class TaskTest extends TestCase {
         } catch (Exception e) {
             e.printStackTrace();
             fail("Can not testCancelThread()" + e);
+        }
+    }
+
+    public void taskChainDelayTest() {
+        final long t = System.currentTimeMillis();
+
+        Task sleeper3sec = new Task() {
+            protected Object doInBackground(Object in) {
+                try {
+                    L.i("sleeper3", "start sleep");
+                    Thread.sleep(3000);
+                    L.i("sleeper3", "end sleep");
+                } catch (Exception e) {
+                    L.e("Problem with sleeper4", "", e);
+                }
+
+                return in;
+            }
+        };
+        Task sleeper3chain = new Task() {
+            protected Object doInBackground(Object in) {
+                L.i("getter3sec", "completed");
+                return new Long(System.currentTimeMillis() - t);
+            }
+        };
+        Task sleeper4sec = new Task() {
+            protected Object doInBackground(Object in) {
+                try {
+                    L.i("sleeper4", "start sleep");
+                    Thread.sleep(4000);
+                    L.i("sleeper4", "end sleep");
+                } catch (Exception e) {
+                    L.e("Problem with sleeper3", "", e);
+                }
+
+                return in;
+            }
+        };
+        Task sleeper4chain = new Task() {
+            protected Object doInBackground(Object in) {
+                L.i("getter10sec", "completed");
+                in = new Long(System.currentTimeMillis() - t);
+
+                return in;
+            }
+        };
+
+        sleeper3sec.chain(sleeper3chain);
+        sleeper4sec.chain(sleeper4chain);
+        sleeper4sec.fork();
+        sleeper3sec.fork();
+        Task[] sleepers = {sleeper4sec, sleeper3sec};
+        try {
+            Task.joinAll(sleepers);
+            assertTrue("joinAll() waiting >4sec", System.currentTimeMillis() - t >= 4000);
+            Object long4 = sleeper4chain.get();
+            Object long3 = sleeper3chain.get();
+            assertTrue("sleeper4chain should be non-null", long4 != null);
+            assertTrue("sleeper3chain should be non-null", long3 != null);
+            assertEquals("sleeper4 should return Long", Long.class, long4.getClass());
+            assertEquals("sleeper3 should return Long", Long.class, long3.getClass());
+            final long runtime4 = ((Long) long4).longValue();
+            final long runtime3 = ((Long) long3).longValue();
+            assertTrue("4sec chain delay task " + runtime4 + " should be slower than 3sec " + runtime3 + " delay task", runtime3 < runtime4);
+            assertTrue("4sec chain delay task " + runtime4 + " should be nearly 1 sec after 3sec " + runtime3 + " delay task", Math.abs(runtime4 - runtime3) < 100);
+        } catch (Exception e) {
+            fail("Problem running taskChainDelayTest: " + e);
         }
     }
 }

@@ -60,7 +60,7 @@ public abstract class Task implements Workable {
      * status: both Worker thread doInBackground() and UI thread onPostExecute()
      * have completed
      */
-    public static final int UI_RUN_FINISHED = 3; // for Closure extension
+    public static final int UI_RUN_FINISHED = 3;
     /**
      * state: cancel() was called
      */
@@ -145,8 +145,8 @@ public abstract class Task implements Workable {
 
     /**
      * Return the currently set shutdown behavior
-     * 
-     * @return 
+     *
+     * @return
      */
     public synchronized int getShutdownBehaviour() {
         return shutdownBehaviour;
@@ -154,14 +154,14 @@ public abstract class Task implements Workable {
 
     /**
      * Override the default shutdown behavior
-     * 
-     * @param shutdownBehaviour 
+     *
+     * @param shutdownBehaviour
      */
     public synchronized void setShutdownBehaviour(int shutdownBehaviour) {
         if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.CANCEL_ON_SHUTDOWN) {
             throw new IllegalArgumentException("Invalid shutdownBehaviour value: " + shutdownBehaviour);
         }
-        
+
         this.shutdownBehaviour = shutdownBehaviour;
     }
 
@@ -378,6 +378,21 @@ public abstract class Task implements Workable {
     }
 
     /**
+     * Wait up to a Task.MAX_TIMEOUT milliseconds for all tasks in the list to
+     * complete execution. If any or all of them have any problem, the first
+     * associated Exception to occur will be thrown.
+     *
+     * @param tasks
+     * @throws InterruptedException
+     * @throws CancellationException
+     * @throws ExecutionException
+     * @throws TimeoutException
+     */
+    public static void joinAll(final Task[] tasks) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+        doJoinAll(tasks, Task.MAX_TIMEOUT, false);
+    }
+
+    /**
      * Wait up to a maximum specified timeout for all tasks in the list to
      * complete execution. If any or all of them have any problem, the first
      * associated Exception to occur will be thrown.
@@ -392,6 +407,20 @@ public abstract class Task implements Workable {
      */
     public static void joinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         doJoinAll(tasks, timeout, false);
+    }
+
+    /**
+     * Wait up to Task.MAX_TIMEOUT milliseconds for all tasks in the list to
+     * complete execution including any follow up tasks on the UI thread.
+     * 
+     * @param tasks
+     * @throws InterruptedException
+     * @throws CancellationException
+     * @throws ExecutionException
+     * @throws TimeoutException 
+     */
+    public static void joinAllUI(final Task[] tasks) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+        joinAllUI(tasks, Task.MAX_TIMEOUT);
     }
 
     /**

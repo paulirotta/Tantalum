@@ -103,7 +103,7 @@ public class HttpGetter extends Task {
         super(key);
 
         setShutdownBehaviour(Task.CANCEL_ON_SHUTDOWN);
-        duplicateTaskWeShouldJoinInsteadOfReGetting = checkForDuplicateNetworkTasks();
+        duplicateTaskWeShouldJoinInsteadOfReGetting = getInFlightNetworkTasks();
     }
 
     /**
@@ -118,10 +118,11 @@ public class HttpGetter extends Task {
         this.postMessage = postMessage;
     }
 
-    private HttpGetter checkForDuplicateNetworkTasks() {
+    private HttpGetter getInFlightNetworkTasks() {
         if (key == null) {
             return null;
         }
+        
         return (HttpGetter) HttpGetter.inFlightGets.get(key);
     }
 
@@ -195,7 +196,7 @@ public class HttpGetter extends Task {
         //#debug
         L.i(this.getClass().getName() + " start", key);
         if (duplicateTaskWeShouldJoinInsteadOfReGetting == null) {
-            duplicateTaskWeShouldJoinInsteadOfReGetting = checkForDuplicateNetworkTasks();
+            duplicateTaskWeShouldJoinInsteadOfReGetting = getInFlightNetworkTasks();
         }
         if (duplicateTaskWeShouldJoinInsteadOfReGetting != null) {
             //#debug
