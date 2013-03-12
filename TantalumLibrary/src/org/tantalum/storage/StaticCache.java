@@ -23,11 +23,9 @@
  */
 package org.tantalum.storage;
 
-import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.Workable;
 import org.tantalum.Worker;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
@@ -265,9 +263,11 @@ public class StaticCache {
         L.i("StaticCache RAM result", "(" + priority + ") " + key + " : " + o);
         if (o == null) {
             // Load from flash memory
-            byte[] bytes = null;
+            final byte[] bytes;
             if (flashCacheEnabled) {
                 bytes = flashCache.getData(key);
+            } else {
+                bytes = null;
             }
 
             //#debug
@@ -276,7 +276,6 @@ public class StaticCache {
                 //#debug
                 L.i("StaticCache hit in flash", "(" + priority + ") " + key);
                 o = convertAndPutToHeapCache(key, bytes);
-                bytes = null;
                 //#debug
                 L.i("StaticCache flash result", "(" + priority + ") " + key + " : " + o);
             }
@@ -310,8 +309,8 @@ public class StaticCache {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
         if (flashCacheEnabled) {
-            Worker.forkSerial(new Workable() {
-                public Object exec(final Object in) {
+            Worker.forkSerial(new Task() {
+                public Object doInBackground(final Object in) {
                     try {
                         synchronousFlashPut(key, bytes);
                     } catch (Exception e) {

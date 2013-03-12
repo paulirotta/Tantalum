@@ -1156,7 +1156,7 @@ public class TaskTest extends TestCase {
             final long runtime4 = ((Long) long4).longValue();
             final long runtime3 = ((Long) long3).longValue();
             assertTrue("4sec chain delay task " + runtime4 + " should be slower than 3sec " + runtime3 + " delay task", runtime3 < runtime4);
-            assertTrue("4sec chain delay task " + runtime4 + " should be nearly 1 sec after 3sec " + runtime3 + " delay task", Math.abs(runtime4 - runtime3) < 100);
+            assertTrue("4sec chain delay task " + runtime4 + " should be nearly 1 sec after 3sec " + runtime3 + " delay task", Math.abs(runtime4 - runtime3 - 1000) < 100);
         } catch (Exception e) {
             fail("Problem running taskChainDelayTest: " + e);
         }

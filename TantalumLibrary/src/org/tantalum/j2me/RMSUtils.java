@@ -29,7 +29,7 @@ import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
-import org.tantalum.Workable;
+import org.tantalum.Task;
 import org.tantalum.Worker;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
@@ -79,8 +79,8 @@ public final class RMSUtils {
      * 
      */
     private RMSUtils() {
-        Worker.forkShutdownTask(new Workable() {
-            public Object exec(final Object in) {
+        Worker.forkShutdownTask(new Task() {
+            public Object doInBackground(final Object in) {
                 //#debug
                 L.i("Closing record stores during shutdown", "open=" + openRecordStores.size());
                 openRecordStores.setMaxLength(0);
@@ -220,7 +220,7 @@ public final class RMSUtils {
      * @throws RecordStoreFullException
      */
     public void write(String recordStoreName, final byte[] data) throws RecordStoreFullException {
-        RecordStore rs = null;
+        final RecordStore rs;
 
         try {
             //delete old value
@@ -348,7 +348,7 @@ public final class RMSUtils {
      * @throws FlashDatabaseException
      */
     public byte[] read(String recordStoreName) throws FlashDatabaseException {
-        RecordStore rs = null;
+        final RecordStore rs;
         byte[] data = null;
 
         try {

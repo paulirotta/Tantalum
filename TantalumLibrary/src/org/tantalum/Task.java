@@ -34,7 +34,7 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public abstract class Task implements Workable {
+public abstract class Task {
     // status values
 
     /**

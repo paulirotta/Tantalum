@@ -86,7 +86,7 @@ public final class Worker extends Thread {
     private static final Vector shutdownQ = new Vector();
     private static int currentlyIdleCount = 0;
     private static boolean shuttingDown = false;
-    private Workable workable = null; // Access only within synchronized(q)
+    private Task currentTask = null; // Access only within synchronized(q)
 
     private Worker(final String name) {
         super(name);
@@ -120,19 +120,19 @@ public final class Worker extends Thread {
      * because the user pressed the RED button to exit the application), then
      * shutdown will be delayed by a maximum of 3 seconds before forcing exit.
      *
-     * @param workable
+     * @param task
      */
-    public static void fork(final Workable workable) {
+    public static void fork(final Task task) {
         synchronized (q) {
-            q.addElement(workable);
+            q.addElement(task);
             try {
-                if (workable instanceof Task) {
-                    ((Task) workable).notifyTaskForked();
+                if (task instanceof Task) {
+                    ((Task) task).notifyTaskForked();
                 }
             } catch (IllegalStateException e) {
                 //#debug
-                L.e("Can not fork", workable.toString(), e);
-                q.removeElement(workable);
+                L.e("Can not fork", task.toString(), e);
+                q.removeElement(task);
                 throw e;
             }
             q.notify();
@@ -162,25 +162,25 @@ public final class Worker extends Thread {
      * Items in the idleQueue will not be executed if shutdown() is called
      * before they begin.
      *
-     * @param workable
+     * @param task
      * @param priority
      */
-    public static void fork(final Workable workable, final int priority) {
+    public static void fork(final Task task, final int priority) {
         switch (priority) {
             case Worker.NORMAL_PRIORITY:
-                fork(workable);
+                fork(task);
                 break;
             case Worker.HIGH_PRIORITY:
                 synchronized (q) {
-                    q.insertElementAt(workable, 0);
+                    q.insertElementAt(task, 0);
                     try {
-                        if (workable instanceof Task) {
-                            ((Task) workable).notifyTaskForked();
+                        if (task instanceof Task) {
+                            ((Task) task).notifyTaskForked();
                         }
                     } catch (IllegalStateException e) {
                         //#debug
-                        L.e("Can not fork high priority", workable.toString(), e);
-                        q.removeElement(workable);
+                        L.e("Can not fork high priority", task.toString(), e);
+                        q.removeElement(task);
                         throw e;
                     }
                     q.notify();
@@ -188,15 +188,15 @@ public final class Worker extends Thread {
                 break;
             case Worker.LOW_PRIORITY:
                 synchronized (q) {
-                    lowPriorityQ.addElement(workable);
+                    lowPriorityQ.addElement(task);
                     try {
-                        if (workable instanceof Task) {
-                            ((Task) workable).notifyTaskForked();
+                        if (task instanceof Task) {
+                            ((Task) task).notifyTaskForked();
                         }
                     } catch (IllegalStateException e) {
                         //#debug
-                        L.e("Can not fork low priority", workable.toString(), e);
-                        lowPriorityQ.removeElement(workable);
+                        L.e("Can not fork low priority", task.toString(), e);
+                        lowPriorityQ.removeElement(task);
                         throw e;
                     }
                     q.notify();
@@ -212,28 +212,28 @@ public final class Worker extends Thread {
      * been started, or has not been fork()ed, or has been forkSerial() assigned
      * to a dedicated thread queue, then this will return false.
      *
-     * @param workable
+     * @param task
      * @return
      */
-    public static boolean tryUnfork(final Workable workable) {
+    public static boolean tryUnfork(final Task task) {
         boolean success;
 
-        if (workable == null) {
+        if (task == null) {
             throw new IllegalArgumentException("Can not tryUnfork(null), probable application logic error");
         }
 
         synchronized (q) {
             //#debug
-            L.i("Unfork start", workable.toString());
-            success = q.removeElement(workable);
+            L.i("Unfork start", task.toString());
+            success = q.removeElement(task);
             //#debug
-            L.i("Unfork continues", "success=" + success + " - " + workable.toString());
+            L.i("Unfork continues", "success=" + success + " - " + task.toString());
             int i = 0;
             while (!success && i < workers.length) {
-                success = workers[i++].serialQ.removeElement(workable);
+                success = workers[i++].serialQ.removeElement(task);
             }
             //#debug
-            L.i("Unfork end", workable + " success=" + success);
+            L.i("Unfork end", task + " success=" + success);
 
             return success;
         }
@@ -254,13 +254,13 @@ public final class Worker extends Thread {
             final Thread currentThread = Thread.currentThread();
 
             for (int i = 0; i < workers.length; i++) {
-                if (task.equals(workers[i].workable)) {
+                if (task.equals(workers[i].currentTask)) {
                     if (currentThread == workers[i]) {
                         throw new IllegalArgumentException("myTask.doInBackground()...interruptWorkable(myTask): a Task can not interrupt() itself- cancel your task with normal logic, it will run faster and cleaner");
                     }
                     //#debug
                     L.i("Sending interrupt signal", "thread=" + workers[i].getName() + " workable=" + task);
-                    interrupted = task == workers[i].workable;
+                    interrupted = task == workers[i].currentTask;
                     if (interrupted) {
                         workers[i].interrupt();
                     }
@@ -279,20 +279,20 @@ public final class Worker extends Thread {
      * will revert to doing general forkSerial(), forkPriority() and
      * forkLowPriority()
      *
-     * @param workable
+     * @param task
      * @param serialQIndex
      */
-    public static void forkSerial(final Workable workable, final int serialQIndex) {
+    public static void forkSerial(final Task task, final int serialQIndex) {
         if (serialQIndex >= workers.length) {
             throw new IndexOutOfBoundsException("serialQ to Worker " + serialQIndex + ", but there are only " + workers.length + " Workers");
         }
-        workers[serialQIndex].serialQ.addElement(workable);
+        workers[serialQIndex].serialQ.addElement(task);
         try {
-            if (workable instanceof Task) {
-                ((Task) workable).notifyTaskForked();
+            if (task instanceof Task) {
+                ((Task) task).notifyTaskForked();
             }
         } catch (IllegalStateException e) {
-            workers[serialQIndex].serialQ.removeElement(workable);
+            workers[serialQIndex].serialQ.removeElement(task);
             throw e;
         }
         synchronized (q) {
@@ -330,11 +330,11 @@ public final class Worker extends Thread {
     /**
      * Add an object to be executed in the background on the worker thread
      *
-     * @param workable
+     * @param task
      */
-    public static void forkShutdownTask(final Workable workable) {
+    public static void forkShutdownTask(final Task task) {
         synchronized (q) {
-            shutdownQ.addElement(workable);
+            shutdownQ.addElement(task);
             q.notify();
         }
     }
@@ -356,9 +356,9 @@ public final class Worker extends Thread {
                 dequeueOrCancelOnShutdown(q);
                 for (int i = 0; i < workers.length; i++) {
                     workers[i].dequeueOrCancelOnShutdown(workers[i].serialQ);
-                    Workable w = workers[i].workable;
-                    if (w instanceof Task) {
-                        ((Task) w).cancel(true);
+                    final Task t = workers[i].currentTask;
+                    if (t instanceof Task) {
+                        ((Task) t).cancel(true);
                     }
                 }
                 q.notifyAll();
@@ -386,23 +386,21 @@ public final class Worker extends Thread {
 
     private static void dequeueOrCancelOnShutdown(final Vector queue) {
         for (int i = queue.size() - 1; i >= 0; i--) {
-            final Workable w = (Workable) queue.elementAt(i);
-            if (w instanceof Task) {
-                final Task t = (Task) w;
-                switch (t.getShutdownBehaviour()) {
-                    case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
-                        break;
-                        
-                    case Task.CANCEL_ON_SHUTDOWN:
-                    case Task.CANCEL_FROM_QUEUE_BUT_LEAVE_RUNNING_IF_STARTED_ON_SHUTDOWN:
-                        t.cancel(false);
-                        queue.removeElementAt(i);
-                        break;
+            final Task t = (Task) queue.elementAt(i);
 
-                    case Task.SILENT_DEQUEUE_ON_SHUTDOWN:
-                        queue.removeElementAt(i);
-                        break;
-                }
+            switch (t.getShutdownBehaviour()) {
+                case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
+                    break;
+
+                case Task.CANCEL_ON_SHUTDOWN:
+                case Task.CANCEL_FROM_QUEUE_BUT_LEAVE_RUNNING_IF_STARTED_ON_SHUTDOWN:
+                    t.cancel(false);
+                    queue.removeElementAt(i);
+                    break;
+
+                case Task.SILENT_DEQUEUE_ON_SHUTDOWN:
+                    queue.removeElementAt(i);
+                    break;
             }
         }
     }
@@ -436,7 +434,7 @@ public final class Worker extends Thread {
                 sb.append(" serialQsize=");
                 sb.append(w.serialQ.size());
                 sb.append(" currentWorkable=");
-                sb.append(w.workable);
+                sb.append(w.currentTask);
                 sb.append("] ");
             }
         }
@@ -455,19 +453,20 @@ public final class Worker extends Thread {
         try {
             while (true) {
                 try {
-                    final Workable w;
+                    final Task t;
+
                     synchronized (q) {
-                        workable = null;
+                        currentTask = null;
                         if (serialQ.isEmpty()) {
                             if (q.size() > 0) {
                                 // Normal compute
-                                workable = (Workable) q.firstElement();
+                                currentTask = (Task) q.firstElement();
                                 q.removeElementAt(0);
                             } else {
                                 if (shuttingDown) {
                                     if (!shutdownQ.isEmpty()) {
                                         // SHUTDOWN PHASE 1: Execute shutdown actions
-                                        workable = (Workable) shutdownQ.firstElement();
+                                        currentTask = (Task) shutdownQ.firstElement();
                                         shutdownQ.removeElementAt(0);
                                     } else if (currentlyIdleCount < workers.length - 1) {
                                         // Nothing more to do, but other threads are still finishing last tasks
@@ -485,7 +484,7 @@ public final class Worker extends Thread {
                                     }
                                 } else if (currentlyIdleCount >= workers.length && lowPriorityQ.size() > 0) {
                                     // Idle compute, at least half available threads in the pool are left for new normal priority tasks
-                                    workable = (Workable) lowPriorityQ.firstElement();
+                                    currentTask = (Task) lowPriorityQ.firstElement();
                                     lowPriorityQ.removeElementAt(0);
                                 } else {
                                     ++currentlyIdleCount;
@@ -494,43 +493,40 @@ public final class Worker extends Thread {
                                 }
                             }
                         } else {
-                            workable = (Workable) serialQ.firstElement();
+                            currentTask = (Task) serialQ.firstElement();
                             serialQ.removeElementAt(0);
                         }
-                        w = workable;
+                        t = currentTask;
                     }
-                    if (w != null) {
-                        if (w instanceof Task) {
-                            final Task t = (Task) w;
-                            boolean e = false;
-                            synchronized (t) {
-                                int s = t.getStatus();
-                                e = s < Task.CANCELED && s != Task.EXEC_STARTED;
-                                if (e) {
-                                    t.setStatus(Task.EXEC_STARTED);
-                                }
+                    if (t != null) {
+                        boolean exec = false;
+                        
+                        synchronized (t) {
+                            final int s = t.getStatus();
+                            
+                            exec = s < Task.CANCELED && s != Task.EXEC_STARTED;
+                            if (exec) {
+                                t.setStatus(Task.EXEC_STARTED);
                             }
-                            if (e) {
-                                w.exec(t.getValue()); // Pass in argument
-                            } else {
-                                //#debug
-                                L.i("Worker will not execute canceled task", t.toString());
-                            }
+                        }
+                        if (exec) {
+                            t.exec(t.getValue()); // Pass in argument
                         } else {
-                            w.exec(null);
+                            //#debug
+                            L.i("Worker will not execute canceled task", t.toString());
                         }
                     }
                 } catch (InterruptedException e) {
                     //#debug
-                    L.i("Worker interrupted", "workable=" + workable);
+                    L.i("Worker interrupted", "workable=" + currentTask);
                 } catch (Exception e) {
                     //#debug
-                    L.e("Uncaught worker error", "workable=" + workable, e);
+                    L.e("Uncaught worker error", "workable=" + currentTask, e);
                 }
             }
         } catch (Throwable t) {
             //#debug
-            L.e("Fatal worker error", "workable=" + workable, t);
+            L.e("Fatal worker error", "workable=" + currentTask, t);
         }
         //#debug
         L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);
@@ -553,12 +549,12 @@ public final class Worker extends Thread {
         for (int i = 0; i < n; i++) {
             final Worker w = workers[i];
             if (w != null) {
-                final Workable workable = w.workable;
-                sb.append(workable != null ? "W" : "w");
+                final Task task = w.currentTask;
+                sb.append(task != null ? "T" : "t");
                 sb.append(i);
                 sb.append(':');
-                if (workable != null) {
-                    lines.addElement(trimmedNameNoPackage(workable.getClass().getName()));
+                if (task != null) {
+                    lines.addElement(trimmedNameNoPackage(task.getClass().getName()));
                 }
             }
         }

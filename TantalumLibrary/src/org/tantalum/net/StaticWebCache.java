@@ -25,7 +25,6 @@ package org.tantalum.net;
 
 import java.util.Hashtable;
 import org.tantalum.Task;
-import org.tantalum.Workable;
 import org.tantalum.Worker;
 import org.tantalum.storage.DataTypeHandler;
 import org.tantalum.storage.StaticCache;
@@ -172,8 +171,8 @@ public class StaticWebCache extends StaticCache {
      */
     public void prefetch(final String key) {
         if (synchronousRAMCacheGet(key) == null) {
-            Worker.fork(new Workable() {
-                public Object exec(final Object in) {
+            Worker.fork(new Task() {
+                public Object doInBackground(final Object in) {
                     try {
                         getAsync(key, Worker.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
                     } catch (Exception e) {
