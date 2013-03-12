@@ -37,24 +37,48 @@ import org.tantalum.util.L;
  * terminal emulator on the window, set the COM port parameters in Windows
  * Devices, and call L.startUSBDebugging() at program start.
  *
+ * This gives you a running list of how long each operation takes which is
+ * helpful for on-device-debug, application profiling and seeing how concurrency
+ * is behaving on device which may be different from the slower emulator.
+ *
  * @author phou
  */
 public class J2MELog extends L {
 
-    private static OutputStream os = null;
+    private final OutputStream os;
 //#mdebug
-    private static final byte[] LFCR = "\n\r".getBytes();
-    private static final Vector byteArrayQueue = new Vector();
-    private static J2MELog.UsbWriter usbWriter = null;
-    private static CommConnection comm = null;
+    private final byte[] LFCR = "\n\r".getBytes();
+    private final Vector byteArrayQueue = new Vector();
+    private final J2MELog.UsbWriter usbWriter;
 //#enddebug    
 
+    public J2MELog(final boolean routeDebugOutputToSerialPort) {
+        OutputStream s = null;
+//#mdebug
+        if (routeDebugOutputToSerialPort) {
+            J2MELog.UsbWriter writer = null;
+            try {
+                System.out.println("Routing debug output to USB serial port");
+                writer = new J2MELog.UsbWriter();
+                s = writer.getOutputStream();
+                new Thread(writer).start();
+            } catch (IOException ex) {
+                System.out.println("Usb debug output error: " + ex);
+            }
+            usbWriter = writer;
+        } else {
+            usbWriter = null;
+        }
+//#enddebug
+        os = s;
+    }
+
     /**
-     * Add to the log a messsage stored in a StringBuffer with optional error
-     * or exception (use null if information only)
-     * 
+     * Add to the log a messsage stored in a StringBuffer with optional error or
+     * exception (use null if information only)
+     *
      * @param sb
-     * @param t 
+     * @param t
      */
     protected void printMessage(final StringBuffer sb, final Throwable t) {
 //#mdebug
@@ -81,17 +105,19 @@ public class J2MELog extends L {
      */
     protected void close() {
 //#mdebug
-        if (usbWriter != null) {
+        final J2MELog.UsbWriter writer = usbWriter;
+
+        if (writer != null) {
             synchronized (L.class) {
-                usbWriter.shutdownStarted = true;
+                writer.shutdownStarted = true;
                 L.class.notifyAll();
             }
 
             // Give the queue time to flush final messages
-            synchronized (usbWriter) {
+            synchronized (writer) {
                 try {
-                    if (!usbWriter.shutdownComplete) {
-                        usbWriter.wait(1000);
+                    if (!writer.shutdownComplete) {
+                        writer.wait(1000);
                     }
                 } catch (InterruptedException ex) {
                 }
@@ -100,31 +126,24 @@ public class J2MELog extends L {
 //#enddebug        
     }
 
-    /**
-     * Open a serial port debug connection through the USB cable to an attached
-     * PC. This will result in a java security prompt on the phone.
-     */
-    protected void routeDebugOutputToUsbSerialPort() {
 //#mdebug
-        try {
-            final String commPort = System.getProperty("microedition.commports");
-            if (commPort != null) {
-                comm = (CommConnection) Connector.open("comm:" + commPort);
-                os = comm.openOutputStream();
-                usbWriter = new J2MELog.UsbWriter();
-                new Thread(usbWriter).start();
-            }
-        } catch (IOException ex) {
-            System.out.println("Usb debug output error: " + ex);
-        }
-//#enddebug
-    }
-
-//#mdebug
-    private static final class UsbWriter implements Runnable {
+    private final class UsbWriter implements Runnable {
 
         boolean shutdownStarted = false;
         boolean shutdownComplete = false;
+        private final CommConnection comm;
+        private final OutputStream os;
+
+        public UsbWriter() throws IOException {
+            final String commPort = System.getProperty("microedition.commports");
+
+            comm = (CommConnection) Connector.open("comm:" + commPort);
+            os = comm.openOutputStream();
+        }
+
+        public OutputStream getOutputStream() {
+            return os;
+        }
 
         public void run() {
             try {
@@ -147,7 +166,6 @@ public class J2MELog extends L {
                     os.close();
                 } catch (IOException ex) {
                 }
-                os = null;
                 try {
                     comm.close();
                 } catch (IOException ex) {

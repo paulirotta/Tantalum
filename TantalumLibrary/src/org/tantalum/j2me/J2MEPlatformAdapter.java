@@ -62,9 +62,9 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
      * This is created for you when your MIDlet extends AndroidMIDlet and calls
      * the super() constructor.
      */
-    public J2MEPlatformAdapter() {
+    public J2MEPlatformAdapter(final boolean routeDebugOutputToSerialPort) {
         display = Display.getDisplay((MIDlet) PlatformUtils.getInstance().getProgram());
-        log = new J2MELog();
+        log = new J2MELog(routeDebugOutputToSerialPort);
     }
 
     /**

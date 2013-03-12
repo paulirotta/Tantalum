@@ -104,7 +104,7 @@ public final class PlatformUtils {
      *
      * @param program
      */
-    public void setProgram(final Object program, final int numberOfWorkers) {
+    public void setProgram(final Object program, final int numberOfWorkers, final boolean routeDebugOutputToSerialPort) {
         if (this.numberOfWorkers != 0) {
             throw new UnsupportedOperationException("You can only call PlatformUtils.getInstance().setProgram() one time per application");
         }
@@ -129,7 +129,7 @@ public final class PlatformUtils {
             if (Class.forName("org.tantalum.j2me.TantalumMIDlet").isAssignableFrom(program.getClass())
                     || program.getClass().getName().toLowerCase().indexOf("test") > 0) {
                 platform = PLATFORM_J2ME;
-                platformAdapter = new J2MEPlatformAdapter();
+                platformAdapter = new J2MEPlatformAdapter(routeDebugOutputToSerialPort);
                 init();
                 return;
             }

@@ -36,36 +36,12 @@ public abstract class L {
     private static final long startTime = System.currentTimeMillis();
 
     /**
-     * To enable logging from a phone connected to a computer by a USB cable,
-     * open a terminal emulator on the window, set the COM port parameters in
-     * Windows Devices, and call L.startUSBDebugging() at program start.
-     *
-     * This gives you a running list of how long each operation takes which is
-     * helpful for on-device-debug, application profiling and seeing how
-     * concurrency is behaving on device which may be different from the slower
-     * emulator.
-     */
-    public static void startUsbDebug() {
-//#debug
-        PlatformUtils.getInstance().getLog().routeDebugOutputToUsbSerialPort();
-    }
-
-//#mdebug
-    /**
-     * Start USB debugging mode. Note that Android supports this with the
-     * default debugger through adb so calling this method is not needed and has
-     * no effect on Android.
-     */
-    protected abstract void routeDebugOutputToUsbSerialPort();
-//#enddebug
-
-    /**
      * Logs an "information" message.
      *
      * @param tag name of the class logging this message
      * @param message message to i
      */
-    public final static void i(final String tag, final String message) {
+    public static void i(final String tag, final String message) {
 //#mdebug
         final StringBuffer sb = getMessage(tag, message);
         PlatformUtils.getInstance().getLog().printMessage(sb, null);
@@ -79,7 +55,7 @@ public abstract class L {
      * @param message explanation
      * @param t exception
      */
-    public final static void e(final String tag, final String message, final Throwable t) {
+    public static void e(final String tag, final String message, final Throwable t) {
 //#mdebug
         final StringBuffer sb = getMessage(tag, message);
         sb.append(", EXCEPTION: ");

@@ -61,10 +61,10 @@ public abstract class TantalumActivity extends Activity {
      * @param numberOfWorkerThreads - Feel free to use
      * TantalumActivity.DEFAULT_NUMBER_OF_WORKER_THREADS
      */
-    public TantalumActivity(int numberOfWorkerThreads) {
+    public TantalumActivity(final int numberOfWorkerThreads) {
         super();
 
-        PlatformUtils.getInstance().setProgram(this, numberOfWorkerThreads);
+        PlatformUtils.getInstance().setProgram(this, numberOfWorkerThreads, false);
     }
 
     /**

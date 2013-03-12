@@ -52,16 +52,27 @@ public abstract class TantalumMIDlet extends MIDlet {
     protected static final int DEFAULT_NUMBER_OF_WORKER_THREADS = 4;
 
     /**
+     * Create a MIDlet that hooks into the MIDlet life-cycle events to
+     * start and stop the background Worker threads with proper notification.
+     * 
+     * @param numberOfWorkerThreads
+     */
+    protected TantalumMIDlet(final int numberOfWorkerThreads) {
+        this(numberOfWorkerThreads, false);
+    }
+    /**
      * If you create a MIDlet constructor, you must call super() as the first
      * line of your MIDlet's constructor. Alternatively, you can call
      * Worker.init() yourself with custom parameters for special needs.
      *
-     * @param numberOfWorkerThreads
+     * @param numberOfWorkerThreads -  - Feel free to use
+     * TantalumMIDlet.DEFAULT_NUMBER_OF_WORKER_THREADS
+     * @param routeDebugOutputToUsbSerialPort 
      */
-    protected TantalumMIDlet(int numberOfWorkerThreads) {
+    protected TantalumMIDlet(final int numberOfWorkerThreads, final boolean routeDebugOutputToUsbSerialPort) {
         super();
 
-        PlatformUtils.getInstance().setProgram(this, numberOfWorkerThreads);
+        PlatformUtils.getInstance().setProgram(this, numberOfWorkerThreads, routeDebugOutputToUsbSerialPort);
     }
 
     /**
