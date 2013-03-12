@@ -197,6 +197,16 @@ public abstract class AsyncTask extends UITask {
      */
     protected void onPostExecute(Object result) {
     }
+    
+    /**
+     * Complete the AsyncTask on a background Worker thread
+     * 
+     * @param params 
+     */
+    public void doInBackground(final Object params) {
+        setValue(params);
+        fork();
+    }
 
     /**
      * Debug helper, override for more specific debug info if needed
