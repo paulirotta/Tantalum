@@ -174,14 +174,18 @@ public class TaskTest extends TestCase {
      */
     public void testExec() throws AssertionFailedException {
         System.out.println("exec");
-        Task instance = new Task() {
+        Task instance = new Task("white") {
             protected Object doInBackground(Object in) {
                 return (String) in + " rabbit";
             }
         };
-        String out = (String) instance.exec("white");
-        assertEquals("white rabbit", out);
-        assertEquals("status is EXEC_FINISHED", Task.EXEC_FINISHED, instance.getStatus());
+        try {
+            String out = (String) instance.get();
+            assertEquals("white rabbit", out);
+            assertEquals("status is EXEC_FINISHED", Task.EXEC_FINISHED, instance.getStatus());
+        } catch (Exception e) {
+            fail("Exception while doing execution tests: " + e);
+        }
     }
 
     /**
@@ -400,8 +404,13 @@ public class TaskTest extends TestCase {
             }
         };
         assertEquals("start", instance.getValue());
-        instance.exec("next");
-        assertEquals("next", instance.getValue());
+        instance.setValue("next");
+        try {
+            instance.get();
+            assertEquals("next", instance.getValue());
+        } catch (Exception e) {
+            fail("Exception in testGetResult: " + e);
+        }
     }
 
     /**
@@ -608,7 +617,7 @@ public class TaskTest extends TestCase {
                 return (String) in + "tty";
             }
         };
-        instance.exec("be");
+        instance.setValue("be");
         try {
             assertEquals("betty", (String) instance.get());
         } catch (Exception ex) {

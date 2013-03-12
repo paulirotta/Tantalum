@@ -316,7 +316,7 @@ public abstract class Task {
         }
         //#enddebug
         boolean doExec = false;
-        Object r;
+        Object out;
 
         synchronized (this) {
             //#debug
@@ -366,15 +366,15 @@ public abstract class Task {
                 default:
                     ;
             }
-            r = value;
+            out = value;
         }
         if (doExec) {
             //#debug
             L.i("Start exec() out-of-sequence exec() after join() and successful unfork()", this.toString());
-            r = exec(r);
+            out = exec(out);
         }
 
-        return r;
+        return out;
     }
 
     /**
@@ -666,7 +666,7 @@ public abstract class Task {
      *
      * @return
      */
-    public final Object exec(Object in) {
+    final Object exec(Object in) {
         Object out = in;
 
         try {
