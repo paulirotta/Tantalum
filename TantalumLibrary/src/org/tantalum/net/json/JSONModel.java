@@ -33,17 +33,21 @@ import org.json.me.JSONObject;
  * off this object to safely access multiple fields at once without interference
  * from model updates which may come in from other background threads.
  *
+ * The point of JSONModel is, like XMLModel, to allow you to create a local Object of type
+ * JSONModel which may last the entire life of your application. You can then
+ * refer to values from JSONModel and know that it always contains the latest,
+ * best JSONObject received from the server or loaded from the local cache.
+ * 
+ * You can update the value in JSONModel by passing it as an object when you
+ * call JSONGetter(url, myJSONMOdel). If you would like to execute some code such
+ * as updating the user interface after the JSONModel is updated asynchonously,
+ * you should chain() that continuation code (a Task or UITask) to the JSONGetter.
+ * 
  * @author Paul Houghton
  */
 public class JSONModel {
 
     private JSONObject jsonObject = new JSONObject();
-
-    /**
-     * Null constructor is an empty placeholder
-     */
-    public JSONModel() {
-    }
 
     /**
      * Update the value of the model
