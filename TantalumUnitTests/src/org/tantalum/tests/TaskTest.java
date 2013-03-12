@@ -47,7 +47,7 @@ public class TaskTest extends TestCase {
         //The first parameter of inherited constructor is the number of test cases
         super(20, "TaskTest");
 
-        PlatformUtils.getInstance().setProgram(this, 2);
+        PlatformUtils.getInstance().setProgram(this, 2, false);
     }
 
     /**

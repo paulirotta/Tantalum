@@ -47,7 +47,7 @@ public class RSSModelTest extends TestCase {
         //The first parameter of inherited constructor is the number of test cases
         super(1, "RSSModelTest");
 
-        PlatformUtils.getInstance().setProgram(this, 4); // Init debug
+        PlatformUtils.getInstance().setProgram(this, 4, false); // Init debug
     }
 
     /**
