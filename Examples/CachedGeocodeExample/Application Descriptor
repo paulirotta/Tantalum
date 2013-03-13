@@ -1,0 +1,8 @@
+MIDlet-Version: 1.0.0
+MIDlet-Vendor: MIDlet Suite Vendor
+MIDlet-Jar-URL: CachedGeocodeExample.jar
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.1
+MIDlet-Permissions: javax.microedition.io.Connector.http
+MIDlet-1: HelloMIDlet,,geocodeexample.HelloMIDlet
+MIDlet-Name: CachedGeocodeExample MIDlet Suite
