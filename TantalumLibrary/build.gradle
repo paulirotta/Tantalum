@@ -22,6 +22,9 @@ apply plugin: 'pmd'
 project.findbugs.ignoreFailures = true
 project.pmd.ignoreFailures = true
 
+// Use this as the name for the generated jars
+project.archivesBaseName = 'Tantalum'
+
 configurations {
     codeCoverageJar
 }
