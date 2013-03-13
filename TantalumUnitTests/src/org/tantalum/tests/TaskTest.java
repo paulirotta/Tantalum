@@ -1084,7 +1084,7 @@ public class TaskTest extends TestCase {
         final Task task1 = new Task("1") {
             protected Object exec(Object in) {
                 assertNotEquals("doInBackground() blue must not run on UI thread", true, PlatformUtils.getInstance().isUIThread());
-                setStatus(Task.CANCELED);
+                cancel(false, "Test cancel thread");
                 return (String) in + "2";
             }
 

@@ -77,8 +77,8 @@ public abstract class Task {
     private static final String[] STATUS_STRINGS = {"EXEC_PENDING", "EXEC_STARTED", "EXEC_FINISHED", "UI_RUN_FINISHED", "CANCELED", "EXCEPTION", "READY"};
     public static final int EXECUTE_NORMALLY_ON_SHUTDOWN = 0;
     /**
-     * Tasks which have not yet started are removed from the task
-     * queue when an application shutdown begins.
+     * Tasks which have not yet started are removed from the task queue when an
+     * application shutdown begins.
      */
     public static final int DEQUEUE_ON_SHUTDOWN = 1;
     /**
@@ -94,7 +94,7 @@ public abstract class Task {
     public static final int DEQUEUE_BUT_LEAVE_RUNNING_IF_ALREADY_STARTED_ON_SHUTDOWN = 2;
     /**
      * Default shutdown behavior.
-     * 
+     *
      * If you explicitly do not want your Task to be cancel(true)ed during
      * shutdown or silently cancel(false)ed when it is queued, use this shutdown
      * behavior. This is useful for example if you need to complete an ongoing
@@ -157,13 +157,13 @@ public abstract class Task {
 
     /**
      * Override the default shutdown behavior
-     * 
-     * If for example you want an ongoing task to finish if it has already started
-     * when the shutdown signal comes, but be removed from the queue if it
-     * has not yet started, set to Task.DEQUEUE_ON_SHUTDOWN
+     *
+     * If for example you want an ongoing task to finish if it has already
+     * started when the shutdown signal comes, but be removed from the queue if
+     * it has not yet started, set to Task.DEQUEUE_ON_SHUTDOWN
      *
      * @param shutdownBehaviour
-     * @return 
+     * @return
      */
     public final synchronized Task setShutdownBehaviour(final int shutdownBehaviour) {
         if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
@@ -171,7 +171,7 @@ public abstract class Task {
         }
 
         this.shutdownBehaviour = shutdownBehaviour;
-        
+
         return this;
     }
 
@@ -342,7 +342,9 @@ public abstract class Task {
                 // Continue to next state
                 case READY:
                     if (status == READY) {
-                        Worker.fork(this, Worker.HIGH_PRIORITY);
+                        doExec = true;
+                        break;
+                        //Worker.fork(this, Worker.HIGH_PRIORITY);
                     }
                 // Continue to next state
                 case EXEC_STARTED:
@@ -617,7 +619,7 @@ public abstract class Task {
             });
             // Also cancel any chained Tasks expecting the output of this Task
             if (t != null) {
-                t.cancel(false);
+                t.cancel(false, "Previous task in chain was canceled");
             }
         }
     }
@@ -747,14 +749,19 @@ public abstract class Task {
      * Override onCanceled() is the normal notification location, and is called
      * from the UI thread with Task state updates handled for you.
      *
-     * @param mayInterruptIfRunning (not yet supported)
-     * @return
+     * @param mayInterruptIfRunning 
+     * @param reason
+     * @return 
      */
-    public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
+    public synchronized boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
         boolean canceled = false;
+        
+        if (reason == null || reason.length() == 0) {
+            throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
+        }
 
         //#debug
-        L.i("Begin explicit cancel task", "status=" + this.getStatusString() + " " + this);
+        L.i("Begin cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
         switch (status) {
             case EXEC_STARTED:
                 if (mayInterruptIfRunning && (Worker.interruptTask(this))) {

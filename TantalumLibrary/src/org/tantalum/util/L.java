@@ -104,7 +104,8 @@ public abstract class L {
         }
         sb.append(millis);
         sb.append(" (");
-        sb.append(Thread.currentThread().getName());
+        String threadName = PlatformUtils.getInstance().isUIThread() ? "UI" : Thread.currentThread().getName();
+        sb.append(threadName);
         sb.append("): ");
         sb.append(tag);
         sb.append(": ");

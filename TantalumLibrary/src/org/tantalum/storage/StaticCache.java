@@ -27,6 +27,7 @@ import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.Worker;
+import org.tantalum.net.StaticWebCache;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
@@ -125,21 +126,25 @@ public class StaticCache {
      * @param handler
      * @return
      */
-    protected static StaticCache getExistingCache(final char priority, final DataTypeHandler handler, final Object taskFactory) {
+    protected static StaticCache getExistingCache(final char priority, final DataTypeHandler handler, final Object taskFactory, final Class clas) {
         synchronized (caches) {
             for (int i = 0; i < caches.size(); i++) {
                 final StaticCache c = (StaticCache) caches.elementAt(i);
 
-                if (c.equals(priority, handler, taskFactory)) {
-                    throw new IllegalArgumentException("A cache with priority=" + priority + " already exists, but DataTypeHandler and/or HttpTaskFactory are now equal to your factory request");
-                }
+                if (c.priority == priority) {
+                    if (c.getClass() != clas) {
+                        throw new IllegalArgumentException("You can not create a StaticCache and a StaticWebCache with the same priority: " + priority);
+                    }
+                    if (c.equals(priority, handler, taskFactory)) {
+                        throw new IllegalArgumentException("A cache with priority=" + priority + " already exists, but DataTypeHandler and/or HttpTaskFactory are now equal to your factory request");
+                    }
 
-                return c;
+                    return c;
+                }
             }
 
             return null;
         }
-
     }
 
     /**
@@ -159,7 +164,7 @@ public class StaticCache {
      * @return
      */
     public static synchronized StaticCache getCache(final char priority, final DataTypeHandler handler) {
-        StaticCache c = getExistingCache(priority, handler, null);
+        StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
 
         if (c == null) {
             c = new StaticCache(priority, handler);
@@ -617,7 +622,7 @@ public class StaticCache {
                 } catch (Exception e) {
                     //#debug
                     L.e("Can not complete", "getKeysTask", e);
-                    this.setStatus(Task.CANCELED);
+                    cancel(false, "Exception during async keys get");
                     flashCache.clear();
 
                     return new Vector();
@@ -682,7 +687,7 @@ public class StaticCache {
          */
         public GetLocalTask(final String key) {
             super(key);
-            
+
             // Better not to interrupt RMS read operation, just in case
             setShutdownBehaviour(Task.DEQUEUE_ON_SHUTDOWN);
         }
@@ -703,8 +708,9 @@ public class StaticCache {
             //#debug
             L.i("Async StaticCache get", (String) in);
             if (in == null || !(in instanceof String)) {
+                //#debug
                 L.i("ERROR", "StaticCache.GetLocalTask must receive a String url, but got " + in == null ? "null" : in.toString());
-                cancel(false);
+                cancel(false, "StaticCache.GetLocalTask got bad input to exec(): " + in);
 
                 return in;
             }
@@ -713,7 +719,7 @@ public class StaticCache {
             } catch (Exception e) {
                 //#debug
                 L.e("Can not async StaticCache get", in.toString(), e);
-                this.cancel(false);
+                cancel(false, "Exception during StatiCache.GetLocalTask synchronousGet(): " + e);
             }
 
             return in;

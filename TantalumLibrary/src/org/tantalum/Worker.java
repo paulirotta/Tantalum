@@ -358,8 +358,8 @@ public final class Worker extends Thread {
             for (int i = 0; i < workers.length; i++) {
                 workers[i].dequeueOrCancelOnShutdown(workers[i].serialQ);
                 final Task t = workers[i].currentTask;
-                if (t instanceof Task) {
-                    ((Task) t).cancel(true);
+                if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
+                    ((Task) t).cancel(true, "Shutdown signal received, hard cancel signal sent");
                 }
             }
 
@@ -394,7 +394,7 @@ public final class Worker extends Thread {
 
                 case Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN:
                 case Task.DEQUEUE_BUT_LEAVE_RUNNING_IF_ALREADY_STARTED_ON_SHUTDOWN:
-                    t.cancel(false);
+                    t.cancel(false, "Shutdown signal received, soft cancel signal sent");
                     queue.removeElementAt(i);
                     break;
 

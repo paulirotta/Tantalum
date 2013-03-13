@@ -245,6 +245,8 @@ public class HttpGetter extends Task {
                     }
                 }
                 out = bytes;
+                //#debug
+                L.i(this.getClass().getName() + " end fixed_length read", key + " content_length=" + length);
             } else {
                 //#debug
                 L.i(this.getClass().getName() + " start variable length read", key);
@@ -260,10 +262,9 @@ public class HttpGetter extends Task {
                     }
                 }
                 out = bos.toByteArray();
+                //#debug
+                L.i(this.getClass().getName() + " end variable length read (" + ((byte[]) out).length + " bytes)", key);
             }
-
-            //#debug
-            L.i(this.getClass().getName() + " complete", ((byte[]) getValue()).length + " bytes, " + key);
 
             success = checkResponseCode(responseCode, responseHeaders);
         } catch (IllegalArgumentException e) {
@@ -273,7 +274,7 @@ public class HttpGetter extends Task {
         } catch (ConnectionNotFoundException e) {
             //#debug
             L.e(this.getClass().getName() + " HttpGetter can not open a connection right now", key, e);
-            cancel(false);
+            cancel(false, "HttpGetter received ConnectionNotFound: " + key);
         } catch (IOException e) {
             //#debug
             L.e(this.getClass().getName() + " retries remaining", key + ", retries=" + retriesRemaining, e);
@@ -307,11 +308,11 @@ public class HttpGetter extends Task {
                 }
                 out = exec(url);
             } else if (!success) {
-                setStatus(Task.CANCELED);
+                cancel(false, "HttpGetter failed response code and header check: " + this.toString());
             }
             HttpGetter.inFlightGets.remove(key);
             //#debug
-            L.i("End " + this.getClass().getName(), key);
+            L.i("End " + this.getClass().getName(), key + " status=" + getStatus());
 
             return out;
         }
@@ -326,14 +327,14 @@ public class HttpGetter extends Task {
      * @return
      */
     protected boolean checkResponseCode(final int responseCode, final Hashtable headers) {
-        boolean ok = false;
+        final boolean ok;
 
-        if (responseCode >= 400) {
+        if (responseCode < 400) {
+            ok = true;
+        } else {
             //#debug
             L.i("Bad response code (" + responseCode + ")", "" + getValue());
-            cancel(true);
-        } else {
-            ok = true;
+            ok = false;
         }
 
         return ok;

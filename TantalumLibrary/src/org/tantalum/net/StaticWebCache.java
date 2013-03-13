@@ -101,8 +101,8 @@ public final class StaticWebCache extends StaticCache {
      * before deciding to cache the response.
      * @return
      */
-    public static synchronized StaticCache getWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) {
-        StaticCache c = getExistingCache(priority, handler, httpTaskFactory);
+    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) {
+        StaticWebCache c = (StaticWebCache) getExistingCache(priority, handler, httpTaskFactory, StaticWebCache.class);
 
         if (c == null) {
             c = new StaticWebCache(priority, handler, httpTaskFactory);
@@ -166,10 +166,10 @@ public final class StaticWebCache extends StaticCache {
      * @param key - The web service location to HTTP_GET the cacheable data
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
-     * @param priority
+     * @param priority *
      * - <code>Worker.HIGH_PRIORITY</code>, <code>Worker.NORMAL_PRIORITY</code>,
      * or <code>Worker.LOW_PRIORITY</code>
-     * @param getType
+     * @param getType *
      * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>,
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param chainedTask - your <code>Task</code> which is given the data
@@ -321,7 +321,7 @@ public final class StaticWebCache extends StaticCache {
             if (in == null || !(in instanceof String)) {
                 //#debug
                 L.i("ERROR", "StaticWebCache.GetAnywhereTask must receive a String url, but got " + in == null ? "null" : in.toString());
-                cancel(false);
+                cancel(false, "StaticWebCache.getAnywhereTask got bad input: " + in);
             } else {
                 //#debug
                 L.i("Async StaticCache.GET_ANYWHERE get", (String) in);
@@ -439,30 +439,39 @@ public final class StaticWebCache extends StaticCache {
 
             try {
                 final HttpGetter httpGetter = httpTaskFactory.getHttpTask((String) in, postMessage);
-                out = httpGetter.get();
-                if (!httpTaskFactory.validateHttpResponse(httpGetter.getResponseCode(), httpGetter.getResponseHeaders(), (byte[]) out)) {
+
+                if (httpGetter == null) {
                     //#debug
-                    L.i("staticwebcache task factory rejected server response", httpGetter.toString());
-                    httpGetter.cancel(false);
-                }
-                if (httpGetter.getStatus() == Task.CANCELED || httpGetter.getStatus() == Task.EXCEPTION) {
-                    this.cancel(false);
-                    return out;
+                    L.i("StaticWebCache.HttpTaskFactory returned null", "This is a normal signal that 'we don't need this queued HTTP operation anymore, so cancel");
+                    cancel(false, "StaticWebCache.GetWebTask received null HttpGetter from HttpTaskFactory which is a normal signal for 'do not get anymore': " + in);
                 } else {
-                    if (out != null) {
-                        try {
-                            out = putAsync((String) in, (byte[]) out); // Convert to use form
-                        } catch (Exception e) {
+                    //#debug
+                    L.i("StaticWebCache.HttpTaskFactory returned", httpGetter.toString());
+                    out = httpGetter.get();
+                    if (httpGetter.getStatus() == Task.CANCELED || httpGetter.getStatus() == Task.EXCEPTION) {
+                        cancel(false, "StaticWebCache.GetWebTask HttpGetter was canceled or error: " + httpGetter);
+                        return out;
+                    } else {
+                        if (!httpTaskFactory.validateHttpResponse(httpGetter.getResponseCode(), httpGetter.getResponseHeaders(), (byte[]) out)) {
                             //#debug
-                            L.e("Can not set result after staticwebcache http get", httpGetter.toString(), e);
-                            setStatus(EXCEPTION);
+                            L.i("staticwebcache task factory rejected server response", httpGetter.toString());
+                            httpGetter.cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation");
+                        }
+                        if (out != null) {
+                            try {
+                                out = putAsync((String) in, (byte[]) out); // Convert to use form
+                            } catch (Exception e) {
+                                //#debug
+                                L.e("Can not set result after staticwebcache http get", httpGetter.toString(), e);
+                                setStatus(EXCEPTION);
+                            }
                         }
                     }
                 }
             } catch (Exception e) {
                 //#debug
                 L.e("Can not async StaticCache web get", in.toString(), e);
-                this.cancel(false);
+                cancel(false, "Exception in StaticWebCache.GetWebTask - " + in + " : " + e);
             }
 
             return out;
@@ -481,12 +490,18 @@ public final class StaticWebCache extends StaticCache {
          * Get an HTTP task, possibly with modified headers. Although this is
          * usually an HttpGetter, in could be an HttpPoster.
          *
+         * You can override this method to customize it. If you return null,
+         * then that will trigger the StaticWebCache async get Task and any
+         * chained operations to cancel.
+         *
          * @param key
          * @param postMessage
          * @return
          */
         public HttpGetter getHttpTask(final String key, final byte[] postMessage) {
             if (postMessage == null) {
+                //#debug
+                L.i("StaticWebCache.HttpTaskFactory is generating a new HttpGetter", key);
                 return new HttpGetter(key);
             } else {
                 final HttpPoster poster = new HttpPoster(key);
