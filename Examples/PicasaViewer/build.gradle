@@ -1,0 +1,10 @@
+/**
+ * Tantalum/Examples
+ *
+ * Example MIDlet projects to test and demo some of the functionality 
+ * in Tantalum
+ */
+
+dependencies {
+    compile project(':TantalumLibrary')
+}

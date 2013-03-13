@@ -4,7 +4,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.eriwen:gradle-cobertura-plugin:1.0'
-        classpath files(antennaDir)
+        classpath files(antennaJar)
     }
 }
 
@@ -81,7 +81,7 @@ subprojects {
 
     buildscript {
         dependencies {
-            classpath files('../' + antennaDir)
+	    classpath files(rootDir.absolutePath + "/" + antennaJar)
         }
     }
 
@@ -94,7 +94,7 @@ subprojects {
 
     // file names
     project.ext.jarFile = target + '/' + jarFileName
-    
+
     task preverify << {
         project.ext.wtkHome = "$System.env.JAVA_ME_HOME"
 	project.ext.javaHome = "$System.env.JAVA_HOME"
@@ -108,8 +108,8 @@ subprojects {
             project.ext.errors = true
         }
         
-        if (antennaDir == null || ''.equals(antennaDir)) {
-            println('antennaDir was not set, edit the antennaDir property in gradle.properties')
+        if (antennaJar == null || ''.equals(antennaJar)) {
+            println('antennaJar was not set, edit the antennaJar property in gradle.properties')
             project.ext.errors = true
         }
 
