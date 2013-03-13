@@ -49,8 +49,12 @@ import org.tantalum.storage.DataTypeHandler;
  * @author phou
  */
 public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
-
+    private static final int NUMBER_OF_WORKERS = 1;
     private boolean midletPaused = false;
+
+    public HelloMIDlet() {
+        super(NUMBER_OF_WORKERS);
+    }
     
     /*
      * Think of a cache as a Hashtable of key-value pairs, where the key is the

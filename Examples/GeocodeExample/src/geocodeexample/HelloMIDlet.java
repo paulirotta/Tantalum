@@ -40,7 +40,7 @@ import org.tantalum.util.L;
  * @author phou
  */
 public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
-
+    private static final int NUMBER_OF_WORKERS = 1;
     private boolean midletPaused = false;
 //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
     private Command exitCommand;
@@ -49,6 +49,10 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     private StringItem locationStringItem;
     private TextField addressTextField;
 //</editor-fold>//GEN-END:|fields|0|
+
+    public HelloMIDlet() {
+        super(NUMBER_OF_WORKERS);
+    }
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
 //</editor-fold>//GEN-END:|methods|0|
