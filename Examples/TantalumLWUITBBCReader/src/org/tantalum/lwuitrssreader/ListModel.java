@@ -52,7 +52,7 @@ public class ListModel extends DefaultListModel implements DataChangedListener, 
         listForm.repaint();
     }
 
-    public Object convertToUseForm(byte[] bytes) {
+    public Object convertToUseForm(final Object key, byte[] bytes) {
         try {
             if (bytes.length > 0) {
                 rssModel.setXML(bytes);

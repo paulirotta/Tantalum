@@ -33,7 +33,7 @@ import org.tantalum.util.L;
  */
 public final class LWUITImageTypeHandler implements DataTypeHandler {
 
-    public Object convertToUseForm(final byte[] bytes) {
+    public Object convertToUseForm(final Object key, final byte[] bytes) {
         try {
             return Image.createImage(bytes, 0, bytes.length);
         } catch (Exception e) {

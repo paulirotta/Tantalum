@@ -37,7 +37,7 @@ import org.tantalum.util.L;
  */
 public final class J2MEImageTypeHandler extends ImageTypeHandler {
 
-    public Object convertToUseForm(final byte[] bytes) {
+    public Object convertToUseForm(final Object key, final byte[] bytes) {
         final Image img;
         final int algorithm;
         final boolean aspect;

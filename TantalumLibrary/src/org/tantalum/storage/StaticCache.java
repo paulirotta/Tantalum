@@ -232,7 +232,7 @@ public class StaticCache {
     protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
         //#debug
         L.i("Start to convert", key + " bytes length=" + bytes.length);
-        final Object o = handler.convertToUseForm(bytes);
+        final Object o = handler.convertToUseForm(key, bytes);
 
         synchronized (MUTEX) {
             accessOrder.addElement(key);

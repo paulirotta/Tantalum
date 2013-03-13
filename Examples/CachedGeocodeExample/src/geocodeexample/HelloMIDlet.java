@@ -75,7 +75,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
          * needed on a background Worker thread so the User Interface Thread (UI Thread)
          * is not blocked and the interface continues to be responsive.
          */
-        public Object convertToUseForm(final byte[] bytes) {
+    public Object convertToUseForm(final Object key, final byte[] bytes) {
             String out = "";
             String s = new String(bytes);
             try {

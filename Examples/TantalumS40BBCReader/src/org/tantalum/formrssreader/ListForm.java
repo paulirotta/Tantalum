@@ -44,7 +44,7 @@ public final class ListForm extends Form implements CommandListener {
     private final FormRSSReader rssReader;
     private final DetailsForm detailsView;
     private final StaticWebCache feedCache = new StaticWebCache('5', new DataTypeHandler() {
-        public Object convertToUseForm(final byte[] bytes) {
+    public Object convertToUseForm(final Object key, final byte[] bytes) {
             try {
                 rssModel.removeAllElements();
                 synchronized (Worker.LARGE_MEMORY_MUTEX) {

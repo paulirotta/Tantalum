@@ -46,7 +46,7 @@ public abstract class RSSListView extends View {
         super(canvas);
 
         feedCache = new StaticWebCache('5', new DataTypeHandler() {
-            public Object convertToUseForm(byte[] bytes) {
+	public Object convertToUseForm(final Object key, byte[] bytes) {
                 try {
                     rssModel.setXML(bytes);
 

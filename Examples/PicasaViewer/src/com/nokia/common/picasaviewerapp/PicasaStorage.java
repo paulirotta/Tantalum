@@ -106,7 +106,7 @@ public class PicasaStorage {
      */
     private static class ImageObjectTypeHandler implements DataTypeHandler {
 
-        public Object convertToUseForm(byte[] bytes) {
+        public Object convertToUseForm(final Object key, byte[] bytes) {
             JSONObject o;
             final Vector vector = new Vector();
 

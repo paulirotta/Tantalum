@@ -42,5 +42,5 @@ public interface DataTypeHandler {
      * @param bytes
      * @return 
      */
-    public Object convertToUseForm(byte[] bytes);
+    public Object convertToUseForm(Object key, byte[] bytes);
 }
