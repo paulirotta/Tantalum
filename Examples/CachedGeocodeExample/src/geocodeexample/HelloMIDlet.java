@@ -186,7 +186,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                  * user wants to see the result of their latest action as soon as possible
                  * without the UI ever locking up.
                  */
-                this.locationsCache.get(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
+                this.locationsCache.getAsync(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
                     protected void onPostExecute(Object result) {
                         // UI Thread callback on success
                         HelloMIDlet.this.getLocationStringItem().setText((String) result);
