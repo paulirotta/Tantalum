@@ -67,7 +67,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
      * least-recently-used local data. If that data is requested again, it will
      * be requested from the web server.
      */
-    private final StaticWebCache locationsCache = new StaticWebCache('0', new DataTypeHandler() {
+    private final StaticWebCache locationsCache = StaticWebCache.getWebCache('0', new DataTypeHandler() {
         /**
          * This method converts the JSON byte[] received from the web service, or
          * stored in local flash memory, into an object we can use in the
