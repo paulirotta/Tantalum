@@ -29,8 +29,8 @@ import org.tantalum.util.L;
  * A Task is the base unit of work in the Tantalum toolset. Any piece of code
  * which runs in response to an event and does not explicitly need to be run on
  * the user interface (UI) thread is usually implemented in an extension of
- * Task.exec(). It will automatically be executed on a background
- * worker thread once fork() has been called.
+ * Task.exec(). It will automatically be executed on a background worker thread
+ * once fork() has been called.
  *
  * @author phou
  */
@@ -52,13 +52,13 @@ public abstract class Task {
      */
     public static final int EXEC_STARTED = 1;
     /**
-     * status: exec() has finished. If this is a UI thread there still
-     * may be pending activity for the user interface thread
+     * status: exec() has finished. If this is a UI thread there still may be
+     * pending activity for the user interface thread
      */
     public static final int EXEC_FINISHED = 2;
     /**
-     * status: both Worker thread exec() and UI thread onPostExecute()
-     * have completed
+     * status: both Worker thread exec() and UI thread onPostExecute() have
+     * completed
      */
     public static final int UI_RUN_FINISHED = 3;
     /**
@@ -102,7 +102,7 @@ public abstract class Task {
      * using Worker.queueShutdownTask(Task).
      */
     public static final int CANCEL_ON_SHUTDOWN = 3;
-    private Object value = null; // Always access within a synchronized block
+    private Object value; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants
      */
@@ -119,7 +119,7 @@ public abstract class Task {
      * the current task is canceled or throws an exception, the chainedTask(s)
      * will have cancel() called to notify that they will not execute.
      */
-    protected volatile Task chainedTask = null; // Run afterwords, passing output as input parameter
+    private Task chainedTask = null; // Run afterwords, passing output as input parameter
 
     /**
      * Create a Task with input value of null
@@ -129,6 +129,7 @@ public abstract class Task {
      *
      */
     public Task() {
+        value = null;
     }
 
     /**
@@ -140,7 +141,7 @@ public abstract class Task {
      * @param in
      */
     public Task(final Object in) {
-        this.value = in;
+        value = in;
     }
 
     /**
@@ -148,21 +149,27 @@ public abstract class Task {
      *
      * @return
      */
-    public synchronized int getShutdownBehaviour() {
+    public final synchronized int getShutdownBehaviour() {
         return shutdownBehaviour;
     }
 
     /**
      * Override the default shutdown behavior
+     * 
+     * If for example you want an ongoing task to end immediately when the shutdown
+     * signal comes, set to Task.CANCEL_ON_SHUTDOWN
      *
      * @param shutdownBehaviour
+     * @return 
      */
-    public synchronized void setShutdownBehaviour(int shutdownBehaviour) {
+    public final synchronized Task setShutdownBehaviour(final int shutdownBehaviour) {
         if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.CANCEL_ON_SHUTDOWN) {
             throw new IllegalArgumentException("Invalid shutdownBehaviour value: " + shutdownBehaviour);
         }
 
         this.shutdownBehaviour = shutdownBehaviour;
+        
+        return this;
     }
 
     /**
@@ -172,7 +179,7 @@ public abstract class Task {
      * @throws IllegalStateException if the task is currently queued or
      * currently running
      */
-    public synchronized void notifyTaskForked() throws IllegalStateException {
+    public final synchronized void notifyTaskForked() throws IllegalStateException {
         if (status < EXEC_FINISHED || (this instanceof Runnable && status < UI_RUN_FINISHED)) {
             throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + getStatusString());
         }
@@ -223,7 +230,7 @@ public abstract class Task {
      *
      * @param value
      */
-    public synchronized final void set(final Object value) {
+    public final synchronized void set(final Object value) {
         if (status < AsyncTask.EXEC_FINISHED) {
             throw new IllegalStateException("Unpredictable run sequence- can not set Task value when status is " + status);
         }
@@ -412,15 +419,15 @@ public abstract class Task {
     /**
      * Wait up to Task.MAX_TIMEOUT milliseconds for all tasks in the list to
      * complete execution including any follow up tasks on the UI thread.
-     * 
+     *
      * @param tasks
      * @throws InterruptedException
      * @throws CancellationException
      * @throws ExecutionException
-     * @throws TimeoutException 
+     * @throws TimeoutException
      */
     public static void joinAllUI(final Task[] tasks) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        joinAllUI(tasks, Task.MAX_TIMEOUT);
+        doJoinAll(tasks, Task.MAX_TIMEOUT, true);
     }
 
     /**
@@ -582,6 +589,10 @@ public abstract class Task {
         }
         final Task t;
         synchronized (this) {
+            if (this.status == status) {
+                // Ignore set state, no change
+                return;
+            }
             if ((this.status == CANCELED || this.status == EXCEPTION) && status != READY) {
                 //#debug
                 L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
@@ -612,12 +623,12 @@ public abstract class Task {
      * Add a Task (or UITAsk, etc) which will run immediately after the present
      * Task and on the same Worker thread.
      *
-     * The output result of the present task is fed as the input to
-     * exec() on the nextTask, so any processing changes can
-     * propagated forward if the nextTask is so designed. This Task behavior may
-     * thus be slightly different from the first Task in the chain, which by
-     * default receives "null" as the input argument unless setValue() is called
-     * before fork()ing the first task in the chain.
+     * The output result of the present task is fed as the input to exec() on
+     * the nextTask, so any processing changes can propagated forward if the
+     * nextTask is so designed. This Task behavior may thus be slightly
+     * different from the first Task in the chain, which by default receives
+     * "null" as the input argument unless setValue() is called before fork()ing
+     * the first task in the chain.
      *
      * Note that if the Task is already chained, the new additional nextTask
      * will be added after the last existing link in the chain.
@@ -640,12 +651,12 @@ public abstract class Task {
         if (nextTask != null) {
             final Task multiLinkChain;
             synchronized (this) {
-                if (this.chainedTask == null) {
-                    this.chainedTask = nextTask;
+                if (chainedTask == null) {
+                    chainedTask = nextTask;
                     multiLinkChain = null;
                 } else {
                     // Already chained- we must add to the end of the chain
-                    multiLinkChain = this.chainedTask;
+                    multiLinkChain = chainedTask;
                 }
             }
             if (multiLinkChain != null) {
@@ -666,23 +677,27 @@ public abstract class Task {
      *
      * @return
      */
-    final Object executeTask(Object in) {
+    final Object executeTask(final Object in) {
         Object out = in;
 
         try {
             synchronized (this) {
                 if (in == null) {
-                    in = value;
+                    // No input provided- used the stored value as input
+                    out = value;
                 } else {
+                    // Input is provided- override the stored value
                     value = in;
                 }
                 if (status == Task.CANCELED || status == Task.EXCEPTION) {
                     throw new IllegalStateException(this.getStatusString() + " state can not be executed: " + this);
-                } else if (status != Task.EXEC_STARTED) {
-                    setStatus(Task.EXEC_STARTED);
                 }
+                setStatus(Task.EXEC_STARTED);
             }
-            out = exec(in);
+            /*
+             * Execute the Task without holding any locks
+             */
+            out = exec(out);
 
             final boolean doRun;
             final Task t;
@@ -699,10 +714,10 @@ public abstract class Task {
             }
             if (t != null) {
                 //#debug
-                L.i("Begin exec chained task", chainedTask.toString() + " INPUT: " + out);
-                t.executeTask(out);
+                L.i("Begin exec chained task", t.toString() + " INPUT: " + out);
+                final Object o = t.executeTask(out);
                 //#debug
-                L.i("End exec chained task", chainedTask.toString());
+                L.i("End exec chained task", t.toString() + " OUTPUT:" + o);
             }
         } catch (final Throwable t) {
             //#debug
