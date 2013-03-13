@@ -27,14 +27,15 @@ import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.Worker;
+import org.tantalum.net.StaticWebCache;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
 import org.tantalum.util.WeakHashCache;
 
 /**
- * A cache which returns Objects based on a String key asynchronously from RAM,
- * RMS, or network and synchronously from RAM and RMS.
+ * A ramCache which returns Objects based on a String key asynchronously from
+ * RAM, RMS, or network and synchronously from RAM and RMS.
  *
  * Objects in RAM are kept with WeakReferences so they may be garbage collected.
  *
@@ -47,22 +48,34 @@ import org.tantalum.util.WeakHashCache;
  * given StaticCache.
  */
 public class StaticCache {
+    /*
+     * The number of the Worker thread which will perform all cache write
+     * operations. Reading is asynchronous from any thread and this works because
+     * the WeakReferenceHash cache is locked from garbage-collecting in-memory
+     * copies of write-queued objects until after the write Task completes, thus
+     * out-of-order read is thread safe. But flash writing must be done in-order
+     * to preserve the application designer's intent without thread race
+     * conditions arising.
+     */
 
     private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
-    private static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
+    /*
+     * A list of all caches, sorted by priority order (lowest char first)
+     */
+    protected static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
         public boolean before(final Object o1, final Object o2) {
             return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
         }
     });
     private final FlashCache flashCache;
     /**
-     * A heap memory cache in the form of a Hashtable from which data can be
+     * A heap memory ramCache in the form of a Hashtable from which data can be
      * removed automatically by the virtual machine to free up memory (automatic
      * memory management).
      */
-    protected final WeakHashCache cache = new WeakHashCache();
+    protected final WeakHashCache ramCache = new WeakHashCache();
     /**
-     * The order in which object in the cache have been accessed since the
+     * The order in which object in the ramCache have been accessed since the
      * program started. Each time an object is accessed, it moves to the
      * beginning of the last. Least recently used objects are the ones most
      * likely to be cleared when additional flash memory is needed. The heap
@@ -71,7 +84,7 @@ public class StaticCache {
     protected final LRUVector accessOrder = new LRUVector();
     /**
      * This character serves as a market tag to distinguish the contents of this
-     * cache from other caches which may also be stored in flash memory in a
+     * ramCache from other caches which may also be stored in flash memory in a
      * flat name space. This must be unique like '0'..'9' or 'a'..'z'. Larger
      * character values indicate lower priority caches which will be garage
      * collected first when flash memory is low, so use larger characters for
@@ -84,15 +97,15 @@ public class StaticCache {
      * format such as Image or your own data model. This is usually a parser of
      * some kind. It will be run both when data first arrives over the network,
      * and again any time the data is loaded from flash memory. Since the heap
-     * memory cache uses WeakReference, values may be loaded from flash memory
-     * several times. This conversion method should therefore be stateless and
-     * thread safe so it can be run on several threads and possibly multiple
-     * cores at the same time.
+     * memory ramCache uses WeakReference, values may be loaded from flash
+     * memory several times. This conversion method should therefore be
+     * stateless and thread safe so it can be run on several threads and
+     * possibly multiple cores at the same time.
      */
     protected final DataTypeHandler handler;
     /**
-     * Total size of the cache as it exists in flash memory. This is often
-     * larger than the current heap cache memory consumption.
+     * Total size of the ramCache as it exists in flash memory. This is often
+     * larger than the current heap ramCache memory consumption.
      */
     protected int sizeAsBytes = 0;
     /*
@@ -102,46 +115,79 @@ public class StaticCache {
     /*
      * All sychronization is not on "this", but on the MUTEX Object to encapsulate
      * synch and dis-allow the bad practice of externally sychronizing on the
-     * cache object itself.
+     * ramCache object itself.
      */
     protected final Object MUTEX = new Object();
 
     /**
-     * Create a named cache
+     * Get the previously-created cache with the same parameters
+     *
+     * @param priority
+     * @param handler
+     * @return
+     */
+    protected static StaticCache getExistingCache(final char priority, final DataTypeHandler handler, final Object taskFactory) {
+        synchronized (caches) {
+            for (int i = 0; i < caches.size(); i++) {
+                final StaticCache c = (StaticCache) caches.elementAt(i);
+
+                if (c.equals(priority, handler, taskFactory)) {
+                    throw new IllegalArgumentException("A cache with priority=" + priority + " already exists, but DataTypeHandler and/or HttpTaskFactory are now equal to your factory request");
+                }
+
+                return c;
+            }
+
+            return null;
+        }
+
+    }
+
+    /**
+     * Get a named Cache
      *
      * Caches with higher priority are more likely to keep their data when space
      * is limited.
      *
-     * You will get IllegalArgumentException if you try to
+     * You will get IllegalArgumentException if you call this multiple times for
+     * the same cache priority but with a different (not .equals())
+     * DataTypeHandler.
      *
      * @param priority - a character from '0' to '9', higher numbers get a
      * preference for space. Letters are also allowed.
      * @param handler - a routine to convert from byte[] to Object form when
-     * loading into the RAM cache.
+     * loading into the RAM ramCache.
+     * @return
      */
-    public StaticCache(final char priority, final DataTypeHandler handler) {
-        flashCache = PlatformUtils.getInstance().getFlashCache(priority);
-        this.priority = priority;
-        this.handler = handler;
+    public static synchronized StaticCache getCache(final char priority, final DataTypeHandler handler) {
+        StaticCache c = getExistingCache(priority, handler, null);
 
+        if (c == null) {
+            c = new StaticCache(priority, handler);
+        }
+
+        return c;
+    }
+
+    /**
+     * Create a named Cache
+     *
+     */
+    protected StaticCache(final char priority, final DataTypeHandler handler) {
         if (priority < '0') {
             throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
-        synchronized (caches) {
-            for (int i = 0; i < caches.size(); i++) {
-                if (((StaticCache) caches.elementAt(i)).priority == priority) {
-                    throw new IllegalArgumentException("A StaticCache with priority=" + priority + " already exists");
-                }
-            }
-            caches.addElement(this);
-        }
+        caches.addElement(this);
+        this.priority = priority;
+        this.handler = handler;
+        flashCache = PlatformUtils.getInstance().getFlashCache(priority);
         init();
     }
 
     /**
      * Load the keys from flash memory
      *
-     * We want to use the RAM Hashtable to know what the cache contains, even
+     * We want to use the RAM Hashtable to know what the ramCache contains, even
      * though we do not pre-load from flash all the values
      */
     private void init() {
@@ -149,7 +195,7 @@ public class StaticCache {
             Vector keys = flashCache.getKeys();
             for (int i = 0; i < keys.size(); i++) {
                 String key = (String) keys.elementAt(i);
-                this.cache.put(key, null);
+                this.ramCache.put(key, null);
             }
         } catch (FlashDatabaseException ex) {
             //#debug
@@ -171,7 +217,7 @@ public class StaticCache {
     }
 
     /**
-     * Synchronously put the hash object to the RAM cache.
+     * Synchronously put the hash object to the RAM ramCache.
      *
      * If you also want the object stored in RMS, call put()
      *
@@ -186,7 +232,7 @@ public class StaticCache {
 
         synchronized (MUTEX) {
             accessOrder.addElement(key);
-            cache.put(key, o);
+            ramCache.put(key, o);
         }
         //#debug
         L.i("End convert", key);
@@ -202,7 +248,7 @@ public class StaticCache {
      */
     public Object synchronousRAMCacheGet(final String key) {
         synchronized (MUTEX) {
-            Object o = cache.get(key);
+            Object o = ramCache.get(key);
 
             if (o != null) {
                 //#debug            
@@ -235,8 +281,8 @@ public class StaticCache {
     }
 
     /**
-     * Get the value from local RAM or Flash cache memory. null is returned if
-     * the value is not available locally.
+     * Get the value from local RAM or Flash ramCache memory. null is returned
+     * if the value is not available locally.
      *
      * @param key
      * @return
@@ -285,7 +331,7 @@ public class StaticCache {
      *
      * @param key
      * @param bytes
-     * @return the byte[] converted to use form by the cache's Handler
+     * @return the byte[] converted to use form by the ramCache's Handler
      */
     public Object putAsync(final String key, final byte[] bytes) {
         if (key == null || key.length() == 0) {
@@ -357,7 +403,7 @@ public class StaticCache {
     }
 
     /**
-     * Remove unused and then currently used items from the RMS cache to make
+     * Remove unused and then currently used items from the RMS ramCache to make
      * room for new items.
      *
      * @param minSpaceToClear - in bytes
@@ -371,7 +417,7 @@ public class StaticCache {
         //#debug
         L.i("Clearing RMS space", minSpaceToClear + " bytes");
 
-        // First: clear cached objects not currently appearing in any open cache
+        // First: clear cached objects not currently appearing in any open ramCache
         for (int i = rsv.size() - 1; i >= 0; i--) {
             final String key = (String) rsv.elementAt(i);
             final StaticCache sc = getCacheContainingKey(key);
@@ -444,7 +490,7 @@ public class StaticCache {
             if (containsKey(key)) {
                 synchronized (MUTEX) {
                     accessOrder.removeElement(key);
-                    cache.remove(key);
+                    ramCache.remove(key);
                 }
                 flashCache.removeData(key);
                 //#debug
@@ -457,7 +503,7 @@ public class StaticCache {
     }
 
     /**
-     * Remove all elements from this cache
+     * Remove all elements from this ramCache
      *
      */
     public void clear() {
@@ -490,7 +536,7 @@ public class StaticCache {
                 synchronized (MUTEX) {
                     //#debug
                     L.i("Heap cached clear start", "" + priority);
-                    cache.clear();
+                    ramCache.clear();
                     init();
                     //#debug
                     L.i("Heap cached cleared", "" + priority);
@@ -506,7 +552,7 @@ public class StaticCache {
     }
 
     /**
-     * Does this cache contain an object matching the key?
+     * Does this ramCache contain an object matching the key?
      *
      * @param key
      * @return
@@ -518,20 +564,20 @@ public class StaticCache {
 
         boolean contained;
         synchronized (MUTEX) {
-            contained = cache.containsKey(key);
+            contained = ramCache.containsKey(key);
         }
 
         return contained;
     }
 
     /**
-     * The number of items in the cache
+     * The number of items in the ramCache
      *
      * @return
      */
     public int getSize() {
         synchronized (MUTEX) {
-            return this.cache.size();
+            return this.ramCache.size();
         }
     }
 
@@ -558,9 +604,9 @@ public class StaticCache {
     }
 
     /**
-     * Get a Vector of all keys for key-value pairs currently in the local cache
-     * at the flash memory level. The value may or may not be in heap memory at
-     * the current time.
+     * Get a Vector of all keys for key-value pairs currently in the local
+     * ramCache at the flash memory level. The value may or may not be in heap
+     * memory at the current time.
      *
      * @return
      */
@@ -612,7 +658,7 @@ public class StaticCache {
     }
 
     /**
-     * A helper class to get data asynchronously from the local cache without
+     * A helper class to get data asynchronously from the local ramCache without
      * attempting to get data from the web.
      *
      * Usually you do not invoke this directly, but rather call
@@ -670,5 +716,9 @@ public class StaticCache {
 
             return in;
         }
+    }
+
+    protected boolean equals(final char priority, final DataTypeHandler handler, final Object taskFactory) {
+        return this.priority == priority && this.handler.equals(handler);
     }
 }
