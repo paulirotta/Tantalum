@@ -341,9 +341,8 @@ public final class Worker extends Thread {
 
     /**
      * Call MIDlet.doNotifyDestroyed() after all current queued and shutdown
-     * Tasks are completed. Resources held by the system will be closed
-     * and queued compute such as writing to the RMS or file system will
-     * complete.
+     * Tasks are completed. Resources held by the system will be closed and
+     * queued compute such as writing to the RMS or file system will complete.
      *
      * @param block Block the calling thread up to three seconds to allow
      * orderly shutdown. This is only needed in MIDlet.doNotifyDestroyed(true)
@@ -354,15 +353,16 @@ public final class Worker extends Thread {
             synchronized (q) {
                 shuttingDown = true;
                 dequeueOrCancelOnShutdown(q);
-                for (int i = 0; i < workers.length; i++) {
-                    workers[i].dequeueOrCancelOnShutdown(workers[i].serialQ);
-                    final Task t = workers[i].currentTask;
-                    if (t instanceof Task) {
-                        ((Task) t).cancel(true);
-                    }
-                }
                 q.notifyAll();
             }
+            for (int i = 0; i < workers.length; i++) {
+                workers[i].dequeueOrCancelOnShutdown(workers[i].serialQ);
+                final Task t = workers[i].currentTask;
+                if (t instanceof Task) {
+                    ((Task) t).cancel(true);
+                }
+            }
+
             if (block) {
                 final long shutdownTimeout = System.currentTimeMillis() + 3000;
                 long timeRemaining;
@@ -392,13 +392,13 @@ public final class Worker extends Thread {
                 case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
                     break;
 
-                case Task.CANCEL_ON_SHUTDOWN:
-                case Task.CANCEL_FROM_QUEUE_BUT_LEAVE_RUNNING_IF_STARTED_ON_SHUTDOWN:
+                case Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN:
+                case Task.DEQUEUE_BUT_LEAVE_RUNNING_IF_ALREADY_STARTED_ON_SHUTDOWN:
                     t.cancel(false);
                     queue.removeElementAt(i);
                     break;
 
-                case Task.SILENT_DEQUEUE_ON_SHUTDOWN:
+                case Task.DEQUEUE_ON_SHUTDOWN:
                     queue.removeElementAt(i);
                     break;
             }
@@ -500,10 +500,10 @@ public final class Worker extends Thread {
                     }
                     if (t != null) {
                         boolean exec = false;
-                        
+
                         synchronized (t) {
                             final int s = t.getStatus();
-                            
+
                             exec = s < Task.CANCELED && s != Task.EXEC_STARTED;
                             if (exec) {
                                 t.setStatus(Task.EXEC_STARTED);

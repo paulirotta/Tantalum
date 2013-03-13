@@ -77,10 +77,10 @@ public abstract class Task {
     private static final String[] STATUS_STRINGS = {"EXEC_PENDING", "EXEC_STARTED", "EXEC_FINISHED", "UI_RUN_FINISHED", "CANCELED", "EXCEPTION", "READY"};
     public static final int EXECUTE_NORMALLY_ON_SHUTDOWN = 0;
     /**
-     * By default, Tasks which have not yet started are removed from the task
+     * Tasks which have not yet started are removed from the task
      * queue when an application shutdown begins.
      */
-    public static final int SILENT_DEQUEUE_ON_SHUTDOWN = 1;
+    public static final int DEQUEUE_ON_SHUTDOWN = 1;
     /**
      * If a Task is still queued but not yet started, you can request
      * notification of the shutdown in order to complete some cleanup activity.
@@ -91,8 +91,10 @@ public abstract class Task {
      * An alternative to this is to create a Task that is run at shutdown time
      * using Worker.queueShutdownTask(Task).
      */
-    public static final int CANCEL_FROM_QUEUE_BUT_LEAVE_RUNNING_IF_STARTED_ON_SHUTDOWN = 2;
+    public static final int DEQUEUE_BUT_LEAVE_RUNNING_IF_ALREADY_STARTED_ON_SHUTDOWN = 2;
     /**
+     * Default shutdown behavior.
+     * 
      * If you explicitly do not want your Task to be cancel(true)ed during
      * shutdown or silently cancel(false)ed when it is queued, use this shutdown
      * behavior. This is useful for example if you need to complete an ongoing
@@ -101,7 +103,7 @@ public abstract class Task {
      * An alternative to this is to create a Task that is run at shutdown time
      * using Worker.queueShutdownTask(Task).
      */
-    public static final int CANCEL_ON_SHUTDOWN = 3;
+    public static final int DEQUEUE_OR_CANCEL_ON_SHUTDOWN = 3;
     private Object value; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants
@@ -113,7 +115,7 @@ public abstract class Task {
      * may be required during shutdown, but HttpGetter could block or a long
      * time and should be cancel()ed during shutdown to speed application close.
      */
-    private int shutdownBehaviour = SILENT_DEQUEUE_ON_SHUTDOWN;
+    private int shutdownBehaviour = DEQUEUE_OR_CANCEL_ON_SHUTDOWN;
     /**
      * The next Task to be executed after this Task completes successfully. If
      * the current task is canceled or throws an exception, the chainedTask(s)
@@ -156,14 +158,15 @@ public abstract class Task {
     /**
      * Override the default shutdown behavior
      * 
-     * If for example you want an ongoing task to end immediately when the shutdown
-     * signal comes, set to Task.CANCEL_ON_SHUTDOWN
+     * If for example you want an ongoing task to finish if it has already started
+     * when the shutdown signal comes, but be removed from the queue if it
+     * has not yet started, set to Task.DEQUEUE_ON_SHUTDOWN
      *
      * @param shutdownBehaviour
      * @return 
      */
     public final synchronized Task setShutdownBehaviour(final int shutdownBehaviour) {
-        if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.CANCEL_ON_SHUTDOWN) {
+        if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
             throw new IllegalArgumentException("Invalid shutdownBehaviour value: " + shutdownBehaviour);
         }
 

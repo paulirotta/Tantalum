@@ -27,7 +27,6 @@ import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.Worker;
-import org.tantalum.net.StaticWebCache;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
@@ -352,7 +351,7 @@ public class StaticCache {
 
                     return in;
                 }
-            }, RMS_WORKER_INDEX);
+            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN), RMS_WORKER_INDEX);
         }
 
         return convertAndPutToHeapCache(key, bytes);
@@ -683,6 +682,9 @@ public class StaticCache {
          */
         public GetLocalTask(final String key) {
             super(key);
+            
+            // Better not to interrupt RMS read operation, just in case
+            setShutdownBehaviour(Task.DEQUEUE_ON_SHUTDOWN);
         }
 
         /**

@@ -79,8 +79,6 @@ public class HttpGetter extends Task {
      */
     public HttpGetter() {
         super();
-
-        setShutdownBehaviour(Task.CANCEL_ON_SHUTDOWN);
     }
 
     /**
@@ -102,7 +100,6 @@ public class HttpGetter extends Task {
     public HttpGetter(final String key) {
         super(key);
 
-        setShutdownBehaviour(Task.CANCEL_ON_SHUTDOWN);
         duplicateTaskWeShouldJoinInsteadOfReGetting = getInFlightNetworkTasks();
     }
 
