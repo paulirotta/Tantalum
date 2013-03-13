@@ -21,33 +21,6 @@ dependencies {
 
 }
 
-/**
- * Package the MIDlet package containing the unit tests to run on a device/emulator
- */
-task wtkpackage << {
-    project.ext.jadFile = target + '/wtk/' + project.name + '.jad'
-    project.ext.jarFile = target + '/wtk/' + project.name + '.jar'
-
-    ant.copy(file: projectDir.toString() + "/Application Descriptor",
-        tofile: project.ext.jadFile)
-
-    ant.wtkpackage(
-        jadFile: project.ext.jadFile,
-        jarFile: project.ext.jarFile,
-        autoversion: doAutoversion,
-        obfuscate: doObfuscate,
-        preverify: false) {
-        bootclasspath {
-            pathElement(path: configurations.bootClasspath.asPath)
-        }
-        classpath {
-            pathElement(path: configurations.compile.asPath)
-        }
-        ant.fileSet(dir: sourceSets.main.output.classesDir.toString())
-        ant.fileSet(dir: sourceSets.main.output.resourcesDir.toString())
-    }
-   
-}
 
 task compileJava(overwrite: true, dependsOn: wtkbuild) << {
 }
