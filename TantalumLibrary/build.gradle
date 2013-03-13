@@ -32,10 +32,22 @@ task jarInstrumented(type: Jar) {
     from sourceSets.main.output
     from sourceSets.main.cobertura.output
 }
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
 artifacts {
     codeCoverageJar jarInstrumented
+    archives sourcesJar
+    archives javadocJar
 }
 
 task compileJava(overwrite: true, dependsOn: wtkbuild) << {
 }
-
