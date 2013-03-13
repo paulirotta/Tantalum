@@ -388,7 +388,7 @@ public class TaskTest extends TestCase {
         assertEquals("Forked task instance is READY", Task.READY, instance.getStatus());
         instance.notifyTaskForked();
         assertEquals("Forked task instance is EXEC_PENDING", Task.EXEC_PENDING, instance.getStatus());
-        t2.cancel(true);
+        t2.cancel(true, "testing");
     }
 
     /**
@@ -504,15 +504,15 @@ public class TaskTest extends TestCase {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        assertEquals("Cancel queued but not started task", true, testCancelInstance3.cancel(false));
-        testCancelInstance2.cancel(true);
+        assertEquals("Cancel queued but not started task", true, testCancelInstance3.cancel(false, "testing"));
+        testCancelInstance2.cancel(true, "testing");
         try {
             Thread.sleep(100);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        assertEquals("Soft cancel running task", false, testCancelInstance.cancel(false));
-        assertEquals("Hard cancel running task", true, testCancelInstance2.cancel(true));
+        assertEquals("Soft cancel running task", false, testCancelInstance.cancel(false, "testing"));
+        assertEquals("Hard cancel running task", true, testCancelInstance2.cancel(true, "testing"));
         try {
             testCancelInstance.get(); // Cleanup for next test
         } catch (Exception ex) {
@@ -554,15 +554,15 @@ public class TaskTest extends TestCase {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        instance4.cancel(true);
+        instance4.cancel(true, "testing");
         try {
             Thread.sleep(100);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
         assertEquals("I AM DONE", testCancelRunsToEnd.getValue());
-        assertEquals(false, testCancelRunsToEnd.cancel(true));
-        assertEquals(false, testCancelRunsToEnd.cancel(false));
+        assertEquals(false, testCancelRunsToEnd.cancel(true, "testing"));
+        assertEquals(false, testCancelRunsToEnd.cancel(false, "testing"));
         for (int i = 0; i < errors.size(); i++) {
             fail((String) errors.elementAt(i));
         }
@@ -596,7 +596,7 @@ public class TaskTest extends TestCase {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        instance.cancel(true);
+        instance.cancel(true, "testing");
         try {
             Thread.sleep(100);
         } catch (InterruptedException ex) {
@@ -723,7 +723,7 @@ public class TaskTest extends TestCase {
         instanceA.fork();
         instanceB.fork();
         assertEquals(Task.EXEC_PENDING, instanceA.getStatus());
-        instance2.cancel(true);
+        instance2.cancel(true, "testing");
         try {
             Thread.sleep(200);
         } catch (InterruptedException ex) {
@@ -762,14 +762,14 @@ public class TaskTest extends TestCase {
         };
         final Task task5a = new Task("fail_a") {
             protected Object exec(Object in) {
-                this.cancel(false);
+                this.cancel(false, "testing");
 
                 return in + "fail";
             }
         };
         final Task task5b = new Task("fail_b") {
             protected Object exec(Object in) {
-                this.cancel(false);
+                this.cancel(false, "testing");
 
                 return in + "fail";
             }
@@ -885,7 +885,7 @@ public class TaskTest extends TestCase {
 
             protected void onPostExecute(Object result) {
                 L.i("UI thread BEFORE call to cancel", "" + result);
-                this.cancel(true);
+                this.cancel(true, "testing");
                 L.i("UI thread AFTER call to cancel", "" + result);
             }
         };
@@ -978,7 +978,7 @@ public class TaskTest extends TestCase {
             protected void onPostExecute(Object result) {
                 setValue(result + "UI");
                 // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
-                cancel(true);
+                cancel(true, "testing");
             }
         };
         final UITask task1b = new UITask("3") {
@@ -989,12 +989,12 @@ public class TaskTest extends TestCase {
             protected void onPostExecute(Object result) {
                 // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
                 setValue(result + "UI");
-                cancel(true);
+                cancel(true, "testing");
             }
         };
         final UITask task2 = new UITask("5") {
             protected Object exec(Object in) {
-                cancel(true);
+                cancel(true, "testing");
 
                 return in + "6";
             }
@@ -1014,7 +1014,7 @@ public class TaskTest extends TestCase {
 
             protected void onPostExecute(Object result) {
                 // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
-                cancel(false);
+                cancel(false, "testing");
                 setValue(result + "UI");
             }
         };
@@ -1029,20 +1029,20 @@ public class TaskTest extends TestCase {
 
             protected void onPostExecute(Object result) {
                 // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
-                cancel(false);
+                cancel(false, "testing");
                 setValue(result + "UI");
             }
         };
         final Task task4a = new Task("B") {
             protected Object exec(Object in) {
-                cancel(false);
+                cancel(false, "testing");
 
                 return in + "C";
             }
         };
         final Task task4b = new Task("D") {
             protected Object exec(Object in) {
-                cancel(false);
+                cancel(false, "testing");
 
                 return in + "E";
             }
