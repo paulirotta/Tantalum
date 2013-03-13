@@ -21,6 +21,19 @@ allprojects {
 
 subprojects {
     repositories {
+	flatDir {
+	   name "windowsJRE"
+	   dirs "${System.env.JAVA_HOME}/jre/lib"
+	}
+	flatDir {
+           // Also requires 'ln -s /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/{classes,rt}.jar' to work
+           name "osxJRE"
+           dirs "${System.env.JAVA_HOME}/../Classes"
+        }
+	flatDir {
+           name "wtk"
+	   dirs "${System.env.JAVA_ME_HOME}/lib"
+        }
         mavenCentral()
     }
 
@@ -30,22 +43,23 @@ subprojects {
 
     configurations {
         bootClasspath
+        jreBootClasspath
         testBootClasspath
     }
 
     dependencies {
-        bootClasspath files(wtkHome + '/lib/midp_2.1.jar')
-        bootClasspath files(wtkHome + '/lib/cldc_1.1.jar')
+        bootClasspath 'wtk:midp_2.1'
+        bootClasspath 'wtk:cldc_1.1'
 
-	testBootClasspath files(rtjar)
-	testBootClasspath files(jssejar)
 	testBootClasspath configurations.bootClasspath
+	jreBootClasspath 'jre:rt'
+	jreBootClasspath 'jre:jsse'
 
 	compile configurations.bootClasspath 
-	// These are now valid for windows. Check Mac+Linux as well
-        compile files(wtkHome + '/lib/cdc_1.1.jar')
-        compile files(wtkHome + '/lib/jsr172_1.0.jar')
-        compile files(wtkHome + '/lib/jsr_280_1.0.jar')
+	// compile 'wtk:cdc_1.1' // Only exists in Java ME 3.2
+        compile 'wtk:jsr172_1.0'
+        compile 'wtk:jsr177_1.0'
+        compile 'wtk:jsr280_1.0'
 
         testCompile "junit:junit:4.11"
         testCompile 'net.sourceforge.cobertura:cobertura:1.9.4.1'
@@ -80,20 +94,17 @@ subprojects {
 
     // file names
     project.ext.jarFile = target + '/' + jarFileName
-
-    // wtk properties
-    ant.property(name: 'wtk.home', value: wtkHome)
-    ant.property(name: 'wtk.cldc.version', value: cldcVersion)
-    ant.property(name: 'wtk.midp.version', value: midpVersion)
-
     
     task preverify << {
+        project.ext.wtkHome = "$System.env.JAVA_ME_HOME"
+	project.ext.javaHome = "$System.env.JAVA_HOME"
+
         project.ext.errors = false
-        if (wtkHome == null || ''.equals(wtkHome)) {
-            println('wtkHome was not set, edit the wtkHome property in gradle.properties')
+        if (project.ext.wtkHome == null || ''.equals(project.ext.wtkHome)) {
+            println('project.ext.wtkHome was not set')
             project.ext.errors = true
-        } else if (!file(wtkHome).exists() || !file(wtkHome).isDirectory()) {
-            println('wtkHome variable must point to the installatio of the Java ME SDK')
+        } else if (!file(project.ext.wtkHome).exists() || !file(project.ext.wtkHome).isDirectory()) {
+            println('project.ext.wtkHome variable must point to the installatio of the Java ME SDK')
             project.ext.errors = true
         }
         
@@ -102,8 +113,9 @@ subprojects {
             project.ext.errors = true
         }
 
+/*
         if (rtjar == null || ''.equals(rtjar)) {
-            println("Variable 'rtjar' is not set. You will need to point this variable on the JRE rt.jar")
+           println("Variable 'rtjar' is not set. You will need to point this variable on the JRE rt.jar")
             project.ext.errors = true
         } else if (!file(rtjar).exists() || !file(rtjar).isFile()) {       
             println("Variable 'rtjar' must point to the runtime jar in the JRE installation")
@@ -117,6 +129,7 @@ subprojects {
             println("Variable 'jssejar' must point to the security extensions ir in the JRE installation")
             project.ext.errors = true
         }
+*/
         
         if (project.ext.errors) {
             println("Error: Missing variables. Failing build")
@@ -137,6 +150,11 @@ subprojects {
         sourceSets.main.output.classesDir.mkdirs()
         sourceSets.main.output.resourcesDir.mkdirs()
        
+        // wtk properties
+        ant.property(name: 'wtk.home', value: project.ext.wtkHome)
+        ant.property(name: 'wtk.cldc.version', value: cldcVersion)
+        ant.property(name: 'wtk.midp.version', value: midpVersion)
+
         ant.wtkbuild(
             destdir: sourceSets.main.output.classesDir,
             encoding: sourceEncoding,

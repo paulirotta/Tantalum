@@ -47,7 +47,12 @@ final def thisProjectCoberturaDir = project.buildDir.toString() + coberturaDirec
  * cobertura files here and back, once finished.
  */
 def runTestsTask = project.tasks["test"]
-project.tasks['test'].bootstrapClasspath = configurations.testBootClasspath
+
+/**
+ * The ordering of the elements is significant. The JRE-classes must come before
+ * the midp and cldc classes, or the J2SE unit tests will fail. 
+ */
+project.tasks['test'].bootstrapClasspath = configurations.jreBootClasspath + configurations.testBootClasspath
 
 runTestsTask.doFirst {
     // Copy the coverage serialization data, as else Cobertura will create a new report file
