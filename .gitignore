@@ -1,0 +1,14 @@
+*.orig
+*.rej
+*.class
+*~
+*.o
+*.err
+*.log
+
+dist/
+build/
+private/
+.gradle/
+.nb-gradle-properties
+.nb-gradle/
