@@ -56,7 +56,6 @@ subprojects {
         jreBootClasspath 'jre:jsse'
 
         compile configurations.bootClasspath
-        // compile 'wtk:cdc_1.1' // Only exists in Java ME 3.2
         compile 'wtk:jsr172_1.0'
         compile 'wtk:jsr177_1.0'
         compile 'wtk:jsr280_1.0'
@@ -92,44 +91,18 @@ subprojects {
         }
     }
 
-    // file names
-    project.ext.jarFile = target + '/' + jarFileName
-
     task preverify << {
         project.ext.wtkHome = "$System.env.JAVA_ME_HOME"
         project.ext.javaHome = "$System.env.JAVA_HOME"
 
         project.ext.errors = false
         if (project.ext.wtkHome == null || ''.equals(project.ext.wtkHome)) {
-            println('project.ext.wtkHome was not set')
+            println('Environment variable JAVA_ME_HOME has not been set')
             project.ext.errors = true
         } else if (!file(project.ext.wtkHome).exists() || !file(project.ext.wtkHome).isDirectory()) {
-            println('project.ext.wtkHome variable must point to the installatio of the Java ME SDK')
+            println('The JAVA_ME_HOME-variable must point to the installatio of the Java ME SDK')
             project.ext.errors = true
         }
-
-        if (antennaJar == null || ''.equals(antennaJar)) {
-            println('antennaJar was not set, edit the antennaJar property in gradle.properties')
-            project.ext.errors = true
-        }
-
-/*
-        if (rtjar == null || ''.equals(rtjar)) {
-           println("Variable 'rtjar' is not set. You will need to point this variable on the JRE rt.jar")
-            project.ext.errors = true
-        } else if (!file(rtjar).exists() || !file(rtjar).isFile()) {       
-            println("Variable 'rtjar' must point to the runtime jar in the JRE installation")
-            project.ext.errors = true
-        }
-        
-        if (jssejar == null || ''.equals(jssejar)) {
-            println("Variable 'jssejar' is not set. You will need to point this variable on security extensions in the JRE installation")
-            project.ext.errors = true
-        } else if (!file(jssejar).exists() || !file(jssejar).isFile()) {
-            println("Variable 'jssejar' must point to the security extensions ir in the JRE installation")
-            project.ext.errors = true
-        }
-*/
 
         if (project.ext.errors) {
             println("Error: Missing variables. Failing build")
@@ -144,31 +117,19 @@ subprojects {
         }
 
         buildDir.mkdirs()
-    }
-
-    /**
-     * Build the project using antenna and the WTK toolkit
-     */
-    task wtkbuild(dependsOn: init) << {
-        sourceSets.main.output.classesDir.mkdirs()
-        sourceSets.main.output.resourcesDir.mkdirs()
-
-        // Convert the source directories to a format that ant/antenna can understand
-        project.ext.sourceDirectories = ""
-        for (file in sourceSets.main.java.srcDirs) {
-            if (file.exists()) {
-                project.ext.sourceDirectories += file.getAbsolutePath() + ":"
-            }
-        }
 
         // wtk properties
         ant.property(name: 'wtk.home', value: project.ext.wtkHome)
         ant.property(name: 'wtk.cldc.version', value: cldcVersion)
         ant.property(name: 'wtk.midp.version', value: midpVersion)
+    }
+
+    project.ext.executeWtkBuild = {
+        sourceDir, destDir ->
 
         ant.wtkbuild(
-                srcdir: project.ext.sourceDirectories,
-                destdir: sourceSets.main.output.classesDir,
+                srcdir: sourceDir,
+                destdir: destDir,
                 encoding: sourceEncoding,
                 source: javaVersion,
                 includeantruntime: false,
@@ -181,6 +142,30 @@ subprojects {
                 pathElement(path: configurations.compile.asPath)
             }
         }
+    }
+
+    project.ext.convertSourceSetToDirectories = {
+        set ->
+        project.ext.temp = ""
+        for (file in set) {
+            if (file.exists()) {
+                project.ext.temp += file.getAbsolutePath() + ":"
+            }
+        }
+
+        return project.ext.temp
+    }
+
+    /**
+     * Build the project using antenna and the WTK toolkit
+     */
+    task wtkbuild(dependsOn: init) << {
+        sourceSets.main.output.classesDir.mkdirs()
+        sourceSets.main.output.resourcesDir.mkdirs()
+
+        // Convert the source directories to a format that ant/antenna can understand
+        project.ext.sourceDirectories = project.ext.convertSourceSetToDirectories(sourceSets.main.java.srcDirs)
+        project.ext.executeWtkBuild(project.ext.sourceDirectories, sourceSets.main.output.classesDir)
     }
 
     /**

@@ -1,10 +1,16 @@
 /**
- * Tantalum/Examples
+ * Tantalum/Examples/CachedGeocodeExample
  *
  * Example MIDlet projects to test and demo some of the functionality 
  * in Tantalum
  */
-
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+}
 dependencies {
     compile project(':TantalumLibrary')
 }
