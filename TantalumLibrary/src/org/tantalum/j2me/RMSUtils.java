@@ -79,6 +79,11 @@ public final class RMSUtils {
         private static RMSUtils instance = new RMSUtils();
     }
 
+    /**
+     * Access the singleton
+     * 
+     * @return 
+     */
     public static RMSUtils getInstance() {
         return RMSUtilsHolder.instance;
     }
@@ -215,6 +220,7 @@ public final class RMSUtils {
      * @param key
      * @param data
      * @throws RecordStoreFullException
+     * @throws FlashDatabaseException 
      */
     public void cacheWrite(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
         write(getRecordStoreCacheName(key), data);
@@ -223,9 +229,10 @@ public final class RMSUtils {
     /**
      * Writes the byte array to the record store. Deletes the previous data.
      *
-     * @param recordStoreName
+     * @param key
      * @param data
      * @throws RecordStoreFullException
+     * @throws FlashDatabaseException 
      */
     public void write(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
         final RecordStore rs;
@@ -308,6 +315,7 @@ public final class RMSUtils {
      * Delete one item from a cache
      *
      * @param key
+     * @throws FlashDatabaseException 
      */
     public void cacheDelete(final String key) throws FlashDatabaseException {
         delete(getRecordStoreCacheName(key));
@@ -351,6 +359,7 @@ public final class RMSUtils {
      * Delete one item
      *
      * @param key
+     * @throws FlashDatabaseException 
      */
     public void delete(final String key) throws FlashDatabaseException {
         final String truncatedRecordStoreName = truncateRecordStoreNameToLast32(key);

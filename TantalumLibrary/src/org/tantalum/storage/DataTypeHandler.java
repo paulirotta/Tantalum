@@ -39,7 +39,11 @@ public interface DataTypeHandler {
      * 
      * Every StaticCache must be assigned a DataTypeHandler
      * 
-     * @param bytes
+     * @param key - an parameter which may optionally help with some implementations
+     * of <code>DataTypeHandler</code> and aids in debug messages if something
+     * goes wrong at runtime.
+     * @param bytes - the bytes received from the network or stored in a
+     * <code>StaticCache</code> for persistence.
      * @return 
      */
     public Object convertToUseForm(Object key, byte[] bytes);

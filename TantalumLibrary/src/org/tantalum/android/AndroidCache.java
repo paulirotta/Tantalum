@@ -41,10 +41,20 @@ import org.tantalum.util.L;
  * database. All web services you access over the net using a StaticWebCache
  * will be automatically stored here for faster access and offline use.
  *
- * @author phou
+  * You should not access this class directly. Use
+ * <code>PlatformUtils.getInstance()...</code> instead.
+ *
+* @author phou
  */
 public final class AndroidCache extends FlashCache {
 
+    /**
+     * Create a new AndroidCache. You should not call this method directly,
+     * but rather request the cache from 
+     * <code>PlatformUtils.getInstance().getFlashCache(priority)</code>
+     * 
+     * @param priority 
+     */
     public AndroidCache(final char priority) {
         super(priority);
 

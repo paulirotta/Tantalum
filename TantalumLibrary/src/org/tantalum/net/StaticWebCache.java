@@ -527,6 +527,15 @@ public final class StaticWebCache extends StaticCache {
         }
     }
 
+    /**
+     * Analyze if this cache is the same one that would be returned by a call
+     * to StaticWebCache.getCache() with the same parameters
+     * 
+     * @param priority
+     * @param handler
+     * @param taskFactory
+     * @return 
+     */
     protected boolean equals(final char priority, final DataTypeHandler handler, final Object taskFactory) {
         return this.priority == priority && this.handler.equals(handler) && this.httpTaskFactory.equals(taskFactory);
     }

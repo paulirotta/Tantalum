@@ -11,10 +11,21 @@ import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 
 /**
- *
+ * For each platform we support (J2ME, Android, ..) there is an implementation
+ * of PlatformAdapter which hooks to the appropriate platform code.
+ * 
+ * Note that by design this is a very minimal set of functions that provide
+ * object persistence, logging, creating an image, UI thread access and
+ * network access. Networking differences require one additional adapter,
+ * HttpConn.
+ * 
+ * The easiest way to add support for an additional platforms is copy one
+ * of the existing adapters and, well, adapt.
+ * 
  * @author phou
  */
 public interface PlatformAdapter {
+
     /**
      * Execute the run() method of the action on the platform's user interface
      * thread. The object will be queued by the platform and run soon, after
@@ -31,8 +42,8 @@ public interface PlatformAdapter {
      * @param action
      */
     public void doRunOnUiThread(final Runnable action);
-    
-        /**
+
+    /**
      * The application calls this when all Workers have completed shutdown to
      * inform the phone that the program has closed itself.
      *
@@ -40,11 +51,39 @@ public interface PlatformAdapter {
      *
      */
     public void doNotifyDestroyed();
-    
+
+    /**
+     * Get a platform-specific logging class. Add Tantalum logs to the
+     * platform's own logs allows you to use filters, redirect from remote
+     * device, and any any similar features as for example on Android. On
+     * J2ME we provide USB debugging in a terminal on your PC.
+     * 
+     * @return 
+     */
     public L doGetLog();
-    
+
+    /**
+     * Provide a return the converts from common Internet compressed byte[]
+     * formats such as PNG and JPG into the platform's native Image object.
+     * 
+     * Note that if you are using a UI framework such as LWUIT that replaces
+     * the native image format with it's own wrapper, you should implement
+     * that in your app. There is an example of this in the Tantalum
+     * LWUIT BBC Reader app.
+     * 
+     * @return 
+     */
     public ImageTypeHandler doGetImageTypeHandler();
-    
+
+    /**
+     * Get a persistence support class. Each cache is identified by a
+     * single character that is both the name of that cache and the
+     * priority. These are guaranteed by runtime exceptions at cache creation
+     * time to be globally unique within each application.
+     * 
+     * @param priority
+     * @return 
+     */
     public FlashCache doGetFlashCache(char priority);
 
     /**

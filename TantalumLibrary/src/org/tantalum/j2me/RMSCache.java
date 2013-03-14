@@ -33,13 +33,24 @@ import org.tantalum.util.L;
 /**
  * Persistent storage implementation for J2ME
  *
+ * You should not access this class directly. Use
+ * <code>PlatformUtils.getInstance()...</code> instead.
+ *
  * @author phou
  */
 public final class RMSCache extends FlashCache {
+
+    /**
+     * Create a new RMSCache. You should not call this method directly, but
+     * rather request the cache from
+     * <code>PlatformUtils.getInstance().getFlashCache(priority)</code>
+     *
+     * @param priority
+     */
     public RMSCache(final char priority) {
         super(priority);
     }
-    
+
     /**
      * Get the key with the priority prepended to create a key that is uniquely
      * stamped as belonging to this cache.

@@ -52,6 +52,16 @@ public class J2MELog extends L {
     private final J2MELog.UsbWriter usbWriter;
 //#enddebug    
 
+    /**
+     * Create a new platform-specific logger implementation
+     *
+     * Do not access this directly. You can use it from the convenience
+     * accessors
+     * <code>L.i("blah", "blah")</code> and
+     * <code>L.e("blah", "blah", myException)</code>
+     *
+     * @param routeDebugOutputToSerialPort
+     */
     public J2MELog(final boolean routeDebugOutputToSerialPort) {
         OutputStream s = null;
 //#mdebug

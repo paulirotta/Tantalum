@@ -27,7 +27,6 @@ import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.Worker;
-import org.tantalum.net.StaticWebCache;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
@@ -48,7 +47,7 @@ import org.tantalum.util.WeakHashCache;
  * given StaticCache.
  */
 public class StaticCache {
-    /*
+    /**
      * The number of the Worker thread which will perform all cache write
      * operations. Reading is asynchronous from any thread and this works because
      * the WeakReferenceHash cache is locked from garbage-collecting in-memory
@@ -57,9 +56,8 @@ public class StaticCache {
      * to preserve the application designer's intent without thread race
      * conditions arising.
      */
-
     private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
-    /*
+    /**
      * A list of all caches, sorted by priority order (lowest char first)
      */
     protected static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
@@ -112,9 +110,9 @@ public class StaticCache {
      *  For testing and performance comparison
      */
     private volatile boolean flashCacheEnabled = true;
-    /*
-     * All sychronization is not on "this", but on the MUTEX Object to encapsulate
-     * synch and dis-allow the bad practice of externally sychronizing on the
+    /**
+     * All synchronization is not on "this", but on the hidden MUTEX Object to encapsulate
+     * synch and disallow the bad practice of externally synchronizing on the
      * ramCache object itself.
      */
     protected final Object MUTEX = new Object();
@@ -124,7 +122,9 @@ public class StaticCache {
      *
      * @param priority
      * @param handler
-     * @return
+     * @param taskFactory
+     * @param clas
+     * @return 
      */
     protected static StaticCache getExistingCache(final char priority, final DataTypeHandler handler, final Object taskFactory, final Class clas) {
         synchronized (caches) {
@@ -176,6 +176,8 @@ public class StaticCache {
     /**
      * Create a named Cache
      *
+     * @param priority
+     * @param handler 
      */
     protected StaticCache(final char priority, final DataTypeHandler handler) {
         if (priority < '0') {
@@ -270,7 +272,8 @@ public class StaticCache {
      * @param key
      * @param getPriority - default is Work.NORMAL_PRIORITY set to
      * Work.HIGH_PRIORITY if you want the results quickly to update the UI.
-     * @return
+     * @param chainedTask
+     * @return 
      */
     public Task getAsync(final String key, final int getPriority, final Task chainedTask) {
         if (key == null || key.length() == 0) {
@@ -533,6 +536,9 @@ public class StaticCache {
      * affect conversions already in progress. Therefore you may want to chain()
      * to the Task returned and continue your code after this clear completes
      * after other queued tasks.
+     * 
+     * @param chainedTask
+     * @return 
      */
     public Task clearHeapCacheAsync(final Task chainedTask) {
         final Task task = new Task() {
@@ -612,7 +618,8 @@ public class StaticCache {
      * ramCache at the flash memory level. The value may or may not be in heap
      * memory at the current time.
      *
-     * @return
+     * @param chainedTask
+     * @return 
      */
     public Task getKeysAsync(final Task chainedTask) {
         final Task task = new Task() {
@@ -726,6 +733,17 @@ public class StaticCache {
         }
     }
 
+    /**
+     * Analyze if this cache is the same one that would be returned by a call to
+     * StaticCache.getCache() with the same parameters
+     *
+     * @param priority
+     * @param handler
+     * @param taskFactory - always null. The parameter exists for polymorphic
+     * equivalency with the overriding StaticWebCache implementation.
+     *
+     * @return
+     */
     protected boolean equals(final char priority, final DataTypeHandler handler, final Object taskFactory) {
         return this.priority == priority && this.handler.equals(handler);
     }

@@ -75,6 +75,9 @@ public abstract class Task {
      */
     public static final int READY = 6;
     private static final String[] STATUS_STRINGS = {"EXEC_PENDING", "EXEC_STARTED", "EXEC_FINISHED", "UI_RUN_FINISHED", "CANCELED", "EXCEPTION", "READY"};
+    /**
+     * Task will run without interruption or dequeue during shutdown
+     */
     public static final int EXECUTE_NORMALLY_ON_SHUTDOWN = 0;
     /**
      * Tasks which have not yet started are removed from the task queue when an
@@ -122,7 +125,7 @@ public abstract class Task {
      * will have cancel() called to notify that they will not execute.
      */
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
-    private final Object STATE_MUTEX = new Object();
+    private final Object MUTEX = new Object();
 
     /**
      * Create a Task with input value of null
@@ -153,7 +156,7 @@ public abstract class Task {
      * @return
      */
     public final int getShutdownBehaviour() {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             return shutdownBehaviour;
         }
     }
@@ -165,11 +168,18 @@ public abstract class Task {
      * started when the shutdown signal comes, but be removed from the queue if
      * it has not yet started, set to Task.DEQUEUE_ON_SHUTDOWN
      *
+     * Note that items passed to Worker.queueShutdownTask() ignore this value
+     * and will all run normally to completion during shutdown unless the
+     * platform (not the application) initiated the shutdown and slow
+     * shutdown Tasks result in a shutdown times-out. If this occurs during
+     * persistent state write operations, behavior is unpredictable, so
+     * it is best to write state as-you-go so that you can shut down quickly.
+     * 
      * @param shutdownBehaviour
      * @return
      */
     public final Task setShutdownBehaviour(final int shutdownBehaviour) {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
                 throw new IllegalArgumentException("Invalid shutdownBehaviour value: " + shutdownBehaviour);
             }
@@ -188,7 +198,7 @@ public abstract class Task {
      * currently running
      */
     public final void notifyTaskForked() throws IllegalStateException {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             if (status < EXEC_FINISHED || (this instanceof Runnable && status < UI_RUN_FINISHED)) {
                 throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + getStatusString());
             }
@@ -206,7 +216,7 @@ public abstract class Task {
      * @return
      */
     public final Object getValue() {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             return value;
         }
     }
@@ -243,7 +253,7 @@ public abstract class Task {
      * @param value
      */
     public final void set(final Object value) {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             if (status < AsyncTask.EXEC_FINISHED) {
                 throw new IllegalStateException("Unpredictable run sequence- can not set Task value when status is " + status);
             }
@@ -263,7 +273,7 @@ public abstract class Task {
      * @return
      */
     public final Object setValue(final Object value) {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             return this.value = value;
         }
     }
@@ -341,7 +351,7 @@ public abstract class Task {
         boolean doExec = false;
         Object out;
 
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             //#debug
             L.i("Start join", "timeout=" + timeout + " " + this);
             switch (status) {
@@ -366,7 +376,7 @@ public abstract class Task {
                     do {
                         final long t = System.currentTimeMillis();
 
-                        STATE_MUTEX.wait(timeout);
+                        MUTEX.wait(timeout);
                         if (status == EXEC_FINISHED) {
                             break;
                         }
@@ -548,14 +558,14 @@ public abstract class Task {
         long t = System.currentTimeMillis();
         join(timeout);
 
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             if (status < UI_RUN_FINISHED) {
                 //#debug
                 L.i("Start joinUI wait", "status=" + getStatusString());
                 timeout -= System.currentTimeMillis() - t;
                 while (timeout > 0) {
                     final long t2 = System.currentTimeMillis();
-                    STATE_MUTEX.wait(timeout);
+                    MUTEX.wait(timeout);
                     if (status == UI_RUN_FINISHED) {
                         break;
                     }
@@ -578,7 +588,7 @@ public abstract class Task {
      * @return
      */
     public final int getStatus() {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             return status;
         }
     }
@@ -589,7 +599,7 @@ public abstract class Task {
      * @return
      */
     public final String getStatusString() {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             return Task.STATUS_STRINGS[status];
         }
     }
@@ -618,7 +628,7 @@ public abstract class Task {
             throw new IllegalArgumentException("setStatus(" + status + ") not allowed");
         }
         final Task t;
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             if (this.status == status || ((this.status == CANCELED || this.status == EXCEPTION) && status != READY)) {
                 //#debug
                 L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
@@ -626,7 +636,7 @@ public abstract class Task {
             }
 
             this.status = status;
-            STATE_MUTEX.notifyAll();
+            MUTEX.notifyAll();
             t = chainedTask;
         }
 
@@ -676,7 +686,7 @@ public abstract class Task {
     public final Task chain(final Task nextTask) {
         if (nextTask != null) {
             final Task multiLinkChain;
-            synchronized (STATE_MUTEX) {
+            synchronized (MUTEX) {
                 if (chainedTask == null) {
                     chainedTask = nextTask;
                     multiLinkChain = null;
@@ -705,7 +715,7 @@ public abstract class Task {
      */
     final Object executeTask(Object in) {
         try {
-            synchronized (STATE_MUTEX) {
+            synchronized (MUTEX) {
                 if (in == null) {
                     // No input provided- used the stored value as input
                     in = value;
@@ -725,7 +735,7 @@ public abstract class Task {
 
             final boolean doRun;
             final Task t;
-            synchronized (STATE_MUTEX) {
+            synchronized (MUTEX) {
                 value = in;
                 doRun = status == EXEC_STARTED;
                 if (doRun) {
@@ -773,7 +783,7 @@ public abstract class Task {
      * @return
      */
     public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             boolean canceled = false;
 
             if (reason == null || reason.length() == 0) {
@@ -833,7 +843,7 @@ public abstract class Task {
      * @return
      */
     public final boolean isCanceled() {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             return status == AsyncTask.CANCELED || status == EXCEPTION;
         }
     }
@@ -844,7 +854,7 @@ public abstract class Task {
      * @return
      */
     public String toString() {
-        synchronized (STATE_MUTEX) {
+        synchronized (MUTEX) {
             return "TASK: status=" + getStatusString() + " result=" + value + " nextTask=(" + chainedTask + ")";
         }
     }

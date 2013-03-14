@@ -91,6 +91,11 @@ public final class PlatformUtils {
         private static final PlatformUtils instance = new PlatformUtils();
     }
 
+    /**
+     * Access the singleton instance of PlatformUtils
+     *
+     * @return
+     */
     public static PlatformUtils getInstance() {
         return PlatformUtils.PlatformUtilsHolder.instance;
     }
@@ -103,6 +108,8 @@ public final class PlatformUtils {
      * flash memory to complete.
      *
      * @param program
+     * @param numberOfWorkers
+     * @param routeDebugOutputToSerialPort
      */
     public void setProgram(final Object program, final int numberOfWorkers, final boolean routeDebugOutputToSerialPort) {
         if (this.numberOfWorkers != 0) {
@@ -150,7 +157,11 @@ public final class PlatformUtils {
         return program;
     }
 
-    protected void init() {
+    /**
+     * Complete cross-platform initialization
+     *
+     */
+    private void init() {
         Worker.init(numberOfWorkers);
         runOnUiThread(new Runnable() {
             public void run() {
@@ -197,6 +208,8 @@ public final class PlatformUtils {
     /**
      * Get a persistent cache implementation appropriate for this phone platform
      *
+     * @param priority - a program-unique identifier, lower values are garbage
+     * collected first
      * @return
      */
     public FlashCache getFlashCache(final char priority) {
@@ -270,7 +283,7 @@ public final class PlatformUtils {
      * @return
      * @throws IOException
      */
-    public  HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
+    public HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
         return PlatformUtils.getInstance().platformAdapter.doGetHttpConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
     }
 
