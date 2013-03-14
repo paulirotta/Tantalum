@@ -529,6 +529,7 @@ public final class Worker extends Thread {
                     if (t != null) {
                         t.executeTask(null);
                     }
+                    //DOSOMETHING
                 } catch (InterruptedException e) {
                     //#debug
                     L.i("Worker interrupted", "Obscure race conditions can do this, but the code is hardented to deal with it. task=" + currentTask);
