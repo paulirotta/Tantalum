@@ -372,14 +372,14 @@ public final class Worker extends Thread {
                 long timeRemaining;
 
                 final int numWorkersToWaitFor = Thread.currentThread() instanceof Worker ? workers.length - 1 : workers.length;
-                while (currentlyIdleCount < numWorkersToWaitFor) {
-                    timeRemaining = shutdownTimeout - System.currentTimeMillis();
-                    if (timeRemaining <= 0) {
-                        //#debug
-                        L.i("A worker blocked shutdown timeout", Worker.toStringWorkers());
-                        break;
-                    }
-                    synchronized (q) {
+                synchronized (q) {
+                    while (currentlyIdleCount < numWorkersToWaitFor) {
+                        timeRemaining = shutdownTimeout - System.currentTimeMillis();
+                        if (timeRemaining <= 0) {
+                            //#debug
+                            L.i("A worker blocked shutdown timeout", Worker.toStringWorkers());
+                            break;
+                        }
                         q.wait(timeRemaining);
                     }
                 }
@@ -522,25 +522,29 @@ public final class Worker extends Thread {
                             } finally {
                                 serialQ.removeElementAt(0);
                             }
-
                         }
                     }
 
                     if (t != null) {
                         t.executeTask(null);
                     }
-                    //DOSOMETHING
                 } catch (InterruptedException e) {
-                    //#debug
-                    L.i("Worker interrupted", "Obscure race conditions can do this, but the code is hardented to deal with it. task=" + currentTask);
+                    synchronized (q) {
+                        //#debug
+                        L.i("Worker interrupted by call to Task.cancel(true, \"blah\"", "Obscure race conditions can do this, but the code is hardened to deal with it and continue smoothly to the next task. task=" + currentTask);
+                    }
                 } catch (Exception e) {
-                    //#debug
-                    L.e("Uncaught worker error", "task=" + currentTask, e);
+                    synchronized (q) {
+                        //#debug
+                        L.e("Uncaught worker error", "task=" + currentTask, e);
+                    }
                 }
             }
         } catch (Throwable t) {
-            //#debug
-            L.e("Fatal worker error", "task=" + currentTask, t);
+            synchronized (q) {
+                //#debug
+                L.e("Fatal worker error", "task=" + currentTask, t);
+            }
         }
         //#debug
         L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);

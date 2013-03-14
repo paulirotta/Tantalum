@@ -119,7 +119,6 @@ public abstract class L {
      * debug output connections.
      */
     protected abstract void close();
-//#enddebug
 
     /**
      * Close any open resources. This is the last action before the program
@@ -128,9 +127,8 @@ public abstract class L {
      *
      */
     public static void shutdown() {
-//#mdebug
         PlatformUtils.getInstance().getLog().printMessage(new StringBuffer("Tantalum log shutdown"), null);
         PlatformUtils.getInstance().getLog().close();
-//#enddebug
     }
+//#enddebug
 }
