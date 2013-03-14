@@ -245,30 +245,34 @@ public final class Worker extends Thread {
      * @param task
      * @return
      */
-    static boolean interruptTask(final Task task) {
+    static void interruptTask(final Task task) {
         if (task == null) {
             throw new IllegalArgumentException("interruptTask(null) not allowed");
         }
         synchronized (q) {
-            boolean interrupted = false;
             final Thread currentThread = Thread.currentThread();
 
             for (int i = 0; i < workers.length; i++) {
                 if (task.equals(workers[i].currentTask)) {
                     if (currentThread == workers[i]) {
-                        throw new IllegalArgumentException("myTask.doInBackground()...interruptTask(myTask): a Task can not interrupt() itself- cancel your task with normal logic, it will run faster and cleaner");
+                        //#debug
+                        L.i("Task attempted hard interrupt, usually cancel(true, ..), in itself", "The task is canceled, but will execute to the end. It if faster and more clear execution if you cancel(false, ..)");
+                        break;
                     }
                     //#debug
                     L.i("Sending interrupt signal", "thread=" + workers[i].getName() + " task=" + task);
-                    interrupted = task == workers[i].currentTask;
-                    if (interrupted) {
+                    if (task == workers[i].currentTask) {
+                        /*
+                         * Note that there is no race condition here (risk the
+                         * task ends before you interrupt it) because currentTask
+                         * is a variable only accessed within a q-synchronized block
+                         * and Worker.run() is hardened against stray interrupts
+                         */
                         workers[i].interrupt();
                     }
                     break;
                 }
             }
-
-            return interrupted;
         }
     }
 
@@ -452,26 +456,39 @@ public final class Worker extends Thread {
     public void run() {
         try {
             while (true) {
+                /*
+                 * The following code is Thread-hardened such that Task.cancel(true, "blah")
+                 * can generate a Thread.interrupt() at an point below _if_
+                 * currentTask is non-null and this Thread will recover and continue
+                 * without side-effects such as re-running a canceled Task because
+                 * of race a condition.
+                 */
                 try {
                     final Task t;
 
                     synchronized (q) {
                         currentTask = null;
                         if (serialQ.isEmpty()) {
-                            if (q.size() > 0) {
-                                // Normal compute
-                                currentTask = (Task) q.firstElement();
-                                q.removeElementAt(0);
+                            if (!q.isEmpty()) {
+                                // Normal compute, hardened against async interrupt
+                                try {
+                                    t = (Task) q.firstElement();
+                                    currentTask = t;
+                                } finally {
+                                    // Ensure we don't re-run in case of interrupt
+                                    q.removeElementAt(0);
+                                }
                             } else {
                                 if (shuttingDown) {
                                     if (!shutdownQ.isEmpty()) {
                                         // SHUTDOWN PHASE 1: Execute shutdown actions
-                                        currentTask = (Task) shutdownQ.firstElement();
+                                        t = (Task) shutdownQ.firstElement();
                                         shutdownQ.removeElementAt(0);
                                     } else if (currentlyIdleCount < workers.length - 1) {
                                         // Nothing more to do, but other threads are still finishing last tasks
                                         ++currentlyIdleCount;
                                         q.wait();
+                                        t = null;
                                         --currentlyIdleCount;
                                     } else {
                                         // PHASE 2: Shutdown actions are all complete
@@ -480,45 +497,41 @@ public final class Worker extends Thread {
                                         L.i("Log notifyDestroyed", "");
                                         L.shutdown();
                                         //#enddebug
+                                        t = null;
                                         shuttingDown = false;
                                     }
                                 } else if (currentlyIdleCount >= workers.length && lowPriorityQ.size() > 0) {
                                     // Idle compute, at least half available threads in the pool are left for new normal priority tasks
-                                    currentTask = (Task) lowPriorityQ.firstElement();
-                                    lowPriorityQ.removeElementAt(0);
+                                    try {
+                                        t = (Task) lowPriorityQ.firstElement();
+                                        currentTask = t;
+                                    } finally {
+                                        lowPriorityQ.removeElementAt(0);
+                                    }
                                 } else {
                                     ++currentlyIdleCount;
                                     q.wait();
                                     --currentlyIdleCount;
+                                    t = null;
                                 }
                             }
                         } else {
-                            currentTask = (Task) serialQ.firstElement();
-                            serialQ.removeElementAt(0);
-                        }
-                        t = currentTask;
-                    }
-                    if (t != null) {
-                        boolean exec = false;
-
-                        synchronized (t) {
-                            final int s = t.getStatus();
-
-                            exec = s < Task.CANCELED && s != Task.EXEC_STARTED;
-                            if (exec) {
-                                t.setStatus(Task.EXEC_STARTED);
+                            try {
+                                t = (Task) serialQ.firstElement();
+                                currentTask = t;
+                            } finally {
+                                serialQ.removeElementAt(0);
                             }
+
                         }
-                        if (exec) {
-                            t.executeTask(t.getValue()); // Pass in argument
-                        } else {
-                            //#debug
-                            L.i("Worker will not execute canceled task", t.toString());
-                        }
+                    }
+
+                    if (t != null) {
+                        t.executeTask(null);
                     }
                 } catch (InterruptedException e) {
                     //#debug
-                    L.i("Worker interrupted", "task=" + currentTask);
+                    L.i("Worker interrupted", "Obscure race conditions can do this, but the code is hardented to deal with it. task=" + currentTask);
                 } catch (Exception e) {
                     //#debug
                     L.e("Uncaught worker error", "task=" + currentTask, e);

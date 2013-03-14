@@ -44,7 +44,7 @@ public final class RMSUtils {
 
     private static final int MAX_RECORD_NAME_LENGTH = 32;
     private static final int MAX_OPEN_RECORD_STORES = 10;
-    private static final String RECORD_HASH_PREFIX = "@";
+    private static final char RECORD_HASH_PREFIX = '@';
     private static final LengthLimitedVector openRecordStores = new LengthLimitedVector(MAX_OPEN_RECORD_STORES) {
         protected synchronized void lengthExceeded(final Object extra) {
             /**
@@ -74,9 +74,18 @@ public final class RMSUtils {
         }
     };
 
+    private static class RMSUtilsHolder {
+
+        private static RMSUtils instance = new RMSUtils();
+    }
+
+    public static RMSUtils getInstance() {
+        return RMSUtilsHolder.instance;
+    }
+
     /**
      * Singleton constructor
-     * 
+     *
      */
     private RMSUtils() {
         Worker.forkShutdownTask(new Task() {
@@ -91,24 +100,16 @@ public final class RMSUtils {
             }
         });
     }
-    
-    private static class RMSUtilsHolder {
-        private static RMSUtils instance = new RMSUtils();
-    }
-    
-    public static RMSUtils getInstance() {
-        return RMSUtilsHolder.instance;
-    }
 
     /**
-     * Return of a list of record stores whose name indiates that they are
+     * Return of a list of record stores whose name indicates that they are
      * caches
      *
      * @return
      */
-    public Vector getCachedRecordStoreNames() {
+    public Vector getCacheRecordStoreNames() {
         final String[] rs = RecordStore.listRecordStores();
-        
+
         if (rs == null) {
             return new Vector();
         }
@@ -116,8 +117,31 @@ public final class RMSUtils {
 
         for (int i = 0; i < rs.length; i++) {
             String name = rs[i];
-            if (name.startsWith(RECORD_HASH_PREFIX)) {
+            if (name.charAt(0) == RECORD_HASH_PREFIX) {
                 name = name.substring(1); // Cut off initial '@'
+                v.addElement(name);
+            }
+        }
+
+        return v;
+    }
+
+    /**
+     * Return of a list of record stores which are not part of a cache
+     *
+     * @return
+     */
+    public Vector getNoncacheRecordStoreNames() {
+        final String[] rs = RecordStore.listRecordStores();
+
+        if (rs == null) {
+            return new Vector();
+        }
+        final Vector v = new Vector(rs.length);
+
+        for (int i = 0; i < rs.length; i++) {
+            final String name = rs[i];
+            if (name.charAt(0) != RECORD_HASH_PREFIX) {
                 v.addElement(name);
             }
         }
@@ -168,11 +192,16 @@ public final class RMSUtils {
         final StringBuffer sb = new StringBuffer(MAX_RECORD_NAME_LENGTH);
 
         sb.append(RECORD_HASH_PREFIX);
-        sb.append(Integer.toString(key.hashCode(), Character.MAX_RADIX));
-        final int fullLength = sb.length() + key.length();
-        if (fullLength > MAX_RECORD_NAME_LENGTH) {
-            sb.append(key.substring(fullLength - MAX_RECORD_NAME_LENGTH));
+        if (key.length() > MAX_RECORD_NAME_LENGTH - 1) {
+            sb.append(Integer.toString(key.hashCode(), Character.MAX_RADIX));
+            final int fullLength = sb.length() + key.length();
+            if (fullLength > MAX_RECORD_NAME_LENGTH) {
+                sb.append(key.substring(0, MAX_RECORD_NAME_LENGTH));
+            } else {
+                sb.append(key);
+            }
         } else {
+            // Short key, just prepend the 
             sb.append(key);
         }
 
@@ -187,8 +216,47 @@ public final class RMSUtils {
      * @param data
      * @throws RecordStoreFullException
      */
-    public void cacheWrite(final String key, final byte[] data) throws RecordStoreFullException {
+    public void cacheWrite(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
         write(getRecordStoreCacheName(key), data);
+    }
+
+    /**
+     * Writes the byte array to the record store. Deletes the previous data.
+     *
+     * @param recordStoreName
+     * @param data
+     * @throws RecordStoreFullException
+     */
+    public void write(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
+        final RecordStore rs;
+        final String recordStoreName = truncateRecordStoreNameToLast32(key);
+
+        try {
+            //delete old value
+            //#debug
+            L.i("Add to RMS", key + " (" + data.length + " bytes)");
+            rs = getRecordStore(recordStoreName, true);
+
+            if (rs.getNumRecords() == 0) {
+                rs.addRecord(data, 0, data.length);
+            } else {
+                rs.setRecord(1, data, 0, data.length);
+            }
+            //#debug
+            L.i("Added to RMS", recordStoreName + " (" + data.length + " bytes)");
+        } catch (RecordStoreFullException e) {
+            //#debug
+            L.i("RMS FULL when writing", key + " " + recordStoreName);
+            throw e;
+        } catch (Exception e) {
+            try {
+                //#debug
+                L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
+                delete(key);
+            } finally {
+                throw new FlashDatabaseException("RMS write problem, delete was attempted: " + key + " : " + e);
+            }
+        }
     }
 
     /**
@@ -204,45 +272,45 @@ public final class RMSUtils {
     }
 
     /**
+     * Reads the data from the given record store.
+     *
+     * @param key
+     * @return
+     * @throws FlashDatabaseException
+     */
+    public byte[] read(final String key) throws FlashDatabaseException {
+        final RecordStore rs;
+        final String recordStoreName = truncateRecordStoreNameToLast32(key);
+        byte[] data = null;
+
+        try {
+            //#debug
+            L.i("Read from RMS", recordStoreName);
+            rs = getRecordStore(recordStoreName, false);
+            if (rs != null && rs.getNumRecords() > 0) {
+                data = rs.getRecord(1);
+                //#debug
+                L.i("End read from RMS", recordStoreName + " (" + data.length + " bytes)");
+            } else {
+                //#debug
+                L.i("End read from RMS", recordStoreName + " (NOTHING TO READ)");
+            }
+        } catch (Exception e) {
+            //#debug
+            L.e("Can not read RMS", recordStoreName, e);
+            throw new FlashDatabaseException("Can not read record from RMS: " + key + " - " + recordStoreName + " : " + e);
+        }
+
+        return data;
+    }
+
+    /**
      * Delete one item from a cache
      *
      * @param key
      */
-    public void cacheDelete(final String key) {
+    public void cacheDelete(final String key) throws FlashDatabaseException {
         delete(getRecordStoreCacheName(key));
-    }
-
-    /**
-     * Writes the byte array to the record store. Deletes the previous data.
-     *
-     * @param recordStoreName
-     * @param data
-     * @throws RecordStoreFullException
-     */
-    public void write(String recordStoreName, final byte[] data) throws RecordStoreFullException {
-        final RecordStore rs;
-
-        try {
-            //delete old value
-            //#debug
-            L.i("Add to RMS", recordStoreName + " (" + data.length + " bytes)");
-            recordStoreName = truncateRecordStoreName(recordStoreName);
-            rs = getRecordStore(recordStoreName, true);
-
-            if (rs.getNumRecords() == 0) {
-                rs.addRecord(data, 0, data.length);
-            } else {
-                rs.setRecord(1, data, 0, data.length);
-            }
-            //#debug
-            L.i("Added to RMS", recordStoreName + " (" + data.length + " bytes)");
-        } catch (Exception e) {
-            //#debug
-            L.e("RMS write problem", recordStoreName, e);
-            if (e instanceof RecordStoreFullException) {
-                throw (RecordStoreFullException) e;
-            }
-        }
     }
 
     /**
@@ -255,7 +323,7 @@ public final class RMSUtils {
      * @return null if the record store does not exist
      * @throws RecordStoreException
      */
-    public RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws RecordStoreException {
+    private RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws FlashDatabaseException {
         RecordStore rs = null;
         boolean success = false;
 
@@ -266,10 +334,12 @@ public final class RMSUtils {
         } catch (RecordStoreNotFoundException e) {
             success = !createIfNecessary;
             rs = null;
+        } catch (RecordStoreException e) {
+            throw new FlashDatabaseException("Can not get RMS: " + recordStoreName + " : " + e);
         } finally {
             if (!success) {
                 //#debug
-                L.i("Can not open record store", "Deleting " + recordStoreName);
+                L.i("Can not open record store", "Attempting RMS delete " + recordStoreName);
                 delete(recordStoreName);
             }
         }
@@ -280,12 +350,13 @@ public final class RMSUtils {
     /**
      * Delete one item
      *
-     * @param recordStoreName
+     * @param key
      */
-    public void delete(String recordStoreName) {
+    public void delete(final String key) throws FlashDatabaseException {
+        final String truncatedRecordStoreName = truncateRecordStoreNameToLast32(key);
+
         try {
             final RecordStore[] recordStores;
-            recordStoreName = truncateRecordStoreName(recordStoreName);
 
             synchronized (openRecordStores) {
                 recordStores = new RecordStore[openRecordStores.size()];
@@ -309,20 +380,22 @@ public final class RMSUtils {
              */
             for (int i = 0; i < recordStores.length; i++) {
                 try {
-                    if (recordStores[i].getName().equals(recordStoreName)) {
+                    if (recordStores[i].getName().equals(truncatedRecordStoreName)) {
                         openRecordStores.markAsExtra(recordStores[i]);
                     }
                 } catch (RecordStoreNotOpenException ex) {
-                    L.e("Mark as extra close of record store failed", recordStoreName, ex);
+                    //#debug
+                    L.e("Mark as extra close of record store failed", truncatedRecordStoreName, ex);
                 }
             }
-            RecordStore.deleteRecordStore(recordStoreName);
+            RecordStore.deleteRecordStore(key);
         } catch (RecordStoreNotFoundException ex) {
             //#debug
-            L.i("RMS not found (normal result)", recordStoreName);
+            L.i("RMS not found (normal result)", key);
         } catch (RecordStoreException ex) {
             //#debug
-            L.e("RMS delete problem", recordStoreName, ex);
+            L.e("RMS delete problem", key, ex);
+            throw new FlashDatabaseException("Can not delete RMS: " + key + " : " + ex);
         }
     }
 
@@ -332,44 +405,14 @@ public final class RMSUtils {
      * @param recordStoreName
      * @return
      */
-    public String truncateRecordStoreName(String recordStoreName) {
+    private String truncateRecordStoreNameToLast32(String recordStoreName) {
+        if (recordStoreName == null || recordStoreName.length() == 0) {
+            throw new IllegalArgumentException("null or trivial record store name");
+        }
         if (recordStoreName.length() > MAX_RECORD_NAME_LENGTH) {
-            recordStoreName = recordStoreName.substring(0, MAX_RECORD_NAME_LENGTH);
+            recordStoreName = recordStoreName.substring(recordStoreName.length() - MAX_RECORD_NAME_LENGTH);
         }
 
         return recordStoreName;
-    }
-
-    /**
-     * Reads the data from the given record store.
-     *
-     * @param recordStoreName
-     * @return
-     * @throws FlashDatabaseException
-     */
-    public byte[] read(String recordStoreName) throws FlashDatabaseException {
-        final RecordStore rs;
-        byte[] data = null;
-
-        try {
-            recordStoreName = truncateRecordStoreName(recordStoreName);
-            //#debug
-            L.i("Read from RMS", recordStoreName);
-            rs = getRecordStore(recordStoreName, false);
-            if (rs != null && rs.getNumRecords() > 0) {
-                data = rs.getRecord(1);
-                //#debug
-                L.i("End read from RMS", recordStoreName + " (" + data.length + " bytes)");
-            } else {
-                //#debug
-                L.i("End read from RMS", recordStoreName + " (NOTHING TO READ)");
-            }
-        } catch (Exception e) {
-            //#debug
-            L.e("Can not read RMS", recordStoreName, e);
-            throw new FlashDatabaseException("Can not read record from RMS: " + recordStoreName + " : " + e);
-        }
-
-        return data;
     }
 }

@@ -51,7 +51,7 @@ public final class RMSCache extends FlashCache {
      * @param key
      * @return
      */
-    private String getPriorityKey(final String key) {
+    private String getCacheKey(final String key) {
         return priority + key;
     }
 
@@ -72,10 +72,10 @@ public final class RMSCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public byte[] getData(String key) throws FlashDatabaseException {
-        key = getPriorityKey(key);
+    public byte[] getData(final String key) throws FlashDatabaseException {
+        final String cacheKey = getCacheKey(key);
 
-        return RMSUtils.getInstance().cacheRead(key);
+        return RMSUtils.getInstance().cacheRead(cacheKey);
     }
 
     /**
@@ -86,14 +86,15 @@ public final class RMSCache extends FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public void putData(String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException {
-        key = getPriorityKey(key);
+    public void putData(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException {
+        final String cacheKey = getCacheKey(key);
 
         try {
-            RMSUtils.getInstance().cacheWrite(key, bytes);
+            RMSUtils.getInstance().cacheWrite(cacheKey, bytes);
         } catch (RecordStoreFullException ex) {
-            L.e("RMS Full", key, ex);
-            throw new FlashFullException("key = " + key + " : " + ex);
+            //#debug
+            L.e("RMS Full", cacheKey, ex);
+            throw new FlashFullException("key = " + cacheKey + " : " + ex);
         }
     }
 
@@ -102,10 +103,10 @@ public final class RMSCache extends FlashCache {
      *
      * @param key
      */
-    public void removeData(String key) {
-        key = getPriorityKey(key);
+    public void removeData(final String key) throws FlashDatabaseException {
+        final String cacheKey = getCacheKey(key);
 
-        RMSUtils.getInstance().cacheDelete(key);
+        RMSUtils.getInstance().cacheDelete(cacheKey);
     }
 
     /**
@@ -115,7 +116,7 @@ public final class RMSCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public Vector getKeys() throws FlashDatabaseException {
-        final Vector keys = RMSUtils.getInstance().getCachedRecordStoreNames();
+        final Vector keys = RMSUtils.getInstance().getCacheRecordStoreNames();
         final String prefix = String.valueOf(priority);
 
         for (int i = keys.size() - 1; i >= 0; i--) {

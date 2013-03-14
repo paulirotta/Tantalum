@@ -122,6 +122,7 @@ public abstract class Task {
      * will have cancel() called to notify that they will not execute.
      */
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
+    private final Object STATE_MUTEX = new Object();
 
     /**
      * Create a Task with input value of null
@@ -151,8 +152,10 @@ public abstract class Task {
      *
      * @return
      */
-    public final synchronized int getShutdownBehaviour() {
-        return shutdownBehaviour;
+    public final int getShutdownBehaviour() {
+        synchronized (STATE_MUTEX) {
+            return shutdownBehaviour;
+        }
     }
 
     /**
@@ -165,14 +168,16 @@ public abstract class Task {
      * @param shutdownBehaviour
      * @return
      */
-    public final synchronized Task setShutdownBehaviour(final int shutdownBehaviour) {
-        if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
-            throw new IllegalArgumentException("Invalid shutdownBehaviour value: " + shutdownBehaviour);
+    public final Task setShutdownBehaviour(final int shutdownBehaviour) {
+        synchronized (STATE_MUTEX) {
+            if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
+                throw new IllegalArgumentException("Invalid shutdownBehaviour value: " + shutdownBehaviour);
+            }
+
+            this.shutdownBehaviour = shutdownBehaviour;
+
+            return this;
         }
-
-        this.shutdownBehaviour = shutdownBehaviour;
-
-        return this;
     }
 
     /**
@@ -182,11 +187,13 @@ public abstract class Task {
      * @throws IllegalStateException if the task is currently queued or
      * currently running
      */
-    public final synchronized void notifyTaskForked() throws IllegalStateException {
-        if (status < EXEC_FINISHED || (this instanceof Runnable && status < UI_RUN_FINISHED)) {
-            throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + getStatusString());
+    public final void notifyTaskForked() throws IllegalStateException {
+        synchronized (STATE_MUTEX) {
+            if (status < EXEC_FINISHED || (this instanceof Runnable && status < UI_RUN_FINISHED)) {
+                throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + getStatusString());
+            }
+            setStatus(EXEC_PENDING);
         }
-        setStatus(EXEC_PENDING);
     }
 
     /**
@@ -198,8 +205,10 @@ public abstract class Task {
      *
      * @return
      */
-    public final synchronized Object getValue() {
-        return value;
+    public final Object getValue() {
+        synchronized (STATE_MUTEX) {
+            return value;
+        }
     }
 
     /**
@@ -233,12 +242,14 @@ public abstract class Task {
      *
      * @param value
      */
-    public final synchronized void set(final Object value) {
-        if (status < AsyncTask.EXEC_FINISHED) {
-            throw new IllegalStateException("Unpredictable run sequence- can not set Task value when status is " + status);
-        }
+    public final void set(final Object value) {
+        synchronized (STATE_MUTEX) {
+            if (status < AsyncTask.EXEC_FINISHED) {
+                throw new IllegalStateException("Unpredictable run sequence- can not set Task value when status is " + status);
+            }
 
-        this.value = value;
+            this.value = value;
+        }
     }
 
     /**
@@ -251,8 +262,10 @@ public abstract class Task {
      * @param value
      * @return
      */
-    public final synchronized Object setValue(final Object value) {
-        return this.value = value;
+    public final Object setValue(final Object value) {
+        synchronized (STATE_MUTEX) {
+            return this.value = value;
+        }
     }
 
     /**
@@ -328,7 +341,7 @@ public abstract class Task {
         boolean doExec = false;
         Object out;
 
-        synchronized (this) {
+        synchronized (STATE_MUTEX) {
             //#debug
             L.i("Start join", "timeout=" + timeout + " " + this);
             switch (status) {
@@ -353,7 +366,7 @@ public abstract class Task {
                     do {
                         final long t = System.currentTimeMillis();
 
-                        wait(timeout);
+                        STATE_MUTEX.wait(timeout);
                         if (status == EXEC_FINISHED) {
                             break;
                         }
@@ -535,14 +548,14 @@ public abstract class Task {
         long t = System.currentTimeMillis();
         join(timeout);
 
-        synchronized (this) {
+        synchronized (STATE_MUTEX) {
             if (status < UI_RUN_FINISHED) {
                 //#debug
                 L.i("Start joinUI wait", "status=" + getStatusString());
                 timeout -= System.currentTimeMillis() - t;
                 while (timeout > 0) {
                     final long t2 = System.currentTimeMillis();
-                    wait(timeout);
+                    STATE_MUTEX.wait(timeout);
                     if (status == UI_RUN_FINISHED) {
                         break;
                     }
@@ -564,8 +577,10 @@ public abstract class Task {
      *
      * @return
      */
-    public final synchronized int getStatus() {
-        return status;
+    public final int getStatus() {
+        synchronized (STATE_MUTEX) {
+            return status;
+        }
     }
 
     /**
@@ -573,8 +588,10 @@ public abstract class Task {
      *
      * @return
      */
-    public final synchronized String getStatusString() {
-        return Task.STATUS_STRINGS[status];
+    public final String getStatusString() {
+        synchronized (STATE_MUTEX) {
+            return Task.STATUS_STRINGS[status];
+        }
     }
 
     /**
@@ -589,23 +606,27 @@ public abstract class Task {
      * @param status
      */
     public final void setStatus(final int status) {
+        if (status == CANCELED) {
+            throw new IllegalArgumentException("Do not setStatus(Task.CANCELED). Call Task.cancel(false, \"Reason for cancel\") instead to keep your code debuggable");
+        }
+
+        doSetStatus(status);
+    }
+
+    private void doSetStatus(final int status) {
         if (status < EXEC_PENDING || status > READY) {
             throw new IllegalArgumentException("setStatus(" + status + ") not allowed");
         }
         final Task t;
-        synchronized (this) {
-            if (this.status == status) {
-                // Ignore set state, no change
-                return;
-            }
-            if ((this.status == CANCELED || this.status == EXCEPTION) && status != READY) {
+        synchronized (STATE_MUTEX) {
+            if (this.status == status || ((this.status == CANCELED || this.status == EXCEPTION) && status != READY)) {
                 //#debug
                 L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
                 return;
             }
 
             this.status = status;
-            this.notifyAll();
+            STATE_MUTEX.notifyAll();
             t = chainedTask;
         }
 
@@ -655,7 +676,7 @@ public abstract class Task {
     public final Task chain(final Task nextTask) {
         if (nextTask != null) {
             final Task multiLinkChain;
-            synchronized (this) {
+            synchronized (STATE_MUTEX) {
                 if (chainedTask == null) {
                     chainedTask = nextTask;
                     multiLinkChain = null;
@@ -682,14 +703,12 @@ public abstract class Task {
      *
      * @return
      */
-    final Object executeTask(final Object in) {
-        Object out = in;
-
+    final Object executeTask(Object in) {
         try {
-            synchronized (this) {
+            synchronized (STATE_MUTEX) {
                 if (in == null) {
                     // No input provided- used the stored value as input
-                    out = value;
+                    in = value;
                 } else {
                     // Input is provided- override the stored value
                     value = in;
@@ -702,12 +721,12 @@ public abstract class Task {
             /*
              * Execute the Task without holding any locks
              */
-            out = exec(out);
+            in = exec(in);
 
             final boolean doRun;
             final Task t;
-            synchronized (this) {
-                value = out;
+            synchronized (STATE_MUTEX) {
+                value = in;
                 doRun = status == EXEC_STARTED;
                 if (doRun) {
                     setStatus(EXEC_FINISHED);
@@ -719,8 +738,8 @@ public abstract class Task {
             }
             if (t != null) {
                 //#debug
-                L.i("Begin exec chained task", t.toString() + " INPUT: " + out);
-                final Object o = t.executeTask(out);
+                L.i("Begin exec chained task", t.toString() + " INPUT: " + in);
+                final Object o = t.executeTask(in);
                 //#debug
                 L.i("End exec chained task", t.toString() + " OUTPUT:" + o);
             }
@@ -730,7 +749,7 @@ public abstract class Task {
             setStatus(EXCEPTION);
         }
 
-        return out;
+        return in;
     }
 
     /**
@@ -749,44 +768,47 @@ public abstract class Task {
      * Override onCanceled() is the normal notification location, and is called
      * from the UI thread with Task state updates handled for you.
      *
-     * @param mayInterruptIfRunning 
+     * @param mayInterruptIfRunning
      * @param reason
-     * @return 
+     * @return
      */
-    public synchronized boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
-        boolean canceled = false;
-        
-        if (reason == null || reason.length() == 0) {
-            throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
-        }
+    public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
+        synchronized (STATE_MUTEX) {
+            boolean canceled = false;
 
-        //#debug
-        L.i("Begin cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
-        switch (status) {
-            case EXEC_STARTED:
-                if (mayInterruptIfRunning && (Worker.interruptTask(this))) {
-                    setStatus(CANCELED);
+            if (reason == null || reason.length() == 0) {
+                throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
+            }
+
+            //#debug
+            L.i("Begin cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
+            switch (status) {
+                case EXEC_STARTED:
+                    doSetStatus(CANCELED);
                     canceled = true;
-                }
-                break;
-
-            case EXEC_FINISHED:
-                if (this instanceof UITask && mayInterruptIfRunning) {
-                    if (Worker.interruptTask(this)) {
-                        break;
+                    if (mayInterruptIfRunning) {
+                        Worker.interruptTask(this);
                     }
-                }
-            case UI_RUN_FINISHED:
-                //#debug
-                L.i("Attempt to cancel Task after EXEC_FINISHED. Suspicious but may be normal due to race-to-cancel condition", this.toString());
-                break;
+                    break;
 
-            default:
-                setStatus(CANCELED);
-                canceled = true;
+                case EXEC_FINISHED:
+                    //#debug
+                    L.i("Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
+                    break;
+                case UI_RUN_FINISHED:
+                    //#debug
+                    L.i("Attempt to cancel Task after EXEC_FINISHED. Suspicious but may be normal due to race-to-cancel condition", this.toString());
+                    break;
+
+                default:
+                    doSetStatus(CANCELED);
+                    canceled = true;
+            }
+            //#debug
+            L.i("End cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
+
+            return canceled;
         }
-
-        return canceled;
     }
 
     /**
@@ -810,8 +832,10 @@ public abstract class Task {
      *
      * @return
      */
-    public final synchronized boolean isCanceled() {
-        return status == AsyncTask.CANCELED || status == EXCEPTION;
+    public final boolean isCanceled() {
+        synchronized (STATE_MUTEX) {
+            return status == AsyncTask.CANCELED || status == EXCEPTION;
+        }
     }
 
     /**
@@ -819,7 +843,9 @@ public abstract class Task {
      *
      * @return
      */
-    public synchronized String toString() {
-        return "TASK: status=" + getStatusString() + " result=" + value + " nextTask=(" + chainedTask + ")";
+    public String toString() {
+        synchronized (STATE_MUTEX) {
+            return "TASK: status=" + getStatusString() + " result=" + value + " nextTask=(" + chainedTask + ")";
+        }
     }
 }
