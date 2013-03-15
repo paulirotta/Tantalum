@@ -748,10 +748,9 @@ public abstract class Task {
             }
             if (t != null) {
                 //#debug
-                L.i("Begin exec chained task", t.toString() + " INPUT: " + in);
-                final Object o = t.executeTask(in);
-                //#debug
-                L.i("End exec chained task", t.toString() + " OUTPUT:" + o);
+                L.i("Begin fork chained task", t.toString() + " INPUT: " + in);
+                t.setValue(in);
+                Worker.fork(t, Worker.HIGH_PRIORITY);
             }
         } catch (final Throwable t) {
             //#debug

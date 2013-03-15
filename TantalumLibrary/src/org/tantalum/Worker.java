@@ -360,7 +360,7 @@ public final class Worker extends Thread {
                 q.notifyAll();
             }
             for (int i = 0; i < workers.length; i++) {
-                workers[i].dequeueOrCancelOnShutdown(workers[i].serialQ);
+                Worker.dequeueOrCancelOnShutdown(workers[i].serialQ);
                 final Task t = workers[i].currentTask;
                 if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
                     ((Task) t).cancel(true, "Shutdown signal received, hard cancel signal sent");
