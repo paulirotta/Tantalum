@@ -341,8 +341,12 @@ public final class RMSUtils {
         RecordStore rs = null;
         boolean success = false;
 
+        //#debug
+        L.i("getRecordStore", recordStoreName + " createIfNecessary:" + createIfNecessary);
         try {
             rs = RecordStore.openRecordStore(recordStoreName, createIfNecessary);
+            //#debug
+            if (rs == null) throw new FlashDatabaseException("BSEmu does not support RMS"); //FIXME and remove this test
             openRecordStores.addElement(rs);
             success = true;
         } catch (RecordStoreNotFoundException e) {
