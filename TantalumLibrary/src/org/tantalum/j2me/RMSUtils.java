@@ -238,6 +238,12 @@ public final class RMSUtils {
         final RecordStore rs;
         final String recordStoreName = truncateRecordStoreNameToLast32(key);
 
+        if (key == null || key.length() == 0) {
+            throw new IllegalArgumentException("Can not RMSUtils.write(), null or trivial key: " + key);
+        }
+        if (data == null) {
+            throw new IllegalArgumentException("Can not RMSUtils.write(), data is null: " + key);
+        }
         try {
             //delete old value
             //#debug
