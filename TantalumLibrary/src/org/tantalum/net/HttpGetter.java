@@ -198,10 +198,10 @@ public class HttpGetter extends Task {
     public Object exec(final Object url) {
         Object out = url;
 
-        this.key = (String) url;
-        if (key == null || key.indexOf(':') <= 0) {
-            throw new IllegalArgumentException("HttpGetter was passed bad URL: " + key);
+        if (!(url instanceof String) || url == null || ((String) url).indexOf(':') <= 0) {
+            throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }
+        this.key = (String) url;
 
         //#debug
         L.i(this.getClass().getName() + " start", key);
