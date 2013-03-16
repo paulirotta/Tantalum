@@ -8,7 +8,8 @@
  http://www.apache.org/licenses/LICENSE-2.0.html
 
  You are kindly requested to return your improvements to this library to the
- open source community at http://projects.developer.nokia.com/Tantalum
+ open source community at http://projects.developer.nokia.com/Tantalum or 
+ http://github.com/TantalumMobile
 
  The above copyright and license notice notice shall be included in all copies
  or substantial portions of the Software.
@@ -25,41 +26,33 @@ package org.tantalum.net;
 
 import java.io.IOException;
 import java.util.Vector;
+import static org.junit.Assert.*;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.tantalum.MockedStaticInitializers;
 import org.tantalum.PlatformUtils;
 import org.tantalum.util.L;
 
 /**
+ * Unit tests for the default implementation of
+ * <code>HttpGetter</code>
  *
- * @author kink
+ * @author Kai Inkinen <kai.inkinen@futurice.com>; github.com/kaiinkinen
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({L.class, PlatformUtils.class})
-@SuppressStaticInitializationFor({"org.tantalum.util.L",
-    "org.tantalum.PlatformUtils"})
-public class HttpGetterTest {
+public class HttpGetterTest extends MockedStaticInitializers {
 
-    public static final int RESPONSE_UNAUTHORIZED = 401;
-    
+    boolean cancelCalled;
     HttpGetter getter;
-    PlatformUtils platformUtils;
     PlatformUtils.HttpConn httpConn;
 
     @Before
     public final void httpGetterTestFixture() {
         createMocks();
-
-        getter = new HttpGetter();
+        cancelCalled = false;
+        getter = new MyTestHttpGetter();
     }
 
     /**
@@ -71,31 +64,44 @@ public class HttpGetterTest {
     public void illegalArgumentExceptionThrownWhenNonStringKey() {
         getter.exec(new Object());
     }
-    
+
     @Test
     public void responseCodesIn400RangeAreConsideredBad() throws IOException {
         final String url = "http://github.com/TantalumMobile";
 
+        /*
+         * Setup test 
+         */
         // Return a unauthorized response code, no response body
         when(platformUtils.getHttpGetConn(eq(url), any(Vector.class), any(Vector.class))).thenReturn(httpConn);
-        when(httpConn.getResponseCode()).thenReturn(RESPONSE_UNAUTHORIZED);
+        when(httpConn.getResponseCode()).thenReturn(HttpGetter.HTTP_401_UNAUTHORIZED);
         when(httpConn.getLength()).thenReturn(0L);
 
+        /*
+         * Execute
+         */
         final Object returnValue = getter.exec(url);
 
-        // Assert
+        /*
+         * Assert
+         */
         verify(httpConn).close();
         assertEquals(url, returnValue);
-        assertEquals(RESPONSE_UNAUTHORIZED, getter.getResponseCode());
-        
+        assertEquals(HttpGetter.HTTP_401_UNAUTHORIZED, getter.getResponseCode());
+        assertTrue("Task was not correctly cancelled after error", cancelCalled);
     }
 
     private void createMocks() {
         PowerMockito.mockStatic(L.class);
-        PowerMockito.mockStatic(PlatformUtils.class);
-        platformUtils = Mockito.mock(PlatformUtils.class);
-        Mockito.when(PlatformUtils.getInstance()).thenReturn(platformUtils);
-
         httpConn = Mockito.mock(PlatformUtils.HttpConn.class);
+    }
+
+    private class MyTestHttpGetter extends HttpGetter {
+
+        @Override
+        public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
+            cancelCalled = true;
+            return true;
+        }
     }
 }
