@@ -251,7 +251,10 @@ public class HttpGetter extends Task {
             // Response headers length estimation
             addDownstreamDataCount(responseHeaders.toString().length());
 
-            if (length > 0 && length < 1000000) {
+            if (length == 0 || inputStream == null) {
+                //#debug
+                L.i(this.getClass().getName() + " exec", "No response. Stream is null, or length is 0");
+            } else if (length > 0 && length < 1000000) {
                 //#debug
                 L.i(this.getClass().getName() + " start fixed_length read", key + " content_length=" + length);
                 int bytesRead = 0;

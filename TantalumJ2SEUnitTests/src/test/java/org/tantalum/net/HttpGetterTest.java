@@ -24,12 +24,14 @@
 package org.tantalum.net;
 
 import java.io.IOException;
+import java.util.Vector;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
@@ -47,6 +49,8 @@ import org.tantalum.util.L;
     "org.tantalum.PlatformUtils"})
 public class HttpGetterTest {
 
+    public static final int RESPONSE_UNAUTHORIZED = 401;
+    
     HttpGetter getter;
     PlatformUtils platformUtils;
     PlatformUtils.HttpConn httpConn;
@@ -66,7 +70,24 @@ public class HttpGetterTest {
     @Test(expected = IllegalArgumentException.class)
     public void illegalArgumentExceptionThrownWhenNonStringKey() {
         getter.exec(new Object());
+    }
+    
+    @Test
+    public void responseCodesIn400RangeAreConsideredBad() throws IOException {
+        final String url = "http://github.com/TantalumMobile";
 
+        // Return a unauthorized response code, no response body
+        when(platformUtils.getHttpGetConn(eq(url), any(Vector.class), any(Vector.class))).thenReturn(httpConn);
+        when(httpConn.getResponseCode()).thenReturn(RESPONSE_UNAUTHORIZED);
+        when(httpConn.getLength()).thenReturn(0L);
+
+        final Object returnValue = getter.exec(url);
+
+        // Assert
+        verify(httpConn).close();
+        assertEquals(url, returnValue);
+        assertEquals(RESPONSE_UNAUTHORIZED, getter.getResponseCode());
+        
     }
 
     private void createMocks() {
