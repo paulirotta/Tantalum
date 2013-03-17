@@ -49,7 +49,7 @@ public abstract class TantalumMIDlet extends MIDlet {
      * too much network contention when there are parallel HTTP GET operations,
      * try reducing the number of threads to 2.
      */
-    protected static final int DEFAULT_NUMBER_OF_WORKER_THREADS = 4;
+    protected static final int DEFAULT_NUMBER_OF_WORKER_THREADS = 2;
 
     /**
      * Create a MIDlet that hooks into the MIDlet life-cycle events to

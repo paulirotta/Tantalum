@@ -217,7 +217,7 @@ public class HttpGetter extends Task {
         try {
             if (this instanceof HttpPoster) {
                 if (postMessage == null) {
-                    throw new IllegalArgumentException("null HTTP POST- did you forget to call HttpPoster.this.setMessage(byte[]) ? : " + key);
+                    throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + key);
                 }
                 httpConn = PlatformUtils.getInstance().getHttpPostConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
             } else {
@@ -308,6 +308,8 @@ public class HttpGetter extends Task {
                 }
                 out = exec(url);
             } else if (!success) {
+                //#debug
+                L.i("HTTP GET FAILED, cancel() of task and any chained Tasks", this.toString());
                 cancel(false, "HttpGetter failed response code and header check: " + this.toString());
             }
             HttpGetter.inFlightGets.remove(key);
@@ -327,11 +329,9 @@ public class HttpGetter extends Task {
      * @return
      */
     protected boolean checkResponseCode(final int responseCode, final Hashtable headers) {
-        final boolean ok;
+        boolean ok = true;
 
-        if (responseCode < 400) {
-            ok = true;
-        } else {
+        if (responseCode >= 400) {
             //#debug
             L.i("Bad response code (" + responseCode + ")", "" + getValue());
             ok = false;
@@ -355,5 +355,14 @@ public class HttpGetter extends Task {
         }
 
         return key.substring(0, i);
+    }
+    
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+        
+        
+        sb.append(super.toString());
+        
+        return sb.toString();
     }
 }
