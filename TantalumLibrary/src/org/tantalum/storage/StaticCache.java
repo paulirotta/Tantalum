@@ -314,10 +314,10 @@ public class StaticCache {
             L.i("StaticCache flash intermediate result", "(" + priority + ") " + key + " : " + bytes);
             if (bytes != null) {
                 //#debug
-                L.i("StaticCache hit in flash", "(" + priority + ") " + key);
+                L.i("StaticCache flash hit", "(" + priority + ") " + key);
                 o = convertAndPutToHeapCache(key, bytes);
                 //#debug
-                L.i("StaticCache flash result", "(" + priority + ") " + key + " : " + o);
+                L.i("StaticCache flash hit result", "(" + priority + ") " + key + " : " + o);
             }
         }
 

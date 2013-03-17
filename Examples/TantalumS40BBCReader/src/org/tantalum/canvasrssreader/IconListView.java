@@ -161,12 +161,13 @@ public final class IconListView extends RSSListView {
                             L.i("Trivial thumbnail link in RSS feed", item.getTitle());
                         } else {
                             DetailsView.imageCache.getAsync(item.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
-                                public Object exec(final Object o) {
+                                public Object exec(Object o) {
                                     try {
                                         //#debug
                                         L.i("getIcon result", "" + o);
                                         item.setLoadingImage(false);
                                         Image icon = (Image) o;
+                                        o = null;
                                         final int w = icon.getWidth();
                                         final int h = icon.getHeight();
                                         synchronized (Task.LARGE_MEMORY_MUTEX) {
@@ -174,7 +175,6 @@ public final class IconListView extends RSSListView {
                                                 data = new int[w * h];
                                             }
                                             icon.getRGB(data, 0, w, 0, 0, w, h);
-                                            icon = null;
                                             icon = ImageUtils.scaleImage(data, data, w, h, 72, h, true, ImageUtils.FIVE_POINT_BLEND);
                                         }
                                         if (item.isNewItem()) {
@@ -190,7 +190,7 @@ public final class IconListView extends RSSListView {
                                         cancel(false, "Problem with getIcon: " + item);
                                     }
 
-                                    return o;
+                                    return null;
                                 }
 
                                 protected void onCanceled() {

@@ -198,19 +198,20 @@ public final class RMSUtils {
 
         sb.append(RECORD_HASH_PREFIX);
         if (key.length() > MAX_RECORD_NAME_LENGTH - 1) {
-            sb.append(Integer.toString(key.hashCode(), Character.MAX_RADIX));
-            final int fullLength = sb.length() + key.length();
-            if (fullLength > MAX_RECORD_NAME_LENGTH) {
-                sb.append(key.substring(0, MAX_RECORD_NAME_LENGTH));
-            } else {
-                sb.append(key);
-            }
+            final String hashString = Integer.toString(key.hashCode(), Character.MAX_RADIX);
+            final int fillLength = MAX_RECORD_NAME_LENGTH - 1 - hashString.length();
+            sb.append(key.substring(0, fillLength));
+            sb.append(hashString);
         } else {
-            // Short key, just prepend the 
+            // Short key, just prepend 
             sb.append(key);
         }
 
-        return sb.toString();
+        final String s = sb.toString();
+        //#debug
+        L.i("key to rms cache key", key + " -> " + s);
+
+        return s;
     }
 
     /**
