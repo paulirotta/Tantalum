@@ -35,6 +35,7 @@ import org.tantalum.util.L;
  * @author phou
  */
 public abstract class Task {
+
     /**
      * Start the task as soon as possible. The fork() operation will place this
      * as the next Task to be completed unless subsequent HIGH_PRIORITY fork
@@ -65,9 +66,7 @@ public abstract class Task {
      * active at a time.
      */
     public static final Object LARGE_MEMORY_MUTEX = new Object();
-
     // status values
-
     /**
      * For join(), if a timeout is not specified, no thread can wait more than 2
      * minutes.
@@ -201,11 +200,11 @@ public abstract class Task {
      *
      * Note that items passed to Worker.queueShutdownTask() ignore this value
      * and will all run normally to completion during shutdown unless the
-     * platform (not the application) initiated the shutdown and slow
-     * shutdown Tasks result in a shutdown times-out. If this occurs during
-     * persistent state write operations, behavior is unpredictable, so
-     * it is best to write state as-you-go so that you can shut down quickly.
-     * 
+     * platform (not the application) initiated the shutdown and slow shutdown
+     * Tasks result in a shutdown times-out. If this occurs during persistent
+     * state write operations, behavior is unpredictable, so it is best to write
+     * state as-you-go so that you can shut down quickly.
+     *
      * @param shutdownBehaviour
      * @return
      */
@@ -667,6 +666,13 @@ public abstract class Task {
             this.status = status;
             MUTEX.notifyAll();
             t = chainedTask;
+            if (status == CANCELED || status == EXCEPTION) {
+                /*
+                 * Unchain as we cancel to simplify avoiding any future reference to
+                 * canceled chained tasks. This can also speed garbage collection.
+                 */
+                chainedTask = null;
+            }
         }
 
         if (status == CANCELED || status == EXCEPTION) {

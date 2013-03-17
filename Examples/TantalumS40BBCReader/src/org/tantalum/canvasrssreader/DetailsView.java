@@ -30,7 +30,6 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import org.tantalum.Task;
-import org.tantalum.Worker;
 import org.tantalum.j2me.J2MEImageTypeHandler;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
@@ -45,7 +44,7 @@ import org.tantalum.util.StringUtils;
 public final class DetailsView extends View {
 
     public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', new J2MEImageTypeHandler());
-   // private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
+    private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
     private volatile RSSItem currentItem; // Current article
@@ -62,14 +61,13 @@ public final class DetailsView extends View {
     }
 
     public Command[] getCommands() {
-        return new Command[]{/*openLinkCommand,*/ backCommand};
+        return new Command[]{openLinkCommand, backCommand};
     }
 
     public void commandAction(Command command, Displayable d) {
-/*        if (command == openLinkCommand) {
+        if (command == openLinkCommand) {
             openLink();
-        } else*/
-        if (command == backCommand) {
+        } else if (command == backCommand) {
             canvas.showList();
         }
     }
