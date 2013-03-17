@@ -1,0 +1,19 @@
+/**
+ * Tantalum/Examples
+ *
+ * Example MIDlet projects to test and demo some of the functionality 
+ * in Tantalum
+ */
+
+dependencies {
+    compile project(':TantalumLibrary')
+}
+
+task compileJava(overwrite: true, dependsOn: wtkbuild) << {
+}
+
+project.tasks["assemble"].dependsOn {
+    [
+            wtkpackage
+    ]
+}

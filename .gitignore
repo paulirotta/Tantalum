@@ -1,3 +1,4 @@
+# Various log and temp files
 *.orig
 *.rej
 *.class
@@ -5,10 +6,18 @@
 *.o
 *.err
 *.log
+\#*#
+*.tmp
+
 
 dist/
-build/
 private/
+.gradle/
+
+# Gradle build output
+build/
+
+# Gradle working dir
 .gradle/
 .nb-gradle-properties
 .nb-gradle/
