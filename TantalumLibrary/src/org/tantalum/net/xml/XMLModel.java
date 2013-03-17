@@ -28,7 +28,6 @@ import java.io.InputStream;
 import javax.xml.parsers.SAXParserFactory;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.Worker;
 import org.tantalum.util.L;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;

@@ -26,7 +26,6 @@ package org.tantalum.storage;
 import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.Worker;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
@@ -57,7 +56,7 @@ public class StaticCache {
      * be done in-order to preserve the application designer's intent without
      * thread race conditions arising.
      */
-    private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
+    private static final int RMS_WRITE_SERIAL_QUEUE_INDEX = Task.nextSerialQueueNumber();
     /**
      * A list of all caches, sorted by priority order (lowest char first)
      */
@@ -349,7 +348,7 @@ public class StaticCache {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
         if (flashCacheEnabled) {
-            Worker.forkSerial(new Task() {
+            (new Task() {
                 public Object exec(final Object in) {
                     try {
                         synchronousFlashPut(key, bytes);
@@ -360,7 +359,7 @@ public class StaticCache {
 
                     return in;
                 }
-            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN), RMS_WORKER_INDEX);
+            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN)).forkSerial(RMS_WRITE_SERIAL_QUEUE_INDEX);
         }
 
         return convertAndPutToHeapCache(key, bytes);
@@ -537,7 +536,7 @@ public class StaticCache {
             }
         };
         task.chain(chainedTask);
-        Worker.forkSerial(task, RMS_WORKER_INDEX);
+        task.forkSerial(RMS_WRITE_SERIAL_QUEUE_INDEX);
 
         return task;
     }

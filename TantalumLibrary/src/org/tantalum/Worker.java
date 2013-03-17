@@ -33,7 +33,7 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public final class Worker extends Thread {
+final class Worker extends Thread {
 
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
@@ -60,6 +60,14 @@ public final class Worker extends Thread {
 
     private Worker(final String name) {
         super(name);
+    }
+
+    static int nextSerialQueueNumber() {
+        synchronized (Worker.q) {
+            final int i = Worker.nextSerialQWorkerIndex;
+            Worker.nextSerialQWorkerIndex = ++Worker.nextSerialQWorkerIndex % Worker.workers.length;
+            return i;
+        }
     }
 
     /**
@@ -92,7 +100,7 @@ public final class Worker extends Thread {
      *
      * @param task
      */
-     private static void fork(final Task task) {
+    private static void fork(final Task task) {
         synchronized (q) {
             q.addElement(task);
             try {
@@ -171,6 +179,9 @@ public final class Worker extends Thread {
                     }
                     q.notify();
                 }
+                break;
+            case Task.SHUTDOWN_PRIORITY:
+                Worker.forkShutdownTask(task);
                 break;
             default:
                 throw new IllegalArgumentException("Illegal priority '" + priority + "'");
@@ -254,51 +265,30 @@ public final class Worker extends Thread {
      * forkLowPriority()
      *
      * @param task
-     * @param serialQIndex
+     * @param serialQueueNumber
      */
-    public static void forkSerial(final Task task, final int serialQIndex) {
-        if (serialQIndex >= workers.length) {
-            throw new IndexOutOfBoundsException("serialQ to Worker " + serialQIndex + ", but there are only " + workers.length + " Workers");
+    static Task forkSerial(final Task task, final int serialQueueNumber) {
+        if (serialQueueNumber >= workers.length) {
+            throw new IndexOutOfBoundsException("serialQ to Worker " + serialQueueNumber + ", but there are only " + workers.length + " Workers");
         }
-        workers[serialQIndex].serialQ.addElement(task);
+        workers[serialQueueNumber].serialQ.addElement(task);
         try {
             if (task instanceof Task) {
                 ((Task) task).notifyTaskForked();
             }
         } catch (IllegalStateException e) {
-            workers[serialQIndex].serialQ.removeElement(task);
+            workers[serialQueueNumber].serialQ.removeElement(task);
             throw e;
         }
         synchronized (q) {
             /*
-             * We must notifyAll to ensure the specified Worker is notified
+             * We must notifyAll to ensure the specified Worker is notified to
+             * begin execution on this Task if it was asleep
              */
             q.notifyAll();
         }
-    }
 
-    /**
-     * Get the id number for the next available Worker thread that can be used
-     * to a specific application-define type of Worker.forkSerial() operations.
-     * Assuming you have a limited number of types of forkSerial() operations,
-     * this round-robin allocation reduces the number of serialized operations
-     * assigned to any one generic Worker. Note that since forkSerial() work is
-     * done by the specified Worker before general fork() operations, it is
-     * higher priority work than a fork() with HIGH_PRIORITY, but only one
-     * Worker can execute that type of task.
-     *
-     * You can use this to guarantee the sequence of execution of a given type
-     * of task (such as writing to flash memory or to a server).
-     *
-     * @return
-     */
-    public static int nextSerialWorkerIndex() {
-        synchronized (q) {
-            final int i = nextSerialQWorkerIndex;
-            nextSerialQWorkerIndex = ++nextSerialQWorkerIndex % workers.length;
-
-            return i;
-        }
+        return task;
     }
 
     /**
@@ -322,7 +312,7 @@ public final class Worker extends Thread {
      * orderly shutdown. This is only needed in MIDlet.doNotifyDestroyed(true)
      * which is called for example by the user pressing the red HANGUP button.
      */
-    public static void shutdown(final boolean block) {
+    static void shutdown(final boolean block) {
         try {
             synchronized (q) {
                 shuttingDown = true;
@@ -520,13 +510,8 @@ public final class Worker extends Thread {
         L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);
     }
 
-    /**
-     * When debugging, show what each Worker is doing and the queue length
-     *
-     * @return One ore more lines of text depending on the number of active
-     * Workers
-     */
-    public static Vector getCurrentState() {
+    //#mdebug
+    static Vector getCurrentState() {
         final StringBuffer sb = new StringBuffer();
         final int n = Worker.getNumberOfWorkers();
         final Vector lines = new Vector(n + 1);
@@ -535,7 +520,7 @@ public final class Worker extends Thread {
         sb.append(Worker.q.size());
         sb.append('-');
         for (int i = 0; i < n; i++) {
-            final Worker w = workers[i];
+            final Worker w = Worker.workers[i];
             if (w != null) {
                 final Task task = w.currentTask;
                 sb.append(task != null ? "T" : "t");
@@ -560,4 +545,5 @@ public final class Worker extends Thread {
 
         return className;
     }
+    //#enddebug
 }

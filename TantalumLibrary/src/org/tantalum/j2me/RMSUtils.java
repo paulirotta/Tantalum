@@ -30,7 +30,6 @@ import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.tantalum.Task;
-import org.tantalum.Worker;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 import org.tantalum.util.LengthLimitedVector;
@@ -93,7 +92,7 @@ public final class RMSUtils {
      *
      */
     private RMSUtils() {
-        Worker.forkShutdownTask(new Task() {
+        (new Task() {
             public Object exec(final Object in) {
                 //#debug
                 L.i("Closing record stores during shutdown", "open=" + openRecordStores.size());
@@ -103,7 +102,7 @@ public final class RMSUtils {
 
                 return in;
             }
-        });
+        }).fork(Task.SHUTDOWN_PRIORITY);
     }
 
     /**

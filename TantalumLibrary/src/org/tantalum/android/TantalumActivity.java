@@ -26,7 +26,6 @@ package org.tantalum.android;
 import android.app.Activity;
 import android.os.Bundle;
 import org.tantalum.PlatformUtils;
-import org.tantalum.Worker;
 
 /**
  * Your main Activity in an Android application should extend TantalumActivity
@@ -88,7 +87,7 @@ public abstract class TantalumActivity extends Activity {
      * which have not yet timed out.
      */
     protected void onDestroy() {
-        Worker.shutdown(true); // Closed database and wait for similar orderly exit tasks
+        PlatformUtils.getInstance().shutdown(true); // Closed database and wait for similar orderly exit tasks
 
         super.onDestroy();
     }

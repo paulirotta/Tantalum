@@ -30,7 +30,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import java.util.Vector;
 import org.tantalum.Task;
-import org.tantalum.Worker;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
@@ -59,7 +58,7 @@ public final class AndroidCache extends FlashCache {
         super(priority);
 
         helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION);
-        Worker.forkShutdownTask(new Task() {
+        (new Task() {
             public Object exec(final Object in2) {
                 if (db != null) {
                     db.close();
@@ -68,7 +67,7 @@ public final class AndroidCache extends FlashCache {
 
                 return in2;
             }
-        });
+        }).fork(Task.SHUTDOWN_PRIORITY);
     }
     private SQLiteOpenHelper helper;
     /**

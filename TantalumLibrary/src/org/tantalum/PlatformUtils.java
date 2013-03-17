@@ -341,4 +341,25 @@ public final class PlatformUtils {
          */
         public void close() throws IOException;
     }
+
+    /**
+     * Close the current application after all current queued and shutdown Tasks
+     * are completed. Resources held by the system will be closed and queued
+     * compute such as writing to the RMS or file system will complete.
+     *
+     * @param block Block the calling thread up to three seconds to allow
+     * orderly shutdown. This is only needed in MIDlet.doNotifyDestroyed(true)
+     * which is called for example by the user pressing the red HANGUP button.
+     *
+     * Ongoing Tasks will be canceled or complete depending on their current run
+     * state and shutdown preference. The default is for Tasks not at
+     * Task.PRIORITY_SHUTDOWN to be canceled immediately. In any case, all work
+     * must finish within 3 seconds or risk being terminated by the phone OS if
+     * this is an system-initiated application close.
+     *
+     * @param unconditional
+     */
+    public void shutdown(final boolean block) {
+        Worker.shutdown(block);
+    }
 }

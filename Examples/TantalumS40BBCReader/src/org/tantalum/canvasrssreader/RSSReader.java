@@ -24,9 +24,8 @@
 package org.tantalum.canvasrssreader;
 
 import javax.microedition.lcdui.*;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.TimeoutException;
-import org.tantalum.Worker;
 import org.tantalum.j2me.TantalumMIDlet;
 import org.tantalum.util.L;
 
@@ -148,7 +147,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
         } catch (Exception ex) {
             //#debug
             L.e("Startup execption", "", ex);
-            Worker.shutdown(false);
+            PlatformUtils.getInstance().shutdown(false);
         }
     }
 }

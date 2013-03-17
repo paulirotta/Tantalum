@@ -23,6 +23,7 @@
  */
 package org.tantalum;
 
+import java.util.Vector;
 import org.tantalum.util.L;
 
 /**
@@ -60,6 +61,19 @@ public abstract class Task {
      * not affect the current user view.
      */
     public static final int LOW_PRIORITY = 1;
+    /**
+     * Start execution when PlatformUtils.shutdown() is called, and do not exit
+     * the program until all such shutdown tasks are completed.
+     *
+     * Note that if shutdown takes too long and the phone is telling the
+     * application to exit, then the phone may give the application a limited
+     * time window (typically around 3 seconds) to complete all shutdown
+     * activities before killing the application. Shutdown time can be unlimited
+     * if the application initiates the exit as by clicking an "Exit" button in
+     * the application, but since this can never be guaranteed to be the only
+     * shutdown sequence, you must design for quick shutdown.
+     */
+    public static final int SHUTDOWN_PRIORITY = 0;
     /**
      * Synchronize on the following object if your processing routine will
      * temporarily need a large amount of memory. Only one such activity can be
@@ -137,6 +151,25 @@ public abstract class Task {
      * using Worker.queueShutdownTask(Task).
      */
     public static final int DEQUEUE_OR_CANCEL_ON_SHUTDOWN = 3;
+
+    /**
+     * Get the id number for the next available Worker thread that can be used
+     * to a specific application-define type of Worker.forkSerial() operations.
+     * Assuming you have a limited number of types of forkSerial() operations,
+     * this round-robin allocation reduces the number of serialized operations
+     * assigned to any one generic Worker. Note that since forkSerial() work is
+     * done by the specified Worker before general fork() operations, it is
+     * higher priority work than a fork() with HIGH_PRIORITY, but only one
+     * Worker can execute that type of task.
+     *
+     * You can use this to guarantee the sequence of execution of a given type
+     * of task (such as writing to flash memory or to a server).
+     *
+     * @return
+     */
+    public static int nextSerialQueueNumber() {
+        return Worker.nextSerialQueueNumber();
+    }
     private Object value; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants
@@ -317,6 +350,20 @@ public abstract class Task {
      */
     public final Task fork() {
         return fork(Task.NORMAL_PRIORITY);
+    }
+
+    /**
+     * Queue compute to the Worker specified by serialQIndex. This compute will
+     * be done after any previously serialQueue()d compute to this Worker. This
+     * Worker will do only serialQueue() tasks until they are complete, then
+     * will revert to doing general forkSerial(), forkPriority() and
+     * forkLowPriority()
+     *
+     * @param serialQueueNumber
+     * @return
+     */
+    public final Task forkSerial(final int serialQueueNumber) {
+        return Worker.forkSerial(this, serialQueueNumber);
     }
 
     /**
@@ -881,6 +928,18 @@ public abstract class Task {
             return status == AsyncTask.CANCELED || status == EXCEPTION;
         }
     }
+
+    //#mdebug
+    /**
+     * When debugging, show what each Worker is doing and the queue length
+     *
+     * @return One ore more lines of text depending on the number of active
+     * Workers
+     */
+    public static Vector getCurrentState() {
+        return Worker.getCurrentState();
+    }
+    //#enddebug
 
     /**
      * For debug

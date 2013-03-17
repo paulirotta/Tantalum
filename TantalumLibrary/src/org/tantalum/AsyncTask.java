@@ -53,7 +53,7 @@ public abstract class AsyncTask extends UITask {
      * guaranteed sequence on one Worker thread. It is generally better to use
      * executeOnExecutor(Params) instead unless
      */
-    public static final int ASYNC_TASK_WORKER_INDEX = Worker.nextSerialWorkerIndex();
+    public static final int ASYNC_TASK_SERIAL_QUEUE_NUMBER = Task.nextSerialQueueNumber();
     /*
      * Note that an AsyncTask is stateful, including parameters. You can therefore
      * not fork() an AsyncTask instance more than once at a time. It is recommended
@@ -84,7 +84,7 @@ public abstract class AsyncTask extends UITask {
                 
                 return in;
             }
-        }, ASYNC_TASK_WORKER_INDEX);
+        }, ASYNC_TASK_SERIAL_QUEUE_NUMBER);
     }
 
     /**
@@ -107,7 +107,7 @@ public abstract class AsyncTask extends UITask {
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
-                Worker.forkSerial(AsyncTask.this, ASYNC_TASK_WORKER_INDEX);
+                Worker.forkSerial(AsyncTask.this, ASYNC_TASK_SERIAL_QUEUE_NUMBER);
             }
         });
 

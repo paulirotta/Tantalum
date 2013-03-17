@@ -28,6 +28,7 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+import org.tantalum.PlatformUtils;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.util.L;
 import org.tantalum.util.PoolingWeakImageHashCache;
@@ -66,7 +67,7 @@ public final class VerticalListView extends RSSListView {
 
     public void commandAction(final Command command, final Displayable d) {
         if (command == exitCommand) {
-            canvas.getRssReader().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false);
         } else if (command == updateCommand) {
             reloadAsync(true);
         } else if (command == clearCacheCommand) {

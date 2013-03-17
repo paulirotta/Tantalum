@@ -24,7 +24,6 @@
 package org.tantalum.formrssreader;
 
 import javax.microedition.lcdui.*;
-import org.tantalum.Worker;
 import org.tantalum.j2me.TantalumMIDlet;
 
 /**
@@ -135,13 +134,6 @@ public class FormRSSReader extends TantalumMIDlet implements CommandListener {
      */
     public Display getDisplay() {
         return Display.getDisplay(this);
-    }
-
-    /**
-     * Exits MIDlet.
-     */
-    public void exitMIDlet() {
-        Worker.shutdown(false);
     }
 
     /**

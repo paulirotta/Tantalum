@@ -24,9 +24,9 @@
 package org.tantalum.formrssreader;
 
 import javax.microedition.lcdui.*;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.UITask;
-import org.tantalum.Worker;
 import org.tantalum.j2me.RMSUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
@@ -86,7 +86,7 @@ public final class ListForm extends Form implements CommandListener {
 
     public void commandAction(final Command command, final Displayable d) {
         if (command == exitCommand) {
-            rssReader.exitMIDlet();
+            PlatformUtils.getInstance().shutdown(false);
         } else if (command == reloadCommand) {
             final Alert alert = new Alert("Reloading", "Reloading..", null, AlertType.INFO);
             alert.setTimeout(10000);

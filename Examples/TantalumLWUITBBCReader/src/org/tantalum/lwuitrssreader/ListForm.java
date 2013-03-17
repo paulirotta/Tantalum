@@ -28,8 +28,8 @@ import com.sun.lwuit.animations.CommonTransitions;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.list.ListCellRenderer;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.Worker;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 
@@ -77,7 +77,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 reload(true);
             }
             if (cmdStr.equals("Exit")) {
-                Worker.shutdown(true);
+                PlatformUtils.getInstance().shutdown(true);
             }
         } else {
             int selectedIndex = ((List) ae.getSource()).getSelectedIndex();

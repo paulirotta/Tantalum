@@ -29,6 +29,7 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.j2me.J2MEImageTypeHandler;
 import org.tantalum.net.StaticWebCache;
@@ -83,7 +84,7 @@ public final class DetailsView extends View {
         try {
             needsToClose = canvas.getRssReader().platformRequest(url);
             if (needsToClose) {
-                canvas.getRssReader().shutdown(false);
+                PlatformUtils.getInstance().shutdown(false);
             }
         } catch (ConnectionNotFoundException ex) {
             //#debug

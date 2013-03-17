@@ -25,7 +25,6 @@ package org.tantalum.j2me;
 
 import javax.microedition.midlet.MIDlet;
 import org.tantalum.PlatformUtils;
-import org.tantalum.Worker;
 
 /**
  * This is a convenience class to embody the best practice patterns for starting
@@ -76,19 +75,6 @@ public abstract class TantalumMIDlet extends MIDlet {
     }
 
     /**
-     * Call this to close your MIDlet in an orderly manner, exactly the same way
-     * it is closed if the system sends you a destoryApp().
-     *
-     * Ongoing Work tasks will complete, or if you set unconditional then they
-     * will complete within 3 seconds.
-     *
-     * @param unconditional
-     */
-    public void shutdown(final boolean unconditional) {
-        Worker.shutdown(unconditional);
-    }
-
-    /**
      * Do not call this directly. Call exitMidlet(false) instead.
      *
      * This is part of MIDlet lifecycle model and may be called by the platform,
@@ -98,7 +84,7 @@ public abstract class TantalumMIDlet extends MIDlet {
      * @param unconditional
      */
     protected final void destroyApp(final boolean unconditional) {
-        shutdown(unconditional);
+        PlatformUtils.getInstance().shutdown(unconditional);
     }
 
     /**

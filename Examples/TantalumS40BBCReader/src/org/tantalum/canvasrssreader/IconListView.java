@@ -24,7 +24,6 @@
 package org.tantalum.canvasrssreader;
 
 import org.tantalum.Task;
-import org.tantalum.Worker;
 import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
@@ -34,6 +33,7 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+import org.tantalum.PlatformUtils;
 
 /**
  * A scrollable grid if pictures from the news feed. Click to open an article.
@@ -78,7 +78,7 @@ public final class IconListView extends RSSListView {
 
     public void commandAction(final Command command, final Displayable d) {
         if (command == exitCommand) {
-            canvas.getRssReader().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false);
         } else if (command == updateCommand) {
             reloadAsync(true);
         } else if (command == clearCacheCommand) {

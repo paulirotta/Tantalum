@@ -25,6 +25,7 @@ package org.tantalum.formrssreader;
 
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.*;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.UITask;
 import org.tantalum.j2me.J2MEImageTypeHandler;
@@ -64,7 +65,7 @@ public final class DetailsForm extends Form implements CommandListener {
         try {
             boolean needsToClose = rssReader.platformRequest(ListForm.getInstance().getDetailsView().getSelectedItem().getLink());
             if (needsToClose) {
-                rssReader.exitMIDlet();
+                PlatformUtils.getInstance().shutdown(false);
             }
         } catch (ConnectionNotFoundException connectionNotFoundException) {
             //#debug
