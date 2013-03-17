@@ -35,36 +35,6 @@ import org.tantalum.util.L;
  */
 public final class Worker extends Thread {
 
-    /**
-     * Start the task as soon as possible. The fork() operation will place this
-     * as the next Task to be completed unless subsequent HIGH_PRIORITY fork
-     * operations occur before a Worker start execution.
-     *
-     * This is the normal priority for user interface tasks where the user
-     * expects a fast response regardless of previous incomplete requests they
-     * may have made.
-     */
-    public static final int HIGH_PRIORITY = 3;
-    /**
-     * Start execution after any previously fork()ed work, first in is usually
-     * first out, however multiple Workers in parallel means that execution
-     * start and completion order is not guaranteed.
-     */
-    public static final int NORMAL_PRIORITY = 2;
-    /**
-     * Start execution if there is nothing else for the Workers to do. At least
-     * one Worker will always be left idle for immediate activation if only
-     * LOW_PRIORITY work is queued for execution. This is intended for
-     * background tasks such as pre-fetch and pre-processing of data that doe
-     * not affect the current user view.
-     */
-    public static final int LOW_PRIORITY = 1;
-    /**
-     * Synchronize on the following object if your processing routine will
-     * temporarily need a large amount of memory. Only one such activity can be
-     * active at a time.
-     */
-    public static final Object LARGE_MEMORY_MUTEX = new Object();
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
@@ -140,7 +110,7 @@ public final class Worker extends Thread {
     }
 
     /**
-     * Worker.HIGH_PRIORITY : Jump an object to the beginning of the forkSerial
+     * Task.HIGH_PRIORITY : Jump an object to the beginning of the forkSerial
      * (LIFO - Last In First Out).
      *
      * Note that this is best used for ensuring that operations holding a lot of
@@ -167,10 +137,10 @@ public final class Worker extends Thread {
      */
     static void fork(final Task task, final int priority) {
         switch (priority) {
-            case Worker.NORMAL_PRIORITY:
+            case Task.NORMAL_PRIORITY:
                 fork(task);
                 break;
-            case Worker.HIGH_PRIORITY:
+            case Task.HIGH_PRIORITY:
                 synchronized (q) {
                     q.insertElementAt(task, 0);
                     try {
@@ -186,7 +156,7 @@ public final class Worker extends Thread {
                     q.notify();
                 }
                 break;
-            case Worker.LOW_PRIORITY:
+            case Task.LOW_PRIORITY:
                 synchronized (q) {
                     lowPriorityQ.addElement(task);
                     try {

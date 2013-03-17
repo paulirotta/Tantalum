@@ -220,7 +220,7 @@ public final class StaticWebCache extends StaticCache {
             (new Task() {
                 public Object exec(final Object in) {
                     try {
-                        getAsync(key, Worker.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
+                        getAsync(key, Task.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
                     } catch (Exception e) {
                         //#debug
                         L.e("Can not prefetch", key, e);
@@ -228,7 +228,7 @@ public final class StaticWebCache extends StaticCache {
 
                     return in;
                 }
-            }).fork(Worker.LOW_PRIORITY);
+            }).fork(Task.LOW_PRIORITY);
         }
     }
 

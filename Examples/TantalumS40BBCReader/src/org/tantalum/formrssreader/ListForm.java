@@ -47,9 +47,8 @@ public final class ListForm extends Form implements CommandListener {
     public Object convertToUseForm(final Object key, final byte[] bytes) {
             try {
                 rssModel.removeAllElements();
-                synchronized (Worker.LARGE_MEMORY_MUTEX) {
-                    rssModel.setXML(bytes);
-                }
+                rssModel.setXML(bytes);
+
                 return rssModel;
             } catch (Exception e) {
                 //#debug
@@ -174,7 +173,7 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
             };
-            feedCache.getAsync(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
+            feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
             uiTask = new UITask() {
                 public void onPostExecute(final Object result) {
@@ -194,7 +193,7 @@ public final class ListForm extends Form implements CommandListener {
                     return false;
                 }
             };
-            feedCache.getAsync(feedUrl, Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
+            feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
         }
 
         return uiTask;

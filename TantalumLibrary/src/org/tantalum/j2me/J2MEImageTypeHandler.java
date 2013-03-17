@@ -24,6 +24,7 @@
 package org.tantalum.j2me;
 
 import javax.microedition.lcdui.Image;
+import org.tantalum.Task;
 import org.tantalum.Worker;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.ImageUtils;
@@ -42,7 +43,7 @@ public final class J2MEImageTypeHandler extends ImageTypeHandler {
         final int algorithm;
         final boolean aspect;
         final int w, h;
-        
+
         synchronized (this) {
             algorithm = this.algorithm;
             aspect = this.preserveAspectRatio;
@@ -56,13 +57,17 @@ public final class J2MEImageTypeHandler extends ImageTypeHandler {
                 L.i("convert image", "length=" + bytes.length);
                 img = Image.createImage(bytes, 0, bytes.length);
             } else {
-                synchronized (Worker.LARGE_MEMORY_MUTEX) {
-                    Image temp = Image.createImage(bytes, 0, bytes.length);
-                    final int tempW = temp.getWidth();
-                    final int tempH = temp.getHeight();
-                    final int[] argbIn = new int[tempW * tempH];
-                    temp.getRGB(argbIn, 0, tempW, 0, 0, tempW, tempH);                    
-                    temp = null;
+                synchronized (Task.LARGE_MEMORY_MUTEX) {
+                    final int tempW;
+                    final int tempH;
+                    final int[] argbIn;
+                    {
+                        final Image tempImage = Image.createImage(bytes, 0, bytes.length);
+                        tempW = tempImage.getWidth();
+                        tempH = tempImage.getHeight();
+                        argbIn = new int[tempW * tempH];
+                        tempImage.getRGB(argbIn, 0, tempW, 0, 0, tempW, tempH);
+                    }
                     img = ImageUtils.scaleImage(argbIn, argbIn, tempW, tempH, w, h, aspect, algorithm);
                 }
             }

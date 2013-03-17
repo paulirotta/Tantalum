@@ -35,6 +35,37 @@ import org.tantalum.util.L;
  * @author phou
  */
 public abstract class Task {
+    /**
+     * Start the task as soon as possible. The fork() operation will place this
+     * as the next Task to be completed unless subsequent HIGH_PRIORITY fork
+     * operations occur before a Worker start execution.
+     *
+     * This is the normal priority for user interface tasks where the user
+     * expects a fast response regardless of previous incomplete requests they
+     * may have made.
+     */
+    public static final int HIGH_PRIORITY = 3;
+    /**
+     * Start execution after any previously fork()ed work, first in is usually
+     * first out, however multiple Workers in parallel means that execution
+     * start and completion order is not guaranteed.
+     */
+    public static final int NORMAL_PRIORITY = 2;
+    /**
+     * Start execution if there is nothing else for the Workers to do. At least
+     * one Worker will always be left idle for immediate activation if only
+     * LOW_PRIORITY work is queued for execution. This is intended for
+     * background tasks such as pre-fetch and pre-processing of data that doe
+     * not affect the current user view.
+     */
+    public static final int LOW_PRIORITY = 1;
+    /**
+     * Synchronize on the following object if your processing routine will
+     * temporarily need a large amount of memory. Only one such activity can be
+     * active at a time.
+     */
+    public static final Object LARGE_MEMORY_MUTEX = new Object();
+
     // status values
 
     /**
@@ -286,7 +317,7 @@ public abstract class Task {
      * @return
      */
     public final Task fork() {
-        return fork(Worker.NORMAL_PRIORITY);
+        return fork(Task.NORMAL_PRIORITY);
     }
 
     /**
@@ -365,7 +396,7 @@ public abstract class Task {
                     if (status == READY) {
                         doExec = true;
                         break;
-                        //Worker.fork(this, Worker.HIGH_PRIORITY);
+                        //Worker.fork(this, Task.HIGH_PRIORITY);
                     }
                 // Continue to next state
                 case EXEC_STARTED:
@@ -748,7 +779,7 @@ public abstract class Task {
                 //#debug
                 L.i("Begin fork chained task", t.toString() + " INPUT: " + in);
                 t.setValue(in);
-                t.fork(Worker.HIGH_PRIORITY);
+                t.fork(Task.HIGH_PRIORITY);
             }
         } catch (final Throwable t) {
             //#debug

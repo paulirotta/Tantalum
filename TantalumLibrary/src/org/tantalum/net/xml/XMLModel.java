@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import javax.xml.parsers.SAXParserFactory;
 import org.tantalum.PlatformUtils;
+import org.tantalum.Task;
 import org.tantalum.Worker;
 import org.tantalum.util.L;
 import org.xml.sax.Attributes;
@@ -68,7 +69,7 @@ public abstract class XMLModel extends DefaultHandler {
      */
     protected int currentDepth;
     //TODO The following is a bit unelegant. Make it more clear.
-    private final Object MUTEX = PlatformUtils.getInstance().isSingleCore() ? Worker.LARGE_MEMORY_MUTEX : new Object();
+    private final Object MUTEX = PlatformUtils.getInstance().isSingleCore() ? Task.LARGE_MEMORY_MUTEX : new Object();
 
     /**
      * Parse the XML document using a SAX parser.

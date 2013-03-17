@@ -149,7 +149,7 @@ public final class DetailsView extends View {
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
-                imageCache.getAsync(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
+                imageCache.getAsync(item.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
                     public Object exec(final Object in) {
                         item.setLoadingImage(false);
                         if (currentItem == item) {
@@ -206,7 +206,7 @@ public final class DetailsView extends View {
         this.leftItem = leftItem;
         this.rightItem = rightItem;
         if (leftItem != null) {
-            imageCache.getAsync(leftItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
+            imageCache.getAsync(leftItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
                 public Object exec(final Object params) {
                     final Object r = getValue();
 
@@ -219,7 +219,7 @@ public final class DetailsView extends View {
             });
         }
         if (rightItem != null) {
-            imageCache.getAsync(rightItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
+            imageCache.getAsync(rightItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
                 public Object exec(final Object params) {
                     final Object r = getValue();
 
