@@ -139,8 +139,8 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
             COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
             COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
             try {
-                reloadTask.fork().join(1000);
-            } catch (TimeoutException ex) {
+                reloadTask.join(200);
+            } catch (Exception ex) {
                 //#debug
                 L.e("Startup reloadAsync timeout", "This is normal if loading from the net", ex);
             }
