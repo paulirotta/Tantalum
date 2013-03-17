@@ -1,0 +1,33 @@
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+}
+
+dependencies {
+    compile project(':TantalumLibrary')
+    compile files('../lib/jmunit4cldc11-1.2.1.jar')
+
+    testCompile "org.microemu:microemulator:2.0.4"
+    testCompile "org.microemu:microemu-midp:2.0.4"
+    testCompile "org.microemu:microemu-cldc:2.0.4"
+    testCompile "org.microemu:microemu-jsr-75:2.0.4"
+    testCompile("org.microemu:microemu-jsr-135:2.0.4") {
+        exclude module: 'microemu-midp'
+        exclude module: 'microemu-cldc'
+    }
+
+}
+
+
+task compileJava(overwrite: true, dependsOn: wtkbuild) << {
+}
+
+project.tasks["assemble"].dependsOn {
+    [
+            wtkpackage
+    ]
+}
+

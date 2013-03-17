@@ -1,0 +1,16 @@
+include 'TantalumLibrary'
+include 'TantalumUnitTests'
+include 'TantalumJ2SEUnitTests'
+
+// Can we include these only in the Examples-project?
+include 'Examples:CachedGeocodeExample'
+include 'Examples:GeocodeExample'
+
+// We currently don't have a dependency to LWUIT. When this is added, we can also build this project
+//include 'Examples:TantalumLWUITBBCReader'
+
+// These examples need the Nokia S40 SDK to compile
+//include 'Examples:PicasaViewer'
+//include 'Examples:TantalumS40BBCReader'
+
+rootProject.name = 'Tantalum'
