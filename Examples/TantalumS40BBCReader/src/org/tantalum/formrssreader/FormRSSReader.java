@@ -95,6 +95,10 @@ public class FormRSSReader extends TantalumMIDlet implements CommandListener {
     }//GEN-BEGIN:|5-switchDisplayable|2|
     //</editor-fold>//GEN-END:|5-switchDisplayable|2|
 
+    public FormRSSReader() {
+        super(DEFAULT_NUMBER_OF_WORKER_THREADS);
+    }
+    
     public ListForm getList() {
         if (list == null) {
             list = new ListForm(this, "Tantalum3 BBC");

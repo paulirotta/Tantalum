@@ -205,7 +205,7 @@ public final class StaticWebCache extends StaticCache {
                 throw new IllegalArgumentException("StaticWebCache get type not supported: " + getType);
         }
         getTask.chain(chainedTask);
-        Worker.fork(getTask, priority);
+        getTask.fork(priority);
 
         return getTask;
     }
@@ -217,7 +217,7 @@ public final class StaticWebCache extends StaticCache {
      */
     public void prefetch(final String key) {
         if (synchronousRAMCacheGet(key) == null) {
-            Worker.fork(new Task() {
+            (new Task() {
                 public Object exec(final Object in) {
                     try {
                         getAsync(key, Worker.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
@@ -228,7 +228,7 @@ public final class StaticWebCache extends StaticCache {
 
                     return in;
                 }
-            }, Worker.LOW_PRIORITY);
+            }).fork(Worker.LOW_PRIORITY);
         }
     }
 

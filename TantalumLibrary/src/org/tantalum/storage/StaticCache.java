@@ -47,14 +47,15 @@ import org.tantalum.util.WeakHashCache;
  * given StaticCache.
  */
 public class StaticCache {
+
     /**
      * The number of the Worker thread which will perform all cache write
-     * operations. Reading is asynchronous from any thread and this works because
-     * the WeakReferenceHash cache is locked from garbage-collecting in-memory
-     * copies of write-queued objects until after the write Task completes, thus
-     * out-of-order read is thread safe. But flash writing must be done in-order
-     * to preserve the application designer's intent without thread race
-     * conditions arising.
+     * operations. Reading is asynchronous from any thread and this works
+     * because the WeakReferenceHash cache is locked from garbage-collecting
+     * in-memory copies of write-queued objects until after the write Task
+     * completes, thus out-of-order read is thread safe. But flash writing must
+     * be done in-order to preserve the application designer's intent without
+     * thread race conditions arising.
      */
     private static final int RMS_WORKER_INDEX = Worker.nextSerialWorkerIndex();
     /**
@@ -111,9 +112,9 @@ public class StaticCache {
      */
     private volatile boolean flashCacheEnabled = true;
     /**
-     * All synchronization is not on "this", but on the hidden MUTEX Object to encapsulate
-     * synch and disallow the bad practice of externally synchronizing on the
-     * ramCache object itself.
+     * All synchronization is not on "this", but on the hidden MUTEX Object to
+     * encapsulate synch and disallow the bad practice of externally
+     * synchronizing on the ramCache object itself.
      */
     protected final Object MUTEX = new Object();
 
@@ -124,7 +125,7 @@ public class StaticCache {
      * @param handler
      * @param taskFactory
      * @param clas
-     * @return 
+     * @return
      */
     protected static StaticCache getExistingCache(final char priority, final DataTypeHandler handler, final Object taskFactory, final Class clas) {
         synchronized (caches) {
@@ -177,7 +178,7 @@ public class StaticCache {
      * Create a named Cache
      *
      * @param priority
-     * @param handler 
+     * @param handler
      */
     protected StaticCache(final char priority, final DataTypeHandler handler) {
         if (priority < '0') {
@@ -273,7 +274,7 @@ public class StaticCache {
      * @param getPriority - default is Work.NORMAL_PRIORITY set to
      * Work.HIGH_PRIORITY if you want the results quickly to update the UI.
      * @param chainedTask
-     * @return 
+     * @return
      */
     public Task getAsync(final String key, final int getPriority, final Task chainedTask) {
         if (key == null || key.length() == 0) {
@@ -512,21 +513,40 @@ public class StaticCache {
     /**
      * Remove all elements from this ramCache
      *
+     * @param chainedTask
+     * @return
      */
-    public void clear() {
-        //#debug
-        L.i("Start Cache Clear", "ID=" + priority);
-        final String[] keys;
+    public Task clearAsync(final Task chainedTask) {
+        final Task task = new Task() {
+            protected Object exec(final Object in) {
+                //#debug
+                L.i("Start Cache Clear", "ID=" + priority);
+                final String[] keys;
 
-        synchronized (MUTEX) {
-            keys = new String[accessOrder.size()];
-            accessOrder.copyInto(keys);
-        }
-        for (int i = 0; i < keys.length; i++) {
-            remove(keys[i]);
-        }
-        //#debug
-        L.i("Cache cleared", "ID=" + priority);
+                synchronized (MUTEX) {
+                    keys = new String[accessOrder.size()];
+                    accessOrder.copyInto(keys);
+                }
+                for (int i = 0; i < keys.length; i++) {
+                    remove(keys[i]);
+                }
+                //#debug
+                L.i("Cache cleared", "ID=" + priority);
+
+                return in;
+            }
+        };
+        task.chain(chainedTask);
+        Worker.forkSerial(task, RMS_WORKER_INDEX);
+
+        return task;
+    }
+
+    /**
+     * Remove all elements from this ramCache
+     *
+     */
+    private void clear() {
     }
 
     /**
@@ -536,9 +556,9 @@ public class StaticCache {
      * affect conversions already in progress. Therefore you may want to chain()
      * to the Task returned and continue your code after this clear completes
      * after other queued tasks.
-     * 
+     *
      * @param chainedTask
-     * @return 
+     * @return
      */
     public Task clearHeapCacheAsync(final Task chainedTask) {
         final Task task = new Task() {
@@ -619,7 +639,7 @@ public class StaticCache {
      * memory at the current time.
      *
      * @param chainedTask
-     * @return 
+     * @return
      */
     public Task getKeysAsync(final Task chainedTask) {
         final Task task = new Task() {

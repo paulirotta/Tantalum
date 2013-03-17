@@ -24,7 +24,6 @@
 package org.tantalum.canvasrssreader;
 
 import org.tantalum.Task;
-import org.tantalum.Workable;
 import org.tantalum.Worker;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSModel;
@@ -45,7 +44,7 @@ public abstract class RSSListView extends View {
     public RSSListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        feedCache = new StaticWebCache('5', new DataTypeHandler() {
+        feedCache = StaticWebCache.getWebCache('5', new DataTypeHandler() {
 	public Object convertToUseForm(final Object key, byte[] bytes) {
                 try {
                     rssModel.setXML(bytes);
@@ -60,25 +59,17 @@ public abstract class RSSListView extends View {
         });
     }
 
-    protected final void clearCache() {
-        Worker.fork(new Workable() {
-            public Object exec(final Object in) {
-                try {
-                    doClearCache();
-                } catch (Exception e) {
-                    //#debug
-                    L.e("Can not clear cache", "", e);
-                }
+    protected void clearCache() {
+        feedCache.clearAsync(new Task() {
 
+            protected Object exec(final Object in) {
+                reloadAsync(true);
+                
                 return in;
             }
-        }, Worker.HIGH_PRIORITY);
-    }
-
-    protected void doClearCache() {
-        feedCache.clear();
-        DetailsView.imageCache.clear();
-        reloadAsync(true);
+            
+        });
+        DetailsView.imageCache.clearAsync(null);
     }
 
     /**
@@ -88,7 +79,7 @@ public abstract class RSSListView extends View {
         this.renderY = 0;
         rssModel.removeAllElements();
         final Task rssResult = new Task() {
-            public Object doInBackground(final Object params) {
+            public Object exec(final Object params) {
                 canvas.refresh();
 
                 return null;

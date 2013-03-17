@@ -44,7 +44,7 @@ import org.tantalum.util.StringUtils;
  */
 public final class DetailsView extends View {
 
-    public static final StaticWebCache imageCache = new StaticWebCache('1', new J2MEImageTypeHandler());
+    public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', new J2MEImageTypeHandler());
    // private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
@@ -150,7 +150,7 @@ public final class DetailsView extends View {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
                 imageCache.getAsync(item.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
-                    public Object doInBackground(final Object in) {
+                    public Object exec(final Object in) {
                         item.setLoadingImage(false);
                         if (currentItem == item) {
                             currentIcon = (Image) in;
@@ -207,7 +207,7 @@ public final class DetailsView extends View {
         this.rightItem = rightItem;
         if (leftItem != null) {
             imageCache.getAsync(leftItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
-                public Object doInBackground(final Object params) {
+                public Object exec(final Object params) {
                     final Object r = getValue();
 
                     if (DetailsView.this.leftItem == leftItem) {
@@ -220,7 +220,7 @@ public final class DetailsView extends View {
         }
         if (rightItem != null) {
             imageCache.getAsync(rightItem.getThumbnail(), Worker.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
-                public Object doInBackground(final Object params) {
+                public Object exec(final Object params) {
                     final Object r = getValue();
 
                     if (DetailsView.this.rightItem == rightItem) {

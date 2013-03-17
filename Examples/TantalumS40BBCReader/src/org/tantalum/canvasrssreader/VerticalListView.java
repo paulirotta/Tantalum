@@ -226,8 +226,8 @@ public final class VerticalListView extends RSSListView {
         this.renderCache.clear();
     }
 
-    protected void doClearCache() {
-        super.doClearCache();
+    protected void clearCache() {
+        super.clearCache();
 
         renderCache.clear();
     }

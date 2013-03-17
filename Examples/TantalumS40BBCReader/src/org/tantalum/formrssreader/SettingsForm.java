@@ -30,6 +30,7 @@ import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.TextField;
 import javax.microedition.rms.RecordStoreFullException;
 import org.tantalum.j2me.RMSUtils;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -38,6 +39,7 @@ import org.tantalum.util.L;
  * @author ssaa
  */
 public final class SettingsForm extends TextBox implements CommandListener {
+
     private final FormRSSReader midlet;
     private final Command saveCommand = new Command("Save", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
@@ -61,12 +63,17 @@ public final class SettingsForm extends TextBox implements CommandListener {
     }
 
     public void commandAction(Command command, Displayable displayable) {
-
         if (command == saveCommand) {
             try {
-                RMSUtils.write("settings", getString().getBytes());
-            } catch (RecordStoreFullException ex) {
-                L.e("Can not write settings", "", ex);
+                RMSUtils.getInstance().write("settings", getString().getBytes());
+            } catch (Exception ex) {
+                L.e("Can not write settings, attempting to delete settings", "", ex);
+                try {
+                    RMSUtils.getInstance().delete("settings");
+                    RMSUtils.getInstance().write("settings", getString().getBytes());
+                } catch (Exception ex1) {
+                    L.e("Can not write settings", "", ex);
+                }
             }
             midlet.switchDisplayable(null, midlet.getList());
             midlet.getList().reload(true);

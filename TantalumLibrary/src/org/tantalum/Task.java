@@ -286,9 +286,7 @@ public abstract class Task {
      * @return
      */
     public final Task fork() {
-        Worker.fork(this);
-
-        return this;
+        return fork(Worker.NORMAL_PRIORITY);
     }
 
     /**
@@ -750,7 +748,7 @@ public abstract class Task {
                 //#debug
                 L.i("Begin fork chained task", t.toString() + " INPUT: " + in);
                 t.setValue(in);
-                Worker.fork(t, Worker.HIGH_PRIORITY);
+                t.fork(Worker.HIGH_PRIORITY);
             }
         } catch (final Throwable t) {
             //#debug

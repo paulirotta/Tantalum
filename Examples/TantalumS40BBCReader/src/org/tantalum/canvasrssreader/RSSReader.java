@@ -46,6 +46,10 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     public static int COLOR_BORDER;
     public static int COLOR_HIGHLIGHTED_BORDER;
 
+    public RSSReader() {
+        super(DEFAULT_NUMBER_OF_WORKER_THREADS);
+    }
+    
     /**
      * Switches a current displayable in a display. The
      * <code>display</code> instance is taken from
@@ -121,7 +125,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     public void startApp() {
         try {
             final Task reloadTask = new Task() {
-                public Object doInBackground(final Object params) {
+                public Object exec(final Object params) {
                     getCanvas().getListView().reloadAsync(false);
                     
                     return null;

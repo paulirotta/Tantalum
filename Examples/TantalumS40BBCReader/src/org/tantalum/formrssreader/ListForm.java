@@ -24,8 +24,8 @@
 package org.tantalum.formrssreader;
 
 import javax.microedition.lcdui.*;
+import org.tantalum.Task;
 import org.tantalum.UITask;
-import org.tantalum.Workable;
 import org.tantalum.Worker;
 import org.tantalum.j2me.RMSUtils;
 import org.tantalum.net.StaticWebCache;
@@ -43,7 +43,7 @@ public final class ListForm extends Form implements CommandListener {
     private static ListForm instance;
     private final FormRSSReader rssReader;
     private final DetailsForm detailsView;
-    private final StaticWebCache feedCache = new StaticWebCache('5', new DataTypeHandler() {
+    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', new DataTypeHandler() {
     public Object convertToUseForm(final Object key, final byte[] bytes) {
             try {
                 rssModel.removeAllElements();
@@ -93,7 +93,7 @@ public final class ListForm extends Form implements CommandListener {
             alert.setTimeout(10000);
             //#debug
             L.i("Alert timeout set", "10000");
-            Worker.fork(new Workable() {
+            (new Task() {
                 public Object exec(final Object in) {
                     try {
                         try {
@@ -112,13 +112,13 @@ public final class ListForm extends Form implements CommandListener {
 
                     return in;
                 }
-            });
+            }).fork();
             rssReader.switchDisplayable(alert, this);
         } else if (command == settingsCommand) {
             String feedUrl = FormRSSReader.INITIAL_FEED_URL;
 
             try {
-                feedUrl = RMSUtils.read("settings").toString();
+                feedUrl = RMSUtils.getInstance().read("settings").toString();
             } catch (Exception e) {
                 //#debug
                 L.e("Can not read settings", "", e);
@@ -145,7 +145,7 @@ public final class ListForm extends Form implements CommandListener {
         String feedUrl = FormRSSReader.INITIAL_FEED_URL;
 
         try {
-            final byte[] bytes = RMSUtils.read("settings");
+            final byte[] bytes = RMSUtils.getInstance().read("settings");
 
             if (bytes != null) {
                 feedUrl = bytes.toString();

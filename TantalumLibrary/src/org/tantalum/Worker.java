@@ -122,7 +122,7 @@ public final class Worker extends Thread {
      *
      * @param task
      */
-    public static void fork(final Task task) {
+     private static void fork(final Task task) {
         synchronized (q) {
             q.addElement(task);
             try {
@@ -165,7 +165,7 @@ public final class Worker extends Thread {
      * @param task
      * @param priority
      */
-    public static void fork(final Task task, final int priority) {
+    static void fork(final Task task, final int priority) {
         switch (priority) {
             case Worker.NORMAL_PRIORITY:
                 fork(task);
@@ -215,7 +215,7 @@ public final class Worker extends Thread {
      * @param task
      * @return
      */
-    public static boolean tryUnfork(final Task task) {
+    static boolean tryUnfork(final Task task) {
         boolean success;
 
         if (task == null) {

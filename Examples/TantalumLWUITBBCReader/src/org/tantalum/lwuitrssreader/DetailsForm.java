@@ -52,7 +52,7 @@ public class DetailsForm extends Form implements ActionListener {
     private Vector linkLabels;
     private RSSReader midlet;
     private RSSItem current;
-    private static final StaticWebCache imageCache = new StaticWebCache('1', new LWUITImageTypeHandler());
+    private static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', new LWUITImageTypeHandler());
 
     public DetailsForm(String title, RSSReader midlet) {
         super(title);
@@ -122,8 +122,8 @@ public class DetailsForm extends Form implements ActionListener {
     }
 
     public Vector getLabels(String str, com.sun.lwuit.Font font, int width) {
-        Vector labels = new Vector();
-        Vector lines = StringUtils.splitToLines(str, font, width);
+        final Vector labels = new Vector();
+        final Vector lines = StringUtils.splitToLines(str, font, width);
         for (int i = 0; i < lines.size(); i++) {
             labels.addElement(new Label((String) lines.elementAt(i)));
             ((Label) labels.lastElement()).getStyle().setFont(font);
