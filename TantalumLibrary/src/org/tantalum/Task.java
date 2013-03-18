@@ -573,7 +573,7 @@ public abstract class Task {
             L.i("End joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length + " timeElapsed=" + (timeout - timeLeft));
         }
     }
-
+    
     /**
      * Wait up to MAX_TIMEOUT milliseconds for the UI thread to complete the
      * Task
