@@ -245,11 +245,11 @@ public final class RMSUtils {
             throw new IllegalArgumentException("Can not RMSUtils.write(), data is null: " + key);
         }
         try {
-            //delete old value
             //#debug
-            L.i("Add to RMS", key + " (" + data.length + " bytes)");
+            L.i("Add to RMS", "key=" + key + " recordStoreName=" + recordStoreName + " (" + data.length + " bytes)");
             rs = getRecordStore(recordStoreName, true);
-
+            //#debug
+            L.i("Add to RMS", "recordStoreName=" + recordStoreName + " opened");
             if (rs.getNumRecords() == 0) {
                 rs.addRecord(data, 0, data.length);
             } else {
@@ -265,7 +265,7 @@ public final class RMSUtils {
             try {
                 //#debug
                 L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
-                delete(key);
+                //delete(key);
             } finally {
                 throw new FlashDatabaseException("RMS write problem, delete was attempted: " + key + " : " + e);
             }

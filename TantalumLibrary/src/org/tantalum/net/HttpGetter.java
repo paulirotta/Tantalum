@@ -26,6 +26,7 @@ package org.tantalum.net;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
@@ -360,7 +361,47 @@ public class HttpGetter extends Task {
     public String toString() {
         final StringBuffer sb = new StringBuffer();
         
+        //#mdebug
+        sb.append("HttpGetter: key=");
+        sb.append(key);
+
+        sb.append(" retriesRemaining=");
+        sb.append(retriesRemaining);
+
+        sb.append(" postMessageLength=");
+        if (postMessage == null) {
+            sb.append("<null>");
+        } else {
+            sb.append(postMessage.length);
+        }
         
+        sb.append(" responseCode=");
+        sb.append(responseCode);
+        
+        sb.append("\nHTTP RESPONSE HEADERS");
+        final Enumeration enu = responseHeaders.keys();
+        while (enu.hasMoreElements()) {
+            final String k = (String) enu.nextElement();
+            sb.append("\n   ");
+            sb.append(k);
+            sb.append(": ");
+            final String value = (String) responseHeaders.get(k);
+            sb.append(value);
+        }
+
+        sb.append("\nHTTP REQUEST CUSTOM HEADERS");
+        for (int i = 0; i < requestPropertyKeys.size(); i++) {
+            final String key = (String) requestPropertyKeys.elementAt(i);
+            sb.append("\n   ");
+            sb.append(key);
+            sb.append(": ");
+            final String value = (String) requestPropertyValues.elementAt(i);
+            sb.append(value);
+        }
+
+        sb.append("\n duplicateTaskWeShouldJoinInsteadOfReGetting=");
+        sb.append(duplicateTaskWeShouldJoinInsteadOfReGetting);
+        //#enddebug
         sb.append(super.toString());
         
         return sb.toString();
