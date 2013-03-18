@@ -25,7 +25,6 @@ package org.tantalum.tests;
 
 import jmunit.framework.cldc11.AssertionFailedException;
 import jmunit.framework.cldc11.TestCase;
-import org.tantalum.PlatformUtils;
 import org.tantalum.util.PoolingWeakHashCache;
 
 /**
@@ -41,7 +40,6 @@ public class PoolingWeakHashCacheTest extends TestCase {
     public PoolingWeakHashCacheTest() {
         //The first parameter of inherited constructor is the number of test cases
         super(3, "PoolingWeakHashCacheTest");
-        PlatformUtils.getInstance().setProgram(this, 4, false);
     }
 
     /**

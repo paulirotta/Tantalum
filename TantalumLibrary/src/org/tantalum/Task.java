@@ -38,9 +38,21 @@ import org.tantalum.util.L;
 public abstract class Task {
 
     /**
-     * Start the task as soon as possible. The fork() operation will place this
-     * as the next Task to be completed unless subsequent HIGH_PRIORITY fork
-     * operations occur before a Worker start execution.
+     * All items with are executed in guaranteed sequence on a single background
+     * worker thread. This is normally used for persistence operations like
+     * flash write. Note that in most other cases it is preferable for you to
+     * sequence items explicitly within a single Task or by the sequence with
+     * which one
+     * <code>Task</code> chains to or forks other
+     * <code>Task</code>s.
+     */
+    public static final int SERIAL_PRIORITY = 4;
+    /**
+     * Start the task as soon as possible. The
+     * <code>fork()</code> operation will place this as the next Task to be
+     * completed unless subsequent
+     * <code>HIGH_PRIORITY</code> fork operations occur before a Worker start
+     * execution.
      *
      * This is the normal priority for user interface tasks where the user
      * expects a fast response regardless of previous incomplete requests they
@@ -48,22 +60,24 @@ public abstract class Task {
      */
     public static final int HIGH_PRIORITY = 3;
     /**
-     * Start execution after any previously fork()ed work, first in is usually
-     * first out, however multiple Workers in parallel means that execution
-     * start and completion order is not guaranteed.
+     * Start execution after any previously
+     * <code>fork()</code>ed work, first in is usually first out, however
+     * multiple Workers in parallel means that execution start and completion
+     * order is not guaranteed.
      */
     public static final int NORMAL_PRIORITY = 2;
     /**
      * Start execution if there is nothing else for the Workers to do. At least
      * one Worker will always be left idle for immediate activation if only
-     * LOW_PRIORITY work is queued for execution. This is intended for
-     * background tasks such as pre-fetch and pre-processing of data that doe
-     * not affect the current user view.
+     * <code>LOW_PRIORITY</code> work is queued for execution. This is intended
+     * for background tasks such as pre-fetch and pre-processing of data that
+     * doe not affect the current user view.
      */
     public static final int LOW_PRIORITY = 1;
     /**
-     * Start execution when PlatformUtils.shutdown() is called, and do not exit
-     * the program until all such shutdown tasks are completed.
+     * Start execution when
+     * <code>PlatformUtils.getInstance().shutdown()</code> is called, and do not
+     * exit the program until all such shutdown tasks are completed.
      *
      * Note that if shutdown takes too long and the phone is telling the
      * application to exit, then the phone may give the application a limited
@@ -151,25 +165,6 @@ public abstract class Task {
      * using Worker.queueShutdownTask(Task).
      */
     public static final int DEQUEUE_OR_CANCEL_ON_SHUTDOWN = 3;
-
-    /**
-     * Get the id number for the next available Worker thread that can be used
-     * to a specific application-define type of Worker.forkSerial() operations.
-     * Assuming you have a limited number of types of forkSerial() operations,
-     * this round-robin allocation reduces the number of serialized operations
-     * assigned to any one generic Worker. Note that since forkSerial() work is
-     * done by the specified Worker before general fork() operations, it is
-     * higher priority work than a fork() with HIGH_PRIORITY, but only one
-     * Worker can execute that type of task.
-     *
-     * You can use this to guarantee the sequence of execution of a given type
-     * of task (such as writing to flash memory or to a server).
-     *
-     * @return
-     */
-    public static int nextSerialQueueNumber() {
-        return Worker.nextSerialQueueNumber();
-    }
     private Object value; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants
@@ -350,20 +345,6 @@ public abstract class Task {
      */
     public final Task fork() {
         return fork(Task.NORMAL_PRIORITY);
-    }
-
-    /**
-     * Queue compute to the Worker specified by serialQIndex. This compute will
-     * be done after any previously serialQueue()d compute to this Worker. This
-     * Worker will do only serialQueue() tasks until they are complete, then
-     * will revert to doing general forkSerial(), forkPriority() and
-     * forkLowPriority()
-     *
-     * @param serialQueueNumber
-     * @return
-     */
-    public final Task forkSerial(final int serialQueueNumber) {
-        return Worker.forkSerial(this, serialQueueNumber);
     }
 
     /**

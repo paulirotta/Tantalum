@@ -46,12 +46,6 @@ final class Worker extends Thread {
      * such dedicated compute to do will drop back to the more general q
      */
     private final Vector serialQ = new Vector();
-    /*
-     * serialQ jobs are assigned to Workers in a round-robin fashion using this
-     * index. The user can store this index if they want to later add objects
-     * to the same serialQ or manually manage this.
-     */
-    private static int nextSerialQWorkerIndex = 0;
     private static final Vector lowPriorityQ = new Vector();
     private static final Vector shutdownQ = new Vector();
     private static int currentlyIdleCount = 0;
@@ -60,14 +54,6 @@ final class Worker extends Thread {
 
     private Worker(final String name) {
         super(name);
-    }
-
-    static int nextSerialQueueNumber() {
-        synchronized (Worker.q) {
-            final int i = Worker.nextSerialQWorkerIndex;
-            Worker.nextSerialQWorkerIndex = ++Worker.nextSerialQWorkerIndex % Worker.workers.length;
-            return i;
-        }
     }
 
     /**
@@ -145,9 +131,6 @@ final class Worker extends Thread {
      */
     static void fork(final Task task, final int priority) {
         switch (priority) {
-            case Task.NORMAL_PRIORITY:
-                fork(task);
-                break;
             case Task.HIGH_PRIORITY:
                 synchronized (q) {
                     q.insertElementAt(task, 0);
@@ -163,6 +146,12 @@ final class Worker extends Thread {
                     }
                     q.notify();
                 }
+                break;
+            case Task.NORMAL_PRIORITY:
+                fork(task);
+                break;
+            case Task.SERIAL_PRIORITY:
+                Worker.forkSerial(task);
                 break;
             case Task.LOW_PRIORITY:
                 synchronized (q) {
@@ -267,17 +256,14 @@ final class Worker extends Thread {
      * @param task
      * @param serialQueueNumber
      */
-    static Task forkSerial(final Task task, final int serialQueueNumber) {
-        if (serialQueueNumber >= workers.length) {
-            throw new IndexOutOfBoundsException("serialQ to Worker " + serialQueueNumber + ", but there are only " + workers.length + " Workers");
-        }
-        workers[serialQueueNumber].serialQ.addElement(task);
+    static Task forkSerial(final Task task) {
+        workers[0].serialQ.addElement(task);
         try {
             if (task instanceof Task) {
                 ((Task) task).notifyTaskForked();
             }
         } catch (IllegalStateException e) {
-            workers[serialQueueNumber].serialQ.removeElement(task);
+            workers[0].serialQ.removeElement(task);
             throw e;
         }
         synchronized (q) {

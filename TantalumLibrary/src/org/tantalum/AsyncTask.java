@@ -48,12 +48,6 @@ public abstract class AsyncTask extends UITask {
 
     private static volatile boolean agressiveThreading = true;
 
-    /**
-     * If tasks are called with execute(Params) then they will all execute in
-     * guaranteed sequence on one Worker thread. It is generally better to use
-     * executeOnExecutor(Params) instead unless
-     */
-    public static final int ASYNC_TASK_SERIAL_QUEUE_NUMBER = Task.nextSerialQueueNumber();
     /*
      * Note that an AsyncTask is stateful, including parameters. You can therefore
      * not fork() an AsyncTask instance more than once at a time. It is recommended
@@ -78,13 +72,13 @@ public abstract class AsyncTask extends UITask {
      * @param runnable
      */
     public static void execute(final Runnable runnable) {
-        Worker.forkSerial(new Task() {
+        Worker.fork(new Task() {
             public Object exec(final Object in) {
                 runnable.run();
                 
                 return in;
             }
-        }, ASYNC_TASK_SERIAL_QUEUE_NUMBER);
+        }, Task.SERIAL_PRIORITY);
     }
 
     /**
@@ -107,7 +101,7 @@ public abstract class AsyncTask extends UITask {
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
-                Worker.forkSerial(AsyncTask.this, ASYNC_TASK_SERIAL_QUEUE_NUMBER);
+                Worker.fork(AsyncTask.this, Task.SERIAL_PRIORITY);
             }
         });
 

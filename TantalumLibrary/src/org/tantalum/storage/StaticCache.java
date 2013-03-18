@@ -48,16 +48,6 @@ import org.tantalum.util.WeakHashCache;
 public class StaticCache {
 
     /**
-     * The number of the Worker thread which will perform all cache write
-     * operations. Reading is asynchronous from any thread and this works
-     * because the WeakReferenceHash cache is locked from garbage-collecting
-     * in-memory copies of write-queued objects until after the write Task
-     * completes, thus out-of-order read is thread safe. But flash writing must
-     * be done in-order to preserve the application designer's intent without
-     * thread race conditions arising.
-     */
-    private static final int RMS_WRITE_SERIAL_QUEUE_INDEX = Task.nextSerialQueueNumber();
-    /**
      * A list of all caches, sorted by priority order (lowest char first)
      */
     protected static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
@@ -359,7 +349,7 @@ public class StaticCache {
 
                     return in;
                 }
-            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN)).forkSerial(RMS_WRITE_SERIAL_QUEUE_INDEX);
+            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN)).fork(Task.SERIAL_PRIORITY);
         }
 
         return convertAndPutToHeapCache(key, bytes);
@@ -536,7 +526,7 @@ public class StaticCache {
             }
         };
         task.chain(chainedTask);
-        task.forkSerial(RMS_WRITE_SERIAL_QUEUE_INDEX);
+        task.fork(Task.SERIAL_PRIORITY);
 
         return task;
     }
