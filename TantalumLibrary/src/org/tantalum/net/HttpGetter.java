@@ -74,6 +74,15 @@ public class HttpGetter extends Task {
     private HttpGetter duplicateTaskWeShouldJoinInsteadOfReGetting = null;
 
     /**
+     * Counter, estimated downloaded bytes during the session. 
+     */
+    private static int downstreamDataCount = 0;
+    /**
+     * Counter, estimated uploaded bytes during the session. 
+     */
+    private static int upstreamDataCount = 0;
+
+    /**
      * Get the byte[] from the URL specified by the input argument when
      * exec(url) is called. This may be chained from a previous chain()ed
      * asynchronous task.
@@ -215,20 +224,32 @@ public class HttpGetter extends Task {
         boolean success = false;
         final String url2 = getUrl();
 
+        addUpstreamDataCount(url2.length());
+        
         try {
             if (this instanceof HttpPoster) {
                 if (postMessage == null) {
                     throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + key);
                 }
                 httpConn = PlatformUtils.getInstance().getHttpPostConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
+                addUpstreamDataCount(postMessage.length);
             } else {
                 httpConn = PlatformUtils.getInstance().getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
             }
 
+	    // Estimate data length of the sent headers
+	    for (int i = 0; i < requestPropertyKeys.size(); i++) {
+		addUpstreamDataCount(((String)requestPropertyKeys.elementAt(i)).length());
+		addUpstreamDataCount(((String)requestPropertyValues.elementAt(i)).length());
+	    }
+	    
             final InputStream inputStream = httpConn.getInputStream();
             final long length = httpConn.getLength();
             responseCode = httpConn.getResponseCode();
             httpConn.getResponseHeaders(responseHeaders);
+            
+            // Response headers length estimation
+            addDownstreamDataCount(responseHeaders.toString().length());
 
             if (length > 0 && length < 1000000) {
                 //#debug
@@ -267,6 +288,8 @@ public class HttpGetter extends Task {
                 L.i(this.getClass().getName() + " end variable length read (" + ((byte[]) out).length + " bytes)", key);
             }
 
+            addDownstreamDataCount(((byte[]) out).length);
+				   
             success = checkResponseCode(responseCode, responseHeaders);
         } catch (IllegalArgumentException e) {
             //#debug
@@ -406,4 +429,53 @@ public class HttpGetter extends Task {
         
         return sb.toString();
     }
+    
+    /**
+     * Retrieves an estimated count of transfered bytes downstream.
+     * The counter is valid during the application run.
+     * @return byte count
+     */
+    public synchronized static int getDownstreamDataCount() {
+	return downstreamDataCount;
+    }
+    
+    /**
+     * Retrieves an estimated count of transfered bytes upstream.
+     * The counter is valid during the application run.
+     * @return byte count
+     */
+    public synchronized static int getUpstreamDataCount() {
+	return upstreamDataCount;
+    }
+    
+    /**
+     * Clears the downstream data counter.
+     */
+    public synchronized static void clearDownstreamDataCount() {
+	downstreamDataCount = 0;
+    }
+
+    /**
+     * Clears the upstream data counter. 
+     */
+    public synchronized static void clearUpstreamDataCount() {
+	upstreamDataCount = 0;
+    }
+    
+    /**
+     * Accumulates the downstream data counter.
+     * @param count 
+     */
+    private synchronized static void addDownstreamDataCount(final int count) {
+	downstreamDataCount += count;
+    }
+       
+    /**
+     * Accumulates the upstream data counter.
+     * @param count 
+     */
+    private synchronized static void addUpstreamDataCount(final int count) {
+	upstreamDataCount += count;
+    }
+
 }
