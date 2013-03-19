@@ -1,25 +1,26 @@
 /*
- Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ Copyright (c) 2013, Paul Houghton and Futurice Oy
  All rights reserved.
 
- Tantalum software shall be used to make the world a better place for everyone.
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ - Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
+ - Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
 
- This software is licensed for use under the Apache 2 open source software license,
- http://www.apache.org/licenses/LICENSE-2.0.html
-
- You are kindly requested to return your improvements to this library to the
- open source community at http://projects.developer.nokia.com/Tantalum
-
- The above copyright and license notice notice shall be included in all copies
- or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
  */
 package geocodeexample;
 
@@ -30,8 +31,9 @@ import javax.microedition.lcdui.*;
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
+import org.tantalum.PlatformUtils;
+import org.tantalum.Task;
 import org.tantalum.UITask;
-import org.tantalum.Worker;
 import org.tantalum.j2me.TantalumMIDlet;
 import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
@@ -40,22 +42,21 @@ import org.tantalum.storage.DataTypeHandler;
 /**
  * Demonstration of a JSON service which returns locally cached values if the
  * same web service request has been performed before.
- * 
+ *
  * Note that you can force the cache to update with the latest results from the
  * web server by calling locationsCache.get() with the parameter
  * StaticWebCache.GET_WEB. You can also force offline-only operation to run off
  * the local cache using StaticWebCache.GET_LOCAL.
- * 
+ *
  * @author phou
  */
 public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
-    private static final int NUMBER_OF_WORKERS = 1;
+
     private boolean midletPaused = false;
 
     public HelloMIDlet() {
-        super(NUMBER_OF_WORKERS);
+        super(DEFAULT_NUMBER_OF_WORKER_THREADS);
     }
-    
     /*
      * Think of a cache as a Hashtable of key-value pairs, where the key is the
      * URL of a web service (HTTP GET of a unique URL).
@@ -69,23 +70,22 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
      */
     private final StaticWebCache locationsCache = StaticWebCache.getWebCache('0', new DataTypeHandler() {
         /**
-         * This method converts the JSON byte[] received from the web service, or
-         * stored in local flash memory, into an object we can use in the
+         * This method converts the JSON byte[] received from the web service,
+         * or stored in local flash memory, into an object we can use in the
          * application ("use form"). It is called by the cache automatically as
-         * needed on a background Worker thread so the User Interface Thread (UI Thread)
-         * is not blocked and the interface continues to be responsive.
+         * needed on a background Worker thread so the User Interface Thread (UI
+         * Thread) is not blocked and the interface continues to be responsive.
          */
-    public Object convertToUseForm(final Object key, final byte[] bytes) {
+        public Object convertToUseForm(final Object key, final byte[] bytes) {
             String out = "";
             String s = new String(bytes);
             try {
                 JSONObject src = new JSONObject(s);
-                JSONArray inn = src.getJSONArray("Placemark");
-                JSONObject arr = inn.getJSONObject(1);
-                JSONObject d = arr.getJSONObject("Point");
-                JSONArray f = d.getJSONArray("coordinates");
+                JSONObject results = src.getJSONObject("results");
+                JSONObject geometry = results.getJSONObject("geometry");
+                JSONArray location = geometry.getJSONArray("location");
 
-                out = "Lat: " + f.getString(0) + " & Lon: " + f.getString(1);
+                out = "Lat: " + location.getString(0) + " & Lon: " + location.getString(1);
             } catch (JSONException ex) {
                 L.e("Can not parse JSON", s, ex);
             }
@@ -182,7 +182,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                 // write pre-action user code here
 //GEN-LINE:|7-commandAction|4|23-postAction
                 // write post-action user code here
-                
+
                 /*
                  * Request with Worker.HIGH_PRIORITY to complete the action before
                  * any other pending Tasks which have not yet started. This is normal
@@ -190,7 +190,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                  * user wants to see the result of their latest action as soon as possible
                  * without the UI ever locking up.
                  */
-                this.locationsCache.getAsync(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), Worker.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
+                this.locationsCache.getAsync(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
                     protected void onPostExecute(Object result) {
                         // UI Thread callback on success
                         HelloMIDlet.this.getLocationStringItem().setText((String) result);
@@ -304,7 +304,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        shutdown(true);
+        PlatformUtils.getInstance().shutdown(true);
     }
 
     /**
@@ -329,34 +329,35 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     }
 
     public String getGeocodeUrl(String address) {
-        return "http://maps.google.com/maps/geo?q=" + urlEncode(address) + "&output=json";
+        return "http://maps.googleapis.com/maps/api/geocode/json?sensor=false&address=" + urlEncode(address);
     }
-    
     private final static String UNRESERVED_CHARS = ".-_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQURSTUVWXYZ*~";
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
+
     public static String urlEncode(final String in) {
-        StringBuffer buf = new StringBuffer();
-        byte[] bytes = null;
+        final StringBuffer buf = new StringBuffer();
+
         try {
             final ByteArrayOutputStream bos = new ByteArrayOutputStream(in.length() * 5 / 4);
             final DataOutputStream dos = new DataOutputStream(bos);
             dos.writeUTF(in);
-            bytes = bos.toByteArray();
+            final byte[] bytes = bos.toByteArray();
             dos.close();
+            for (int i = 2; i < bytes.length; i++) {
+                byte b = bytes[i];
+                if (UNRESERVED_CHARS.indexOf(b) >= 0) {
+                    buf.append((char) b);
+                } else {
+                    buf.append('%');
+                    buf.append(HEX[(b >>> 4) & 0x0F]);
+                    buf.append(HEX[b & 0x0F]);
+                }
+            }
         } catch (IOException e) {
             //#debug
             L.e("Can not urlEncode", in, e);
         }
-        for (int i = 2; i < bytes.length; i++) {
-            byte b = bytes[i];
-            if (UNRESERVED_CHARS.indexOf(b) >= 0) {
-                buf.append((char) b);
-            } else {
-                buf.append('%');
-                buf.append(HEX[(b >>> 4) & 0x0F]);
-                buf.append(HEX[b & 0x0F]);
-            }
-        }
+        
         return buf.toString();
     }
 }

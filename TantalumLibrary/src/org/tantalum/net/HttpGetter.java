@@ -1,25 +1,26 @@
 /*
- Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ Copyright (c) 2013, Paul Houghton and Futurice Oy
  All rights reserved.
 
- Tantalum software shall be used to make the world a better place for everyone.
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ - Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
+ - Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
 
- This software is licensed for use under the Apache 2 open source software license,
- http://www.apache.org/licenses/LICENSE-2.0.html
-
- You are kindly requested to return your improvements to this library to the
- open source community at http://projects.developer.nokia.com/Tantalum
-
- The above copyright and license notice notice shall be included in all copies
- or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
  */
 package org.tantalum.net;
 
@@ -72,13 +73,12 @@ public class HttpGetter extends Task {
     private Vector requestPropertyKeys = new Vector();
     private Vector requestPropertyValues = new Vector();
     private HttpGetter duplicateTaskWeShouldJoinInsteadOfReGetting = null;
-
     /**
-     * Counter, estimated downloaded bytes during the session. 
+     * Counter, estimated downloaded bytes during the session.
      */
     private static int downstreamDataCount = 0;
     /**
-     * Counter, estimated uploaded bytes during the session. 
+     * Counter, estimated uploaded bytes during the session.
      */
     private static int upstreamDataCount = 0;
 
@@ -225,7 +225,7 @@ public class HttpGetter extends Task {
         final String url2 = getUrl();
 
         addUpstreamDataCount(url2.length());
-        
+
         try {
             if (this instanceof HttpPoster) {
                 if (postMessage == null) {
@@ -237,17 +237,17 @@ public class HttpGetter extends Task {
                 httpConn = PlatformUtils.getInstance().getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
             }
 
-	    // Estimate data length of the sent headers
-	    for (int i = 0; i < requestPropertyKeys.size(); i++) {
-		addUpstreamDataCount(((String)requestPropertyKeys.elementAt(i)).length());
-		addUpstreamDataCount(((String)requestPropertyValues.elementAt(i)).length());
-	    }
-	    
+            // Estimate data length of the sent headers
+            for (int i = 0; i < requestPropertyKeys.size(); i++) {
+                addUpstreamDataCount(((String) requestPropertyKeys.elementAt(i)).length());
+                addUpstreamDataCount(((String) requestPropertyValues.elementAt(i)).length());
+            }
+
             final InputStream inputStream = httpConn.getInputStream();
             final long length = httpConn.getLength();
             responseCode = httpConn.getResponseCode();
             httpConn.getResponseHeaders(responseHeaders);
-            
+
             // Response headers length estimation
             addDownstreamDataCount(responseHeaders.toString().length());
 
@@ -289,7 +289,7 @@ public class HttpGetter extends Task {
             }
 
             addDownstreamDataCount(((byte[]) out).length);
-				   
+
             success = checkResponseCode(responseCode, responseHeaders);
         } catch (IllegalArgumentException e) {
             //#debug
@@ -380,11 +380,11 @@ public class HttpGetter extends Task {
 
         return key.substring(0, i);
     }
-    
+
+    //#mdebug
     public String toString() {
         final StringBuffer sb = new StringBuffer();
-        
-        //#mdebug
+
         sb.append("HttpGetter: key=");
         sb.append(key);
 
@@ -397,10 +397,10 @@ public class HttpGetter extends Task {
         } else {
             sb.append(postMessage.length);
         }
-        
+
         sb.append(" responseCode=");
         sb.append(responseCode);
-        
+
         sb.append("\nHTTP RESPONSE HEADERS");
         final Enumeration enu = responseHeaders.keys();
         while (enu.hasMoreElements()) {
@@ -412,70 +412,78 @@ public class HttpGetter extends Task {
             sb.append(value);
         }
 
-        sb.append("\nHTTP REQUEST CUSTOM HEADERS");
-        for (int i = 0; i < requestPropertyKeys.size(); i++) {
-            final String key = (String) requestPropertyKeys.elementAt(i);
-            sb.append("\n   ");
-            sb.append(key);
-            sb.append(": ");
-            final String value = (String) requestPropertyValues.elementAt(i);
-            sb.append(value);
+        if (requestPropertyKeys.isEmpty()) {
+            sb.append("\n(no HTTP request customer header)");
+        } else {
+            sb.append("\nHTTP REQUEST CUSTOM HEADERS");
+            for (int i = 0; i < requestPropertyKeys.size(); i++) {
+                final String key = (String) requestPropertyKeys.elementAt(i);
+                sb.append("\n   ");
+                sb.append(key);
+                sb.append(": ");
+                final String value = (String) requestPropertyValues.elementAt(i);
+                sb.append(value);
+            }
         }
 
         sb.append("\n duplicateTaskWeShouldJoinInsteadOfReGetting=");
         sb.append(duplicateTaskWeShouldJoinInsteadOfReGetting);
-        //#enddebug
+        sb.append('\n');
         sb.append(super.toString());
-        
+
         return sb.toString();
     }
-    
+    //#enddebug
+
     /**
-     * Retrieves an estimated count of transfered bytes downstream.
-     * The counter is valid during the application run.
+     * Retrieves an estimated count of transfered bytes downstream. The counter
+     * is valid during the application run.
+     *
      * @return byte count
      */
     public synchronized static int getDownstreamDataCount() {
-	return downstreamDataCount;
+        return downstreamDataCount;
     }
-    
+
     /**
-     * Retrieves an estimated count of transfered bytes upstream.
-     * The counter is valid during the application run.
+     * Retrieves an estimated count of transfered bytes upstream. The counter is
+     * valid during the application run.
+     *
      * @return byte count
      */
     public synchronized static int getUpstreamDataCount() {
-	return upstreamDataCount;
+        return upstreamDataCount;
     }
-    
+
     /**
      * Clears the downstream data counter.
      */
     public synchronized static void clearDownstreamDataCount() {
-	downstreamDataCount = 0;
+        downstreamDataCount = 0;
     }
 
     /**
-     * Clears the upstream data counter. 
+     * Clears the upstream data counter.
      */
     public synchronized static void clearUpstreamDataCount() {
-	upstreamDataCount = 0;
-    }
-    
-    /**
-     * Accumulates the downstream data counter.
-     * @param count 
-     */
-    private synchronized static void addDownstreamDataCount(final int count) {
-	downstreamDataCount += count;
-    }
-       
-    /**
-     * Accumulates the upstream data counter.
-     * @param count 
-     */
-    private synchronized static void addUpstreamDataCount(final int count) {
-	upstreamDataCount += count;
+        upstreamDataCount = 0;
     }
 
+    /**
+     * Accumulates the downstream data counter.
+     *
+     * @param count
+     */
+    private synchronized static void addDownstreamDataCount(final int count) {
+        downstreamDataCount += count;
+    }
+
+    /**
+     * Accumulates the upstream data counter.
+     *
+     * @param count
+     */
+    private synchronized static void addUpstreamDataCount(final int count) {
+        upstreamDataCount += count;
+    }
 }

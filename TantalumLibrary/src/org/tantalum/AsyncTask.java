@@ -1,38 +1,39 @@
 /*
- Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
+ Copyright (c) 2013, Paul Houghton and Futurice Oy
  All rights reserved.
 
- Tantalum software shall be used to make the world a better place for everyone.
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ - Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
+ - Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
 
- This software is licensed for use under the Apache 2 open source software license,
- http://www.apache.org/licenses/LICENSE-2.0.html
-
- You are kindly requested to return your improvements to this library to the
- open source community at http://projects.developer.nokia.com/Tantalum
-
- The above copyright and license notice notice shall be included in all copies
- or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
  */
 package org.tantalum;
 
 /**
- * An implementation of Android's AsyncTask pattern for cross platform application
- * on J2ME and Android. On Android it is intended as a drop-in
+ * An implementation of Android's AsyncTask pattern for cross platform
+ * application on J2ME and Android. On Android it is intended as a drop-in
  * replacement for the platform library class. The less commonly used features
  * of the Android implementation are not supported. Unlike the Android version,
  * you can join() or jointUI() a Tantalum AsyncTask to trigger out-of-sequence
- * execution or wait a specified max time interval for the AsyncTask to complete.
- * This design pattern is from Java 7's fork-join framework, but instead of
- * using for server scalability we use it here for convenience in improving
- * client side user experience.
+ * execution or wait a specified max time interval for the AsyncTask to
+ * complete. This design pattern is from Java 7's fork-join framework, but
+ * instead of using for server scalability we use it here for convenience in
+ * improving client side user experience.
  */
 public abstract class AsyncTask extends UITask {
     /*
@@ -63,7 +64,7 @@ public abstract class AsyncTask extends UITask {
     public static void disableAgressiveThreading() {
         AsyncTask.agressiveThreading = false;
     }
-    
+
     /**
      * For compatability with Android, run one Runnable task on a single
      * background thread. Execution is guaranteed to be in the same order
@@ -75,7 +76,7 @@ public abstract class AsyncTask extends UITask {
         Worker.fork(new Task() {
             public Object exec(final Object in) {
                 runnable.run();
-                
+
                 return in;
             }
         }, Task.SERIAL_PRIORITY);
@@ -132,18 +133,18 @@ public abstract class AsyncTask extends UITask {
 
         PlatformUtils.getInstance().runOnUiThread(
                 new Runnable() {
-                    public void run() {
-                        onPreExecute();
-                        if (!agressive) {
-                            /*
-                             * This is the sequence Android uses, but it is slow
-                             * so by default agressive = true and the task is
-                             * queued to both worker and UI thread simultaneously
-                             */
-                            AsyncTask.this.fork();
-                        }
-                    }
-                });
+            public void run() {
+                onPreExecute();
+                if (!agressive) {
+                    /*
+                     * This is the sequence Android uses, but it is slow
+                     * so by default agressive = true and the task is
+                     * queued to both worker and UI thread simultaneously
+                     */
+                    AsyncTask.this.fork();
+                }
+            }
+        });
         if (agressive) {
             AsyncTask.this.fork();
         }
@@ -176,8 +177,8 @@ public abstract class AsyncTask extends UITask {
      * This is executed on the UI thread
      *
      * Override if needed and use the volatile variable "progress"
-     * 
-     * @param progress 
+     *
+     * @param progress
      */
     protected void onProgressUpdate(final Object progress) {
     }
@@ -186,16 +187,16 @@ public abstract class AsyncTask extends UITask {
      * This is executed on the UI thread
      *
      * Override if needed
-     * 
-     * @param result 
+     *
+     * @param result
      */
     protected void onPostExecute(Object result) {
     }
-    
+
     /**
      * Complete the AsyncTask on a background Worker thread
-     * 
-     * @param params 
+     *
+     * @param params
      */
     public void doInBackground(final Object params) {
         setValue(params);
