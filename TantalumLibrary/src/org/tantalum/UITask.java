@@ -77,10 +77,6 @@ public abstract class UITask extends Task implements Runnable {
             }
         } catch (Throwable t) {
             L.e("UITask onPostExecute uncaught error", this.toString(), t);
-        } finally {
-            if (this.status < UI_RUN_FINISHED) {
-                setStatus(UI_RUN_FINISHED);
-            }
         }
     }
 

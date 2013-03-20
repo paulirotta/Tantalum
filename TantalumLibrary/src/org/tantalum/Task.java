@@ -116,11 +116,6 @@ public abstract class Task {
      */
     public static final int EXEC_FINISHED = 2;
     /**
-     * status: both Worker thread exec() and UI thread onPostExecute() have
-     * completed
-     */
-    public static final int UI_RUN_FINISHED = 3;
-    /**
      * state: cancel() was called
      */
     public static final int CANCELED = 4;
@@ -258,7 +253,7 @@ public abstract class Task {
      */
     public final void notifyTaskForked() throws IllegalStateException {
         synchronized (MUTEX) {
-            if (status < EXEC_FINISHED || (this instanceof Runnable && status < UI_RUN_FINISHED)) {
+            if (status < EXEC_FINISHED) {
                 throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + getStatusString());
             }
             setStatus(EXEC_PENDING);
@@ -481,7 +476,7 @@ public abstract class Task {
      * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, Task.MAX_TIMEOUT, false);
+        doJoinAll(tasks, Task.MAX_TIMEOUT);
     }
 
     /**
@@ -498,47 +493,10 @@ public abstract class Task {
      * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, timeout, false);
+        doJoinAll(tasks, timeout);
     }
 
-    /**
-     * Wait up to Task.MAX_TIMEOUT milliseconds for all tasks in the list to
-     * complete execution including any follow up tasks on the UI thread.
-     *
-     * @param tasks
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
-     * @throws TimeoutException
-     */
-    public static void joinAllUI(final Task[] tasks) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, Task.MAX_TIMEOUT, true);
-    }
-
-    /**
-     * Wait up to a maximum specified timeout for all tasks in the list to
-     * complete execution including any follow up tasks on the UI thread. If any
-     * or all of them have any problem, the first associated Exception to occur
-     * will be thrown.
-     *
-     * Note that unlike joinUI(), it is legal to call joinUI() with some, or
-     * all, of the Tasks being of type Task, not type UITask. This allows easier
-     * mixing of Task and UITask in the list for convenience, where joinUI()
-     * calls to a Task that is not a UITask() would be a logical error.
-     *
-     * @param tasks - list of Tasks to wait for
-     * @param timeout - milliseconds, max total time from for all Tasks to
-     * complete
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
-     * @throws TimeoutException
-     */
-    public static void joinAllUI(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, timeout, true);
-    }
-
-    private static void doJoinAll(final Task[] tasks, final long timeout, final boolean joinUI) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    private static void doJoinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (tasks == null) {
             throw new IllegalArgumentException("Can not joinAll(), list of tasks to join is null");
         }
@@ -563,79 +521,11 @@ public abstract class Task {
                 if (timeLeft <= 0) {
                     throw new TimeoutException("joinAll(" + timeout + ") timout exceeded (" + timeLeft + ")");
                 }
-                if (joinUI && task instanceof UITask) {
-                    task.joinUI(timeout);
-                } else {
-                    task.join(timeout);
-                }
+                task.join(timeout);
             }
         } finally {
             //#debug
             L.i("End joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length + " timeElapsed=" + (timeout - timeLeft));
-        }
-    }
-    
-    /**
-     * Wait up to MAX_TIMEOUT milliseconds for the UI thread to complete the
-     * Task
-     *
-     * @return
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
-     * @throws TimeoutException
-     */
-    public final Object joinUI() throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        return joinUI(MAX_TIMEOUT);
-    }
-
-    /**
-     * Wait for a maximum of timeout milliseconds for the UITask to complete if
-     * needed and then also complete the followup action on the user interface
-     * thread.
-     *
-     * You will receive a debug time warning if you are currently on the UI
-     * thread and the timeout value is greater than 100ms.
-     *
-     * @param timeout in milliseconds
-     * @return final evaluation result of the Task
-     * @throws InterruptedException - task was running when it was explicitly
-     * canceled by another thread
-     * @throws CancellationException - task was explicitly canceled by another
-     * thread
-     * @throws ExecutionException - an uncaught exception was thrown
-     * @throws TimeoutException - UITask failed to complete within timeout
-     * milliseconds
-     */
-    public final Object joinUI(long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        if (!(this instanceof UITask)) {
-            throw new ClassCastException("Can not joinUI() unless Task is a UITask");
-        }
-
-        long t = System.currentTimeMillis();
-        join(timeout);
-
-        synchronized (MUTEX) {
-            if (status < UI_RUN_FINISHED) {
-                //#debug
-                L.i("Start joinUI wait", "status=" + getStatusString());
-                timeout -= System.currentTimeMillis() - t;
-                while (timeout > 0) {
-                    final long t2 = System.currentTimeMillis();
-                    MUTEX.wait(timeout);
-                    if (status == UI_RUN_FINISHED) {
-                        break;
-                    }
-                    timeout -= System.currentTimeMillis() - t2;
-                }
-                //#debug
-                L.i("End joinUI wait", "status=" + getStatusString());
-                if (status < UI_RUN_FINISHED) {
-                    throw new TimeoutException("JoinUI(" + timeout + ") failed to complete quickly enough");
-                }
-            }
-
-            return value;
         }
     }
 
@@ -867,10 +757,6 @@ public abstract class Task {
                 case EXEC_FINISHED:
                     //#debug
                     L.i("Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
-                    break;
-                case UI_RUN_FINISHED:
-                    //#debug
-                    L.i("Attempt to cancel Task after EXEC_FINISHED. Suspicious but may be normal due to race-to-cancel condition", this.toString());
                     break;
 
                 default:
