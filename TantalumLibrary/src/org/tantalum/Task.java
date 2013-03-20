@@ -88,7 +88,7 @@ public abstract class Task {
      * the application, but since this can never be guaranteed to be the only
      * shutdown sequence, you must design for quick shutdown.
      */
-    public static final int SHUTDOWN_PRIORITY = 0;
+    public static final int SHUTDOWN_PRIORITY = -3;
     /**
      * Synchronize on the following object if your processing routine will
      * temporarily need a large amount of memory. Only one such activity can be
