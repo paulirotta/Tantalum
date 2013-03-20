@@ -179,6 +179,7 @@ public abstract class Task {
      * will have cancel() called to notify that they will not execute.
      */
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
+    private int chainedTaskForkPriority = Task.NORMAL_PRIORITY; // Run afterwords, passing output as input parameter
     private final Object MUTEX = new Object();
 
     /**
@@ -340,7 +341,9 @@ public abstract class Task {
      * @return
      */
     public final Task fork() {
-        return fork(Task.NORMAL_PRIORITY);
+        Worker.fork(this, getForkPriority());
+
+        return this;
     }
 
     /**
@@ -351,9 +354,9 @@ public abstract class Task {
      * @return
      */
     public final Task fork(final int priority) {
-        Worker.fork(this, priority);
+        setForkPriority(priority);
 
-        return this;
+        return fork();
     }
 
     /**
@@ -635,14 +638,69 @@ public abstract class Task {
      * will throw an IllegalArgumentException
      *
      * @param nextTask
-     * @return nextTask
+     * @param nextTaskPriority - update the fork priority for the next task
+     * @return
+     */
+    public final Task chain(final Task nextTask, final int nextTaskPriority) {
+        return doChain(nextTask, nextTaskPriority, true);
+    }
+
+    /**
+     * Set a Task which will fork()ed after the current Task completes.
+     *
+     * The Task will fork at it's current task.setForkPriority(). By default,
+     * this is Task.NORMAL_PRIORITY. If you want to change this, either change
+     * before chain() or use the alternate convenience call which applies the
+     * change.
+     *
+     * @param nextTask
+     * @return
      */
     public final Task chain(final Task nextTask) {
+        return doChain(nextTask, 0, false);
+    }
+
+    /**
+     * Update the priority parameter which will be applied to this Task
+     * when it is fork()ed as link in a Task chain.
+     * 
+     * @param chainedForkPriority
+     * @return 
+     */
+    public final Task setForkPriority(final int chainedForkPriority) {
+        if (chainedForkPriority < Task.SHUTDOWN_PRIORITY || chainedForkPriority > Task.HIGH_PRIORITY) {
+            throw new IllegalArgumentException("Illegal Task prioirty. Use one of the constants from Task");
+        }
+        synchronized (MUTEX) {
+            this.chainedTaskForkPriority = chainedForkPriority;
+        }
+
+        return this;
+    }
+
+    /**
+     * Return the priority value applied when this Task was fork()ed.
+     * 
+     * If the Task is not yet fork()ed, for example if it is part of a Task
+     * chain, this is the value which will be applied when it is forked.
+     * 
+     * @return 
+     */
+    public final int getForkPriority() {
+        synchronized (MUTEX) {
+            return chainedTaskForkPriority;
+        }        
+    }
+
+    private Task doChain(final Task nextTask, final int nextTaskPriority, final boolean setNextTaskPriority) {
         if (nextTask != null) {
             final Task multiLinkChain;
             synchronized (MUTEX) {
                 if (chainedTask == null) {
                     chainedTask = nextTask;
+                    if (setNextTaskPriority) {
+                        nextTask.setForkPriority(nextTaskPriority);
+                    }
                     multiLinkChain = null;
                 } else {
                     // Already chained- we must add to the end of the chain
