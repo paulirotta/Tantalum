@@ -39,16 +39,6 @@ import org.tantalum.util.L;
 public abstract class Task {
 
     /**
-     * All items with are executed in guaranteed sequence on a single background
-     * worker thread. This is normally used for persistence operations like
-     * flash write. Note that in most other cases it is preferable for you to
-     * sequence items explicitly within a single Task or by the sequence with
-     * which one
-     * <code>Task</code> chains to or forks other
-     * <code>Task</code>s.
-     */
-    public static final int SERIAL_PRIORITY = 4;
-    /**
      * Start the task as soon as possible. The
      * <code>fork()</code> operation will place this as the next Task to be
      * completed unless subsequent
@@ -59,14 +49,24 @@ public abstract class Task {
      * expects a fast response regardless of previous incomplete requests they
      * may have made.
      */
-    public static final int HIGH_PRIORITY = 3;
+    public static final int HIGH_PRIORITY = 2;
     /**
      * Start execution after any previously
      * <code>fork()</code>ed work, first in is usually first out, however
      * multiple Workers in parallel means that execution start and completion
      * order is not guaranteed.
      */
-    public static final int NORMAL_PRIORITY = 2;
+    public static final int NORMAL_PRIORITY = 0;
+    /**
+     * All items with are executed in guaranteed sequence on a single background
+     * worker thread. This is normally used for persistence operations like
+     * flash write. Note that in most other cases it is preferable for you to
+     * sequence items explicitly within a single Task or by the sequence with
+     * which one
+     * <code>Task</code> chains to or forks other
+     * <code>Task</code>s.
+     */
+    public static final int SERIAL_PRIORITY = -1;
     /**
      * Start execution if there is nothing else for the Workers to do. At least
      * one Worker will always be left idle for immediate activation if only
@@ -74,7 +74,7 @@ public abstract class Task {
      * for background tasks such as pre-fetch and pre-processing of data that
      * doe not affect the current user view.
      */
-    public static final int LOW_PRIORITY = 1;
+    public static final int LOW_PRIORITY = -2;
     /**
      * Start execution when
      * <code>PlatformUtils.getInstance().shutdown()</code> is called, and do not
