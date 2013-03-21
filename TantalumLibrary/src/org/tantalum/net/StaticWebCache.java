@@ -166,11 +166,11 @@ public final class StaticWebCache extends StaticCache {
      * @param key - The web service location to HTTP_GET the cacheable data
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
-     * @param priority *
+     * @param priority
      * - <code>Worker.HIGH_PRIORITY</code>, <code>Worker.NORMAL_PRIORITY</code>,
      * or <code>Worker.LOW_PRIORITY</code>
-     * @param getType *
-     * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>,
+     * @param getType 
+     * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param chainedTask - your <code>Task</code> which is given the data
      * returned and executed after the getAsync operation.
@@ -523,18 +523,29 @@ public final class StaticWebCache extends StaticCache {
          * @return false to cancel() the HTTP operation
          */
         public boolean validateHttpResponse(final int responseCode, final Hashtable headers, final byte[] bytesReceived) {
+            if (responseCode >= HttpGetter.HTTP_500_INTERNAL_SERVER_ERROR) {
+                //#debug
+                L.i(this.getClass().getName(), "Invalid response code " + responseCode + " received");
+                return false; // TODO: Should we throw an exception?
+            } else if (responseCode >= HttpGetter.HTTP_400_BAD_REQUEST) {
+                return false;
+            } else if (responseCode >= HttpGetter.HTTP_300_MULTIPLE_CHOICES) {
+                // Redirect. Still valid?
+                return true;
+            }
+
             return true;
         }
     }
 
     /**
-     * Analyze if this cache is the same one that would be returned by a call
-     * to StaticWebCache.getCache() with the same parameters
-     * 
+     * Analyze if this cache is the same one that would be returned by a call to
+     * StaticWebCache.getCache() with the same parameters
+     *
      * @param priority
      * @param handler
      * @param taskFactory
-     * @return 
+     * @return
      */
     protected boolean equals(final char priority, final DataTypeHandler handler, final Object taskFactory) {
         return this.priority == priority && this.handler.equals(handler) && this.httpTaskFactory.equals(taskFactory);

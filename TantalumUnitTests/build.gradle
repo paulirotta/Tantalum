@@ -21,7 +21,6 @@ dependencies {
 
 }
 
-
 task compileJava(overwrite: true, dependsOn: wtkbuild) << {
 }
 
