@@ -99,14 +99,15 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
      */
     public HttpConn doGetHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
-        final boolean doOutput = bytes != null;
+        final boolean doOutput = requestMethod.equals("POST");
 
         try {
             final AndroidHttpConn httpConn = new AndroidHttpConn(url, requestPropertyKeys, requestPropertyValues);
             httpConn.httpConnection.setDoOutput(doOutput);
             httpConn.httpConnection.setDoInput(true);
             httpConn.httpConnection.setRequestMethod(requestMethod);
-            if (doOutput) {
+            
+            if (bytes != null) {
                 out = httpConn.httpConnection.getOutputStream();
                 out.write(bytes);
             }
@@ -139,6 +140,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
 
         final HttpURLConnection httpConnection;
         InputStream is = null;
+        OutputStream os = null;
 
         /**
          * Create an Android-specific handler for HttpConnecions
@@ -170,6 +172,20 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
             }
 
             return is;
+        }
+        
+        /**
+         * Get the OutputStream associated with this HTTP connection
+         *
+         * @return
+         * @throws IOException
+         */
+        public OutputStream getOutputStream() throws IOException {
+            if (os == null) {
+                os = httpConnection.getOutputStream();
+            }
+
+            return os;
         }
 
         /**
@@ -232,6 +248,9 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
         public final void close() throws IOException {
             if (is != null) {
                 is.close();
+            }
+            if (os != null) {
+                os.close();
             }
             httpConnection.disconnect();
         }

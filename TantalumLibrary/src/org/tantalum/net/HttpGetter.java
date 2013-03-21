@@ -31,6 +31,8 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
+import java.io.OutputStream;
+
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.L;
@@ -81,6 +83,25 @@ public class HttpGetter extends Task {
      * Counter, estimated uploaded bytes during the session.
      */
     private static int upstreamDataCount = 0;
+	
+    private StreamWriter streamWriter = null;
+    private StreamReader streamReader = null;
+
+    public StreamWriter getWriter() {
+		return streamWriter;
+	}
+        
+	public void setWriter(StreamWriter writer) {
+		this.streamWriter = writer;
+	}
+	
+	public StreamReader getReader() {
+		return streamReader;
+	}
+
+	public void setReader(StreamReader reader) {
+		this.streamReader = reader;
+	}
 
     /**
      * Get the byte[] from the URL specified by the input argument when
@@ -227,14 +248,30 @@ public class HttpGetter extends Task {
         addUpstreamDataCount(url2.length());
 
         try {
+        	InputStream inputStream = null;
+            OutputStream outputStream = null;
             if (this instanceof HttpPoster) {
-                if (postMessage == null) {
-                    throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + key);
-                }
+                if (postMessage == null && streamWriter == null  ) {
+					  throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + key);
+				}
+                
                 httpConn = PlatformUtils.getInstance().getHttpPostConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
+            	outputStream = httpConn.getOutputStream();
+				if( streamWriter != null ) {
+					streamWriter.writeReady(outputStream);
+					
+					success = true;
+					out = null;
+				 }
                 addUpstreamDataCount(postMessage.length);
             } else {
                 httpConn = PlatformUtils.getInstance().getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
+				inputStream = httpConn.getInputStream();
+				if( streamReader != null ) {
+					streamReader.readReady( inputStream );
+					success = true;
+					out = null;
+				}
             }
 
             // Estimate data length of the sent headers
@@ -243,7 +280,6 @@ public class HttpGetter extends Task {
                 addUpstreamDataCount(((String) requestPropertyValues.elementAt(i)).length());
             }
 
-            final InputStream inputStream = httpConn.getInputStream();
             final long length = httpConn.getLength();
             responseCode = httpConn.getResponseCode();
             httpConn.getResponseHeaders(responseHeaders);

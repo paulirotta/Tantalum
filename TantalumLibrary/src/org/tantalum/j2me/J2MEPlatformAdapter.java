@@ -147,6 +147,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
 
         final HttpConnection httpConnection;
         InputStream is = null;
+        OutputStream os = null;
 
         /**
          * Create a platform-specific HTTP network connection, and set the HTTP
@@ -176,6 +177,20 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
             }
 
             return is;
+        }
+        
+        /**
+         * Get the OutputStream from the platform-specific HTTP connection
+         *
+         * @return
+         * @throws IOException
+         */
+        public OutputStream getOutputStream() throws IOException {
+            if (os == null) {
+                os = httpConnection.openOutputStream();
+            }
+
+            return os;
         }
 
         /**
@@ -208,6 +223,10 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
             if (is != null) {
                 is.close();
                 is = null;
+            }
+			if (os != null) {
+                os.close();
+                os = null;
             }
             httpConnection.close();
         }

@@ -26,6 +26,7 @@ package org.tantalum;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.android.AndroidPlatformAdapter;
@@ -305,6 +306,14 @@ public final class PlatformUtils {
          * @throws IOException
          */
         public InputStream getInputStream() throws IOException;
+        
+        /**
+         * Get the OutputStream from the platform-specific HTTP connection
+         *
+         * @return
+         * @throws IOException
+         */
+        public OutputStream getOutputStream() throws IOException;
 
         /**
          * Get the response code provided by the HTTP server after the
