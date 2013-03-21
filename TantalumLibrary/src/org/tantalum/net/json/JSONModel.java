@@ -114,4 +114,19 @@ public class JSONModel {
     public synchronized long getLong(String key) throws JSONException {
         return jsonObject.getLong(key);
     }
+    
+    /**
+     * Returns JSONObject currently contained in the model 
+     * and sets it to null 
+     *    
+     * @param 
+     * @return JSONObject
+     * @throws 
+    */
+    public synchronized JSONObject take() {
+    	JSONObject ret = jsonObject;
+    	jsonObject = null;
+    	return ret;    	
+    }
+   
 }
