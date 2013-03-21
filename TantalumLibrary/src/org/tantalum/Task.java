@@ -39,16 +39,6 @@ import org.tantalum.util.L;
 public abstract class Task {
 
     /**
-     * All items with are executed in guaranteed sequence on a single background
-     * worker thread. This is normally used for persistence operations like
-     * flash write. Note that in most other cases it is preferable for you to
-     * sequence items explicitly within a single Task or by the sequence with
-     * which one
-     * <code>Task</code> chains to or forks other
-     * <code>Task</code>s.
-     */
-    public static final int SERIAL_PRIORITY = 4;
-    /**
      * Start the task as soon as possible. The
      * <code>fork()</code> operation will place this as the next Task to be
      * completed unless subsequent
@@ -59,14 +49,24 @@ public abstract class Task {
      * expects a fast response regardless of previous incomplete requests they
      * may have made.
      */
-    public static final int HIGH_PRIORITY = 3;
+    public static final int HIGH_PRIORITY = 2;
     /**
      * Start execution after any previously
      * <code>fork()</code>ed work, first in is usually first out, however
      * multiple Workers in parallel means that execution start and completion
      * order is not guaranteed.
      */
-    public static final int NORMAL_PRIORITY = 2;
+    public static final int NORMAL_PRIORITY = 0;
+    /**
+     * All items with are executed in guaranteed sequence on a single background
+     * worker thread. This is normally used for persistence operations like
+     * flash write. Note that in most other cases it is preferable for you to
+     * sequence items explicitly within a single Task or by the sequence with
+     * which one
+     * <code>Task</code> chains to or forks other
+     * <code>Task</code>s.
+     */
+    public static final int SERIAL_PRIORITY = -1;
     /**
      * Start execution if there is nothing else for the Workers to do. At least
      * one Worker will always be left idle for immediate activation if only
@@ -74,7 +74,7 @@ public abstract class Task {
      * for background tasks such as pre-fetch and pre-processing of data that
      * doe not affect the current user view.
      */
-    public static final int LOW_PRIORITY = 1;
+    public static final int LOW_PRIORITY = -2;
     /**
      * Start execution when
      * <code>PlatformUtils.getInstance().shutdown()</code> is called, and do not
@@ -88,7 +88,7 @@ public abstract class Task {
      * the application, but since this can never be guaranteed to be the only
      * shutdown sequence, you must design for quick shutdown.
      */
-    public static final int SHUTDOWN_PRIORITY = 0;
+    public static final int SHUTDOWN_PRIORITY = -3;
     /**
      * Synchronize on the following object if your processing routine will
      * temporarily need a large amount of memory. Only one such activity can be
@@ -115,11 +115,6 @@ public abstract class Task {
      * pending activity for the user interface thread
      */
     public static final int EXEC_FINISHED = 2;
-    /**
-     * status: both Worker thread exec() and UI thread onPostExecute() have
-     * completed
-     */
-    public static final int UI_RUN_FINISHED = 3;
     /**
      * state: cancel() was called
      */
@@ -184,6 +179,7 @@ public abstract class Task {
      * will have cancel() called to notify that they will not execute.
      */
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
+    private int chainedTaskForkPriority = Task.NORMAL_PRIORITY; // Run afterwords, passing output as input parameter
     private final Object MUTEX = new Object();
 
     /**
@@ -258,7 +254,7 @@ public abstract class Task {
      */
     public final void notifyTaskForked() throws IllegalStateException {
         synchronized (MUTEX) {
-            if (status < EXEC_FINISHED || (this instanceof Runnable && status < UI_RUN_FINISHED)) {
+            if (status < EXEC_FINISHED) {
                 throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + getStatusString());
             }
             setStatus(EXEC_PENDING);
@@ -345,7 +341,9 @@ public abstract class Task {
      * @return
      */
     public final Task fork() {
-        return fork(Task.NORMAL_PRIORITY);
+        Worker.fork(this, getForkPriority());
+
+        return this;
     }
 
     /**
@@ -356,9 +354,9 @@ public abstract class Task {
      * @return
      */
     public final Task fork(final int priority) {
-        Worker.fork(this, priority);
+        setForkPriority(priority);
 
-        return this;
+        return fork();
     }
 
     /**
@@ -481,7 +479,7 @@ public abstract class Task {
      * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, Task.MAX_TIMEOUT, false);
+        doJoinAll(tasks, Task.MAX_TIMEOUT);
     }
 
     /**
@@ -498,47 +496,10 @@ public abstract class Task {
      * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, timeout, false);
+        doJoinAll(tasks, timeout);
     }
 
-    /**
-     * Wait up to Task.MAX_TIMEOUT milliseconds for all tasks in the list to
-     * complete execution including any follow up tasks on the UI thread.
-     *
-     * @param tasks
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
-     * @throws TimeoutException
-     */
-    public static void joinAllUI(final Task[] tasks) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, Task.MAX_TIMEOUT, true);
-    }
-
-    /**
-     * Wait up to a maximum specified timeout for all tasks in the list to
-     * complete execution including any follow up tasks on the UI thread. If any
-     * or all of them have any problem, the first associated Exception to occur
-     * will be thrown.
-     *
-     * Note that unlike joinUI(), it is legal to call joinUI() with some, or
-     * all, of the Tasks being of type Task, not type UITask. This allows easier
-     * mixing of Task and UITask in the list for convenience, where joinUI()
-     * calls to a Task that is not a UITask() would be a logical error.
-     *
-     * @param tasks - list of Tasks to wait for
-     * @param timeout - milliseconds, max total time from for all Tasks to
-     * complete
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
-     * @throws TimeoutException
-     */
-    public static void joinAllUI(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, timeout, true);
-    }
-
-    private static void doJoinAll(final Task[] tasks, final long timeout, final boolean joinUI) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    private static void doJoinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (tasks == null) {
             throw new IllegalArgumentException("Can not joinAll(), list of tasks to join is null");
         }
@@ -563,79 +524,11 @@ public abstract class Task {
                 if (timeLeft <= 0) {
                     throw new TimeoutException("joinAll(" + timeout + ") timout exceeded (" + timeLeft + ")");
                 }
-                if (joinUI && task instanceof UITask) {
-                    task.joinUI(timeout);
-                } else {
-                    task.join(timeout);
-                }
+                task.join(timeout);
             }
         } finally {
             //#debug
             L.i("End joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length + " timeElapsed=" + (timeout - timeLeft));
-        }
-    }
-    
-    /**
-     * Wait up to MAX_TIMEOUT milliseconds for the UI thread to complete the
-     * Task
-     *
-     * @return
-     * @throws InterruptedException
-     * @throws CancellationException
-     * @throws ExecutionException
-     * @throws TimeoutException
-     */
-    public final Object joinUI() throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        return joinUI(MAX_TIMEOUT);
-    }
-
-    /**
-     * Wait for a maximum of timeout milliseconds for the UITask to complete if
-     * needed and then also complete the followup action on the user interface
-     * thread.
-     *
-     * You will receive a debug time warning if you are currently on the UI
-     * thread and the timeout value is greater than 100ms.
-     *
-     * @param timeout in milliseconds
-     * @return final evaluation result of the Task
-     * @throws InterruptedException - task was running when it was explicitly
-     * canceled by another thread
-     * @throws CancellationException - task was explicitly canceled by another
-     * thread
-     * @throws ExecutionException - an uncaught exception was thrown
-     * @throws TimeoutException - UITask failed to complete within timeout
-     * milliseconds
-     */
-    public final Object joinUI(long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        if (!(this instanceof UITask)) {
-            throw new ClassCastException("Can not joinUI() unless Task is a UITask");
-        }
-
-        long t = System.currentTimeMillis();
-        join(timeout);
-
-        synchronized (MUTEX) {
-            if (status < UI_RUN_FINISHED) {
-                //#debug
-                L.i("Start joinUI wait", "status=" + getStatusString());
-                timeout -= System.currentTimeMillis() - t;
-                while (timeout > 0) {
-                    final long t2 = System.currentTimeMillis();
-                    MUTEX.wait(timeout);
-                    if (status == UI_RUN_FINISHED) {
-                        break;
-                    }
-                    timeout -= System.currentTimeMillis() - t2;
-                }
-                //#debug
-                L.i("End joinUI wait", "status=" + getStatusString());
-                if (status < UI_RUN_FINISHED) {
-                    throw new TimeoutException("JoinUI(" + timeout + ") failed to complete quickly enough");
-                }
-            }
-
-            return value;
         }
     }
 
@@ -745,14 +638,69 @@ public abstract class Task {
      * will throw an IllegalArgumentException
      *
      * @param nextTask
-     * @return nextTask
+     * @param nextTaskPriority - update the fork priority for the next task
+     * @return
+     */
+    public final Task chain(final Task nextTask, final int nextTaskPriority) {
+        return doChain(nextTask, nextTaskPriority, true);
+    }
+
+    /**
+     * Set a Task which will fork()ed after the current Task completes.
+     *
+     * The Task will fork at it's current task.setForkPriority(). By default,
+     * this is Task.NORMAL_PRIORITY. If you want to change this, either change
+     * before chain() or use the alternate convenience call which applies the
+     * change.
+     *
+     * @param nextTask
+     * @return
      */
     public final Task chain(final Task nextTask) {
+        return doChain(nextTask, 0, false);
+    }
+
+    /**
+     * Update the priority parameter which will be applied to this Task
+     * when it is fork()ed as link in a Task chain.
+     * 
+     * @param chainedForkPriority
+     * @return 
+     */
+    public final Task setForkPriority(final int chainedForkPriority) {
+        if (chainedForkPriority < Task.SHUTDOWN_PRIORITY || chainedForkPriority > Task.HIGH_PRIORITY) {
+            throw new IllegalArgumentException("Illegal Task prioirty. Use one of the constants from Task");
+        }
+        synchronized (MUTEX) {
+            this.chainedTaskForkPriority = chainedForkPriority;
+        }
+
+        return this;
+    }
+
+    /**
+     * Return the priority value applied when this Task was fork()ed.
+     * 
+     * If the Task is not yet fork()ed, for example if it is part of a Task
+     * chain, this is the value which will be applied when it is forked.
+     * 
+     * @return 
+     */
+    public final int getForkPriority() {
+        synchronized (MUTEX) {
+            return chainedTaskForkPriority;
+        }        
+    }
+
+    private Task doChain(final Task nextTask, final int nextTaskPriority, final boolean setNextTaskPriority) {
         if (nextTask != null) {
             final Task multiLinkChain;
             synchronized (MUTEX) {
                 if (chainedTask == null) {
                     chainedTask = nextTask;
+                    if (setNextTaskPriority) {
+                        nextTask.setForkPriority(nextTaskPriority);
+                    }
                     multiLinkChain = null;
                 } else {
                     // Already chained- we must add to the end of the chain
@@ -867,10 +815,6 @@ public abstract class Task {
                 case EXEC_FINISHED:
                     //#debug
                     L.i("Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
-                    break;
-                case UI_RUN_FINISHED:
-                    //#debug
-                    L.i("Attempt to cancel Task after EXEC_FINISHED. Suspicious but may be normal due to race-to-cancel condition", this.toString());
                     break;
 
                 default:
