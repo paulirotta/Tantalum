@@ -21,3 +21,8 @@ build/
 .gradle/
 .nb-gradle-properties
 .nb-gradle/
+
+# eclipse 
+
+.classpath
+

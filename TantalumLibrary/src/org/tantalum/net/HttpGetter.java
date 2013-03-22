@@ -31,6 +31,8 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
+import java.io.OutputStream;
+
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.L;
@@ -81,6 +83,25 @@ public class HttpGetter extends Task {
      * Counter, estimated uploaded bytes during the session.
      */
     private static int upstreamDataCount = 0;
+	
+    private StreamWriter streamWriter = null;
+    private StreamReader streamReader = null;
+
+    public StreamWriter getWriter() {
+		return streamWriter;
+	}
+        
+	public void setWriter(StreamWriter writer) {
+		this.streamWriter = writer;
+	}
+	
+	public StreamReader getReader() {
+		return streamReader;
+	}
+
+	public void setReader(StreamReader reader) {
+		this.streamReader = reader;
+	}
 
     /**
      * Get the byte[] from the URL specified by the input argument when
@@ -198,10 +219,10 @@ public class HttpGetter extends Task {
     public Object exec(final Object url) {
         Object out = url;
 
-        this.key = (String) url;
-        if (key == null || key.indexOf(':') <= 0) {
-            throw new IllegalArgumentException("HttpGetter was passed bad URL: " + key);
+        if (!(url instanceof String) || url == null || ((String) url).indexOf(':') <= 0) {
+            throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }
+        this.key = (String) url;
 
         //#debug
         L.i(this.getClass().getName() + " start", key);
@@ -227,14 +248,30 @@ public class HttpGetter extends Task {
         addUpstreamDataCount(url2.length());
 
         try {
+        	InputStream inputStream = null;
+            OutputStream outputStream = null;
             if (this instanceof HttpPoster) {
-                if (postMessage == null) {
-                    throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + key);
-                }
+                if (postMessage == null && streamWriter == null  ) {
+					  throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + key);
+				}
+                
                 httpConn = PlatformUtils.getInstance().getHttpPostConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
+            	outputStream = httpConn.getOutputStream();
+				if( streamWriter != null ) {
+					streamWriter.writeReady(outputStream);
+					
+					success = true;
+					out = null;
+				 }
                 addUpstreamDataCount(postMessage.length);
             } else {
                 httpConn = PlatformUtils.getInstance().getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
+				inputStream = httpConn.getInputStream();
+				if( streamReader != null ) {
+					streamReader.readReady( inputStream );
+					success = true;
+					out = null;
+				}
             }
 
             // Estimate data length of the sent headers
@@ -243,7 +280,6 @@ public class HttpGetter extends Task {
                 addUpstreamDataCount(((String) requestPropertyValues.elementAt(i)).length());
             }
 
-            final InputStream inputStream = httpConn.getInputStream();
             final long length = httpConn.getLength();
             responseCode = httpConn.getResponseCode();
             httpConn.getResponseHeaders(responseHeaders);
@@ -251,7 +287,10 @@ public class HttpGetter extends Task {
             // Response headers length estimation
             addDownstreamDataCount(responseHeaders.toString().length());
 
-            if (length > 0 && length < 1000000) {
+            if (length == 0 || inputStream == null) {
+                //#debug
+                L.i(this.getClass().getName() + " exec", "No response. Stream is null, or length is 0");
+            } else if (length > 0 && length < 1000000) {
                 //#debug
                 L.i(this.getClass().getName() + " start fixed_length read", key + " content_length=" + length);
                 int bytesRead = 0;
@@ -355,9 +394,18 @@ public class HttpGetter extends Task {
     protected boolean checkResponseCode(final int responseCode, final Hashtable headers) {
         boolean ok = true;
 
-        if (responseCode >= 400) {
+        if (responseCode < 400) {
+            ok = true;
+        } else if (responseCode < 500) {
+            // We might be able to extract some useful information in case of a 400+ error code
             //#debug
             L.i("Bad response code (" + responseCode + ")", "" + getValue());
+            ok = false;
+        } else {
+            // 500+ error codes, which means that something went wrong on server side. 
+            // Probably not recoverable, so should we throw an exception instead?
+            //#debug
+            L.i("Server side error. Bad response code (" + responseCode + ")", "" + getValue());
             ok = false;
         }
 
@@ -486,4 +534,107 @@ public class HttpGetter extends Task {
     private synchronized static void addUpstreamDataCount(final int count) {
         upstreamDataCount += count;
     }
+    /*
+     * HTTP Method constants
+     */
+    public static final String HTTP_GET = "GET";
+    public static final String HTTP_HEAD = "HEAD";
+    public static final String HTTP_POST = "POST";
+    public static final String HTTP_PUT = "PUT";
+    public static final String HTTP_DELETE = "DELETE";
+    public static final String HTTP_TRACE = "TRACE";
+    public static final String HTTP_CONNECT = "CONNECT";
+    /*
+     * HTTP Status constants
+     */
+    public static final int HTTP_100_CONTINUE = 100;
+    public static final int HTTP_101_SWITCHING_PROTOCOLS = 101;
+    public static final int HTTP_102_PROCESSING = 102;
+    public static final int HTTP_200_OK = 200;
+    public static final int HTTP_201_CREATED = 201;
+    public static final int HTTP_202_ACCEPTED = 202;
+    public static final int HTTP_203_NON_AUTHORITATIVE_INFORMATION = 203;
+    public static final int HTTP_204_NO_CONTENT = 204;
+    public static final int HTTP_205_RESET_CONTENT = 205;
+    public static final int HTTP_206_PARTIAL_CONTENT = 206;
+    public static final int HTTP_207_MULTI_STATUS = 207;
+    public static final int HTTP_208_ALREADY_REPORTED = 208;
+    public static final int HTTP_250_LOW_ON_STORAGE_SPACE = 250;
+    public static final int HTTP_226_IM_USED = 226;
+    public static final int HTTP_300_MULTIPLE_CHOICES = 300;
+    public static final int HTTP_301_MOVED_PERMANENTLY = 301;
+    public static final int HTTP_302_FOUND = 302;
+    public static final int HTTP_303_SEE_OTHER = 303;
+    public static final int HTTP_304_NOT_MODIFIED = 304;
+    public static final int HTTP_305_USE_PROXY = 305;
+    public static final int HTTP_306_SWITCH_PROXY = 306;
+    public static final int HTTP_307_TEMPORARY_REDIRECT = 307;
+    public static final int HTTP_308_PERMANENT_REDIRECT = 308;
+    public static final int HTTP_400_BAD_REQUEST = 400;
+    public static final int HTTP_401_UNAUTHORIZED = 401;
+    public static final int HTTP_402_PAYMENT_REQUIRED = 402;
+    public static final int HTTP_403_FORBIDDEN = 403;
+    public static final int HTTP_404_NOT_FOUND = 404;
+    public static final int HTTP_405_METHOD_NOT_ALLOWED = 405;
+    public static final int HTTP_406_NOT_ACCEPTABLE = 406;
+    public static final int HTTP_407_PROXY_AUTHENTICATION_REQUIRED = 407;
+    public static final int HTTP_408_REQUEST_TIMEOUT = 408;
+    public static final int HTTP_409_CONFLICT = 409;
+    public static final int HTTP_410_GONE = 410;
+    public static final int HTTP_411_LENGTH_REQUIRED = 411;
+    public static final int HTTP_412_PRECONDITION_FAILED = 412;
+    public static final int HTTP_413_REQUEST_ENTITY_TOO_LARGE = 413;
+    public static final int HTTP_414_REQUEST_URI_TOO_LONG = 414;
+    public static final int HTTP_415_UNSUPPORTED_MEDIA_TYPE = 415;
+    public static final int HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE = 416;
+    public static final int HTTP_417_EXPECTATION_FAILED = 417;
+    public static final int HTTP_418_IM_A_TEAPOT = 418;
+    public static final int HTTP_420_ENHANCE_YOUR_CALM = 420;
+    public static final int HTTP_422_UNPROCESSABLE_ENTITY = 422;
+    public static final int HTTP_423_LOCKED = 423;
+    public static final int HTTP_424_FAILED_DEPENDENCY = 424;
+    public static final int HTTP_424_METHOD_FAILURE = 424;
+    public static final int HTTP_425_UNORDERED_COLLECTION = 425;
+    public static final int HTTP_426_UPGRADE_REQUIRED = 426;
+    public static final int HTTP_428_PRECONDITION_REQUIRED = 428;
+    public static final int HTTP_429_TOO_MANY_REQUESTS = 429;
+    public static final int HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE = 431;
+    public static final int HTTP_444_NO_RESPONSE = 444;
+    public static final int HTTP_449_RETRY_WITH = 449;
+    public static final int HTTP_450_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450;
+    public static final int HTTP_451_PARAMETER_NOT_UNDERSTOOD = 451;
+    public static final int HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451;
+    public static final int HTTP_451_REDIRECT = 451;
+    public static final int HTTP_452_CONFERENCE_NOT_FOUND = 452;
+    public static final int HTTP_453_NOT_ENOUGH_BANDWIDTH = 453;
+    public static final int HTTP_454_SESSION_NOT_FOUND = 454;
+    public static final int HTTP_455_METHOD_NOT_VALID_IN_THIS_STATE = 455;
+    public static final int HTTP_456_HEADER_FIELD_NOT_VALID_FOR_RESOURCE = 456;
+    public static final int HTTP_457_INVALID_RANGE = 457;
+    public static final int HTTP_458_PARAMETER_IS_READ_ONLY = 458;
+    public static final int HTTP_459_AGGREGATE_OPERATION_NOT_ALLOWED = 459;
+    public static final int HTTP_460_ONLY_AGGREGATE_OPERATION_ALLOWED = 460;
+    public static final int HTTP_461_UNSUPPORTED_TRANSPORT = 461;
+    public static final int HTTP_462_DESTINATION_UNREACHABLE = 462;
+    public static final int HTTP_494_REQUEST_HEADER_TOO_LARGE = 494;
+    public static final int HTTP_495_CERT_ERROR = 495;
+    public static final int HTTP_496_NO_CERT = 496;
+    public static final int HTTP_497_HTTP_TO_HTTPS = 497;
+    public static final int HTTP_499_CLIENT_CLOSED_REQUEST = 499;
+    public static final int HTTP_500_INTERNAL_SERVER_ERROR = 500;
+    public static final int HTTP_501_NOT_IMPLEMENTED = 501;
+    public static final int HTTP_502_BAD_GATEWAY = 502;
+    public static final int HTTP_503_SERVICE_UNAVAILABLE = 503;
+    public static final int HTTP_504_GATEWAY_TIMEOUT = 504;
+    public static final int HTTP_505_HTTP_VERSION_NOT_SUPPORTED = 505;
+    public static final int HTTP_506_VARIANT_ALSO_NEGOTIATES = 506;
+    public static final int HTTP_507_INSUFFICIENT_STORAGE = 507;
+    public static final int HTTP_508_LOOP_DETECTED = 508;
+    public static final int HTTP_509_BANDWIDTH_LIMIT_EXCEEDED = 509;
+    public static final int HTTP_510_NOT_EXTENDED = 510;
+    public static final int HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = 511;
+    public static final int HTTP_550_PERMISSION_DENIED = 550;
+    public static final int HTTP_551_OPTION_NOT_SUPPORTED = 551;
+    public static final int HTTP_598_NETWORK_READ_TIMEOUT_ERROR = 598;
+    public static final int HTTP_599_NETWORK_CONNECT_TIMEOUT_ERROR = 599;
 }

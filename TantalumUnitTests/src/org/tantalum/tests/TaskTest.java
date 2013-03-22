@@ -61,60 +61,53 @@ public class TaskTest extends TestCase {
                 testFork();
                 break;
             case 1:
-                testSetStatus();
-                break;
-            case 2:
                 testDoGet();
                 break;
-            case 3:
+            case 2:
                 testJoin();
                 break;
-            case 4:
+            case 3:
                 testGet();
                 break;
-            case 5:
+            case 4:
                 testSetResult();
                 break;
-            case 6:
+            case 5:
                 testNotifyTaskForked();
                 break;
-            case 7:
+            case 6:
                 testGetResult();
                 break;
-            case 8:
+            case 7:
                 testToString();
                 break;
-            case 9:
-                testJoinUI();
+            case 8:
                 break;
-            case 10:
+            case 9:
                 testCancel();
                 break;
-            case 11:
+            case 10:
                 testOnCanceled();
                 break;
-            case 12:
+            case 11:
                 testDoInBackground();
                 break;
-            case 13:
+            case 12:
                 testChain();
                 break;
-            case 14:
+            case 13:
                 testGetStatus();
                 break;
-            case 15:
+            case 14:
                 testJoinAll();
                 break;
-            case 16:
-                testJoinAllUI();
-                break;
-            case 17:
+            case 15:
                 testCancelSelf();
                 break;
-            case 18:
+            case 16:
                 testCancelThread();
                 break;
-            case 19:
+            case 17:
                 taskChainDelayTest();
                 break;
             default:
@@ -147,23 +140,6 @@ public class TaskTest extends TestCase {
             ex.printStackTrace();
             fail("Can not get() : " + ex);
         }
-    }
-
-    /**
-     * Test of testSetStatus method, of class Task.
-     *
-     * @throws AssertionFailedException
-     */
-    public void testSetStatus() throws AssertionFailedException {
-        System.out.println("setStatus");
-        Task instance = new Task() {
-            protected Object exec(Object in) {
-                return "run";
-            }
-        };
-        int status_1 = Task.UI_RUN_FINISHED;
-        instance.setStatus(status_1);
-        assertEquals("set status RUN_FINISHED", status_1, instance.getStatus());
     }
 
     /**
@@ -428,35 +404,7 @@ public class TaskTest extends TestCase {
         this.assertTrue(result_1.length() > 5);
     }
 
-    /**
-     * Test of testJoinUI method, of class Task.
-     *
-     * @throws AssertionFailedException
-     * @throws Exception
-     */
-    public void testJoinUI() throws AssertionFailedException, Exception {
-        System.out.println("joinUI");
-        final Task instance = new UITask("big") {
-            protected Object exec(Object in) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-                return in + " bunny";
-            }
-
-            protected void onPostExecute(Object result) {
-                setValue(result + " bounce");
-            }
-        };
-        instance.fork();
-        Thread.sleep(20);
-        instance.joinUI(300);
-        assertEquals("big bunny bounce", instance.joinUI(300));
-    }
-
-    /**
+     /**
      * Test of testCancel method, of class Task.
      *
      * @throws AssertionFailedException
@@ -693,11 +641,6 @@ public class TaskTest extends TestCase {
                 return in;
             }
         };
-        final Task instanceB = new UITask() {
-            protected void onPostExecute(Object result) {
-                ;
-            }
-        };
         final Task instance2 = new Task() {
             protected Object exec(Object in) {
                 try {
@@ -720,7 +663,6 @@ public class TaskTest extends TestCase {
         instance2.fork();
         instance3.fork();
         instanceA.fork();
-        instanceB.fork();
         assertEquals(Task.EXEC_PENDING, instanceA.getStatus());
         instance2.cancel(true, "testing");
         try {
@@ -729,7 +671,6 @@ public class TaskTest extends TestCase {
             ex.printStackTrace();
         }
         assertEquals(Task.EXEC_FINISHED, instanceA.getStatus());
-        assertEquals(Task.UI_RUN_FINISHED, instanceB.getStatus());
     }
 
     /**
@@ -843,133 +784,9 @@ public class TaskTest extends TestCase {
      *
      * @throws AssertionFailedException
      */
-    public void testJoinAllUI() throws AssertionFailedException {
-        System.out.println("joinAllUI");
-        final UITask task1 = new UITask("1") {
-            protected Object exec(Object in) {
-                return (String) in + "2";
-            }
-
-            protected void onPostExecute(Object result) {
-                setValue(result + "UI");
-            }
-        };
-        final UITask task2 = new UITask("3") {
-            protected Object exec(Object in) {
-                return in + "4";
-            }
-
-            protected void onPostExecute(Object result) {
-                setValue(result + "UI");
-            }
-        };
-        final UITask task3 = new UITask("A") {
-            protected Object exec(Object in) {
-                return (String) in + "2";
-            }
-
-            protected void onPostExecute(Object result) {
-                setValue(result + "UI");
-            }
-        };
-        final Task task4 = new Task("B") {
-            protected Object exec(Object in) {
-                return in + "3";
-            }
-        };
-        final UITask task5 = new UITask("fail") {
-            protected Object exec(Object in) {
-                return in;
-            }
-
-            protected void onPostExecute(Object result) {
-                L.i("UI thread BEFORE call to cancel", "" + result);
-                this.cancel(true, "testing");
-                L.i("UI thread AFTER call to cancel", "" + result);
-            }
-        };
-        final UITask task6 = new UITask("slow") {
-            protected Object exec(Object in) {
-                return in;
-            }
-
-            protected void onPostExecute(Object result) {
-                try {
-                    Thread.sleep(101);
-                } catch (Exception e) {
-                }
-            }
-        };
-
-        Runnable runnable = new Runnable() {
-            public void run() {
-                try {
-                    task3.fork();
-                    Task[] tasks = {task1, task2};
-                    Task.joinAllUI(tasks, 505);
-                    assertEquals("12UI34UI", (String) task1.getValue() + (String) task2.getValue());
-
-                    Task[] moreTasks = {task3, task4};
-                    Task.joinAllUI(moreTasks, 106);
-                    assertEquals("A2UIB3", (String) task3.getValue() + (String) task4.getValue());
-
-                    Task[] exceptionTasks = {task1, task2, task3, task4, task5};
-                    try {
-                        Task.joinAllUI(exceptionTasks, 107);
-                        // Correct execution path
-                    } catch (CancellationException e) {
-                        fail("joinAllUI() should not throw an CancellationException from the UI thread, but it did not");
-                    }
-
-                    Task[] slowTasks = {task1, task6, task3};
-                    try {
-                        Task.joinAllUI(slowTasks, 11);
-                        fail("joinAllUI() should have thrown a TimeoutException, but did not");
-                    } catch (TimeoutException e) {
-                        // Correct execution path                
-                    }
-
-                    try {
-                        Task.joinAllUI(null, 12);
-                        fail("joinAllUI() should have thrown an IllegalArgumentException for null, but did not");
-                    } catch (IllegalArgumentException e) {
-                        // Correct execution path                
-                    }
-
-
-                    try {
-                        Task.joinAllUI(tasks, -2);
-                        fail("joinAllUI() should have thrown an IllegalArgumentException for negative timeout, but did not");
-                    } catch (IllegalArgumentException e) {
-                        // Correct execution path                
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    fail("Can not joinAllUI: " + ex);
-                }
-            }
-        };
-
-        /*
-         * We can't run UI tests from the UI thread, so make a clean thread
-         * 
-         * FIXME With this crap test framework, we can't test threading stuff.
-         * It seems we would need to wait() for the test to finish, but waiting
-         * for the UI thread would ruin some of the tests.
-         */
-        runnable.run();
-//        Thread thread = new Thread(runnable);
-//        thread.start();
-    }
-
-    /**
-     * Test joinAll().
-     *
-     * @throws AssertionFailedException
-     */
     public void testCancelSelf() throws AssertionFailedException {
         System.out.println("cancelSelf");
-        final UITask task1a = new UITask("1") {
+        final Task task1a = new Task("1") {
             protected Object exec(Object in) {
                 return (String) in + "2";
             }
@@ -980,7 +797,7 @@ public class TaskTest extends TestCase {
                 cancel(true, "testing");
             }
         };
-        final UITask task1b = new UITask("3") {
+        final Task task1b = new Task("3") {
             protected Object exec(Object in) {
                 return (String) in + "4";
             }
@@ -991,7 +808,7 @@ public class TaskTest extends TestCase {
                 cancel(true, "testing");
             }
         };
-        final UITask task2 = new UITask("5") {
+        final Task task2 = new Task("5") {
             protected Object exec(Object in) {
                 cancel(true, "testing");
 
@@ -1002,7 +819,7 @@ public class TaskTest extends TestCase {
                 setValue(result + "UI");
             }
         };
-        final UITask task3a = new UITask("7") {
+        final Task task3a = new Task("7") {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -1017,7 +834,7 @@ public class TaskTest extends TestCase {
                 setValue(result + "UI");
             }
         };
-        final UITask task3b = new UITask("9") {
+        final Task task3b = new Task("9") {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -1051,8 +868,8 @@ public class TaskTest extends TestCase {
             task1a.fork().join();
             assertEquals("task1a was not EXEC_FINISHED", Task.EXEC_FINISHED, task1a.getStatus());
 
-            task1b.fork().joinUI();
-            assertEquals("task1b was not UI_RUN_FINISHED", Task.UI_RUN_FINISHED, task1b.getStatus());
+            task1b.fork().join();
+            assertEquals("task1b was not EXEC_FINISHED", Task.EXEC_FINISHED, task1b.getStatus());
 
             task2.fork().join();
             assertEquals("task2 should not have been CANCELED- you can not cancel() yourself", Task.EXEC_FINISHED, task2.getStatus());
@@ -1060,15 +877,15 @@ public class TaskTest extends TestCase {
             task3a.fork().join();
             assertEquals("task3a should not have been CANCELED- you can not cancel() yourself", Task.EXEC_FINISHED, task3a.getStatus());
 
-            task3b.fork().joinUI();
-            assertEquals("task3b should not have been CANCELED- you can not cancel() yourself", Task.UI_RUN_FINISHED, task3b.getStatus());
+            task3b.fork().join();
+            assertEquals("task3b should not have been CANCELED- you can not cancel() yourself", Task.EXEC_FINISHED, task3b.getStatus());
 
             task4a.fork().join();
             assertNotEquals("task4a should not have been CANCELED", Task.CANCELED, task4a.getStatus());
 
             try {
-                task4b.fork().joinUI();
-                fail("Task 4b- joinUI() should throw ClassCastException if Task (not UITask)");
+                task4b.fork().join();
+                fail("Task 4b- join() should throw ClassCastException if Task (not UITask)");
             } catch (ClassCastException e) {
                 // Normal execution path
             }
