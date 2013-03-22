@@ -39,6 +39,7 @@ subprojects {
 
     apply plugin: 'java'
     apply plugin: 'cobertura'
+    apply plugin: 'eclipse'
 
 
     configurations {
