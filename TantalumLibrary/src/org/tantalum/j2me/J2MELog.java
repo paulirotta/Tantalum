@@ -48,7 +48,7 @@ public class J2MELog extends L {
 
     private final OutputStream os;
 //#mdebug
-    private final byte[] LFCR = "\n\r".getBytes();
+    private final byte[] CRLF = "\r\n".getBytes();
     private final Vector byteArrayQueue = new Vector();
     private final J2MELog.UsbWriter usbWriter;
 //#enddebug    
@@ -167,7 +167,7 @@ public class J2MELog extends L {
                     while (!byteArrayQueue.isEmpty()) {
                         os.write((byte[]) byteArrayQueue.firstElement());
                         byteArrayQueue.removeElementAt(0);
-                        os.write(LFCR);
+                        os.write(CRLF);
                     }
                     os.flush();
                 }
