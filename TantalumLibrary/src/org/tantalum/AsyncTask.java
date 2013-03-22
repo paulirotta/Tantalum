@@ -35,7 +35,7 @@ package org.tantalum;
  * instead of using for server scalability we use it here for convenience in
  * improving client side user experience.
  */
-public abstract class AsyncTask extends UITask {
+public abstract class AsyncTask extends Task {
     /*
      * Control if objects passed to executeOnExecutor() are thread safe to
      * allow parallel handling on the UI and a worker thread.
@@ -45,9 +45,11 @@ public abstract class AsyncTask extends UITask {
      * has completed on the UI thread. In most cases, this is not needed and the
      * object can be queued to both the worker and UI threads simultaneously for
      * better performance.
+     * 
+     * Access only within static synchronized blocks
      */
 
-    private static volatile boolean agressiveThreading = true;
+    private static boolean agressiveThreading = true;
 
     /*
      * Note that an AsyncTask is stateful, including parameters. You can therefore
@@ -58,10 +60,19 @@ public abstract class AsyncTask extends UITask {
     private volatile Object params = ""; // For default toString debug helper
 
     /**
-     * Run for complete Android compatability, or if your AsyncTask is (!) not
-     * thread safe.
+     * When you call this, it means you don't want this object to be
+     * simultaneously on both the background worker task queue and the UI task
+     * queue.
+     *
+     * Call this one time for complete, conservative (but lower performance)
+     * compatability with all Android SDK versions. You may also want to call
+     * this if your suspect your AsyncTasks are not thread safe (!)
+     *
+     * The Android threading model has changed over time back and forth between
+     * different release versions, apparently because many programmers with
+     * using AsyncTask without making their code thread safe.
      */
-    public static void disableAgressiveThreading() {
+    public static synchronized void disableAgressiveThreading() {
         AsyncTask.agressiveThreading = false;
     }
 
@@ -128,14 +139,17 @@ public abstract class AsyncTask extends UITask {
             setStatus(EXEC_PENDING);
         }
 
-        final boolean agressive = AsyncTask.agressiveThreading;
+        final boolean aggressive;
+        synchronized (AsyncTask.class) {
+            aggressive = AsyncTask.agressiveThreading;
+        }
         this.params = params;
 
         PlatformUtils.getInstance().runOnUiThread(
                 new Runnable() {
             public void run() {
                 onPreExecute();
-                if (!agressive) {
+                if (!aggressive) {
                     /*
                      * This is the sequence Android uses, but it is slow
                      * so by default agressive = true and the task is
@@ -145,7 +159,7 @@ public abstract class AsyncTask extends UITask {
                 }
             }
         });
-        if (agressive) {
+        if (aggressive) {
             AsyncTask.this.fork();
         }
 
@@ -181,6 +195,14 @@ public abstract class AsyncTask extends UITask {
      * @param progress
      */
     protected void onProgressUpdate(final Object progress) {
+    }
+
+    /**
+     * This is visible as part of extending the Task class. It will call
+     * onPostExecute() for you
+     */
+    public final void run() {
+        onPostExecute(getValue());
     }
 
     /**

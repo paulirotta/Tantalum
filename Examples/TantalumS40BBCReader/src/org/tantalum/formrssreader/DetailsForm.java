@@ -28,8 +28,6 @@ import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.*;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.UITask;
-import org.tantalum.j2me.J2MEImageTypeHandler;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.util.L;
@@ -42,7 +40,7 @@ public final class DetailsForm extends Form implements CommandListener {
 
     private FormRSSReader rssReader;
     private RSSItem selectedItem;
-    private static StaticWebCache imageCache = StaticWebCache.getWebCache('1', new J2MEImageTypeHandler());
+    private static StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.getInstance().getImageTypeHandler());
     private Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private Command backCommand = new Command("Back", Command.BACK, 0);
 
@@ -109,15 +107,18 @@ public final class DetailsForm extends Form implements CommandListener {
             } else if (!selectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
-                imageCache.getAsync(selectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
-                                                                       int count = 0;
+                imageCache.getAsync(selectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.UI_PRIORITY) {
 
-                                                                       public void onPostExecute(final Object result) {
-                                                                           L.i("IMAGE DEBUG", "count=" + ++count);
-                                                                           selectedItem.setLoadingImage(false);
-                                                                           DetailsForm.this.appendImageItem();
-                                                                       }
-                                                                   });
+                    protected Object exec(final Object in) {
+                        L.i("IMAGE DEBUG", selectedItem.getThumbnail());
+                        selectedItem.setLoadingImage(false);
+                        
+                        return in;
+                    }
+                    public void run(final Object result) {
+                        DetailsForm.this.appendImageItem();
+                    }
+                });
             }
         }
     }

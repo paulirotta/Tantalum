@@ -36,8 +36,24 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public abstract class Task {
+public abstract class Task implements Runnable {
 
+    /**
+     * Start the task as soon as possible, exactly like
+     * <code>HIGH_PRIORITY</code>.
+     *
+     * After the
+     * <code>Task</code> completes successfully and enters the
+     * <code>EXEC_FINISHED</code> state,
+     * <code>Task.run()</code> will be forked to the UI thread.
+     *
+     * All
+     * <code>Task</code>s at this priority must therefore override
+     * <code>run()</code>, and most will want the to use the result available
+     * with
+     * <code>Task.getValue()</code>.
+     */
+    public static final int UI_PRIORITY = 3;
     /**
      * Start the task as soon as possible. The
      * <code>fork()</code> operation will place this as the next Task to be
@@ -183,14 +199,25 @@ public abstract class Task {
     private final Object MUTEX = new Object();
 
     /**
-     * Create a Task with input value of null
+     * Create a <code>Task</code> with input value of null
      *
-     * Use this constructor if your Task does not accept an input value,
-     * otherwise use the Task(Object) constructor.
+     * Use this constructor if your <code>Task</code> does not accept an input value,
+     * otherwise use the <code>Task(Object)</code> constructor.
      *
      */
     public Task() {
         value = null;
+    }
+
+    /**
+     * Create a Task and specify the priority at which this <code>Task</code> should be
+     * forked within a chain if the previous <code>Task</code> completes normally.
+     * @param forkPriority 
+     */
+    public Task(final int forkPriority) {
+        this();
+        
+        setForkPriority(forkPriority);
     }
 
     /**
@@ -202,7 +229,7 @@ public abstract class Task {
      * @param in
      */
     public Task(final Object in) {
-        value = in;
+        setValue(in);
     }
 
     /**
@@ -479,7 +506,7 @@ public abstract class Task {
      * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, Task.MAX_TIMEOUT);
+        joinAll(tasks, Task.MAX_TIMEOUT);
     }
 
     /**
@@ -496,10 +523,6 @@ public abstract class Task {
      * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
-        doJoinAll(tasks, timeout);
-    }
-
-    private static void doJoinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
         if (tasks == null) {
             throw new IllegalArgumentException("Can not joinAll(), list of tasks to join is null");
         }
@@ -661,11 +684,11 @@ public abstract class Task {
     }
 
     /**
-     * Update the priority parameter which will be applied to this Task
-     * when it is fork()ed as link in a Task chain.
-     * 
+     * Update the priority parameter which will be applied to this Task when it
+     * is fork()ed as link in a Task chain.
+     *
      * @param chainedForkPriority
-     * @return 
+     * @return
      */
     public final Task setForkPriority(final int chainedForkPriority) {
         if (chainedForkPriority < Task.SHUTDOWN_PRIORITY || chainedForkPriority > Task.HIGH_PRIORITY) {
@@ -680,16 +703,16 @@ public abstract class Task {
 
     /**
      * Return the priority value applied when this Task was fork()ed.
-     * 
+     *
      * If the Task is not yet fork()ed, for example if it is part of a Task
      * chain, this is the value which will be applied when it is forked.
-     * 
-     * @return 
+     *
+     * @return
      */
     public final int getForkPriority() {
         synchronized (MUTEX) {
             return chainedTaskForkPriority;
-        }        
+        }
     }
 
     private Task doChain(final Task nextTask, final int nextTaskPriority, final boolean setNextTaskPriority) {
@@ -749,20 +772,21 @@ public abstract class Task {
             final Task t;
             synchronized (MUTEX) {
                 value = in;
-                doRun = status == EXEC_STARTED;
-                if (doRun) {
+                final boolean started = status == EXEC_STARTED;
+                doRun = this.chainedTaskForkPriority == Task.UI_PRIORITY && started;
+                if (started) {
                     setStatus(EXEC_FINISHED);
                 }
                 t = chainedTask;
             }
-            if (this instanceof UITask && doRun) {
-                PlatformUtils.getInstance().runOnUiThread((UITask) this);
+            if (doRun) {
+                PlatformUtils.getInstance().runOnUiThread(this);
             }
             if (t != null) {
                 //#debug
                 L.i("Begin fork chained task", t.toString() + " INPUT: " + in);
                 t.setValue(in);
-                t.fork(Task.HIGH_PRIORITY);
+                t.fork(t.chainedTaskForkPriority);
             }
         } catch (final Throwable t) {
             //#debug
@@ -855,6 +879,17 @@ public abstract class Task {
         }
     }
 
+    /**
+     * The default implementation of run() does nothing. If you
+     * task.fork(Task.UI_PRIORITY) then you should override this method.
+     *
+     * Your overriding run() method probably will want to access and display the
+     * result with getValue()
+     *
+     */
+    public void run() {
+    }
+
     //#mdebug
     /**
      * When debugging, show what each Worker is doing and the queue length
@@ -865,7 +900,6 @@ public abstract class Task {
     public static Vector getCurrentState() {
         return Worker.getCurrentState();
     }
-    //#enddebug
 
     /**
      * For debug
@@ -877,4 +911,5 @@ public abstract class Task {
             return "TASK: status=" + getStatusString() + " result=" + value + " nextTask=(" + chainedTask + ")";
         }
     }
+    //#enddebug
 }

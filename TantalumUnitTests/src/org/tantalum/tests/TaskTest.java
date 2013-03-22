@@ -30,8 +30,6 @@ import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.TimeoutException;
-import org.tantalum.UITask;
-import org.tantalum.Worker;
 import org.tantalum.util.L;
 
 /**

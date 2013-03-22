@@ -33,7 +33,6 @@ import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import java.util.Vector;
 import org.tantalum.Task;
-import org.tantalum.UITask;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.util.L;
@@ -106,17 +105,22 @@ public class DetailsForm extends Form implements ActionListener {
         addLabels(descriptionLabels);
         addComponent(imgLabel);
 
-        imageCache.getAsync(item.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
-                                                               protected void onPostExecute(final Object result) {
-                                                                   try {
-                                                                       imgLabel.setIcon((Image) result);
-                                                                       DetailsForm.this.repaint();
-                                                                   } catch (Exception ex) {
-                                                                       //#debug
-                                                                       L.e("Can not get image for RSSItem", item.getThumbnail(), ex);
-                                                                   }
-                                                               }
-                                                           });
+        imageCache.getAsync(item.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.UI_PRIORITY) {
+
+            protected Object exec(final Object in) {
+                return in;
+            }
+            
+            public void run() {
+                try {
+                    imgLabel.setIcon((Image) getValue());
+                    DetailsForm.this.repaint();
+                } catch (Exception ex) {
+                    //#debug
+                    L.e("Can not get image for RSSItem", item.getThumbnail(), ex);
+                }
+            }
+        });
 
         addLabels(linkLabels);
         setScrollY(0);

@@ -32,7 +32,6 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.j2me.J2MEImageTypeHandler;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.util.L;
@@ -45,7 +44,7 @@ import org.tantalum.util.StringUtils;
  */
 public final class DetailsView extends View {
 
-    public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', new J2MEImageTypeHandler());
+    public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.getInstance().getImageTypeHandler());
     private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;

@@ -27,7 +27,6 @@ package org.tantalum.formrssreader;
 import javax.microedition.lcdui.*;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.UITask;
 import org.tantalum.j2me.RMSUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
@@ -45,7 +44,7 @@ public final class ListForm extends Form implements CommandListener {
     private final FormRSSReader rssReader;
     private final DetailsForm detailsView;
     private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', new DataTypeHandler() {
-    public Object convertToUseForm(final Object key, final byte[] bytes) {
+        public Object convertToUseForm(final Object key, final byte[] bytes) {
             try {
                 rssModel.removeAllElements();
                 rssModel.setXML(bytes);
@@ -133,8 +132,8 @@ public final class ListForm extends Form implements CommandListener {
      *
      * @param forceLoad
      */
-    public UITask reload(final boolean forceLoad) {
-        final UITask uiTask;
+    public Task reload(final boolean forceLoad) {
+        final Task uiTask;
 
         if (loading && !forceLoad) {
             //already loading
@@ -159,8 +158,12 @@ public final class ListForm extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            uiTask = new UITask() {
-                public void onPostExecute(final Object result) {
+            uiTask = new Task(Task.UI_PRIORITY) {
+                protected Object exec(final Object in) {
+                    return in;
+                }
+
+                public void run() {
                     //#debug
                     L.i("start postExecute on force reload", "model length=" + rssModel.size());
                     loading = false;
@@ -176,8 +179,12 @@ public final class ListForm extends Form implements CommandListener {
             };
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
-            uiTask = new UITask() {
-                public void onPostExecute(final Object result) {
+            uiTask = new Task(Task.UI_PRIORITY) {
+                protected Object exec(final Object in) {
+                    return in;
+                }
+
+                public void run() {
                     //#debug
                     L.i("start postExecute on reload", "model length=" + rssModel.size());
                     loading = false;
