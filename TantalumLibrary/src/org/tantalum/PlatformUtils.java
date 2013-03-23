@@ -240,7 +240,7 @@ public final class PlatformUtils {
      * @return
      */
     public L getLog() {
-        return platformAdapter.doGetLog();
+        return platformAdapter.getLog();
     }
 
     /**

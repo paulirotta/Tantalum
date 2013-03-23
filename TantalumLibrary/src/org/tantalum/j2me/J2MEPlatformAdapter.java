@@ -135,7 +135,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
         }
     }
 
-    public L doGetLog() {
+    public L getLog() {
         return log;
     }
 

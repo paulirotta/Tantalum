@@ -120,7 +120,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
         }
     }
 
-    public L doGetLog() {
+    public L getLog() {
         return log;
     }
 

@@ -80,7 +80,7 @@ public interface PlatformAdapter {
      * 
      * @return 
      */
-    public L doGetLog();
+    public L getLog();
 
     /**
      * Provide a return the converts from common Internet compressed byte[]
