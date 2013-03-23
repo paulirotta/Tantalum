@@ -204,7 +204,7 @@ public final class PlatformUtils {
     public void notifyDestroyed(final String reasonDestroyed) {
         //#debug
         L.i("Call to notifyDestroyed", reasonDestroyed);
-        platformAdapter.doNotifyDestroyed();
+        platformAdapter.shutdownComplete();
     }
 
     /**
@@ -358,7 +358,7 @@ public final class PlatformUtils {
      * compute such as writing to the RMS or file system will complete.
      *
      * @param block Block the calling thread up to three seconds to allow
-     * orderly shutdown. This is only needed in MIDlet.doNotifyDestroyed(true)
+     * orderly shutdown. This is only needed in shutdown(true)
      * which is called for example by the user pressing the red HANGUP button.
      *
      * Ongoing Tasks will be canceled or complete depending on their current run

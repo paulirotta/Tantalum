@@ -70,7 +70,7 @@ public interface PlatformAdapter {
      * Do not call this directly, call Worker.shutdown() to initiate a close
      *
      */
-    public void doNotifyDestroyed();
+    public void shutdownComplete();
 
     /**
      * Get a platform-specific logging class. Add Tantalum logs to the

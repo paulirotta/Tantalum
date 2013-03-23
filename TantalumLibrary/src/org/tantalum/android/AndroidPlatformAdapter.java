@@ -69,7 +69,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
      * navigates to another Activity, or asynchronously after a slight delay
      * when you call Worker.shutdown() to terminate the program.
      */
-    public void doNotifyDestroyed() {
+    public void shutdownComplete() {
         ((Activity) PlatformUtils.getInstance().getProgram()).finish();
     }
 

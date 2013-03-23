@@ -292,12 +292,12 @@ final class Worker extends Thread {
     }
 
     /**
-     * Call MIDlet.doNotifyDestroyed() after all current queued and shutdown
+     * Call PlatformUtils.getInstance().shutdown() after all current queued and shutdown
      * Tasks are completed. Resources held by the system will be closed and
      * queued compute such as writing to the RMS or file system will complete.
      *
      * @param block Block the calling thread up to three seconds to allow
-     * orderly shutdown. This is only needed in MIDlet.doNotifyDestroyed(true)
+     * orderly shutdown. This is only needed in shutdown(true)
      * which is called for example by the user pressing the red HANGUP button.
      */
     static void shutdown(final boolean block) {

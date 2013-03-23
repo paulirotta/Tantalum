@@ -93,7 +93,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
      * Do not call this directly, call Worker.shutdown() to initiate a close
      *
      */
-    public void doNotifyDestroyed() {
+    public void shutdownComplete() {
         ((MIDlet) PlatformUtils.getInstance().getProgram()).notifyDestroyed();
     }
 
