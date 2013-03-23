@@ -40,9 +40,14 @@ import org.tantalum.util.L;
  * <code>Task</code>s receive an input value. During execution this value is
  * mutated into an output value which is from that point immutable.
  *
- * In other functional programming platforms the function filled by
+ * Each
+ * <code>Task</code> is a functional programming "function" for asynchronous
+ * concurrent fulfillment on a background thread pool. In other functional
+ * programming platforms the function filled by
  * <code>Task</code> is known as a "future" (C++ 11 stdlib) or a "promise"
- * (JavaScript frameworks such as RX).
+ * (JavaScript frameworks such as RX). All asynchronous
+ * <code>Task</code>s can be converted for synchronous usage by calling
+ * <code>get()</code> which will block until execution completes.
  *
  * Any piece of code which runs in response to an event and does not explicitly
  * need to be run on the user interface (UI) thread is usually implemented in an
@@ -332,15 +337,14 @@ public abstract class Task implements Runnable {
     }
 
     /**
-     * Get the current input or result value of this Task without forcing
-     * execution.
-     *
-     * If the task has not yet been executed, this will be the input value. If
-     * the task has been executed, this will be the return value.
+     * Get the current value of this Task. Access is synchronized and execution
+     * is not forced execution. If the task has not yet been executed, this will
+     * return the input value. If the task has been executed, this will be the
+     * return value.
      *
      * @return
      */
-    public final Object getValue() {
+    protected final Object getValue() {
         synchronized (MUTEX) {
             return value;
         }
@@ -352,9 +356,23 @@ public abstract class Task implements Runnable {
      * This is similar to join() with a very long timeout. Note that a
      * MAX_TIMEOUT of 2 minutes is enforced.
      *
+     * <code>Task</code> value is final and immutable after execution completes.
+     * You may safely use the Task as a value object. Since a
+     * <code>Task</code> is a "future" or a "promise" that will be executed as
+     * soon as processing and other associated resources become available, you
+     * may store the Task as a functional programming value object as soon as it
+     * is created. If you
+     * <code>get()</code> the value of the object before it has naturally
+     * executed, the
+     * <code>get()</code> will block and out-of-order execution will attempt to
+     * speed up execution. If you choose not to
+     * <code>fork()</code> the
+     * <code>Task</code>, this is a form of lazy execution at first use. Note
+     * that in this case references from the UI Thread will block until
+     * execution completes.
+     *
      * @return
      * @throws InterruptedException
-     * @throws ExecutionException
      * @throws CancellationException
      * @throws TimeoutException
      */
@@ -399,6 +417,10 @@ public abstract class Task implements Runnable {
      */
     public final Object setValue(final Object value) {
         synchronized (MUTEX) {
+            if (this.status >= Task.FINISHED) {
+                throw new IllegalStateException("Can not setValue(), Task value is final after execution: " + this);
+            }
+
             return this.value = value;
         }
     }
@@ -435,7 +457,6 @@ public abstract class Task implements Runnable {
      * @return
      * @throws InterruptedException
      * @throws CancellationException
-     * @throws ExecutionException
      * @throws TimeoutException
      */
     public final Object join() throws InterruptedException, CancellationException, TimeoutException {
@@ -460,7 +481,6 @@ public abstract class Task implements Runnable {
      * canceled by another thread
      * @throws CancellationException - task was explicitly canceled by another
      * thread
-     * @throws ExecutionException - an uncaught exception was thrown
      * @throws TimeoutException - UITask failed to complete within timeout
      * milliseconds
      */
@@ -540,7 +560,6 @@ public abstract class Task implements Runnable {
      * @param tasks
      * @throws InterruptedException
      * @throws CancellationException
-     * @throws ExecutionException
      * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks) throws InterruptedException, CancellationException, TimeoutException {
@@ -557,7 +576,6 @@ public abstract class Task implements Runnable {
      * complete
      * @throws InterruptedException
      * @throws CancellationException
-     * @throws ExecutionException
      * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, TimeoutException {
