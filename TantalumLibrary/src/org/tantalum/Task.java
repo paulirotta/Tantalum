@@ -28,11 +28,54 @@ import java.util.Vector;
 import org.tantalum.util.L;
 
 /**
- * A Task is the base unit of work in the Tantalum toolset. Any piece of code
- * which runs in response to an event and does not explicitly need to be run on
- * the user interface (UI) thread is usually implemented in an extension of
- * Task.exec(). It will automatically be executed on a background worker thread
- * once fork() has been called.
+ * A
+ * <code>Task</code> is the base unit of work in Tantalum. It is a single unit
+ * of work executed on a background worker thread pool. The thread pool pulls
+ * <code>Task</code>s from a common queue.
+ *
+ * Each
+ * <code>Task</code> is
+ * <code>fork()</code>ed and executed only one time after which it is discarded
+ * or passed as a value object.
+ * <code>Task</code>s receive an input value. During execution this value is
+ * mutated into an output value which is from that point immutable.
+ *
+ * In other functional programming platforms the function filled by
+ * <code>Task</code> is known as a "future" (C++ 11 stdlib) or a "promise"
+ * (JavaScript frameworks such as RX).
+ *
+ * Any piece of code which runs in response to an event and does not explicitly
+ * need to be run on the user interface (UI) thread is usually implemented in an
+ * extension of
+ * <code>Task.exec()</code>. It will automatically be executed on a background
+ * worker thread once
+ * <code>fork()</code> has been called.
+ *
+ * A
+ * <code>Task</code> which has
+ * <code>Task.UI_PRIORITY</code> will, after successful completion on a
+ * background worker thread, be forked to the platform's UI Thread after
+ * successful completion. The UI Thread will then call their
+ * <code>run()</code> method for synchronous, serialized interface updates.
+ *
+ * A
+ * <code>Task</code> is often an anonymous inner class extending
+ * <code>Task</code> and adding a lambda expression (bit of asynchronously
+ * executable code). Such inner classes are closures and exhibit lambda capture
+ * (convenient reference access to final values in the outer scope). Since inner
+ * classes maintain an object reference to their parent instance, the outer
+ * scope parent can not be garbage collected until the Task completes. In cases
+ * where rapid heap memory release is critical and the outer scope is holding
+ * large objects that should be freed before the Task executes or completes, a
+ * named static inner class may be more suitable.
+ *
+ * Long running
+ * <code>Task</code>s may periodically check their status to see if
+ * <code>cancel(false, "reason")</code> has been signaled. They can be stopped
+ * instantly by calling
+ * <code>cancel(true, "reason")</code>.
+ * <code>Task.exec()</code> code which may be canceled should utilize
+ * <code>try {..}finally{..}</code> to clean any associated resources.
  *
  * @author phou
  */
@@ -44,7 +87,7 @@ public abstract class Task implements Runnable {
      *
      * After the
      * <code>Task</code> completes successfully and enters the
-     * <code>EXEC_FINISHED</code> state,
+     * <code>FINISHED</code> state,
      * <code>Task.run()</code> will be forked to the UI thread.
      *
      * All
@@ -106,9 +149,9 @@ public abstract class Task implements Runnable {
      */
     public static final int SHUTDOWN_PRIORITY = -3;
     /**
-     * Synchronize on the following object if your processing routine will
-     * temporarily need a large amount of memory. Only one such activity can be
-     * active at a time.
+     * While holding no other locks, synchronize on the following during
+     * critical code sections if your processing routine will temporarily need a
+     * large amount of memory. Only one such activity can be active at a time.
      */
     public static final Object LARGE_MEMORY_MUTEX = new Object();
     // status values
@@ -121,24 +164,20 @@ public abstract class Task implements Runnable {
      * status: created and forked for execution by a background Worker thread,
      * but no Worker has yet been free to accept this queued Task
      */
-    public static final int EXEC_PENDING = 0;
+    public static final int PENDING = 0;
     /**
      * status: exec() has started but not yet finished
      */
-    public static final int EXEC_STARTED = 1;
+    public static final int STARTED = 1;
     /**
      * status: exec() has finished. If this is a UI thread there still may be
      * pending activity for the user interface thread
      */
-    public static final int EXEC_FINISHED = 2;
+    public static final int FINISHED = 2;
     /**
      * state: cancel() was called
      */
     public static final int CANCELED = 4;
-    /**
-     * status: an uncaught exception was thrown during execution
-     */
-    public static final int EXCEPTION = 5;
     /**
      * status: the Task has been created, but fork() has not yet been called to
      * queue this for execution on a background Worker thread
@@ -199,10 +238,12 @@ public abstract class Task implements Runnable {
     private final Object MUTEX = new Object();
 
     /**
-     * Create a <code>Task</code> with input value of null
+     * Create a
+     * <code>Task</code> with input value of null
      *
-     * Use this constructor if your <code>Task</code> does not accept an input value,
-     * otherwise use the <code>Task(Object)</code> constructor.
+     * Use this constructor if your
+     * <code>Task</code> does not accept an input value, otherwise use the
+     * <code>Task(Object)</code> constructor.
      *
      */
     public Task() {
@@ -210,13 +251,15 @@ public abstract class Task implements Runnable {
     }
 
     /**
-     * Create a Task and specify the priority at which this <code>Task</code> should be
-     * forked within a chain if the previous <code>Task</code> completes normally.
-     * @param forkPriority 
+     * Create a Task and specify the priority at which this
+     * <code>Task</code> should be forked within a chain if the previous
+     * <code>Task</code> completes normally.
+     *
+     * @param forkPriority
      */
     public Task(final int forkPriority) {
         this();
-        
+
         setForkPriority(forkPriority);
     }
 
@@ -281,10 +324,10 @@ public abstract class Task implements Runnable {
      */
     public final void notifyTaskForked() throws IllegalStateException {
         synchronized (MUTEX) {
-            if (status < EXEC_FINISHED) {
+            if (status < FINISHED) {
                 throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + getStatusString());
             }
-            setStatus(EXEC_PENDING);
+            setStatus(PENDING);
         }
     }
 
@@ -315,7 +358,7 @@ public abstract class Task implements Runnable {
      * @throws CancellationException
      * @throws TimeoutException
      */
-    public final Object get() throws InterruptedException, ExecutionException, CancellationException, TimeoutException {
+    public final Object get() throws InterruptedException, CancellationException, TimeoutException {
         return join(MAX_TIMEOUT);
     }
 
@@ -336,7 +379,7 @@ public abstract class Task implements Runnable {
      */
     public final void set(final Object value) {
         synchronized (MUTEX) {
-            if (status < AsyncTask.EXEC_FINISHED) {
+            if (status < AsyncTask.FINISHED) {
                 throw new IllegalStateException("Unpredictable run sequence- can not set Task value when status is " + status);
             }
 
@@ -395,7 +438,7 @@ public abstract class Task implements Runnable {
      * @throws ExecutionException
      * @throws TimeoutException
      */
-    public final Object join() throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    public final Object join() throws InterruptedException, CancellationException, TimeoutException {
         return join(MAX_TIMEOUT);
     }
 
@@ -421,7 +464,7 @@ public abstract class Task implements Runnable {
      * @throws TimeoutException - UITask failed to complete within timeout
      * milliseconds
      */
-    public final Object join(long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    public final Object join(long timeout) throws InterruptedException, CancellationException, TimeoutException {
         if (timeout < 0) {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
@@ -437,7 +480,7 @@ public abstract class Task implements Runnable {
             //#debug
             L.i("Start join", "timeout=" + timeout + " " + this);
             switch (status) {
-                case EXEC_PENDING:
+                case PENDING:
                     //#debug
                     L.i("Start join of EXEC_PENDING task", "timeout=" + timeout + " " + this.toString());
                     if (Worker.tryUnfork(this)) {
@@ -452,34 +495,29 @@ public abstract class Task implements Runnable {
                         //Worker.fork(this, Task.HIGH_PRIORITY);
                     }
                 // Continue to next state
-                case EXEC_STARTED:
+                case STARTED:
                     //#debug
                     L.i("Start join wait()", "status=" + getStatusString());
                     do {
                         final long t = System.currentTimeMillis();
 
                         MUTEX.wait(timeout);
-                        if (status == EXEC_FINISHED) {
+                        if (status == FINISHED) {
                             break;
                         }
                         if (status == CANCELED) {
                             throw new CancellationException("join() was to a Task which had already been canceled: " + this);
                         }
-                        if (status == EXCEPTION) {
-                            throw new ExecutionException("join() was to a Task which had already expereienced an uncaught runtime exception: " + this);
-                        }
                         timeout -= System.currentTimeMillis() - t;
                     } while (timeout > 0);
                     //#debug
                     L.i("End join wait()", "status=" + getStatusString());
-                    if (status == EXEC_STARTED) {
+                    if (status == STARTED) {
                         throw new TimeoutException("Task was already started when join() was call and did not complete during " + timeout + " milliseconds");
                     }
                     break;
                 case CANCELED:
                     throw new CancellationException("join() was to a Task which was running but then canceled: " + this);
-                case EXCEPTION:
-                    throw new ExecutionException("join() was to a Task which had an uncaught exception: " + this);
                 default:
                     ;
             }
@@ -505,7 +543,7 @@ public abstract class Task implements Runnable {
      * @throws ExecutionException
      * @throws TimeoutException
      */
-    public static void joinAll(final Task[] tasks) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    public static void joinAll(final Task[] tasks) throws InterruptedException, CancellationException, TimeoutException {
         joinAll(tasks, Task.MAX_TIMEOUT);
     }
 
@@ -522,7 +560,7 @@ public abstract class Task implements Runnable {
      * @throws ExecutionException
      * @throws TimeoutException
      */
-    public static void joinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, ExecutionException, TimeoutException {
+    public static void joinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, TimeoutException {
         if (tasks == null) {
             throw new IllegalArgumentException("Can not joinAll(), list of tasks to join is null");
         }
@@ -588,7 +626,7 @@ public abstract class Task implements Runnable {
      *
      * @param status
      */
-    public final void setStatus(final int status) {
+    final void setStatus(final int status) {
         if (status == CANCELED) {
             throw new IllegalArgumentException("Do not setStatus(Task.CANCELED). Call Task.cancel(false, \"Reason for cancel\") instead to keep your code debuggable");
         }
@@ -597,12 +635,12 @@ public abstract class Task implements Runnable {
     }
 
     private void doSetStatus(final int status) {
-        if (status < EXEC_PENDING || status > READY) {
+        if (status < PENDING || status > READY) {
             throw new IllegalArgumentException("setStatus(" + status + ") not allowed");
         }
         final Task t;
         synchronized (MUTEX) {
-            if (this.status == status || ((this.status == CANCELED || this.status == EXCEPTION) && status != READY)) {
+            if (this.status == status || ((this.status == CANCELED) && status != READY)) {
                 //#debug
                 L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
                 return;
@@ -611,7 +649,7 @@ public abstract class Task implements Runnable {
             this.status = status;
             MUTEX.notifyAll();
             t = chainedTask;
-            if (status == CANCELED || status == EXCEPTION) {
+            if (status == CANCELED) {
                 /*
                  * Unchain as we cancel to simplify avoiding any future reference to
                  * canceled chained tasks. This can also speed garbage collection.
@@ -620,7 +658,7 @@ public abstract class Task implements Runnable {
             }
         }
 
-        if (status == CANCELED || status == EXCEPTION) {
+        if (status == CANCELED) {
             PlatformUtils.getInstance().runOnUiThread(new Runnable() {
                 public void run() {
                     //#debug
@@ -758,10 +796,10 @@ public abstract class Task implements Runnable {
                     // Input is provided- override the stored value
                     value = in;
                 }
-                if (status == Task.CANCELED || status == Task.EXCEPTION) {
+                if (status == Task.CANCELED) {
                     throw new IllegalStateException(this.getStatusString() + " state can not be executed: " + this);
                 }
-                setStatus(Task.EXEC_STARTED);
+                setStatus(Task.STARTED);
             }
             /*
              * Execute the Task without holding any locks
@@ -772,10 +810,10 @@ public abstract class Task implements Runnable {
             final Task t;
             synchronized (MUTEX) {
                 value = in;
-                final boolean started = status == EXEC_STARTED;
+                final boolean started = status == STARTED;
                 doRun = this.chainedTaskForkPriority == Task.UI_PRIORITY && started;
                 if (started) {
-                    setStatus(EXEC_FINISHED);
+                    setStatus(FINISHED);
                 }
                 t = chainedTask;
             }
@@ -791,7 +829,7 @@ public abstract class Task implements Runnable {
         } catch (final Throwable t) {
             //#debug
             L.e("Unhandled task exception", this.toString(), t);
-            setStatus(EXCEPTION);
+            setStatus(CANCELED);
         }
 
         return in;
@@ -828,18 +866,16 @@ public abstract class Task implements Runnable {
             //#debug
             L.i("Begin cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
             switch (status) {
-                case EXEC_STARTED:
-                    doSetStatus(CANCELED);
-                    canceled = true;
-                    if (mayInterruptIfRunning) {
-                        Worker.interruptTask(this);
-                    }
-                    break;
-
-                case EXEC_FINISHED:
+                case FINISHED:
                     //#debug
                     L.i("Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
                     break;
+
+                case STARTED:
+                    if (mayInterruptIfRunning) {
+                        Worker.interruptTask(this);
+                    }
+                // continue to default
 
                 default:
                     doSetStatus(CANCELED);
@@ -875,7 +911,7 @@ public abstract class Task implements Runnable {
      */
     public final boolean isCanceled() {
         synchronized (MUTEX) {
-            return status == AsyncTask.CANCELED || status == EXCEPTION;
+            return status == AsyncTask.CANCELED;
         }
     }
 

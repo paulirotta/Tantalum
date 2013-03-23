@@ -105,10 +105,10 @@ public abstract class AsyncTask extends Task {
     public final AsyncTask execute(final Object params) {
         this.params = params;
         synchronized (this) {
-            if (status <= EXEC_FINISHED) {
+            if (status <= FINISHED) {
                 throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + getStatusString());
             }
-            setStatus(EXEC_PENDING);
+            setStatus(PENDING);
         }
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
@@ -133,10 +133,10 @@ public abstract class AsyncTask extends Task {
      */
     public final AsyncTask executeOnExecutor(final Object params) {
         synchronized (this) {
-            if (status <= EXEC_FINISHED) {
+            if (status <= FINISHED) {
                 throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + getStatusString());
             }
-            setStatus(EXEC_PENDING);
+            setStatus(PENDING);
         }
 
         final boolean aggressive;

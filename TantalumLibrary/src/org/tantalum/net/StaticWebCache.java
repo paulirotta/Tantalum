@@ -448,7 +448,7 @@ public final class StaticWebCache extends StaticCache {
                     //#debug
                     L.i("StaticWebCache.HttpTaskFactory returned", httpGetter.toString());
                     out = httpGetter.get();
-                    if (httpGetter.getStatus() == Task.CANCELED || httpGetter.getStatus() == Task.EXCEPTION) {
+                    if (httpGetter.getStatus() == Task.CANCELED) {
                         cancel(false, "StaticWebCache.GetWebTask HttpGetter was canceled or error: " + httpGetter);
                         return out;
                     } else {
@@ -463,7 +463,7 @@ public final class StaticWebCache extends StaticCache {
                             } catch (Exception e) {
                                 //#debug
                                 L.e("Can not set result after staticwebcache http get", httpGetter.toString(), e);
-                                setStatus(EXCEPTION);
+                                cancel(false, "Can not set result after staticwebcache http get: " + httpGetter.toString() + " : " + e);
                             }
                         }
                     }

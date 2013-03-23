@@ -157,7 +157,7 @@ public class TaskTest extends TestCase {
         try {
             String out = (String) instance.get();
             assertEquals("white rabbit", out);
-            assertEquals("status is EXEC_FINISHED", Task.EXEC_FINISHED, instance.getStatus());
+            assertEquals("status is EXEC_FINISHED", Task.FINISHED, instance.getStatus());
         } catch (Exception e) {
             fail("Exception while doing execution tests: " + e);
         }
@@ -354,7 +354,7 @@ public class TaskTest extends TestCase {
                         ex.printStackTrace();
                         fail("Interrupt while waiting notirfyTaskForked notification semaphore");
                     }
-                    assertEquals(Task.EXEC_PENDING, instance.getStatus());
+                    assertEquals(Task.PENDING, instance.getStatus());
                 }
                 return "result";
             }
@@ -362,7 +362,7 @@ public class TaskTest extends TestCase {
         Thread.sleep(100);
         assertEquals("Forked task instance is READY", Task.READY, instance.getStatus());
         instance.notifyTaskForked();
-        assertEquals("Forked task instance is EXEC_PENDING", Task.EXEC_PENDING, instance.getStatus());
+        assertEquals("Forked task instance is EXEC_PENDING", Task.PENDING, instance.getStatus());
         t2.cancel(true, "testing");
     }
 
@@ -663,14 +663,14 @@ public class TaskTest extends TestCase {
         instance2.fork();
         instance3.fork();
         instanceA.fork();
-        assertEquals(Task.EXEC_PENDING, instanceA.getStatus());
+        assertEquals(Task.PENDING, instanceA.getStatus());
         instance2.cancel(true, "testing");
         try {
             Thread.sleep(200);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        assertEquals(Task.EXEC_FINISHED, instanceA.getStatus());
+        assertEquals(Task.FINISHED, instanceA.getStatus());
     }
 
     /**
@@ -866,19 +866,19 @@ public class TaskTest extends TestCase {
 
         try {
             task1a.fork().join();
-            assertEquals("task1a was not EXEC_FINISHED", Task.EXEC_FINISHED, task1a.getStatus());
+            assertEquals("task1a was not EXEC_FINISHED", Task.FINISHED, task1a.getStatus());
 
             task1b.fork().join();
-            assertEquals("task1b was not EXEC_FINISHED", Task.EXEC_FINISHED, task1b.getStatus());
+            assertEquals("task1b was not EXEC_FINISHED", Task.FINISHED, task1b.getStatus());
 
             task2.fork().join();
-            assertEquals("task2 should not have been CANCELED- you can not cancel() yourself", Task.EXEC_FINISHED, task2.getStatus());
+            assertEquals("task2 should not have been CANCELED- you can not cancel() yourself", Task.FINISHED, task2.getStatus());
 
             task3a.fork().join();
-            assertEquals("task3a should not have been CANCELED- you can not cancel() yourself", Task.EXEC_FINISHED, task3a.getStatus());
+            assertEquals("task3a should not have been CANCELED- you can not cancel() yourself", Task.FINISHED, task3a.getStatus());
 
             task3b.fork().join();
-            assertEquals("task3b should not have been CANCELED- you can not cancel() yourself", Task.EXEC_FINISHED, task3b.getStatus());
+            assertEquals("task3b should not have been CANCELED- you can not cancel() yourself", Task.FINISHED, task3b.getStatus());
 
             task4a.fork().join();
             assertNotEquals("task4a should not have been CANCELED", Task.CANCELED, task4a.getStatus());
