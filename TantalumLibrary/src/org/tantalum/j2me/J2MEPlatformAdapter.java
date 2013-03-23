@@ -116,7 +116,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
      * @return
      * @throws IOException
      */
-    public HttpConn doGetHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
+    public HttpConn getHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
 
         try {

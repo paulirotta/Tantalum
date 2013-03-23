@@ -117,5 +117,5 @@ public interface PlatformAdapter {
      * @return
      * @throws IOException
      */
-    public PlatformUtils.HttpConn doGetHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException;
+    public PlatformUtils.HttpConn getHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException;
 }

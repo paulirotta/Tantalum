@@ -272,7 +272,7 @@ public final class PlatformUtils {
      * @throws IOException
      */
     public HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
-        return platformAdapter.doGetHttpConn(url, requestPropertyKeys, requestPropertyValues, null, "GET");
+        return platformAdapter.getHttpConn(url, requestPropertyKeys, requestPropertyValues, null, "GET");
     }
 
     /**
@@ -286,7 +286,7 @@ public final class PlatformUtils {
      * @throws IOException
      */
     public HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
-        return PlatformUtils.getInstance().platformAdapter.doGetHttpConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
+        return PlatformUtils.getInstance().platformAdapter.getHttpConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
     }
 
     /**
