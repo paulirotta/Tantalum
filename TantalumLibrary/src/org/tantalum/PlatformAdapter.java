@@ -61,7 +61,7 @@ public interface PlatformAdapter {
      *
      * @param action
      */
-    public void doRunOnUiThread(final Runnable action);
+    public void runOnUiThread(final Runnable action);
 
     /**
      * The application calls this when all Workers have completed shutdown to

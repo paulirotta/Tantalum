@@ -57,7 +57,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
      *
      * @param action
      */
-    public void doRunOnUiThread(final Runnable action) {
+    public void runOnUiThread(final Runnable action) {
         ((Activity) PlatformUtils.getInstance().getProgram()).runOnUiThread(action);
     }
 

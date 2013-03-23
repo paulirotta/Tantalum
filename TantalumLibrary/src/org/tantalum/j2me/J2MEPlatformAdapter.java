@@ -82,7 +82,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
      *
      * @param action
      */
-    public void doRunOnUiThread(final Runnable action) {
+    public void runOnUiThread(final Runnable action) {
         display.callSerially(action);
     }
 

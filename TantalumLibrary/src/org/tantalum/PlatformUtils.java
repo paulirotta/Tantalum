@@ -259,7 +259,7 @@ public final class PlatformUtils {
      * @param action
      */
     public void runOnUiThread(final Runnable action) {
-        platformAdapter.doRunOnUiThread(action);
+        platformAdapter.runOnUiThread(action);
     }
 
     /**
