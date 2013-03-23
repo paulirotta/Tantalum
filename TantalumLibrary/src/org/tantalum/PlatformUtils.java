@@ -105,9 +105,12 @@ public final class PlatformUtils {
     /**
      * During startup, this is automatically called when you extend a
      * platform-specific base class such as TantalumMIDlet or TantalumActivity.
-     * This initializes the background Worker threads and provides hooks for
-     * orderly program shutdown with time for background tasks such as write to
-     * flash memory to complete.
+     * You do not need to extend these classes, you can call this method
+     * directly.
+     *
+     * Calling this method one time as the application starts initializes the
+     * background Worker threads and provides hooks for orderly program shutdown
+     * with time for background tasks such as write to flash memory to complete.
      *
      * @param program
      * @param numberOfWorkers
@@ -306,7 +309,7 @@ public final class PlatformUtils {
          * @throws IOException
          */
         public InputStream getInputStream() throws IOException;
-        
+
         /**
          * Get the OutputStream from the platform-specific HTTP connection
          *
@@ -358,8 +361,8 @@ public final class PlatformUtils {
      * compute such as writing to the RMS or file system will complete.
      *
      * @param block Block the calling thread up to three seconds to allow
-     * orderly shutdown. This is only needed in shutdown(true)
-     * which is called for example by the user pressing the red HANGUP button.
+     * orderly shutdown. This is only needed in shutdown(true) which is called
+     * for example by the user pressing the red HANGUP button.
      *
      * Ongoing Tasks will be canceled or complete depending on their current run
      * state and shutdown preference. The default is for Tasks not at

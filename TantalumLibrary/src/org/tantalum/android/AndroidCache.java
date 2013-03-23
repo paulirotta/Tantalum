@@ -24,12 +24,14 @@
  */
 package org.tantalum.android;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import java.util.Vector;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
@@ -41,35 +43,13 @@ import org.tantalum.util.L;
  * database. All web services you access over the net using a StaticWebCache
  * will be automatically stored here for faster access and offline use.
  *
-  * You should not access this class directly. Use
+ * You should not access this class directly. Use
  * <code>PlatformUtils.getInstance()...</code> instead.
  *
-* @author phou
+ * @author phou
  */
 public final class AndroidCache extends FlashCache {
 
-    /**
-     * Create a new AndroidCache. You should not call this method directly,
-     * but rather request the cache from 
-     * <code>PlatformUtils.getInstance().getFlashCache(priority)</code>
-     * 
-     * @param priority 
-     */
-    public AndroidCache(final char priority) {
-        super(priority);
-
-        helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION);
-        (new Task() {
-            public Object exec(final Object in2) {
-                if (db != null) {
-                    db.close();
-                }
-                db = null;
-
-                return in2;
-            }
-        }).fork(Task.SHUTDOWN_PRIORITY);
-    }
     private SQLiteOpenHelper helper;
     /**
      * Database version number
@@ -96,23 +76,46 @@ public final class AndroidCache extends FlashCache {
      */
     private static final String COL_DATA = "data";
     /**
+     * Android object used for associated the database with an application
+     */
+    private static Context context = null;
+    /**
      * SQL to create the database
      */
     private final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS "
             + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_KEY
             + " TEXT NOT NULL, " + COL_DATA + " BLOB NOT NULL)";
     private final String CLEAR_TABLE = "DROP TABLE " + TABLE_NAME;
-    private static Context context;
-    private volatile SQLiteDatabase db = null;
+    private SQLiteDatabase db = null;
 
     /**
-     * Your app must call this to set the context before the database is
-     * initialized in Tantalum
+     * Create a new AndroidCache. You should not call this method directly, but
+     * rather request the cache from
+     * <code>PlatformUtils.getInstance().getFlashCache(priority)</code>
      *
-     * @param c
+     * @param priority
      */
-    public static void setContext(final Context c) {
-        context = c;
+    public AndroidCache(final char priority) {
+        super(priority);
+
+        final Context c;
+        synchronized (AndroidCache.class) {
+            if (context == null) {
+                context = ((Activity) PlatformUtils.getInstance().getProgram()).getApplicationContext();
+            }
+            c = context;
+        }
+        helper = new SQLiteOpenHelper(c, databaseName, null, DB_VERSION);
+        (new Task() {
+            public Object exec(final Object in2) {
+                if (db != null) {
+                    db.close();
+                }
+                db = null;
+
+                return in2;
+            }
+        }).fork(Task.SHUTDOWN_PRIORITY);
     }
 
     /**
@@ -120,7 +123,7 @@ public final class AndroidCache extends FlashCache {
      *
      * @param db
      */
-    public void onCreate(SQLiteDatabase db) {
+    public void onCreate(final SQLiteDatabase db) {
         db.execSQL(CREATE_TABLE);
     }
 
@@ -131,7 +134,7 @@ public final class AndroidCache extends FlashCache {
      * @param oldVersion
      * @param newVersion
      */
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    public void onUpgrade(final SQLiteDatabase db, final int oldVersion, final int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         onCreate(db);
     }
@@ -237,7 +240,7 @@ public final class AndroidCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public Vector getKeys() throws FlashDatabaseException {
+    public synchronized Vector getKeys() throws FlashDatabaseException {
         final Vector keys = new Vector();
         Cursor cursor = null;
 
@@ -270,7 +273,7 @@ public final class AndroidCache extends FlashCache {
      * each cache, other caches still contain values.
      *
      */
-    public void clear() {
+    public synchronized void clear() {
         db.execSQL(CLEAR_TABLE);
     }
 }

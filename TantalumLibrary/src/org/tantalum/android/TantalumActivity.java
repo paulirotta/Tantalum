@@ -68,18 +68,6 @@ public abstract class TantalumActivity extends Activity {
     }
 
     /**
-     * Your Activity class should call super.onCreate() to initialize the
-     * platform and create the background Worker thread pool.
-     *
-     * @param savedInstanceState
-     */
-    protected void onCreate(final Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        AndroidCache.setContext(getApplicationContext());
-    }
-
-    /**
      * Your Activity class should call super.onDestroy() to give queued
      * background tasks such as write persistent data to the SQLite database
      * time to complete execution. This will automatically time out for you if
