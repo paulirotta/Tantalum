@@ -356,11 +356,11 @@ public final class RMSUtils {
         } catch (RecordStoreException e) {
             throw new FlashDatabaseException("Can not get RMS: " + recordStoreName + " : " + e);
         } finally {
+            //#mdebug
             if (!success) {
-                //#debug
-                L.i("Can not open record store", "Attempting RMS delete " + recordStoreName);
-                delete(recordStoreName);
+                L.i("Can not open record store", recordStoreName);
             }
+            //#enddebug
         }
 
         return rs;
