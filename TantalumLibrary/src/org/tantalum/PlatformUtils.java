@@ -228,7 +228,7 @@ public final class PlatformUtils {
      * @return
      */
     public ImageTypeHandler getImageTypeHandler() {
-        return platformAdapter.doGetImageTypeHandler();
+        return platformAdapter.getImageTypeHandler();
     }
 
     /**

@@ -93,7 +93,7 @@ public interface PlatformAdapter {
      * 
      * @return 
      */
-    public ImageTypeHandler doGetImageTypeHandler();
+    public ImageTypeHandler getImageTypeHandler();
 
     /**
      * Get a persistence support class. Each cache is identified by a

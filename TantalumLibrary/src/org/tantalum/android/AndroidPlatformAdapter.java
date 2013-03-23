@@ -128,7 +128,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
         return new AndroidCache(priority);
     }
 
-    public ImageTypeHandler doGetImageTypeHandler() {
+    public ImageTypeHandler getImageTypeHandler() {
         return new AndroidImageTypeHandler();
     }
 

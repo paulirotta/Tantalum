@@ -97,7 +97,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
         ((MIDlet) PlatformUtils.getInstance().getProgram()).notifyDestroyed();
     }
 
-    public ImageTypeHandler doGetImageTypeHandler() {
+    public ImageTypeHandler getImageTypeHandler() {
         return new J2MEImageTypeHandler();
     }
 
