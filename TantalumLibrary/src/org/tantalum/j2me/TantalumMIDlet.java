@@ -87,11 +87,4 @@ public abstract class TantalumMIDlet extends MIDlet {
     protected final void destroyApp(final boolean unconditional) {
         PlatformUtils.getInstance().shutdown(unconditional);
     }
-
-    /**
-     * Do nothing, not generally used
-     *
-     */
-    protected void pauseApp() {
-    }
 }

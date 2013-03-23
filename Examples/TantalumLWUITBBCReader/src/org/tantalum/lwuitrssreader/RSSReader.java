@@ -95,4 +95,7 @@ public class RSSReader extends TantalumMIDlet {
         dialog.setDialogType(Dialog.TYPE_ERROR);
         dialog.show();
     }
+
+    protected void pauseApp() {
+    }
 }

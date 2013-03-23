@@ -151,4 +151,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
             PlatformUtils.getInstance().shutdown(false);
         }
     }
+
+    protected void pauseApp() {
+    }
 }
