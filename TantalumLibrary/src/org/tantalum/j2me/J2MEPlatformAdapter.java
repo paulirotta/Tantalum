@@ -101,7 +101,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
         return new J2MEImageTypeHandler();
     }
 
-    public FlashCache doGetFlashCache(final char priority) {
+    public FlashCache getFlashCache(final char priority) {
         return new RMSCache(priority);
     }
 

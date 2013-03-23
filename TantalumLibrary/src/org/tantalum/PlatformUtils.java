@@ -215,7 +215,7 @@ public final class PlatformUtils {
      * @return
      */
     public FlashCache getFlashCache(final char priority) {
-        return platformAdapter.doGetFlashCache(priority);
+        return platformAdapter.getFlashCache(priority);
     }
 
     /**

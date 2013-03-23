@@ -124,7 +124,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
         return log;
     }
 
-    public FlashCache doGetFlashCache(final char priority) {
+    public FlashCache getFlashCache(final char priority) {
         return new AndroidCache(priority);
     }
 

@@ -104,7 +104,7 @@ public interface PlatformAdapter {
      * @param priority
      * @return 
      */
-    public FlashCache doGetFlashCache(char priority);
+    public FlashCache getFlashCache(char priority);
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform
