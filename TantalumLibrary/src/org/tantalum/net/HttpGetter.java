@@ -76,32 +76,69 @@ public class HttpGetter extends Task {
     private Vector requestPropertyValues = new Vector();
     private HttpGetter duplicateTaskWeShouldJoinInsteadOfReGetting = null;
     /**
-     * Counter, estimated downloaded bytes during the session.
+     * Counter, estimated downloaded bytes during the app session.
+     *
+     * Access only in static synchronized block
      */
     private static int downstreamDataCount = 0;
     /**
-     * Counter, estimated uploaded bytes during the session.
+     * Counter, estimated uploaded bytes during the app session.
+     *
+     * Access only in static synchronized block
      */
     private static int upstreamDataCount = 0;
-	
-    private StreamWriter streamWriter = null;
-    private StreamReader streamReader = null;
+    private volatile StreamWriter streamWriter = null;
+    private volatile StreamReader streamReader = null;
 
+    /**
+     * Set the StreamWriter which will provide data in the optional streaming
+     * upload mode. Most HTTP activities are block-oriented in which case a
+     * stream does not need to be set up.
+     *
+     * If you are tracking data usage, update addUpstreamDataCount() after or
+     * while streaming
+     *
+     * @return
+     */
     public StreamWriter getWriter() {
-		return streamWriter;
-	}
-        
-	public void setWriter(StreamWriter writer) {
-		this.streamWriter = writer;
-	}
-	
-	public StreamReader getReader() {
-		return streamReader;
-	}
+        return streamWriter;
+    }
 
-	public void setReader(StreamReader reader) {
-		this.streamReader = reader;
-	}
+    /**
+     * Set the StreamReader which will receive data in the optional streaming
+     * download mode. Most HTTP activities are block-oriented in which case a
+     * stream does not need to be set up.
+     *
+     * If you are tracking data usage, update addDownstreamDataCount() after or
+     * while streaming
+     *
+     * @param writer
+     */
+    public void setWriter(StreamWriter writer) {
+        this.streamWriter = writer;
+    }
+
+    /**
+     * Get the current streaming download reader.
+     * 
+     * Most HTTP use is block-oriented in which case the value is null.
+     * 
+     * @return 
+     */
+    public StreamReader getReader() {
+        return streamReader;
+    }
+
+    /**
+     * Get the current streaming upload reader.
+     * 
+     * Most HTTP use is block-oriented in which case the value is null.
+     * 
+     * @param reader 
+     */
+    public void setReader(StreamReader reader) {
+        this.streamReader = reader;
+    }
 
     /**
      * Get the byte[] from the URL specified by the input argument when
@@ -248,30 +285,31 @@ public class HttpGetter extends Task {
         addUpstreamDataCount(url2.length());
 
         try {
-        	InputStream inputStream = null;
+            InputStream inputStream = null;
             OutputStream outputStream = null;
             if (this instanceof HttpPoster) {
-                if (postMessage == null && streamWriter == null  ) {
-					  throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + key);
-				}
-                
+                if (postMessage == null && streamWriter == null) {
+                    throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + key);
+                }
+
                 httpConn = PlatformUtils.getInstance().getHttpPostConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
-            	outputStream = httpConn.getOutputStream();
-				if( streamWriter != null ) {
-					streamWriter.writeReady(outputStream);
-					
-					success = true;
-					out = null;
-				 }
+                outputStream = httpConn.getOutputStream();
+                final StreamWriter writer = this.streamWriter;
+                if (writer != null) {
+                    writer.writeReady(outputStream);
+                    success = true;
+                    out = null;
+                }
                 addUpstreamDataCount(postMessage.length);
             } else {
                 httpConn = PlatformUtils.getInstance().getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
-				inputStream = httpConn.getInputStream();
-				if( streamReader != null ) {
-					streamReader.readReady( inputStream );
-					success = true;
-					out = null;
-				}
+                inputStream = httpConn.getInputStream();
+                final StreamReader reader = streamReader;
+                if (reader != null) {
+                    reader.readReady(inputStream);
+                    success = true;
+                    out = null;
+                }
             }
 
             // Estimate data length of the sent headers
@@ -520,19 +558,19 @@ public class HttpGetter extends Task {
     /**
      * Accumulates the downstream data counter.
      *
-     * @param count
+     * @param byteCount
      */
-    private synchronized static void addDownstreamDataCount(final int count) {
-        downstreamDataCount += count;
+    protected synchronized static void addDownstreamDataCount(final int byteCount) {
+        downstreamDataCount += byteCount;
     }
 
     /**
      * Accumulates the upstream data counter.
      *
-     * @param count
+     * @param byteCount
      */
-    private synchronized static void addUpstreamDataCount(final int count) {
-        upstreamDataCount += count;
+    protected synchronized static void addUpstreamDataCount(final int byteCount) {
+        upstreamDataCount += byteCount;
     }
     /*
      * HTTP Method constants
