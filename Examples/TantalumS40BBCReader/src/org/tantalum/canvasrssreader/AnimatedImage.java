@@ -26,7 +26,7 @@ package org.tantalum.canvasrssreader;
 
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
-import org.tantalum.util.ImageUtils;
+import org.tantalum.j2me.J2MEImageUtils;
 
 /**
  *
@@ -62,7 +62,7 @@ public class AnimatedImage {
             data = new int[image.getWidth() * image.getHeight()];
         }
         image.getRGB(data, 0, image.getWidth(), 0, 0, image.getWidth(), image.getHeight());
-        ImageUtils.drawFlipshade(g, x, y, data, data, image.getWidth(), image.getHeight(), (int) w, (int) h, false);
+        J2MEImageUtils.drawFlipshade(g, x, y, data, data, image.getWidth(), image.getHeight(), (int) w, (int) h, false);
         animationComplete = ++frame >= numberOfAnimationFrames;
         if (!animationComplete) {
             // Linear

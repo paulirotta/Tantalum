@@ -22,7 +22,7 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.util;
+package org.tantalum.j2me;
 
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -34,25 +34,8 @@ import javax.microedition.lcdui.Image;
  *
  * @author phou
  */
-public final class ImageUtils {
+public final class J2MEImageUtils {
 
-    /**
-     * The fastest scaling algorithm, this pulls one pixel from the source image
-     * to the destination image, thus decimating the image to make it smaller.
-     * You can see visual artifacts such as diagonal lines displaying a
-     * stair-step effect, and detail is not preserved as the image gets smaller.
-     */
-    public static final int BASIC_ONE_POINT_PICK = 0;
-    /**
-     * This is BASIC_ONE_POINT_PICK slightly modified to improve the legibility
-     * when scaling down to very small sizes. The image is quickly halfed along
-     * width and height until that is no longer possible, then ONE_POINT_PICK.
-     * This is equally fast on larger images, and while slightly slower it
-     * retains much of the image detail even on extreme down scaling. Because of
-     * the image halfing which comgines ARGB values of 4 pixels into 1, the
-     * exact time this takes can vary more than ONE_POINT_PICK
-     */
-    public static final int ONE_POINT_PICK = 1;
     /**
      * Although just slightly slower than ONE_POINT_PICK, this algorithm does a
      * log more by combing a weighted sampling 5 pixels from the source image to
@@ -65,7 +48,24 @@ public final class ImageUtils {
      * Generally this is very fast- the best performing scaling algorithm for
      * general use and a good default choice.
      */
-    public static final int FIVE_POINT_BLEND = 2;
+    public static final int FIVE_POINT_BLEND = 0;
+    /**
+     * The fastest scaling algorithm, this pulls one pixel from the source image
+     * to the destination image, thus decimating the image to make it smaller.
+     * You can see visual artifacts such as diagonal lines displaying a
+     * stair-step effect, and detail is not preserved as the image gets smaller.
+     */
+    public static final int BASIC_ONE_POINT_PICK = 1;
+    /**
+     * This is BASIC_ONE_POINT_PICK slightly modified to improve the legibility
+     * when scaling down to very small sizes. The image is quickly halfed along
+     * width and height until that is no longer possible, then ONE_POINT_PICK.
+     * This is equally fast on larger images, and while slightly slower it
+     * retains much of the image detail even on extreme down scaling. Because of
+     * the image halfing which comgines ARGB values of 4 pixels into 1, the
+     * exact time this takes can vary more than ONE_POINT_PICK
+     */
+    public static final int ONE_POINT_PICK = 2;
     /**
      * This algorithm combines the relative contributions of all source pixels
      * with appropriate weighting. The alpha channel is assumed to be opaque to
@@ -149,7 +149,7 @@ public final class ImageUtils {
      *
      * image = null;
      *
-     * image = ImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false,
+     * image = J2MEImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false,
      * false);
      *
      * data = null;
@@ -164,7 +164,7 @@ public final class ImageUtils {
      * @param maxW - maximum bounding width of scaled image
      * @param maxH - maximum bounding size of scaled image
      * @param preserveAspectRatio - set true except for special effects
-     * @param scalingAlgorithm - a constant from ImageUtils specifying how to
+     * @param scalingAlgorithm - a constant from J2MEImageUtils specifying how to
      * scale
      * @return
      */
@@ -195,7 +195,7 @@ public final class ImageUtils {
             maxW = srcW;
             widthIsMaxed = true;
         }
-        final boolean processAlpha = scalingAlgorithm != ImageUtils.WEIGHTED_AVERAGE_OPAQUE;
+        final boolean processAlpha = scalingAlgorithm != J2MEImageUtils.WEIGHTED_AVERAGE_OPAQUE;
         if (maxH >= srcH) {
             if (widthIsMaxed) {
                 // No resize needed
@@ -208,44 +208,44 @@ public final class ImageUtils {
         switch (scalingAlgorithm) {
             case ONE_POINT_PICK:
                 while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
-                    ImageUtils.half(inputImageARGB, inputImageARGB, srcW,
+                    J2MEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
                             srcH >>= 1);
                     srcW >>= 1;
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-                    ImageUtils.half(inputImageARGB, outputImageARGB, srcW,
+                    J2MEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
                             srcH >>= 1);
                     break;
                 }
             case BASIC_ONE_POINT_PICK:
-                ImageUtils.onePointPick(inputImageARGB, outputImageARGB, srcW,
+                J2MEImageUtils.onePointPick(inputImageARGB, outputImageARGB, srcW,
                         srcH, maxW, maxH);
                 break;
             case FIVE_POINT_BLEND:
                 while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
-                    ImageUtils.half(inputImageARGB, inputImageARGB, srcW,
+                    J2MEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
                             srcH >>= 1);
                     srcW >>= 1;
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-                    ImageUtils.half(inputImageARGB, outputImageARGB, srcW,
+                    J2MEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
                             srcH >>= 1);
                     break;
                 }
-                ImageUtils.fivePointSampleDownscale(inputImageARGB,
+                J2MEImageUtils.fivePointSampleDownscale(inputImageARGB,
                         outputImageARGB, srcW, srcH, maxW, maxH);
                 break;
             case WEIGHTED_AVERAGE_TRANSLUCENT:
                 if (srcW < maxW || srcH < maxH) {
-                    ImageUtils.pureUpscale(inputImageARGB, outputImageARGB, srcW,
+                    J2MEImageUtils.pureUpscale(inputImageARGB, outputImageARGB, srcW,
                             srcH, maxW, maxH, preserveAspectRatio);
                 } else {
-                    ImageUtils.pureDownscale(inputImageARGB, outputImageARGB, srcW,
+                    J2MEImageUtils.pureDownscale(inputImageARGB, outputImageARGB, srcW,
                             srcH, maxW, maxH, preserveAspectRatio);
                 }
                 break;
             case WEIGHTED_AVERAGE_OPAQUE:
-                ImageUtils.pureOpaqueDownscale(inputImageARGB, outputImageARGB,
+                J2MEImageUtils.pureOpaqueDownscale(inputImageARGB, outputImageARGB,
                         srcW, srcH, maxW, maxH, preserveAspectRatio);
                 break;
         }
@@ -274,15 +274,15 @@ public final class ImageUtils {
             final int[] outputImageARGB, int srcW, int srcH, int maxW,
             int maxH, final boolean processAlpha) {
         while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
-            ImageUtils.half(inputImageARGB, inputImageARGB, srcW, srcH >>= 1);
+            J2MEImageUtils.half(inputImageARGB, inputImageARGB, srcW, srcH >>= 1);
             srcW >>= 1;
         }
         if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-            ImageUtils.half(inputImageARGB, outputImageARGB, srcW, srcH >>= 1);
+            J2MEImageUtils.half(inputImageARGB, outputImageARGB, srcW, srcH >>= 1);
         } else {
             maxW = Math.min(srcW, maxW);
             maxH = Math.min(srcH, maxH);
-            ImageUtils.fivePointSampleDownscale(inputImageARGB,
+            J2MEImageUtils.fivePointSampleDownscale(inputImageARGB,
                     outputImageARGB, srcW, srcH, maxW, maxH);
         }
         g.drawRGB(outputImageARGB, 0, maxW, x - (maxW >> 1), y - (maxH >> 1),

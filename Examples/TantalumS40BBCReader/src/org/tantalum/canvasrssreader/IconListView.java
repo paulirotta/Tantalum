@@ -28,7 +28,7 @@ import org.tantalum.Task;
 import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
-import org.tantalum.util.ImageUtils;
+import org.tantalum.j2me.J2MEImageUtils;
 import java.util.Hashtable;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
@@ -176,7 +176,7 @@ public final class IconListView extends RSSListView {
                                                 data = new int[w * h];
                                             }
                                             icon.getRGB(data, 0, w, 0, 0, w, h);
-                                            icon = ImageUtils.scaleImage(data, data, w, h, 72, h, true, ImageUtils.FIVE_POINT_BLEND);
+                                            icon = J2MEImageUtils.scaleImage(data, data, w, h, 72, h, true, J2MEImageUtils.FIVE_POINT_BLEND);
                                         }
                                         if (item.isNewItem()) {
                                             item.setNewItem(false);

@@ -24,7 +24,6 @@
  */
 package org.tantalum.storage;
 
-import org.tantalum.util.ImageUtils;
 
 /**
  * This DataTypeHandler for use with a StaticCache converts from compressed
@@ -54,11 +53,13 @@ public abstract class ImageTypeHandler implements DataTypeHandler {
     /**
      * Select the image resize algorithm from among the cross-platform algorithms
      * available in ImageUtils. Some produce faster results, some sharper, some
-     * smoother, some support alpha blending. The default value is
+     * smoother, some support alpha blending. The default value for J2ME is
      * ImageUtils.FIVE_POINT_BLEND which is fast and smooth and supports alpha
-     * translucency.
+     * translucency. The Android implementation does not implement scaling. It
+     * recommends the default Android use of native scaling algorithms
+     * in the UI layer itself so this value is not used.
      */
-    protected int algorithm = ImageUtils.FIVE_POINT_BLEND;
+    protected int algorithm = 0;
     /**
      * If the source image is larger than maxWidith and/or maxHeight, should the
      * image keep the same width/height ratio after resizing. The default value

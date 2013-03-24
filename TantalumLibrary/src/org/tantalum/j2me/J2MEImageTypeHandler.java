@@ -26,8 +26,6 @@ package org.tantalum.j2me;
 
 import javax.microedition.lcdui.Image;
 import org.tantalum.Task;
-import org.tantalum.storage.ImageTypeHandler;
-import org.tantalum.util.ImageUtils;
 import org.tantalum.util.L;
 
 /**
@@ -36,7 +34,7 @@ import org.tantalum.util.L;
  *
  * @author tsaa
  */
-public final class J2MEImageTypeHandler extends ImageTypeHandler {
+public final class J2MEImageTypeHandler extends org.tantalum.storage.ImageTypeHandler {
 
     public Object convertToUseForm(final Object key, final byte[] bytes) {
         final Image img;
@@ -68,7 +66,7 @@ public final class J2MEImageTypeHandler extends ImageTypeHandler {
                         argb = new int[tempW * tempH];
                         tempImage.getRGB(argb, 0, tempW, 0, 0, tempW, tempH);
                     }
-                    img = ImageUtils.scaleImage(argb, argb, tempW, tempH, w, h, aspect, alg);
+                    img = J2MEImageUtils.scaleImage(argb, argb, tempW, tempH, w, h, aspect, alg);
                 }
             }
         } catch (IllegalArgumentException e) {
