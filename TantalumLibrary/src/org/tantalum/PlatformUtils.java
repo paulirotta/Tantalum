@@ -128,7 +128,7 @@ public final class PlatformUtils {
         this.numberOfWorkers = numberOfWorkers;
 
         try {
-            if (Class.forName("org.tantalum.android.TantalumActivity").isAssignableFrom(program.getClass())) {
+            if (Class.forName("android.app.Activity").isAssignableFrom(program.getClass())) {
                 platform = PLATFORM_ANDROID;
                 platformAdapter = new AndroidPlatformAdapter();
                 init();
@@ -138,7 +138,7 @@ public final class PlatformUtils {
             System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
         }
         try {
-            if (Class.forName("org.tantalum.j2me.TantalumMIDlet").isAssignableFrom(program.getClass())
+            if (Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(program.getClass())
                     || program.getClass().getName().toLowerCase().indexOf("test") > 0) {
                 platform = PLATFORM_J2ME;
                 platformAdapter = new J2MEPlatformAdapter(routeDebugOutputToSerialPort);
@@ -373,6 +373,7 @@ public final class PlatformUtils {
      * @param unconditional
      */
     public void shutdown(final boolean block) {
+        L.i("Shutdown", "block calling thread up to 3 seconds=" + block);
         Worker.shutdown(block);
     }
 }
