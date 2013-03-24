@@ -24,8 +24,6 @@
  */
 package org.tantalum.net.xml;
 
-import org.tantalum.util.StringUtils;
-
 /**
  * RSS Item object, associated with RSSModel which is a list of such objects.
  * 
@@ -45,8 +43,6 @@ public class RSSItem {
     private String thumbnail = "";
     private volatile boolean loadingImage = false;
     private volatile boolean newItem = true;
-    private Object truncatedFont;
-    private int truncatedTitleWidth = 0;
     
     /**
      * Get the item description field
@@ -136,35 +132,6 @@ public class RSSItem {
      */
     public synchronized void setTitle(String title) {
         this.title = title;
-    }
-
-    /**
-     * Get the item title, shortened to fit within the specified pixel width
-     * with the specified font.
-     * 
-     * This is for J2ME only and will throw a runtime exception on other platforms.
-     * 
-     * @param font
-     * @param width
-     * @return 
-     */
-    public synchronized String getTruncatedTitle(final Object font, final int width) {
-        if (truncatedTitle == null || truncatedFont != font || truncatedTitleWidth != width) {
-            this.truncatedTitle = StringUtils.truncate(title, (javax.microedition.lcdui.Font) font, width);
-            truncatedFont = font;
-        }
-        
-        return truncatedTitle;
-    }
-
-    /**
-     * Set the item title, shortened to fit on screen
-     * 
-     * @param truncatedTitle 
-     */
-    public synchronized void setTruncatedTitle(String truncatedTitle) {
-        this.truncatedTitle = truncatedTitle;
-        truncatedFont = null;
     }
 
     /**

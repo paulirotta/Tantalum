@@ -30,7 +30,6 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
-import javax.microedition.io.ConnectionNotFoundException;
 import java.io.OutputStream;
 
 import org.tantalum.PlatformUtils;
@@ -120,10 +119,10 @@ public class HttpGetter extends Task {
 
     /**
      * Get the current streaming download reader.
-     * 
+     *
      * Most HTTP use is block-oriented in which case the value is null.
-     * 
-     * @return 
+     *
+     * @return
      */
     public StreamReader getReader() {
         return streamReader;
@@ -131,10 +130,10 @@ public class HttpGetter extends Task {
 
     /**
      * Get the current streaming upload reader.
-     * 
+     *
      * Most HTTP use is block-oriented in which case the value is null.
-     * 
-     * @param reader 
+     *
+     * @param reader
      */
     public void setReader(StreamReader reader) {
         this.streamReader = reader;
@@ -372,10 +371,6 @@ public class HttpGetter extends Task {
             //#debug
             L.e(this.getClass().getName() + " HttpGetter has illegal argument", key, e);
             throw e;
-        } catch (ConnectionNotFoundException e) {
-            //#debug
-            L.e(this.getClass().getName() + " HttpGetter can not open a connection right now", key, e);
-            cancel(false, "HttpGetter received ConnectionNotFound: " + key);
         } catch (IOException e) {
             //#debug
             L.e(this.getClass().getName() + " retries remaining", key + ", retries=" + retriesRemaining, e);
@@ -387,20 +382,23 @@ public class HttpGetter extends Task {
                 L.i(this.getClass().getName() + " no more retries", key);
             }
         } finally {
-            try {
-                httpConn.close();
-            } catch (Exception e) {
-                //#debug
-                L.e("Closing Http InputStream error", key, e);
+            if (httpConn != null) {
+                try {
+                    httpConn.close();
+                } catch (Exception e) {
+                    //#debug
+                    L.e("Closing Http InputStream error", key, e);
+                } finally {
+                    httpConn = null;
+                }
             }
-            httpConn = null;
             try {
                 if (bos != null) {
                     bos.close();
+                    bos = null;
                 }
             } catch (Exception e) {
             }
-            bos = null;
 
             if (tryAgain) {
                 try {

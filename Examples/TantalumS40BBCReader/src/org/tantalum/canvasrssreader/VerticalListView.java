@@ -171,7 +171,7 @@ public final class VerticalListView extends RSSListView {
         g.setColor(selected ? RSSReader.COLOR_HIGHLIGHTED_FOREGROUND : RSSReader.COLOR_FOREGROUND);
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         final int w = width - 2 * RSSReaderCanvas.MARGIN;
-        g.drawString(item.getTruncatedTitle(RSSReaderCanvas.FONT_TITLE, w), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN, Graphics.LEFT | Graphics.TOP);
+        g.drawString(item.getTitle(), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN, Graphics.LEFT | Graphics.TOP);
         g.setFont(RSSReaderCanvas.FONT_DATE);
         g.drawString(item.getPubDate(), RSSReaderCanvas.MARGIN, RSSReaderCanvas.MARGIN + RSSReaderCanvas.FONT_TITLE.getHeight(), Graphics.LEFT | Graphics.TOP);
 
