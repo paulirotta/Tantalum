@@ -22,9 +22,10 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.util;
+package org.tantalum.canvasrssreader;
 
 import javax.microedition.lcdui.Image;
+import org.tantalum.util.PoolingWeakHashCache;
 
 /**
  * Keep recent instances of images all of which are the same size in memory.

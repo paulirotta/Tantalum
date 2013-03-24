@@ -32,7 +32,6 @@ import javax.microedition.lcdui.Image;
 import org.tantalum.PlatformUtils;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.util.L;
-import org.tantalum.util.PoolingWeakImageHashCache;
 
 /**
  * View for rendering list of RSS items
