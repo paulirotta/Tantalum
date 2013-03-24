@@ -26,6 +26,8 @@ package org.tantalum.android;
 
 import org.tantalum.PlatformAdapter;
 import android.app.Activity;
+import android.graphics.BitmapFactory;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,6 +40,7 @@ import org.tantalum.PlatformUtils.HttpConn;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
+import org.tantalum.util.StringUtils;
 
 /**
  * Android-specific support routines for Tantalum
@@ -130,6 +133,12 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
 
     public ImageTypeHandler getImageTypeHandler() {
         return new AndroidImageTypeHandler();
+    }
+
+    public Object readImageFromJAR(final String jarPathAndFilename) throws IOException {
+        final byte[] bytes = StringUtils.readBytesFromJAR(jarPathAndFilename);
+
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
     }
 
     /**

@@ -26,79 +26,19 @@ package org.tantalum.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Vector;
-import javax.microedition.lcdui.Font;
-import org.tantalum.PlatformUtils;
 
 /**
- * Utility methods for String handling
+ * Utility methods for String operations such as extracting a String from the JAR
  *
  * @author ssaa, paul houghton
  */
 public class StringUtils {
 
-    private static StringUtils singleton;
-    private final static String ELIPSIS = "...";
-
-    private static synchronized StringUtils getStringUtils() {
-        if (singleton == null) {
-            singleton = new StringUtils();
-        }
-
-        return singleton;
+    private static final class StringUtilsHolder {
+        public static final StringUtils instance = new StringUtils();
     }
 
     private StringUtils() {
-    }
-
-    /**
-     * Truncates the string to fit the maxWidth. If truncated, an elipsis "..."
-     * is displayed to indicate this.
-     *
-     * @param str
-     * @param font
-     * @param maxWidth
-     * @return String - truncated string with ellipsis added to end of the
-     * string
-     */
-    public static String truncate(String str, final Font font, final int maxWidth) {
-        if (font.stringWidth(str) > maxWidth) {
-            final StringBuffer truncated = new StringBuffer(str);
-            while (font.stringWidth(truncated.toString()) > maxWidth) {
-                truncated.deleteCharAt(truncated.length() - 1);
-            }
-            truncated.delete(truncated.length() - ELIPSIS.length(), truncated.length());
-            truncated.append(ELIPSIS);
-            str = truncated.toString();
-        }
-
-        return str;
-    }
-
-    /**
-     * Split a string in to several lines of text which will display within a
-     * maximum width.
-     *
-     * @param vector
-     * @param text
-     * @param font
-     * @param maxWidth
-     */
-    public static void splitToLines(final Vector vector, final String text, final Font font, final int maxWidth) {
-        int lastSpace = 0;
-
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == ' ') {
-                lastSpace = i;
-            }
-            final int len = font.stringWidth(text.substring(0, i));
-            if (len > maxWidth) {
-                vector.addElement(text.substring(0, lastSpace + 1).trim());
-                splitToLines(vector, text.substring(lastSpace + 1), font, maxWidth);
-                return;
-            }
-        }
-        vector.addElement(text.trim());
     }
 
     /**
@@ -133,7 +73,7 @@ public class StringUtils {
      * @throws IOException
      */
     public static byte[] readBytesFromJAR(final String name) throws IOException {
-        return getStringUtils().doReadBytesFromJAR(name);
+        return StringUtilsHolder.instance.doReadBytesFromJAR(name);
     }
 
     /**
@@ -146,5 +86,5 @@ public class StringUtils {
     public static String readStringFromJAR(final String name) throws IOException {
         return new String(readBytesFromJAR(name));
     }
-    //TODO Add clean implementations of uuencode and uudecode
+    //TODO Add urlencode (uuencode) and urldecod (uudecode)
 }

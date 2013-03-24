@@ -24,6 +24,7 @@
  */
 package org.tantalum.j2me;
 
+import android.graphics.BitmapFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,6 +33,7 @@ import java.util.Vector;
 import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
 import javax.microedition.lcdui.Display;
+import javax.microedition.lcdui.Image;
 import javax.microedition.midlet.MIDlet;
 import org.tantalum.PlatformUtils;
 import org.tantalum.PlatformUtils.HttpConn;
@@ -39,6 +41,7 @@ import org.tantalum.PlatformAdapter;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
+import org.tantalum.util.StringUtils;
 
 /**
  * Utilities for support of each specific platform (J2ME, Android, ..)
@@ -138,6 +141,13 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
     public L getLog() {
         return log;
     }
+    
+    public Object readImageFromJAR(final String jarPathAndFilename) throws IOException {
+        final byte[] bytes = StringUtils.readBytesFromJAR(jarPathAndFilename);
+
+        return Image.createImage(bytes, 0, bytes.length);
+    }
+
 
     /**
      * A convenience class abstracting HTTP connection operations between

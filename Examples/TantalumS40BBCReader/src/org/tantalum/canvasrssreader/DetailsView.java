@@ -32,6 +32,7 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.j2me.J2MEFontUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.util.L;
@@ -45,6 +46,9 @@ import org.tantalum.util.StringUtils;
 public final class DetailsView extends View {
 
     public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.getInstance().getImageTypeHandler());
+    private static final J2MEFontUtils titleFontUtils = J2MEFontUtils.getFontUtils(RSSReaderCanvas.FONT_TITLE, "...");
+    private static final J2MEFontUtils descriptionFontUtils = J2MEFontUtils.getFontUtils(RSSReaderCanvas.FONT_DESCRIPTION, "...");
+
     private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
     private int contentHeight;
@@ -114,8 +118,7 @@ public final class DetailsView extends View {
 
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_FOREGROUND);
-        final Vector lines = new Vector();
-        StringUtils.splitToLines(lines, item.getTitle(), RSSReaderCanvas.FONT_TITLE, width - 2 * RSSReaderCanvas.MARGIN);
+        final Vector lines = titleFontUtils.splitToLines(item.getTitle(), width - 2 * RSSReaderCanvas.MARGIN);
         curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), lines);
 
         if (!canvas.isPortrait()) {
@@ -128,8 +131,7 @@ public final class DetailsView extends View {
         curY += RSSReaderCanvas.FONT_DATE.getHeight() << 1;
 
         g.setFont(RSSReaderCanvas.FONT_DESCRIPTION);
-        final Vector lines2 = new Vector();
-        StringUtils.splitToLines(lines2, item.getDescription(), RSSReaderCanvas.FONT_DESCRIPTION, width - 2 * RSSReaderCanvas.MARGIN);
+        final Vector lines2 = descriptionFontUtils.splitToLines(item.getDescription(), width - 2 * RSSReaderCanvas.MARGIN);
         curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), lines2);
 
         curY += RSSReaderCanvas.FONT_DESCRIPTION.getHeight();
