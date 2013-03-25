@@ -103,10 +103,20 @@ public final class PlatformUtils {
     }
 
     /**
-     * During startup, this is automatically called when you extend a
-     * platform-specific base class such as TantalumMIDlet or TantalumActivity.
-     * You do not need to extend these classes, you can call this method
-     * directly.
+     * During startup, specify the TantalumMIDlet or TantalumActivity that
+     * drives the Tantalum lifecycle.
+     *
+     * @param program
+     * @param numberOfWorkers
+     */
+    public void setProgram(final Object program, final int numberOfWorkers) {
+        setProgram(program, numberOfWorkers, 0);
+    }
+
+    /**
+     * During startup, specify the TantalumMIDlet or TantalumActivity that
+     * drives the Tantalum lifecycle. You do not need to extend these classes,
+     * you can call this method directly.
      *
      * Calling this method one time as the application starts initializes the
      * background Worker threads and provides hooks for orderly program shutdown
@@ -114,7 +124,7 @@ public final class PlatformUtils {
      *
      * @param program
      * @param numberOfWorkers
-     * @param logMode 
+     * @param logMode
      */
     public void setProgram(final Object program, final int numberOfWorkers, final int logMode) {
         if (this.numberOfWorkers != 0) {
