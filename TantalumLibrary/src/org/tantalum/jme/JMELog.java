@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Vector;
 import javax.microedition.io.CommConnection;
+import javax.microedition.io.Connection;
 import javax.microedition.io.Connector;
+import javax.microedition.io.file.FileConnection;
 import org.tantalum.util.L;
 
 /**
@@ -46,11 +48,34 @@ import org.tantalum.util.L;
  */
 public class JMELog extends L {
 
+    /**
+     * Send log output to the standard output device, usually your IDE log
+     * window
+     */
+    public static final int NORMAL_MODE = 0;
+    /**
+     * Open a serial port connection to terminal-emulator software opened to the
+     * USB serial port on your computer. On Windows open Control Panel - System
+     * - Devices to set the maximum baud rate, no parity and hardware CTS flow
+     * control and to the same in terminal emulation software such as Putty
+     *
+     * With the release build of the Tantalum library, this setting is ignored
+     * and there will not be any log output.
+     */
+    public static final int USB_SERIAL_PORT_MODE = 1;
+    /**
+     * Store the most recent run log data as "tantalum.log" on the phone's
+     * memory card in the root directory.
+     *
+     * With the release build of the Tantalum library, this setting is ignored
+     * and there will not be any log output.
+     */
+    public static final int MEMORY_CARD_MODE = 2;
     private final OutputStream os;
 //#mdebug
     private final byte[] CRLF = "\r\n".getBytes();
     private final Vector byteArrayQueue = new Vector();
-    private final JMELog.UsbWriter usbWriter;
+    private final JMELog.LogWriter usbWriter;
 //#enddebug    
 
     /**
@@ -63,26 +88,56 @@ public class JMELog extends L {
      *
      * @param routeDebugOutputToSerialPort
      */
-    public JMELog(final boolean routeDebugOutputToSerialPort) {
+    public JMELog(final int logMode) {
         OutputStream s = null;
 //#mdebug
-        if (routeDebugOutputToSerialPort) {
-            JMELog.UsbWriter writer = null;
-            try {
+        String uri = null;
+        JMELog.LogWriter writer = null;
+        switch (logMode) {
+            case NORMAL_MODE:
+                break;
+
+            case USB_SERIAL_PORT_MODE:
                 System.out.println("Routing debug output to USB serial port");
-                writer = new JMELog.UsbWriter();
-                s = writer.getOutputStream();
-                new Thread(writer).start();
-            } catch (IOException ex) {
-                System.out.println("Usb debug output error: " + ex);
-            }
-            usbWriter = writer;
-        } else {
-            usbWriter = null;
+                final String commPort = System.getProperty("microedition.commports");
+                uri = "comm:" + commPort;
+                break;
+
+
+            case MEMORY_CARD_MODE:
+                final String memoryCardPath = System.getProperty("fileconn.dir.memorycard");
+                uri = memoryCardPath + "tantalum.log";
+                System.out.println("Routing debug output to memory card log file: " + uri);
+                break;
+
+            default:
+                throw new IllegalArgumentException("Log mode must be one of the pre-defined constants such as JMELog.NORMAL_LOG_MODE");
         }
+        try {
+            writer = initWriter(uri, logMode == USB_SERIAL_PORT_MODE);
+            if (writer != null) {
+                s = writer.getOutputStream();
+            }
+        } catch (IOException ex) {
+            System.out.println("Debug output setup error: " + ex);
+        }
+        usbWriter = writer;
 //#enddebug
         os = s;
     }
+
+//#mdebug
+    private JMELog.LogWriter initWriter(final String uri, final boolean serialPortMode) throws IOException {
+        JMELog.LogWriter writer = null;
+
+        if (uri != null) {
+            writer = new JMELog.LogWriter(uri, serialPortMode);
+            new Thread(writer).start();
+        }
+
+        return writer;
+    }
+//#enddebug
 
     /**
      * Add to the log a messsage stored in a StringBuffer with optional error or
@@ -100,7 +155,8 @@ public class JMELog extends L {
         if (os != null) {
             byteArrayQueue.addElement(sb.toString().getBytes());
             synchronized (L.class) {
-                L.class.notifyAll();
+                L.class
+                        .notifyAll();
             }
         } else {
             synchronized (L.class) {
@@ -116,12 +172,15 @@ public class JMELog extends L {
      */
     protected void close() {
 //#mdebug
-        final JMELog.UsbWriter writer = usbWriter;
+        final JMELog.LogWriter writer = usbWriter;
+
+
 
         if (writer != null) {
             synchronized (L.class) {
                 writer.shutdownStarted = true;
-                L.class.notifyAll();
+                L.class
+                        .notifyAll();
             }
 
             // Give the queue time to flush final messages
@@ -138,18 +197,29 @@ public class JMELog extends L {
     }
 
 //#mdebug
-    private final class UsbWriter implements Runnable {
+    private final class LogWriter implements Runnable {
 
         boolean shutdownStarted = false;
         boolean shutdownComplete = false;
-        private final CommConnection comm;
+        private final Connection conn;
         private final OutputStream os;
 
-        public UsbWriter() throws IOException {
-            final String commPort = System.getProperty("microedition.commports");
-
-            comm = (CommConnection) Connector.open("comm:" + commPort);
-            os = comm.openOutputStream();
+        public LogWriter(final String uri, final boolean serialPortMode) throws IOException {
+            if (serialPortMode) {
+                final CommConnection connection = (CommConnection) Connector.open(uri);
+                os = connection.openOutputStream();
+                conn = connection;
+            } else {
+                final FileConnection connection = (FileConnection) Connector.open("file:///CFCard/newfile.txt", Connector.READ_WRITE);
+                if (connection.exists()) {
+                    System.out.println("Log file exists on the memory card, clearing old data... " + uri);
+                    connection.truncate(0);
+                } else {
+                    connection.create();  // 
+                }
+                os = connection.openOutputStream();
+                conn = connection;
+            }
         }
 
         public OutputStream getOutputStream() {
@@ -178,7 +248,7 @@ public class JMELog extends L {
                 } catch (IOException ex) {
                 }
                 try {
-                    comm.close();
+                    conn.close();
                 } catch (IOException ex) {
                 }
                 synchronized (this) {

@@ -114,9 +114,9 @@ public final class PlatformUtils {
      *
      * @param program
      * @param numberOfWorkers
-     * @param routeDebugOutputToSerialPort
+     * @param logMode 
      */
-    public void setProgram(final Object program, final int numberOfWorkers, final boolean routeDebugOutputToSerialPort) {
+    public void setProgram(final Object program, final int numberOfWorkers, final int logMode) {
         if (this.numberOfWorkers != 0) {
             throw new UnsupportedOperationException("You can only call PlatformUtils.getInstance().setProgram() one time per application");
         }
@@ -141,7 +141,7 @@ public final class PlatformUtils {
             if (Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(program.getClass())
                     || program.getClass().getName().toLowerCase().indexOf("test") > 0) {
                 platform = PLATFORM_JME;
-                platformAdapter = new JMEPlatformAdapter(routeDebugOutputToSerialPort);
+                platformAdapter = new JMEPlatformAdapter(logMode);
                 init();
                 return;
             }

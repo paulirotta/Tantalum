@@ -17,7 +17,7 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
      * than 2 is not allowed and more than 4 probably introduces too much context
      * switching between threads.
      */
-    private static final int NUMBER_OF_WORKER_THREADS = 2;
+    private static final int NUMBER_OF_WORKER_THREADS = 4;
     /*
      * Change to true if you want debug output from the phone sent to the USB serial
      * port for display on a terminal.

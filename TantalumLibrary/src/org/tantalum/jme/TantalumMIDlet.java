@@ -49,7 +49,7 @@ public abstract class TantalumMIDlet extends MIDlet {
      * too much network contention when there are parallel HTTP GET operations,
      * try reducing the number of threads to 2.
      */
-    protected static final int DEFAULT_NUMBER_OF_WORKER_THREADS = 2;
+    protected static final int DEFAULT_NUMBER_OF_WORKER_THREADS = 4;
 
     /**
      * Create a MIDlet that hooks into the MIDlet life-cycle events to
@@ -58,7 +58,7 @@ public abstract class TantalumMIDlet extends MIDlet {
      * @param numberOfWorkerThreads
      */
     protected TantalumMIDlet(final int numberOfWorkerThreads) {
-        this(numberOfWorkerThreads, false);
+        this(numberOfWorkerThreads, JMELog.NORMAL_MODE);
     }
     /**
      * If you create a MIDlet constructor, you must call super() as the first
@@ -69,10 +69,10 @@ public abstract class TantalumMIDlet extends MIDlet {
      * TantalumMIDlet.DEFAULT_NUMBER_OF_WORKER_THREADS
      * @param routeDebugOutputToUsbSerialPort 
      */
-    protected TantalumMIDlet(final int numberOfWorkerThreads, final boolean routeDebugOutputToUsbSerialPort) {
+    protected TantalumMIDlet(final int numberOfWorkerThreads, final int logMode) {
         super();
 
-        PlatformUtils.getInstance().setProgram(this, numberOfWorkerThreads, routeDebugOutputToUsbSerialPort);
+        PlatformUtils.getInstance().setProgram(this, numberOfWorkerThreads, logMode);
     }
 
     /**

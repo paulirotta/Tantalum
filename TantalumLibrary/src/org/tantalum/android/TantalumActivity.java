@@ -25,7 +25,6 @@
 package org.tantalum.android;
 
 import android.app.Activity;
-import android.os.Bundle;
 import org.tantalum.PlatformUtils;
 
 /**
@@ -64,7 +63,7 @@ public abstract class TantalumActivity extends Activity {
     public TantalumActivity(final int numberOfWorkerThreads) {
         super();
 
-        PlatformUtils.getInstance().setProgram(this, numberOfWorkerThreads, false);
+        PlatformUtils.getInstance().setProgram(this, numberOfWorkerThreads, 0);
     }
 
     /**

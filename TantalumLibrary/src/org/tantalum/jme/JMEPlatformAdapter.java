@@ -24,7 +24,6 @@
  */
 package org.tantalum.jme;
 
-import android.graphics.BitmapFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -70,9 +69,9 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
      * may ignore this parameter because they have their own mechanism for
      * remote debugging.
      */
-    public JMEPlatformAdapter(final boolean routeDebugOutputToSerialPort) {
+    public JMEPlatformAdapter(final int logMode) {
         display = Display.getDisplay((MIDlet) PlatformUtils.getInstance().getProgram());
-        log = new JMELog(routeDebugOutputToSerialPort);
+        log = new JMELog(logMode);
     }
 
     /**

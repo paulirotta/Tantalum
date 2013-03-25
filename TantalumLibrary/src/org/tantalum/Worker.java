@@ -41,7 +41,7 @@ final class Worker extends Thread {
      */
     private static final Vector q = new Vector();
     private static Worker[] workers;
-    private static final int MAX_SERIAL_Q_LENGTH_BEFORE_HIGHT_PRIORITY = 4;
+    private static final int MAX_SERIAL_Q_LENGTH_BEFORE_SERIAL_Q_IS_HIGHEST_PRIORITY_FOR_WORKER_0 = 0;
     /*
      * Higher priority forkSerial of tasks to be done only by this thread, in the
      * exact order they appear in the serialQ. Other threads which don't have
@@ -356,7 +356,7 @@ final class Worker extends Thread {
                         currentTask = null;
                         final boolean qIsEmpty = q.isEmpty();
 
-                        if (serialQ.isEmpty() || (!qIsEmpty && serialQ.size() < MAX_SERIAL_Q_LENGTH_BEFORE_HIGHT_PRIORITY)) {
+                        if (serialQ.isEmpty() || (!qIsEmpty && serialQ.size() < MAX_SERIAL_Q_LENGTH_BEFORE_SERIAL_Q_IS_HIGHEST_PRIORITY_FOR_WORKER_0)) {
                             if (!qIsEmpty) {
                                 // Normal compute, hardened against async interrupt
                                 try {
