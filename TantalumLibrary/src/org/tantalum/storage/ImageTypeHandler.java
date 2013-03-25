@@ -53,7 +53,7 @@ public abstract class ImageTypeHandler implements DataTypeHandler {
     /**
      * Select the image resize algorithm from among the cross-platform algorithms
      * available in ImageUtils. Some produce faster results, some sharper, some
-     * smoother, some support alpha blending. The default value for J2ME is
+     * smoother, some support alpha blending. The default value for JME is
      * ImageUtils.FIVE_POINT_BLEND which is fast and smooth and supports alpha
      * translucency. The Android implementation does not implement scaling. It
      * recommends the default Android use of native scaling algorithms

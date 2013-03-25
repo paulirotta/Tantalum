@@ -71,9 +71,6 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
         if (ae.getCommand() != null) {
             String cmdStr = ae.getCommand().getCommandName();
 
-            if (cmdStr.equals("Settings")) {
-                midlet.getSettingsForm().show();
-            }
             if (cmdStr.equals("Reload")) {
                 reload(true);
             }

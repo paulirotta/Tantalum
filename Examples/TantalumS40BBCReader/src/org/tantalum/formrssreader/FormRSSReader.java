@@ -25,7 +25,7 @@
 package org.tantalum.formrssreader;
 
 import javax.microedition.lcdui.*;
-import org.tantalum.j2me.TantalumMIDlet;
+import org.tantalum.jme.TantalumMIDlet;
 
 /**
  * @author vand

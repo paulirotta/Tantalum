@@ -154,10 +154,22 @@ public class TaskTest extends TestCase {
                 return (String) in + " rabbit";
             }
         };
+        Task instance2 = new Task("white") {
+            protected Object exec(Object in) {
+                return (String) in + " rabbit";
+            }
+        };
         try {
-            String out = (String) instance.get();
+            try {
+                instance.join(400);
+                fail("join() or get() to a Task that was not fork()ed should timeout");
+            } catch (TimeoutException e) {
+                // Normal execution path
+            }
+
+            String out = (String) instance2.fork().get();
             assertEquals("white rabbit", out);
-            assertEquals("status is EXEC_FINISHED", Task.FINISHED, instance.getStatus());
+            assertEquals("status is FINISHED", Task.FINISHED, instance.getStatus());
         } catch (Exception e) {
             fail("Exception while doing execution tests: " + e);
         }
@@ -312,24 +324,38 @@ public class TaskTest extends TestCase {
      */
     public void testSetResult() throws AssertionFailedException {
         System.out.println("setResult");
-        Task instance = new Task() {
-            protected Object exec(Object in) {
-                return "result";
-            }
-        };
-        instance.setValue("prezult");
-        assertEquals("prezult", instance.getValue());
-        instance.fork();
         try {
-            assertEquals("result", instance.get());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            fail("Can not testSetResult(): " + ex);
+            Task instance = new Task() {
+                protected Object exec(Object in) {
+                    return "result";
+                }
+            };
+            Task instance2 = new Task() {
+                protected Object exec(Object in) {
+                    return "result";
+                }
+            };
+            Task instance3 = new Task() {
+                protected Object exec(Object in) {
+                    return "result";
+                }
+            };
+            instance.set("prezult");
+            assertEquals("prezult", instance.get());
+            instance2.fork();
+            try {
+                assertEquals("result", instance2.get());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                fail("Can not testSetResult(): " + ex);
+            }
+            instance3.set("zult");
+            assertEquals("zult", instance3.get());
+            instance.set(null);
+            assertNull(instance3.get());
+        } catch (Exception e) {
+            fail("Exception in testSetResult(): " + e);
         }
-        instance.setValue("zult");
-        assertEquals("zult", instance.getValue());
-        instance.setValue(null);
-        assertNull(instance.getValue());
     }
 
     /**
@@ -360,9 +386,7 @@ public class TaskTest extends TestCase {
             }
         }).fork();
         Thread.sleep(100);
-        assertEquals("Forked task instance is READY", Task.READY, instance.getStatus());
-        instance.notifyTaskForked();
-        assertEquals("Forked task instance is EXEC_PENDING", Task.PENDING, instance.getStatus());
+        assertEquals("Forked task instance is PENDING", Task.PENDING, instance.getStatus());
         t2.cancel(true, "testing");
     }
 
@@ -378,11 +402,15 @@ public class TaskTest extends TestCase {
                 return in;
             }
         };
-        assertEquals("start", instance.getValue());
-        instance.setValue("next");
+        final Task instance2 = new Task("start") {
+            protected Object exec(Object in) {
+                return in;
+            }
+        };
         try {
-            instance.get();
-            assertEquals("next", instance.getValue());
+            assertEquals("start", instance.get());
+            instance2.set("next");
+            assertEquals("next", instance2.get());
         } catch (Exception e) {
             fail("Exception in testGetResult: " + e);
         }
@@ -404,7 +432,7 @@ public class TaskTest extends TestCase {
         this.assertTrue(result_1.length() > 5);
     }
 
-     /**
+    /**
      * Test of testCancel method, of class Task.
      *
      * @throws AssertionFailedException
@@ -482,6 +510,7 @@ public class TaskTest extends TestCase {
             }
         };
         final Task instance5 = new Task("instance5") {
+            @Override
             protected Object exec(Object in) {
                 try {
                     instance4.join(400);
@@ -507,11 +536,15 @@ public class TaskTest extends TestCase {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        assertEquals("I AM DONE", testCancelRunsToEnd.getValue());
-        assertEquals(false, testCancelRunsToEnd.cancel(true, "testing"));
-        assertEquals(false, testCancelRunsToEnd.cancel(false, "testing"));
-        for (int i = 0; i < errors.size(); i++) {
-            fail((String) errors.elementAt(i));
+        try {
+            assertEquals("I AM DONE", testCancelRunsToEnd.get());
+            assertEquals(false, testCancelRunsToEnd.cancel(true, "testing"));
+            assertEquals(false, testCancelRunsToEnd.cancel(false, "testing"));
+            for (int i = 0; i < errors.size(); i++) {
+                fail((String) errors.elementAt(i));
+            }
+        } catch (Exception e) {
+            fail("Problem in testCancel: " + e);
         }
     }
 
@@ -560,11 +593,12 @@ public class TaskTest extends TestCase {
     public void testDoInBackground() throws AssertionFailedException {
         System.out.println("doInBackground");
         final Task instance = new Task("ca") {
+            @Override
             protected Object exec(Object in) {
                 return (String) in + "tty";
             }
         };
-        instance.setValue("be");
+        instance.set("be");
         try {
             assertEquals("betty", (String) instance.get());
         } catch (Exception ex) {
@@ -595,22 +629,24 @@ public class TaskTest extends TestCase {
             }
         };
         final Task instanceA = new Task("A") {
+            @Override
             protected Object exec(Object in) {
                 return (String) in + "B";
             }
         };
         final Task instance5 = new Task("5") {
+            @Override
             protected Object exec(Object in) {
                 return (String) in + "6";
             }
         };
         final Task instance6 = new Task("BAD") {
+            @Override
             protected Object exec(Object in) {
                 return in + "7";
             }
         };
         try {
-            assertEquals("bad", (String) instance2.getValue());
             instance.chain(instance2).chain(instance3);
             instance.fork().join(200);
             assertEquals("12", (String) instance.get());
@@ -659,7 +695,7 @@ public class TaskTest extends TestCase {
                 return in;
             }
         };
-        assertEquals(Task.READY, instanceA.getStatus());
+        assertEquals(Task.PENDING, instanceA.getStatus());
         instance2.fork();
         instance3.fork();
         instanceA.fork();
@@ -729,11 +765,11 @@ public class TaskTest extends TestCase {
             task3.fork();
             Task[] tasks = {task1, task2};
             Task.joinAll(tasks, 102);
-            assertEquals("1234", (String) task1.getValue() + (String) task2.getValue());
+            assertEquals("1234", (String) task1.get() + (String) task2.get());
 
             Task[] moreTasks = {task3, task4};
             Task.joinAll(moreTasks, 102);
-            assertEquals("A2B3", (String) task3.getValue() + (String) task4.getValue());
+            assertEquals("A2B3", (String) task3.get() + (String) task4.get());
 
             Task[] exceptionTasks1 = {task1, task2, task3, task4, task5a};
             try {
@@ -787,14 +823,18 @@ public class TaskTest extends TestCase {
     public void testCancelSelf() throws AssertionFailedException {
         System.out.println("cancelSelf");
         final Task task1a = new Task("1") {
+            @Override
             protected Object exec(Object in) {
                 return (String) in + "2";
             }
 
-            protected void onPostExecute(Object result) {
-                setValue(result + "UI");
-                // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
-                cancel(true, "testing");
+            public void run(Object result) {
+                try {
+                    // TEST FOR LOGIC ERROR- you can not set() after background execution completes
+                    set(result + "UI");
+                    fail("set() after run should have been stopped");
+                } catch (Exception e) {
+                }
             }
         };
         final Task task1b = new Task("3") {
@@ -802,61 +842,31 @@ public class TaskTest extends TestCase {
                 return (String) in + "4";
             }
 
-            protected void onPostExecute(Object result) {
+            public void run(Object result) {
                 // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
-                setValue(result + "UI");
-                cancel(true, "testing");
+                try {
+                    cancel(true, "testing");
+                    fail("cancel() after run should have been stopped");
+                } catch (Exception e) {
+                }
             }
         };
         final Task task2 = new Task("5") {
+            @Override
             protected Object exec(Object in) {
                 cancel(true, "testing");
 
                 return in + "6";
             }
-
-            protected void onPostExecute(Object result) {
-                setValue(result + "UI");
-            }
         };
-        final Task task3a = new Task("7") {
-            protected Object exec(Object in) {
-                try {
-                    Thread.sleep(200);
-                } catch (Exception e) {
-                }
-                return (String) in + "8";
-            }
-
-            protected void onPostExecute(Object result) {
-                // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
-                cancel(false, "testing");
-                setValue(result + "UI");
-            }
-        };
-        final Task task3b = new Task("9") {
-            protected Object exec(Object in) {
-                try {
-                    Thread.sleep(200);
-                } catch (Exception e) {
-                }
-                return (String) in + "A";
-            }
-
-            protected void onPostExecute(Object result) {
-                // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
-                cancel(false, "testing");
-                setValue(result + "UI");
-            }
-        };
-        final Task task4a = new Task("B") {
+        final Task task3 = new Task("B") {
             protected Object exec(Object in) {
                 cancel(false, "testing");
 
                 return in + "C";
             }
         };
-        final Task task4b = new Task("D") {
+        final Task task4 = new Task("D") {
             protected Object exec(Object in) {
                 cancel(false, "testing");
 
@@ -865,26 +875,20 @@ public class TaskTest extends TestCase {
         };
 
         try {
-            task1a.fork().join();
+            task1a.fork(Task.UI).join();
             assertEquals("task1a was not EXEC_FINISHED", Task.FINISHED, task1a.getStatus());
 
-            task1b.fork().join();
+            task1b.fork(Task.NORMAL_PRIORITY | Task.UI).join();
             assertEquals("task1b was not EXEC_FINISHED", Task.FINISHED, task1b.getStatus());
 
             task2.fork().join();
             assertEquals("task2 should not have been CANCELED- you can not cancel() yourself", Task.FINISHED, task2.getStatus());
 
-            task3a.fork().join();
-            assertEquals("task3a should not have been CANCELED- you can not cancel() yourself", Task.FINISHED, task3a.getStatus());
-
-            task3b.fork().join();
-            assertEquals("task3b should not have been CANCELED- you can not cancel() yourself", Task.FINISHED, task3b.getStatus());
-
-            task4a.fork().join();
-            assertNotEquals("task4a should not have been CANCELED", Task.CANCELED, task4a.getStatus());
+            task3.fork().join();
+            assertNotEquals("task4a should not have been CANCELED", Task.CANCELED, task3.getStatus());
 
             try {
-                task4b.fork().join();
+                task4.fork().join();
                 fail("Task 4b- join() should throw ClassCastException if Task (not UITask)");
             } catch (ClassCastException e) {
                 // Normal execution path
@@ -898,22 +902,28 @@ public class TaskTest extends TestCase {
     public void testCancelThread() throws AssertionFailedException {
         System.out.println("cancelSelf");
         final Task task1 = new Task("1") {
+            @Override
             protected Object exec(Object in) {
                 assertNotEquals("doInBackground() blue must not run on UI thread", true, PlatformUtils.getInstance().isUIThread());
                 cancel(false, "Test cancel thread");
                 return (String) in + "2";
             }
 
+            @Override
             protected void onCanceled() {
-                assertEquals("onCanceld() blue must run on UI thread", true, PlatformUtils.getInstance().isUIThread());
-                setValue("blue");
+                assertEquals("onCanceled() blue must run on UI thread", true, PlatformUtils.getInstance().isUIThread());
+                try {
+                    set("blue");
+                    fail("Can not set(\"blue\") in onCanceled()");
+                } catch (Exception e) {
+                }
             }
         };
 
         try {
             task1.fork();
             Thread.sleep(200);
-            assertEquals("fork()ed task setStatus(Task.CANCELED) did not run onCanceled()", "blue", task1.getValue());
+            assertEquals("fork()ed task setStatus(Task.CANCELED) did not run onCanceled()", "blue", task1.get());
         } catch (Exception e) {
             e.printStackTrace();
             fail("Can not testCancelThread()" + e);

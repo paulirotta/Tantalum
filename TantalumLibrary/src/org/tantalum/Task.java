@@ -58,9 +58,9 @@ import org.tantalum.util.L;
  *
  * A
  * <code>Task</code> which has
- * <code>Task.UI_PRIORITY</code> will, after successful completion on a
- * background worker thread, be forked to the platform's UI Thread after
- * successful completion. The UI Thread will then call their
+ * <code>Task.UI</code> will, after successful completion on a background worker
+ * thread, be forked to the platform's UI Thread after successful completion.
+ * The UI Thread will then call their
  * <code>run()</code> method for synchronous, serialized interface updates.
  *
  * A
@@ -86,22 +86,25 @@ import org.tantalum.util.L;
  */
 public abstract class Task implements Runnable {
 
+    static final int PRIORITY_MASK = 0x000F;
+    private static final int UI_PRIORITY_MASK = 0xFFF0;
     /**
-     * Start the task as soon as possible, exactly like
-     * <code>HIGH_PRIORITY</code>.
+     * The task is queued at
+     * <code>HIGH_PRIORITY</code> to be the next task started as with
+     * <code>HIGH_PRIORITY</code>. You may alternately binary "or" this value
+     * with any other state. For example,
+     * <code>myTask.fork(Task.SERIAL | Task.UI)</code>
      *
      * After the
      * <code>Task</code> completes successfully and enters the
      * <code>FINISHED</code> state,
-     * <code>Task.run()</code> will be forked to the UI thread.
-     *
-     * All
+     * <code>Task.run()</code> will be forked to the UI thread. All
      * <code>Task</code>s at this priority must therefore override
      * <code>run()</code>, and most will want the to use the result available
      * with
      * <code>Task.getValue()</code>.
      */
-    public static final int UI_PRIORITY = 3;
+    public static final int UI = 0x10;
     /**
      * Start the task as soon as possible. The
      * <code>fork()</code> operation will place this as the next Task to be
@@ -113,24 +116,14 @@ public abstract class Task implements Runnable {
      * expects a fast response regardless of previous incomplete requests they
      * may have made.
      */
-    public static final int HIGH_PRIORITY = 2;
+    public static final int HIGH_PRIORITY = 5;
     /**
      * Start execution after any previously
      * <code>fork()</code>ed work, first in is usually first out, however
      * multiple Workers in parallel means that execution start and completion
      * order is not guaranteed.
      */
-    public static final int NORMAL_PRIORITY = 0;
-    /**
-     * All items with are executed in guaranteed sequence on a single background
-     * worker thread. This is normally used for persistence operations like
-     * flash write. Note that in most other cases it is preferable for you to
-     * sequence items explicitly within a single Task or by the sequence with
-     * which one
-     * <code>Task</code> chains to or forks other
-     * <code>Task</code>s.
-     */
-    public static final int SERIAL_PRIORITY = -1;
+    public static final int NORMAL_PRIORITY = 4;
     /**
      * Start execution if there is nothing else for the Workers to do. At least
      * one Worker will always be left idle for immediate activation if only
@@ -138,7 +131,23 @@ public abstract class Task implements Runnable {
      * for background tasks such as pre-fetch and pre-processing of data that
      * doe not affect the current user view.
      */
-    public static final int LOW_PRIORITY = -2;
+    public static final int LOW_PRIORITY = 3;
+    /**
+     * All
+     * <code>SERIAL</code> tasks are executed on a single thread for guaranteed
+     * sequential execution in the order in which they are
+     * <code>fork()</code>ed.
+     *
+     * This is normally used for persistence operations like flash write. In the
+     * case of cached content it is not necessary to read in serial order since
+     * the heap memory cache will shield out-of-order read inconsistencies which
+     * would otherwise occur. Note that in some cases it is preferable for you
+     * to sequence items explicitly within a single Task or by the sequence with
+     * which one
+     * <code>Task</code> chains to or forks other
+     * <code>Task</code>s.
+     */
+    public static final int SERIAL = 2;
     /**
      * Start execution when
      * <code>PlatformUtils.getInstance().shutdown()</code> is called, and do not
@@ -152,7 +161,8 @@ public abstract class Task implements Runnable {
      * the application, but since this can never be guaranteed to be the only
      * shutdown sequence, you must design for quick shutdown.
      */
-    public static final int SHUTDOWN_PRIORITY = -3;
+    public static final int SHUTDOWN = 1;
+    private static final int PRIORITY_NOT_SET = Integer.MIN_VALUE;
     /**
      * While holding no other locks, synchronize on the following during
      * critical code sections if your processing routine will temporarily need a
@@ -171,24 +181,15 @@ public abstract class Task implements Runnable {
      */
     public static final int PENDING = 0;
     /**
-     * status: exec() has started but not yet finished
-     */
-    public static final int STARTED = 1;
-    /**
      * status: exec() has finished. If this is a UI thread there still may be
      * pending activity for the user interface thread
      */
-    public static final int FINISHED = 2;
+    public static final int FINISHED = 1;
     /**
      * state: cancel() was called
      */
-    public static final int CANCELED = 4;
-    /**
-     * status: the Task has been created, but fork() has not yet been called to
-     * queue this for execution on a background Worker thread
-     */
-    public static final int READY = 6;
-    private static final String[] STATUS_STRINGS = {"EXEC_PENDING", "EXEC_STARTED", "EXEC_FINISHED", "UI_RUN_FINISHED", "CANCELED", "EXCEPTION", "READY"};
+    public static final int CANCELED = 2;
+    private static final String[] STATUS_STRINGS = {"PENDING", "FINISHED", "CANCELED"};
     /**
      * Task will run without interruption or dequeue during shutdown
      */
@@ -221,11 +222,11 @@ public abstract class Task implements Runnable {
      * using Worker.queueShutdownTask(Task).
      */
     public static final int DEQUEUE_OR_CANCEL_ON_SHUTDOWN = 3;
-    private Object value; // Always access within a synchronized block
+    private Object value = null; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants
      */
-    protected int status = READY; // Always access within a synchronized block
+    protected int status = PENDING; // Always access within a synchronized block
     /**
      * All tasks are removed from the queue without notice automatically on
      * shutdown unless specifically marked. For example, writing to flash memory
@@ -239,7 +240,7 @@ public abstract class Task implements Runnable {
      * will have cancel() called to notify that they will not execute.
      */
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
-    private int chainedTaskForkPriority = Task.NORMAL_PRIORITY; // Run afterwords, passing output as input parameter
+    private int forkPriority = Task.PRIORITY_NOT_SET; // Access only in synchronized(MUTEX) block
     private final Object MUTEX = new Object();
 
     /**
@@ -252,7 +253,6 @@ public abstract class Task implements Runnable {
      *
      */
     public Task() {
-        value = null;
     }
 
     /**
@@ -260,12 +260,10 @@ public abstract class Task implements Runnable {
      * <code>Task</code> should be forked within a chain if the previous
      * <code>Task</code> completes normally.
      *
-     * @param forkPriority
+     * @param priority
      */
-    public Task(final int forkPriority) {
-        this();
-
-        setForkPriority(forkPriority);
+    public Task(final int priority) {
+        setForkPriority(priority);
     }
 
     /**
@@ -274,10 +272,10 @@ public abstract class Task implements Runnable {
      * The default action is for the output value to be the same as the input
      * value, however many Tasks will return their own value.
      *
-     * @param in
+     * @param initialValue
      */
-    public Task(final Object in) {
-        setValue(in);
+    public Task(final Object initialValue) {
+        set(initialValue);
     }
 
     /**
@@ -321,22 +319,6 @@ public abstract class Task implements Runnable {
     }
 
     /**
-     * Check status of the object to ensure it can be queued at this time (it is
-     * not already queued and running)
-     *
-     * @throws IllegalStateException if the task is currently queued or
-     * currently running
-     */
-    public final void notifyTaskForked() throws IllegalStateException {
-        synchronized (MUTEX) {
-            if (status < FINISHED) {
-                throw new IllegalStateException("Task can not be re-forked, wait for previous exec to complete: status=" + getStatusString());
-            }
-            setStatus(PENDING);
-        }
-    }
-
-    /**
      * Get the current value of this Task. Access is synchronized and execution
      * is not forced execution. If the task has not yet been executed, this will
      * return the input value. If the task has been executed, this will be the
@@ -353,8 +335,14 @@ public abstract class Task implements Runnable {
     /**
      * Execute synchronously if needed and return the resulting value.
      *
-     * This is similar to join() with a very long timeout. Note that a
-     * MAX_TIMEOUT of 2 minutes is enforced.
+     * This is similar to
+     * <code>join()</code> with a very long timeout. Note that a
+     * <code>MAX_TIMEOUT</code> of 2 minutes is enforced. As with
+     * <code>join()</code>, you must
+     * <code>fork()</code> or a preceeding
+     * <code>Task</code>in a chain before you
+     * <code>get()</code> or the worker thread will erroneously assume this is
+     * <code>fork()</code>ed along a chain and may wait the full timeout.
      *
      * <code>Task</code> value is final and immutable after execution completes.
      * You may safely use the Task as a value object. Since a
@@ -381,31 +369,6 @@ public abstract class Task implements Runnable {
     }
 
     /**
-     * Override the current value of the task with a new value
-     *
-     * Note that this is not used in normal operations. Usually you set the
-     * value when creating the task, or pass in the value as an argument from
-     * the previous Task in a chain. It can be useful to update a Task not yet
-     * forked, or to override the normal result of a Task.
-     *
-     * Because you face a race condition when setting the value on Task which is
-     * currently forked or already running, you will receive an
-     * IllegalStateException. Only use this method before forking and after
-     * execution has completed.
-     *
-     * @param value
-     */
-    public final void set(final Object value) {
-        synchronized (MUTEX) {
-            if (status < AsyncTask.FINISHED) {
-                throw new IllegalStateException("Unpredictable run sequence- can not set Task value when status is " + status);
-            }
-
-            this.value = value;
-        }
-    }
-
-    /**
      * Set the return value of this task during or at the end of execution.
      *
      * Note that although you can use this to set or override the initial input
@@ -415,7 +378,7 @@ public abstract class Task implements Runnable {
      * @param value
      * @return
      */
-    public final Object setValue(final Object value) {
+    public final Object set(final Object value) {
         synchronized (MUTEX) {
             if (this.status >= Task.FINISHED) {
                 throw new IllegalStateException("Can not setValue(), Task value is final after execution: " + this);
@@ -433,9 +396,25 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final Task fork() {
-        Worker.fork(this, getForkPriority());
+        return doFork(getPriorityDuringFork());
+    }
 
-        return this;
+    /**
+     * Get the priority. If it has not yet been asserted, set it to default.
+     *
+     * Since priority can only be set once, this and PRIORITY_NOT_SET help allow
+     * checks to prevent common multi-chain-or-fork errors.
+     *
+     * @return
+     */
+    private int getPriorityDuringFork() {
+        synchronized (MUTEX) {
+            if (forkPriority == Task.PRIORITY_NOT_SET) {
+                setForkPriority(Task.NORMAL_PRIORITY);
+            }
+
+            return forkPriority;
+        }
     }
 
     /**
@@ -448,7 +427,13 @@ public abstract class Task implements Runnable {
     public final Task fork(final int priority) {
         setForkPriority(priority);
 
-        return fork();
+        return doFork(priority);
+    }
+
+    private Task doFork(final int taskPriority) {
+        Worker.fork(this, taskPriority);
+
+        return this;
     }
 
     /**
@@ -475,6 +460,14 @@ public abstract class Task implements Runnable {
      * UITask. You will receive a debug warning, but are not prevented from
      * making longer join() calls from the user interface Thread.
      *
+     * If you call join() on chain()ed Task, note that there is by definition no
+     * out-of-order execution so you must wait for every previous step of the
+     * chain() to start and complete at their designated priorities.
+     *
+     * If you call join() a Task.SERIAL priority Task, note that there is by
+     * definition no out-of-order execution so you must wait for normal
+     * completion at the designated priority.
+     *
      * @param timeout in milliseconds
      * @return final evaluation result of the Task
      * @throws InterruptedException - task was running when it was explicitly
@@ -489,7 +482,7 @@ public abstract class Task implements Runnable {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
         //#mdebug
-        if (PlatformUtils.getInstance().isUIThread() && timeout > 100) {
+        if (PlatformUtils.getInstance().isUIThread() && timeout > 200) {
             L.i("WARNING- slow Task.join() on UI Thread", "timeout=" + timeout + " " + this);
         }
         //#enddebug
@@ -501,43 +494,33 @@ public abstract class Task implements Runnable {
             L.i("Start join", "timeout=" + timeout + " " + this);
             switch (status) {
                 case PENDING:
-                    //#debug
-                    L.i("Start join of EXEC_PENDING task", "timeout=" + timeout + " " + this.toString());
-                    if (Worker.tryUnfork(this)) {
-                        doExec = true;
-                        break;
-                    }
-                // Continue to next state
-                case READY:
-                    if (status == READY) {
-                        doExec = true;
-                        break;
-                        //Worker.fork(this, Task.HIGH_PRIORITY);
-                    }
-                // Continue to next state
-                case STARTED:
-                    //#debug
-                    L.i("Start join wait()", "status=" + getStatusString());
-                    do {
-                        final long t = System.currentTimeMillis();
-
-                        MUTEX.wait(timeout);
-                        if (status == FINISHED) {
+                    try {
+                        //#debug
+                        L.i("Start join of EXEC_PENDING task", "timeout=" + timeout + " " + this.toString());
+                        if (Worker.tryUnfork(this)) {
+                            doExec = true;
                             break;
+                        } else {
+                            //#debug
+                            L.i("Start join() wait", this.toString());
+                            final long t = System.currentTimeMillis();
+
+                            MUTEX.wait(timeout);
+                            if (status == FINISHED) {
+                                break;
+                            }
+                            if (System.currentTimeMillis() > t) {
+                                throw new TimeoutException("join(" + timeout + ") was to a Task which did not complete within the specified time: " + this);
+                            }
+                            throw new CancellationException("join() was to a Task which was PENDING but was then canceled: " + this);
                         }
-                        if (status == CANCELED) {
-                            throw new CancellationException("join() was to a Task which had already been canceled: " + this);
-                        }
-                        timeout -= System.currentTimeMillis() - t;
-                    } while (timeout > 0);
-                    //#debug
-                    L.i("End join wait()", "status=" + getStatusString());
-                    if (status == STARTED) {
-                        throw new TimeoutException("Task was already started when join() was call and did not complete during " + timeout + " milliseconds");
+                    } finally {
+                        //#debug
+                        L.i("End join() wait", this.toString());
                     }
-                    break;
+
                 case CANCELED:
-                    throw new CancellationException("join() was to a Task which was running but then canceled: " + this);
+                    throw new CancellationException("join() was to a Task which was canceled: " + this);
                 default:
                     ;
             }
@@ -548,7 +531,6 @@ public abstract class Task implements Runnable {
             L.i("Start exec() out-of-sequence exec() after join() and successful unfork()", this.toString());
             out = executeTask(out);
         }
-
         return out;
     }
 
@@ -653,17 +635,16 @@ public abstract class Task implements Runnable {
     }
 
     private void doSetStatus(final int status) {
-        if (status < PENDING || status > READY) {
-            throw new IllegalArgumentException("setStatus(" + status + ") not allowed");
+        if (status > FINISHED) {
+            throw new IllegalArgumentException("setStatus(" + Task.STATUS_STRINGS[status] + ") not allowed, already FINISHED or CANCELED: " + this);
         }
         final Task t;
         synchronized (MUTEX) {
-            if (this.status == status || ((this.status == CANCELED) && status != READY)) {
+            if (this.status == status) {
                 //#debug
                 L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
                 return;
             }
-
             this.status = status;
             MUTEX.notifyAll();
             t = chainedTask;
@@ -692,94 +673,26 @@ public abstract class Task implements Runnable {
     }
 
     /**
-     * Add a Task (or UITAsk, etc) which will run immediately after the present
-     * Task and on the same Worker thread.
+     * Set a
+     * <code>Task</code> which will
+     * <code>fork()</code>ed after the current
+     * <code>Task</code> completes. nextTask == null is legal and has no effect.
      *
-     * The output result of the present task is fed as the input to exec() on
-     * the nextTask, so any processing changes can propagated forward if the
-     * nextTask is so designed. This Task behavior may thus be slightly
-     * different from the first Task in the chain, which by default receives
-     * "null" as the input argument unless setValue() is called before fork()ing
-     * the first task in the chain.
-     *
-     * Note that if the Task is already chained, the new additional nextTask
-     * will be added after the last existing link in the chain.
-     *
-     * Note that you can not unchain. Do not start chaining until you know that
-     * you really do want to chain. If you change your mind later before you
-     * fork(), make a new Task. If you change your mind later after you fork(),
-     * you may want to cancel() the Task already running, but cancel() for
-     * simple logic reasons is usually indicative of a design problem, is bad
-     * practice and constructing and starting then stopping Task chains will
-     * decrease performance.
-     *
-     * Setting nextTask to null is treated as an application logic error and
-     * will throw an IllegalArgumentException
+     * Each
+     * <code>Task</code> in a chain will run at the same priority as the
+     * previous
+     * <code>Task</code> in the chain unless you explicitly set a different
+     * priority for it.
      *
      * @param nextTask
-     * @param nextTaskPriority - update the fork priority for the next task
-     * @return
-     */
-    public final Task chain(final Task nextTask, final int nextTaskPriority) {
-        return doChain(nextTask, nextTaskPriority, true);
-    }
-
-    /**
-     * Set a Task which will fork()ed after the current Task completes.
-     *
-     * The Task will fork at it's current task.setForkPriority(). By default,
-     * this is Task.NORMAL_PRIORITY. If you want to change this, either change
-     * before chain() or use the alternate convenience call which applies the
-     * change.
-     *
-     * @param nextTask
-     * @return
+     * @return nextTask
      */
     public final Task chain(final Task nextTask) {
-        return doChain(nextTask, 0, false);
-    }
-
-    /**
-     * Update the priority parameter which will be applied to this Task when it
-     * is fork()ed as link in a Task chain.
-     *
-     * @param chainedForkPriority
-     * @return
-     */
-    public final Task setForkPriority(final int chainedForkPriority) {
-        if (chainedForkPriority < Task.SHUTDOWN_PRIORITY || chainedForkPriority > Task.HIGH_PRIORITY) {
-            throw new IllegalArgumentException("Illegal Task prioirty. Use one of the constants from Task");
-        }
-        synchronized (MUTEX) {
-            this.chainedTaskForkPriority = chainedForkPriority;
-        }
-
-        return this;
-    }
-
-    /**
-     * Return the priority value applied when this Task was fork()ed.
-     *
-     * If the Task is not yet fork()ed, for example if it is part of a Task
-     * chain, this is the value which will be applied when it is forked.
-     *
-     * @return
-     */
-    public final int getForkPriority() {
-        synchronized (MUTEX) {
-            return chainedTaskForkPriority;
-        }
-    }
-
-    private Task doChain(final Task nextTask, final int nextTaskPriority, final boolean setNextTaskPriority) {
         if (nextTask != null) {
             final Task multiLinkChain;
             synchronized (MUTEX) {
                 if (chainedTask == null) {
                     chainedTask = nextTask;
-                    if (setNextTaskPriority) {
-                        nextTask.setForkPriority(nextTaskPriority);
-                    }
                     multiLinkChain = null;
                 } else {
                     // Already chained- we must add to the end of the chain
@@ -799,58 +712,115 @@ public abstract class Task implements Runnable {
     }
 
     /**
+     * Update the priority parameter which will be applied to this Task when it
+     * is fork()ed as link in a Task chain.
+     *
+     * @param priority
+     * @return
+     */
+    private Task setForkPriority(final int priority) {
+        synchronized (MUTEX) {
+            final int maskedPriority = priority & Task.PRIORITY_MASK;
+            final int maskedUIPriority = (priority & Task.UI_PRIORITY_MASK) | Task.UI;
+
+            if ((maskedPriority < Task.SHUTDOWN && priority != Task.UI) || maskedPriority > Task.HIGH_PRIORITY || maskedUIPriority != Task.UI) {
+                throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
+            }
+            if (forkPriority != Task.PRIORITY_NOT_SET) {
+                throw new IllegalStateException("Task priority has alrady been set: " + this);
+            }
+            if (priority == Task.UI) {
+                forkPriority = priority | Task.HIGH_PRIORITY;
+            } else {
+                forkPriority = priority;
+            }
+
+            return this;
+        }
+    }
+
+    /**
+     * Return the priority value applied when this Task was fork()ed.
+     *
+     * If the Task is not yet fork()ed, for example if it is part of a Task
+     * chain, this is the value which will be applied when it is forked.
+     *
+     * @return
+     */
+    public final int getForkPriority() {
+        synchronized (MUTEX) {
+            return forkPriority;
+        }
+    }
+
+    private int assertForkPriority(final int priorityIfPriorityNotSet) {
+        synchronized (MUTEX) {
+            if (forkPriority == Task.PRIORITY_NOT_SET) {
+                forkPriority = priorityIfPriorityNotSet;
+            }
+
+            return forkPriority;
+        }
+    }
+
+    /**
      * You can call this as the return statement of your overriding method once
      * you have set the result
      *
      * @return
      */
-    final Object executeTask(Object in) {
+    final Object executeTask(Object v) {
         try {
             synchronized (MUTEX) {
-                if (in == null) {
+                if (v == null) {
                     // No input provided- used the stored value as input
-                    in = value;
+                    v = value;
                 } else {
                     // Input is provided- override the stored value
-                    value = in;
+                    value = v;
                 }
                 if (status == Task.CANCELED) {
                     throw new IllegalStateException(this.getStatusString() + " state can not be executed: " + this);
                 }
-                setStatus(Task.STARTED);
             }
             /*
              * Execute the Task without holding any locks
              */
-            in = exec(in);
+            v = exec(v);
 
             final boolean doRun;
+            final boolean executionSuccessful;
             final Task t;
             synchronized (MUTEX) {
-                value = in;
-                final boolean started = status == STARTED;
-                doRun = this.chainedTaskForkPriority == Task.UI_PRIORITY && started;
-                if (started) {
+                executionSuccessful = status == Task.PENDING;
+                if (executionSuccessful) {
+                    value = v;
+                    t = chainedTask;
+                    doRun = (forkPriority & PRIORITY_MASK) != 0;
                     setStatus(FINISHED);
+                } else {
+                    // Task was canceled
+                    t = null;
+                    doRun = false;
                 }
-                t = chainedTask;
             }
             if (doRun) {
                 PlatformUtils.getInstance().runOnUiThread(this);
             }
             if (t != null) {
                 //#debug
-                L.i("Begin fork chained task", t.toString() + " INPUT: " + in);
-                t.setValue(in);
-                t.fork(t.chainedTaskForkPriority);
+                L.i("Begin fork chained task", t.toString() + " INPUT: " + v);
+                t.set(v);
+                t.assertForkPriority(forkPriority);
+                t.fork();
             }
         } catch (final Throwable t) {
             //#debug
             L.e("Unhandled task exception", this.toString(), t);
-            setStatus(CANCELED);
+            this.cancel(false, "Unhandled task exception: " + this.toString() + " : " + t);
         }
 
-        return in;
+        return v;
     }
 
     /**
@@ -889,7 +859,7 @@ public abstract class Task implements Runnable {
                     L.i("Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
                     break;
 
-                case STARTED:
+                case PENDING:
                     if (mayInterruptIfRunning) {
                         Worker.interruptTask(this);
                     }
@@ -935,7 +905,7 @@ public abstract class Task implements Runnable {
 
     /**
      * The default implementation of run() does nothing. If you
-     * task.fork(Task.UI_PRIORITY) then you should override this method.
+     * task.fork(Task.UI) then you should override this method.
      *
      * Your overriding run() method probably will want to access and display the
      * result with getValue()

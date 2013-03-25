@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.tantalum.j2me;
+package org.tantalum.jme;
 
 import java.util.Hashtable;
 import java.util.Vector;
@@ -17,7 +17,7 @@ import javax.microedition.lcdui.Font;
  * 
  * @author phou
  */
-public final class J2MEFontUtils {
+public final class JMEFontUtils {
     private static final Hashtable instances = new Hashtable();
     private final Hashtable charWidth = new Hashtable();
     /**
@@ -40,24 +40,24 @@ public final class J2MEFontUtils {
      * @param elipsis
      * @return 
      */
-    public static synchronized J2MEFontUtils getFontUtils(final Font font, final String elipsis) {
+    public static synchronized JMEFontUtils getFontUtils(final Font font, final String elipsis) {
         if (font == null) {
-            throw new IllegalArgumentException("J2MEFontUtils was passed a null font");
+            throw new IllegalArgumentException("JMEFontUtils was passed a null font");
         }
         if (elipsis == null) {
-            throw new IllegalArgumentException("J2MEFontUtils was passed a null elipsis");
+            throw new IllegalArgumentException("JMEFontUtils was passed a null elipsis");
         }
         final int key = font.hashCode() ^ elipsis.hashCode();
-        J2MEFontUtils instance = (J2MEFontUtils) instances.get(new Integer(key));
+        JMEFontUtils instance = (JMEFontUtils) instances.get(new Integer(key));
         
         if (instance == null) {
-            instance = new J2MEFontUtils(font, elipsis);
+            instance = new JMEFontUtils(font, elipsis);
         }
 
         return instance;
     }
 
-    private J2MEFontUtils(final Font font, final String elipsis) {
+    private JMEFontUtils(final Font font, final String elipsis) {
         this.font = font;
         this.elipsis = elipsis;
     }

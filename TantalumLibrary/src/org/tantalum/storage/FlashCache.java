@@ -30,7 +30,7 @@ import java.util.Vector;
 /**
  * A Hashtable-style interface for persistent data.
  *
- * Each implementation is platform-specific (J2ME, Android, ...)
+ * Each implementation is platform-specific (JME, Android, ...)
  *
  * @author phou
  */

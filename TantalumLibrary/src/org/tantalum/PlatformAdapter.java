@@ -31,7 +31,7 @@ import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 
 /**
- * For each platform we support (J2ME, Android, ..) there is an implementation
+ * For each platform we support (JME, Android, ..) there is an implementation
  * of PlatformAdapter which hooks to the appropriate platform code.
  *
  * Note that by design this is a very minimal set of functions that provide
@@ -74,7 +74,7 @@ public interface PlatformAdapter {
     /**
      * Get a platform-specific logging class. Add Tantalum logs to the
      * platform's own logs allows you to use filters, redirect from remote
-     * device, and any any similar features as for example on Android. On J2ME
+     * device, and any any similar features as for example on Android. On JME
      * we provide USB debugging in a terminal on your PC.
      *
      * @return

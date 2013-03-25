@@ -261,19 +261,19 @@ public class StaticCache {
      * Retrieve an object from RAM or RMS storage.
      *
      * @param key
-     * @param getPriority - default is Work.NORMAL_PRIORITY set to
+     * @param priority - default is Work.NORMAL_PRIORITY set to
      * Work.HIGH_PRIORITY if you want the results quickly to update the UI.
      * @param chainedTask
      * @return
      */
-    public Task getAsync(final String key, final int getPriority, final Task chainedTask) {
+    public Task getAsync(final String key, final int priority, final Task chainedTask) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
 
         final Task task = new GetLocalTask(key);
         task.chain(chainedTask);
-        task.fork(getPriority);
+        task.fork(priority);
 
         return task;
     }
@@ -338,8 +338,9 @@ public class StaticCache {
         if (bytes == null || bytes.length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
+        final Object useForm = convertAndPutToHeapCache(key, bytes);
         if (flashCacheEnabled) {
-            (new Task() {
+            (new Task(Task.SERIAL) {
                 public Object exec(final Object in) {
                     try {
                         synchronousFlashPut(key, bytes);
@@ -350,10 +351,10 @@ public class StaticCache {
 
                     return in;
                 }
-            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN)).fork(Task.SERIAL_PRIORITY);
+            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN)).fork();
         }
 
-        return convertAndPutToHeapCache(key, bytes);
+        return useForm;
     }
 
     /**
@@ -527,7 +528,7 @@ public class StaticCache {
             }
         };
         task.chain(chainedTask);
-        task.fork(Task.SERIAL_PRIORITY);
+        task.fork(Task.SERIAL);
 
         return task;
     }

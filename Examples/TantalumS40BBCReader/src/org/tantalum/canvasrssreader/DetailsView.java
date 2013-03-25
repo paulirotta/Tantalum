@@ -32,11 +32,10 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.j2me.J2MEFontUtils;
+import org.tantalum.jme.JMEFontUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.util.L;
-import org.tantalum.util.StringUtils;
 
 /**
  * View for rendering details of an RSS item
@@ -46,8 +45,8 @@ import org.tantalum.util.StringUtils;
 public final class DetailsView extends View {
 
     public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.getInstance().getImageTypeHandler());
-    private static final J2MEFontUtils titleFontUtils = J2MEFontUtils.getFontUtils(RSSReaderCanvas.FONT_TITLE, "...");
-    private static final J2MEFontUtils descriptionFontUtils = J2MEFontUtils.getFontUtils(RSSReaderCanvas.FONT_DESCRIPTION, "...");
+    private static final JMEFontUtils titleFontUtils = JMEFontUtils.getFontUtils(RSSReaderCanvas.FONT_TITLE, "...");
+    private static final JMEFontUtils descriptionFontUtils = JMEFontUtils.getFontUtils(RSSReaderCanvas.FONT_DESCRIPTION, "...");
 
     private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);

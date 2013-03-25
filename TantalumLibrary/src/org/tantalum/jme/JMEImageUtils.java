@@ -22,7 +22,7 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.j2me;
+package org.tantalum.jme;
 
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -34,7 +34,7 @@ import javax.microedition.lcdui.Image;
  *
  * @author phou
  */
-public final class J2MEImageUtils {
+public final class JMEImageUtils {
 
     /**
      * Although just slightly slower than ONE_POINT_PICK, this algorithm does a
@@ -149,7 +149,7 @@ public final class J2MEImageUtils {
      *
      * image = null;
      *
-     * image = J2MEImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false,
+     * image = JMEImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false,
      * false);
      *
      * data = null;
@@ -164,7 +164,7 @@ public final class J2MEImageUtils {
      * @param maxW - maximum bounding width of scaled image
      * @param maxH - maximum bounding size of scaled image
      * @param preserveAspectRatio - set true except for special effects
-     * @param scalingAlgorithm - a constant from J2MEImageUtils specifying how to
+     * @param scalingAlgorithm - a constant from JMEImageUtils specifying how to
      * scale
      * @return
      */
@@ -195,7 +195,7 @@ public final class J2MEImageUtils {
             maxW = srcW;
             widthIsMaxed = true;
         }
-        final boolean processAlpha = scalingAlgorithm != J2MEImageUtils.WEIGHTED_AVERAGE_OPAQUE;
+        final boolean processAlpha = scalingAlgorithm != JMEImageUtils.WEIGHTED_AVERAGE_OPAQUE;
         if (maxH >= srcH) {
             if (widthIsMaxed) {
                 // No resize needed
@@ -208,44 +208,44 @@ public final class J2MEImageUtils {
         switch (scalingAlgorithm) {
             case ONE_POINT_PICK:
                 while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
-                    J2MEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
+                    JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
                             srcH >>= 1);
                     srcW >>= 1;
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-                    J2MEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
+                    JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
                             srcH >>= 1);
                     break;
                 }
             case BASIC_ONE_POINT_PICK:
-                J2MEImageUtils.onePointPick(inputImageARGB, outputImageARGB, srcW,
+                JMEImageUtils.onePointPick(inputImageARGB, outputImageARGB, srcW,
                         srcH, maxW, maxH);
                 break;
             case FIVE_POINT_BLEND:
                 while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
-                    J2MEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
+                    JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
                             srcH >>= 1);
                     srcW >>= 1;
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-                    J2MEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
+                    JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
                             srcH >>= 1);
                     break;
                 }
-                J2MEImageUtils.fivePointSampleDownscale(inputImageARGB,
+                JMEImageUtils.fivePointSampleDownscale(inputImageARGB,
                         outputImageARGB, srcW, srcH, maxW, maxH);
                 break;
             case WEIGHTED_AVERAGE_TRANSLUCENT:
                 if (srcW < maxW || srcH < maxH) {
-                    J2MEImageUtils.pureUpscale(inputImageARGB, outputImageARGB, srcW,
+                    JMEImageUtils.pureUpscale(inputImageARGB, outputImageARGB, srcW,
                             srcH, maxW, maxH, preserveAspectRatio);
                 } else {
-                    J2MEImageUtils.pureDownscale(inputImageARGB, outputImageARGB, srcW,
+                    JMEImageUtils.pureDownscale(inputImageARGB, outputImageARGB, srcW,
                             srcH, maxW, maxH, preserveAspectRatio);
                 }
                 break;
             case WEIGHTED_AVERAGE_OPAQUE:
-                J2MEImageUtils.pureOpaqueDownscale(inputImageARGB, outputImageARGB,
+                JMEImageUtils.pureOpaqueDownscale(inputImageARGB, outputImageARGB,
                         srcW, srcH, maxW, maxH, preserveAspectRatio);
                 break;
         }
@@ -274,15 +274,15 @@ public final class J2MEImageUtils {
             final int[] outputImageARGB, int srcW, int srcH, int maxW,
             int maxH, final boolean processAlpha) {
         while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
-            J2MEImageUtils.half(inputImageARGB, inputImageARGB, srcW, srcH >>= 1);
+            JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW, srcH >>= 1);
             srcW >>= 1;
         }
         if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-            J2MEImageUtils.half(inputImageARGB, outputImageARGB, srcW, srcH >>= 1);
+            JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW, srcH >>= 1);
         } else {
             maxW = Math.min(srcW, maxW);
             maxH = Math.min(srcH, maxH);
-            J2MEImageUtils.fivePointSampleDownscale(inputImageARGB,
+            JMEImageUtils.fivePointSampleDownscale(inputImageARGB,
                     outputImageARGB, srcW, srcH, maxW, maxH);
         }
         g.drawRGB(outputImageARGB, 0, maxW, x - (maxW >> 1), y - (maxH >> 1),

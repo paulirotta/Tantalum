@@ -9,8 +9,7 @@ import org.json.me.JSONException;
 import org.json.me.JSONObject;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.UITask;
-import org.tantalum.j2me.TantalumMIDlet;
+import org.tantalum.jme.TantalumMIDlet;
 import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.storage.DataTypeHandler;
@@ -166,8 +165,12 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                  * user wants to see the result of their latest action as soon as possible
                  * without the UI ever locking up.
                  */
-                this.locationsCache.getAsync(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new UITask() {
-                    protected void onPostExecute(Object result) {
+                this.locationsCache.getAsync(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.UI) {
+                    protected Object exec(Object o) {
+                        return o;
+                    }
+                    
+                    public void run(Object result) {
                         // UI Thread callback on success
                         HelloMIDlet.this.getLocationStringItem().setText((String) result);
                     }
@@ -333,7 +336,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
             //#debug
             L.e("Can not urlEncode", in, e);
         }
-        
+
         return buf.toString();
     }
 }

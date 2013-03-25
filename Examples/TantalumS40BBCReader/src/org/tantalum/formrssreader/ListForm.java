@@ -27,7 +27,7 @@ package org.tantalum.formrssreader;
 import javax.microedition.lcdui.*;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.j2me.RMSUtils;
+import org.tantalum.jme.RMSUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.net.xml.RSSModel;
@@ -158,7 +158,7 @@ public final class ListForm extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            uiTask = new Task(Task.UI_PRIORITY) {
+            uiTask = new Task(Task.UI) {
                 protected Object exec(final Object in) {
                     return in;
                 }
@@ -179,7 +179,7 @@ public final class ListForm extends Form implements CommandListener {
             };
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
-            uiTask = new Task(Task.UI_PRIORITY) {
+            uiTask = new Task(Task.UI) {
                 protected Object exec(final Object in) {
                     return in;
                 }

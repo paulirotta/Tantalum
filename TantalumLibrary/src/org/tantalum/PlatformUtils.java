@@ -30,7 +30,7 @@ import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.android.AndroidPlatformAdapter;
-import org.tantalum.j2me.J2MEPlatformAdapter;
+import org.tantalum.jme.JMEPlatformAdapter;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
@@ -46,7 +46,7 @@ import org.tantalum.util.L;
  */
 public final class PlatformUtils {
 
-    private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be J2ME MIDlet or Android Activity";
+    private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be JME MIDlet or Android Activity";
     /**
      * PlatformUtils.setProgram() has not yet been called. Usually this is done
      * by overriding a platform-specific base class such as TantalumMIDlet or
@@ -54,9 +54,9 @@ public final class PlatformUtils {
      */
     public static final int PLATFORM_NOT_INITIALIZED = 0;
     /**
-     * Automatically detected that we are in a J2ME phone
+     * Automatically detected that we are in a JME phone
      */
-    public static final int PLATFORM_J2ME = 1;
+    public static final int PLATFORM_JME = 1;
     /**
      * Automatically detected that we are in an Android phone
      */
@@ -68,7 +68,7 @@ public final class PlatformUtils {
      */
     protected int numberOfWorkers = 0;
     /**
-     * The base class for the application on this platform. On J2ME this is a
+     * The base class for the application on this platform. On JME this is a
      * MIDlet, on Android this is an Activity
      */
     protected Object program;
@@ -140,13 +140,13 @@ public final class PlatformUtils {
         try {
             if (Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(program.getClass())
                     || program.getClass().getName().toLowerCase().indexOf("test") > 0) {
-                platform = PLATFORM_J2ME;
-                platformAdapter = new J2MEPlatformAdapter(routeDebugOutputToSerialPort);
+                platform = PLATFORM_JME;
+                platformAdapter = new JMEPlatformAdapter(routeDebugOutputToSerialPort);
                 init();
                 return;
             }
         } catch (Throwable t) {
-            System.out.println("Can not init J2ME in setProgram(" + program.getClass().getName() + ") : " + t);
+            System.out.println("Can not init JME in setProgram(" + program.getClass().getName() + ") : " + t);
         }
 
         throw new UnsupportedOperationException("SET PROGRAM: " + UNSUPPORTED_PLATFORM_MESSAGE + " : " + program.getClass().getName());
@@ -154,7 +154,7 @@ public final class PlatformUtils {
 
     /**
      * Return a reference to the main program object appropriate for this phone
-     * platform (J2ME MIDlet, Android Activity, ...)
+     * platform (JME MIDlet, Android Activity, ...)
      *
      * @return
      */
@@ -193,7 +193,7 @@ public final class PlatformUtils {
      */
     public boolean isSingleCore() {
         //TODO check Android devices for number of cores at start time
-        return PlatformUtils.getInstance().platform == PLATFORM_J2ME;
+        return PlatformUtils.getInstance().platform == PLATFORM_JME;
     }
 
     /**

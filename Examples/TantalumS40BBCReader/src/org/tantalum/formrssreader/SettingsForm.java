@@ -30,7 +30,7 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.TextField;
 import javax.microedition.rms.RecordStoreFullException;
-import org.tantalum.j2me.RMSUtils;
+import org.tantalum.jme.RMSUtils;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 

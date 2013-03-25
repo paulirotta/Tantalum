@@ -9,8 +9,7 @@ import org.json.me.JSONException;
 import org.json.me.JSONObject;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.UITask;
-import org.tantalum.j2me.TantalumMIDlet;
+import org.tantalum.jme.TantalumMIDlet;
 import org.tantalum.net.HttpGetter;
 import org.tantalum.util.L;
 
@@ -18,6 +17,7 @@ import org.tantalum.util.L;
  * @author phou
  */
 public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
+
     private boolean midletPaused = false;
 //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
     private Command exitCommand;
@@ -115,13 +115,13 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                 final Task getter = new HttpGetter(getGeocodeUrl(this.getAddressTextField().getString()));
 
                 // Add a task which will run after the HTTP GET
-                getter.chain(new UITask() {
-                    protected Object doInBackground(final Object in) {
+                getter.chain(new Task(Task.UI) {
+                    public Object exec(final Object in) {
                         // Parse the JSON on the background Worker thread
                         // Using the background thread keeps the UI fast and responsive
                         String out = "Parse error- try a different address";
                         String s = new String((byte[]) in);
-                        
+
                         try {
                             JSONObject src = new JSONObject(s);
                             JSONArray inn = src.getJSONArray("Placemark");
@@ -137,7 +137,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                         return out;
                     }
 
-                    protected void onPostExecute(Object result) {
+                    public void run(Object result) {
                         // Update UI on the UI thread
                         HelloMIDlet.this.getLocationStringItem().setText((String) result);
                     }
@@ -147,7 +147,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
                 });
-                
+
                 getter.fork(); // Start task on a background Worker thread
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction
         }//GEN-END:|7-commandAction|5|7-postCommandAction
@@ -279,9 +279,9 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     public String getGeocodeUrl(String address) {
         return "http://maps.google.com/maps/geo?q=" + urlEncode(address) + "&output=json";
     }
-    
     private final static String UNRESERVED_CHARS = ".-_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQURSTUVWXYZ*~";
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
+
     public static String urlEncode(final String in) {
         StringBuffer buf = new StringBuffer();
         byte[] bytes = null;
@@ -295,16 +295,19 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
             //#debug
             L.e("Can not urlEncode", in, e);
         }
-        for (int i = 2; i < bytes.length; i++) {
-            byte b = bytes[i];
-            if (UNRESERVED_CHARS.indexOf(b) >= 0) {
-                buf.append((char) b);
-            } else {
-                buf.append('%');
-                buf.append(HEX[(b >>> 4) & 0x0F]);
-                buf.append(HEX[b & 0x0F]);
+        if (bytes != null) {
+            for (int i = 2; i < bytes.length; i++) {
+                byte b = bytes[i];
+                if (UNRESERVED_CHARS.indexOf(b) >= 0) {
+                    buf.append((char) b);
+                } else {
+                    buf.append('%');
+                    buf.append(HEX[(b >>> 4) & 0x0F]);
+                    buf.append(HEX[b & 0x0F]);
+                }
             }
         }
+
         return buf.toString();
     }
 }

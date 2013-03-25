@@ -76,36 +76,6 @@ final class Worker extends Thread {
     }
 
     /**
-     * Add an object to be executed in the background on the worker thread. This
-     * well be executed FIFO (First In First Out), but some Worker threads may
-     * be occupied with their own serialQueue() tasks which they prioritize over
-     * main forkSerial compute.
-     *
-     * Shutdown() will be delayed indefinitely until items in the forkSerial
-     * complete execution. If the shutdown signal comes from the phone (usually
-     * because the user pressed the RED button to exit the application), then
-     * shutdown will be delayed by a maximum of 3 seconds before forcing exit.
-     *
-     * @param task
-     */
-    private static void fork(final Task task) {
-        synchronized (q) {
-            q.addElement(task);
-            try {
-                if (task instanceof Task) {
-                    ((Task) task).notifyTaskForked();
-                }
-            } catch (IllegalStateException e) {
-                //#debug
-                L.e("Can not fork", task.toString(), e);
-                q.removeElement(task);
-                throw e;
-            }
-            q.notify();
-        }
-    }
-
-    /**
      * Task.HIGH_PRIORITY : Jump an object to the beginning of the forkSerial
      * (LIFO - Last In First Out).
      *
@@ -132,46 +102,33 @@ final class Worker extends Thread {
      * @param priority
      */
     static void fork(final Task task, final int priority) {
-        switch (priority) {
+        if (task.getStatus() != Task.PENDING) {
+            throw new IllegalStateException("Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time: " + task);
+        }
+        switch (priority & Task.PRIORITY_MASK) {
             case Task.HIGH_PRIORITY:
                 synchronized (q) {
                     q.insertElementAt(task, 0);
-                    try {
-                        if (task instanceof Task) {
-                            ((Task) task).notifyTaskForked();
-                        }
-                    } catch (IllegalStateException e) {
-                        //#debug
-                        L.e("Can not fork high priority", task.toString(), e);
-                        q.removeElement(task);
-                        throw e;
-                    }
                     q.notify();
                 }
                 break;
             case Task.NORMAL_PRIORITY:
-                fork(task);
+                synchronized (q) {
+                    q.addElement(task);
+                    q.notify();
+                }
+
                 break;
-            case Task.SERIAL_PRIORITY:
+            case Task.SERIAL:
                 Worker.forkSerial(task);
                 break;
             case Task.LOW_PRIORITY:
                 synchronized (q) {
                     lowPriorityQ.addElement(task);
-                    try {
-                        if (task instanceof Task) {
-                            ((Task) task).notifyTaskForked();
-                        }
-                    } catch (IllegalStateException e) {
-                        //#debug
-                        L.e("Can not fork low priority", task.toString(), e);
-                        lowPriorityQ.removeElement(task);
-                        throw e;
-                    }
                     q.notify();
                 }
                 break;
-            case Task.SHUTDOWN_PRIORITY:
+            case Task.SHUTDOWN:
                 Worker.forkShutdownTask(task);
                 break;
             default:
@@ -188,27 +145,15 @@ final class Worker extends Thread {
      * @return
      */
     static boolean tryUnfork(final Task task) {
-        boolean success;
-
-        if (task == null) {
-            throw new IllegalArgumentException("Can not tryUnfork(null), probable application logic error");
-        }
+        final boolean success;
 
         synchronized (q) {
-            //#debug
-            L.i("Unfork start", task.toString());
             success = q.removeElement(task);
-            //#debug
-            L.i("Unfork continues", "success=" + success + " - " + task.toString());
-            int i = 0;
-            while (!success && i < workers.length) {
-                success = workers[i++].serialQ.removeElement(task);
-            }
-            //#debug
-            L.i("Unfork end", task + " success=" + success);
-
-            return success;
         }
+        //#debug
+        L.i("Unfork", task + " success=" + success);
+
+        return success;
     }
 
     /**
@@ -260,14 +205,6 @@ final class Worker extends Thread {
      */
     static Task forkSerial(final Task task) {
         workers[0].serialQ.addElement(task);
-        try {
-            if (task instanceof Task) {
-                ((Task) task).notifyTaskForked();
-            }
-        } catch (IllegalStateException e) {
-            workers[0].serialQ.removeElement(task);
-            throw e;
-        }
         synchronized (q) {
             /*
              * We must notifyAll to ensure the specified Worker is notified to
@@ -292,13 +229,14 @@ final class Worker extends Thread {
     }
 
     /**
-     * Call PlatformUtils.getInstance().shutdown() after all current queued and shutdown
-     * Tasks are completed. Resources held by the system will be closed and
-     * queued compute such as writing to the RMS or file system will complete.
+     * Call PlatformUtils.getInstance().shutdown() after all current queued and
+     * shutdown Tasks are completed. Resources held by the system will be closed
+     * and queued compute such as writing to the RMS or file system will
+     * complete.
      *
      * @param block Block the calling thread up to three seconds to allow
-     * orderly shutdown. This is only needed in shutdown(true)
-     * which is called for example by the user pressing the red HANGUP button.
+     * orderly shutdown. This is only needed in shutdown(true) which is called
+     * for example by the user pressing the red HANGUP button.
      */
     static void shutdown(final boolean block) {
         try {
@@ -486,7 +424,7 @@ final class Worker extends Thread {
                 } catch (Exception e) {
                     synchronized (q) {
                         //#debug
-                        L.e("Uncaught worker error", "task=" + currentTask, e);
+                        L.e("Uncaught Task exception", "task=" + currentTask, e);
                     }
                 }
             }

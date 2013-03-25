@@ -22,7 +22,7 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.j2me;
+package org.tantalum.jme;
 
 import java.util.Vector;
 import javax.microedition.rms.RecordStoreFullException;
@@ -32,7 +32,7 @@ import org.tantalum.storage.FlashFullException;
 import org.tantalum.util.L;
 
 /**
- * Persistent storage implementation for J2ME
+ * Persistent storage implementation for JME
  *
  * You should not access this class directly. Use
  * <code>PlatformUtils.getInstance()...</code> instead.

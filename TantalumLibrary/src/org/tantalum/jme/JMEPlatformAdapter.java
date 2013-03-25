@@ -22,7 +22,7 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.j2me;
+package org.tantalum.jme;
 
 import android.graphics.BitmapFactory;
 import java.io.IOException;
@@ -44,14 +44,14 @@ import org.tantalum.util.L;
 import org.tantalum.util.StringUtils;
 
 /**
- * Utilities for support of each specific platform (J2ME, Android, ..)
+ * Utilities for support of each specific platform (JME, Android, ..)
  *
  * The platform-specific local copy of this class replaces this base version for
  * other platforms.
  *
  * @author phou
  */
-public final class J2MEPlatformAdapter implements PlatformAdapter {
+public final class JMEPlatformAdapter implements PlatformAdapter {
 
     /**
      * There is only one Display per application
@@ -61,7 +61,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
     private final L log;
 
     /**
-     * Create a new instance of the J2ME platform port helper class.
+     * Create a new instance of the JME platform port helper class.
      *
      * This is created for you when your MIDlet extends AndroidMIDlet and calls
      * the super() constructor.
@@ -70,9 +70,9 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
      * may ignore this parameter because they have their own mechanism for
      * remote debugging.
      */
-    public J2MEPlatformAdapter(final boolean routeDebugOutputToSerialPort) {
+    public JMEPlatformAdapter(final boolean routeDebugOutputToSerialPort) {
         display = Display.getDisplay((MIDlet) PlatformUtils.getInstance().getProgram());
-        log = new J2MELog(routeDebugOutputToSerialPort);
+        log = new JMELog(routeDebugOutputToSerialPort);
     }
 
     /**
@@ -101,7 +101,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
     }
 
     public ImageTypeHandler getImageTypeHandler() {
-        return new J2MEImageTypeHandler();
+        return new JMEImageTypeHandler();
     }
 
     public FlashCache getFlashCache(final char priority) {
@@ -123,7 +123,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
         OutputStream out = null;
 
         try {
-            final J2MEHttpConn httpConn = new J2MEHttpConn(url, requestPropertyKeys, requestPropertyValues);
+            final JMEHttpConn httpConn = new JMEHttpConn(url, requestPropertyKeys, requestPropertyValues);
             httpConn.httpConnection.setRequestMethod(requestMethod);
             if (bytes != null) {
                 out = httpConn.httpConnection.openOutputStream();
@@ -153,7 +153,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
      * A convenience class abstracting HTTP connection operations between
      * different platforms
      */
-    public static final class J2MEHttpConn implements PlatformUtils.HttpConn {
+    public static final class JMEHttpConn implements PlatformUtils.HttpConn {
 
         final HttpConnection httpConnection;
         InputStream is = null;
@@ -168,7 +168,7 @@ public final class J2MEPlatformAdapter implements PlatformAdapter {
          * @param requestPropertyValues - a list of associated header values
          * @throws IOException
          */
-        public J2MEHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
+        public JMEHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
             httpConnection = (HttpConnection) Connector.open(url);
             for (int i = 0; i < requestPropertyKeys.size(); i++) {
                 httpConnection.setRequestProperty((String) requestPropertyKeys.elementAt(i), (String) requestPropertyValues.elementAt(i));

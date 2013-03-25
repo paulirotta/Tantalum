@@ -27,7 +27,7 @@ package org.tantalum.canvasrssreader;
 import javax.microedition.lcdui.*;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.j2me.TantalumMIDlet;
+import org.tantalum.jme.TantalumMIDlet;
 import org.tantalum.util.L;
 
 /**
@@ -124,13 +124,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
      */
     public void startApp() {
         try {
-            final Task reloadTask = new Task() {
-                public Object exec(final Object params) {
-                    getCanvas().getListView().reloadAsync(false);
-                    
-                    return null;
-                }
-            };
+            final Task reloadTask = getCanvas().getListView().reloadAsync(false);
             final Display display = getDisplay();
             COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
             COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);

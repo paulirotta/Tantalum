@@ -22,7 +22,7 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.j2me;
+package org.tantalum.jme;
 
 import javax.microedition.lcdui.Image;
 import org.tantalum.Task;
@@ -34,7 +34,7 @@ import org.tantalum.util.L;
  *
  * @author tsaa
  */
-public final class J2MEImageTypeHandler extends org.tantalum.storage.ImageTypeHandler {
+public final class JMEImageTypeHandler extends org.tantalum.storage.ImageTypeHandler {
 
     public Object convertToUseForm(final Object key, final byte[] bytes) {
         final Image img;
@@ -66,7 +66,7 @@ public final class J2MEImageTypeHandler extends org.tantalum.storage.ImageTypeHa
                         argb = new int[tempW * tempH];
                         tempImage.getRGB(argb, 0, tempW, 0, 0, tempW, tempH);
                     }
-                    img = J2MEImageUtils.scaleImage(argb, argb, tempW, tempH, w, h, aspect, alg);
+                    img = JMEImageUtils.scaleImage(argb, argb, tempW, tempH, w, h, aspect, alg);
                 }
             }
         } catch (IllegalArgumentException e) {

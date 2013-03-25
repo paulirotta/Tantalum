@@ -178,10 +178,14 @@ public final class StaticWebCache extends StaticCache {
      * @return a new Task containing the result
      */
     public Task getAsync(final String key, final byte[] postMessage, final int priority, final int getType, final Task chainedTask) {
+        if (key == null) {
+            throw new IllegalArgumentException("Can not getAsync() with null key");
+        }
+        
         final Task getTask;
 
         //#debug
-        L.i("StaticWebCache get:" + getType + " : " + chainedTask, key);
+        L.i("StaticWebCache getType=" + getType + " : " + chainedTask, "key=" + key);
         switch (getType) {
             case GET_LOCAL:
                 //#debug
@@ -330,7 +334,7 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i("StaticWebCache: not found locally, get from the web", (String) in);
-                        out = new GetWebTask((String) in, postMessage).get();
+                        out = new GetWebTask((String) in, postMessage).fork().get();
                     }
                 } catch (Exception e) {
                     //#debug
@@ -447,7 +451,7 @@ public final class StaticWebCache extends StaticCache {
                 } else {
                     //#debug
                     L.i("StaticWebCache.HttpTaskFactory returned", httpGetter.toString());
-                    out = httpGetter.get();
+                    out = httpGetter.fork().get();
                     if (httpGetter.getStatus() == Task.CANCELED) {
                         cancel(false, "StaticWebCache.GetWebTask HttpGetter was canceled or error: " + httpGetter);
                         return out;

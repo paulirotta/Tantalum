@@ -22,7 +22,7 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.j2me;
+package org.tantalum.jme;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -32,7 +32,7 @@ import javax.microedition.io.Connector;
 import org.tantalum.util.L;
 
 /**
- * Debug-time logging implementation for J2ME
+ * Debug-time logging implementation for JME
  *
  * To enable logging from a phone connected to a computer by a USB cable, open a
  * terminal emulator on the window, set the COM port parameters in Windows
@@ -44,13 +44,13 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public class J2MELog extends L {
+public class JMELog extends L {
 
     private final OutputStream os;
 //#mdebug
     private final byte[] CRLF = "\r\n".getBytes();
     private final Vector byteArrayQueue = new Vector();
-    private final J2MELog.UsbWriter usbWriter;
+    private final JMELog.UsbWriter usbWriter;
 //#enddebug    
 
     /**
@@ -63,14 +63,14 @@ public class J2MELog extends L {
      *
      * @param routeDebugOutputToSerialPort
      */
-    public J2MELog(final boolean routeDebugOutputToSerialPort) {
+    public JMELog(final boolean routeDebugOutputToSerialPort) {
         OutputStream s = null;
 //#mdebug
         if (routeDebugOutputToSerialPort) {
-            J2MELog.UsbWriter writer = null;
+            JMELog.UsbWriter writer = null;
             try {
                 System.out.println("Routing debug output to USB serial port");
-                writer = new J2MELog.UsbWriter();
+                writer = new JMELog.UsbWriter();
                 s = writer.getOutputStream();
                 new Thread(writer).start();
             } catch (IOException ex) {
@@ -111,12 +111,12 @@ public class J2MELog extends L {
     }
 
     /**
-     * Close the J2ME Logging and (if needed) USB serial port resources
+     * Close the JME Logging and (if needed) USB serial port resources
      *
      */
     protected void close() {
 //#mdebug
-        final J2MELog.UsbWriter writer = usbWriter;
+        final JMELog.UsbWriter writer = usbWriter;
 
         if (writer != null) {
             synchronized (L.class) {

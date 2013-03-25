@@ -26,7 +26,7 @@ package org.tantalum;
 
 /**
  * An implementation of Android's AsyncTask pattern for cross platform
- * application on J2ME and Android. On Android it is intended as a drop-in
+ * application on JME and Android. On Android it is intended as a drop-in
  * replacement for the platform library class. The less commonly used features
  * of the Android implementation are not supported. Unlike the Android version,
  * you can join() or jointUI() a Tantalum AsyncTask to trigger out-of-sequence
@@ -84,13 +84,13 @@ public abstract class AsyncTask extends Task {
      * @param runnable
      */
     public static void execute(final Runnable runnable) {
-        Worker.fork(new Task() {
+        (new Task() {
             public Object exec(final Object in) {
                 runnable.run();
 
                 return in;
             }
-        }, Task.SERIAL_PRIORITY);
+        }).fork(Task.SERIAL);
     }
 
     /**
@@ -105,15 +105,14 @@ public abstract class AsyncTask extends Task {
     public final AsyncTask execute(final Object params) {
         this.params = params;
         synchronized (this) {
-            if (status <= FINISHED) {
-                throw new IllegalStateException("AsyncTask can not be started, wait for previous exec to complete: status=" + getStatusString());
+            if (status != PENDING) {
+                throw new IllegalStateException("AsyncTask can not be started multiple times, create a new AsynTask instance each time: " + this);
             }
-            setStatus(PENDING);
         }
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
-                Worker.fork(AsyncTask.this, Task.SERIAL_PRIORITY);
+                AsyncTask.this.fork(Task.SERIAL);
             }
         });
 
@@ -145,8 +144,7 @@ public abstract class AsyncTask extends Task {
         }
         this.params = params;
 
-        PlatformUtils.getInstance().runOnUiThread(
-                new Runnable() {
+        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
                 if (!aggressive) {
@@ -221,7 +219,7 @@ public abstract class AsyncTask extends Task {
      * @param params
      */
     public void doInBackground(final Object params) {
-        setValue(params);
+        set(params);
         fork();
     }
 

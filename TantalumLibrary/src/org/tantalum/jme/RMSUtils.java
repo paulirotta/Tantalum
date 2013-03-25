@@ -22,7 +22,7 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.j2me;
+package org.tantalum.jme;
 
 import java.util.Vector;
 import javax.microedition.rms.RecordStore;
@@ -93,17 +93,17 @@ public final class RMSUtils {
      *
      */
     private RMSUtils() {
-        (new Task() {
-            public Object exec(final Object in) {
-                //#debug
-                L.i("Closing record stores during shutdown", "open=" + openRecordStores.size());
-                openRecordStores.setMaxLength(0);
-                //#debug
-                L.i("Closed record stores during shutdown", "open=" + openRecordStores.size());
-
-                return in;
-            }
-        }).fork(Task.SHUTDOWN_PRIORITY);
+//        (new Task() {
+//            public Object exec(final Object in) {
+//                //#debug
+//                L.i("Closing record stores during shutdown", "open=" + openRecordStores.size());
+//                openRecordStores.setMaxLength(0);
+//                //#debug
+//                L.i("Closed record stores during shutdown", "open=" + openRecordStores.size());
+//
+//                return in;
+//            }
+//        }).fork(Task.SHUTDOWN);
     }
 
     /**
