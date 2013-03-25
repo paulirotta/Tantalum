@@ -1,0 +1,17 @@
+android.app
+android.content
+android.database
+android.database.sqlite
+android.graphics
+android.os
+android.util
+java.net
+org.json.me
+org.tantalum
+org.tantalum.android
+org.tantalum.jme
+org.tantalum.net
+org.tantalum.net.json
+org.tantalum.net.xml
+org.tantalum.storage
+org.tantalum.util

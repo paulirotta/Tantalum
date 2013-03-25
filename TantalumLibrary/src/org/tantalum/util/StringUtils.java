@@ -24,17 +24,22 @@
  */
 package org.tantalum.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Utility methods for String operations such as extracting a String from the JAR
+ * Utility methods for String operations such as extracting a String from the
+ * JAR
  *
  * @author ssaa, paul houghton
  */
 public class StringUtils {
 
     private static final class StringUtilsHolder {
+
         public static final StringUtils instance = new StringUtils();
     }
 
@@ -86,5 +91,65 @@ public class StringUtils {
     public static String readStringFromJAR(final String name) throws IOException {
         return new String(readBytesFromJAR(name));
     }
-    //TODO Add urlencode (uuencode) and urldecod (uudecode)
+
+    /**
+     * Encodes a string so that certain characters are replace by their ASCII
+     * code counterpart. E.g. for space "%20".
+     *
+     * @param s Text that is to be encoded.
+     * @return The encoded string.
+     */
+    public static String encodeURL(final String s) throws IOException {
+        final ByteArrayInputStream bIn;
+        final StringBuffer ret = new StringBuffer((s.length() * 5) / 4); //return value
+        {
+            final ByteArrayOutputStream bOut = new ByteArrayOutputStream((s.length() * 3) / 2);
+            final DataOutputStream dOut = new DataOutputStream(bOut);
+            dOut.writeUTF(s);
+            bIn = new ByteArrayInputStream(bOut.toByteArray());
+            dOut.close();
+        }
+        //TODO Why this initial read hack?
+        bIn.read();
+        bIn.read();
+        int c = bIn.read();
+        while (c >= 0) {
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '-'
+                    || c == '*' || c == '_') {
+                ret.append((char) c);
+            } else if (c == ' ') {
+                ret.append("%20");
+            } else {
+                if (c < 128) {
+                    appendHex(c, ret);
+                } else if (c < 224) {
+                    appendHex(c, ret);
+                    appendHex(bIn.read(), ret);
+                } else if (c < 240) {
+                    appendHex(c, ret);
+                    appendHex(bIn.read(), ret);
+                    appendHex(bIn.read(), ret);
+                }
+            }
+            c = bIn.read();
+        }
+        bIn.close();
+
+        return ret.toString();
+    }
+
+    /**
+     * Appends integer as a hex formatted string to buffer.
+     *
+     * @param arg0 Value that should be appended
+     * @param buff Buffer we are appending to
+     * @return The encoded string.
+     */
+    private static void appendHex(final int arg0, final StringBuffer buff) {
+        buff.append('%');
+        if (arg0 < 16) {
+            buff.append('0');
+        }
+        buff.append(Integer.toHexString(arg0).toUpperCase());
+    }
 }
