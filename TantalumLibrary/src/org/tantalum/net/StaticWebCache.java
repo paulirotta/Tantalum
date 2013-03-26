@@ -486,7 +486,9 @@ public final class StaticWebCache extends StaticCache {
      * If you override this default implementation, you can add custom header
      * parameters to the HTTP request and act on custom header fields such as
      * cookies in the HTTP response.
-     *
+     * 
+     * If your override returns null, that is an indication that the HTTP GET
+     * is obsolete and no longer desired by the application.
      */
     public static class HttpTaskFactory {
 

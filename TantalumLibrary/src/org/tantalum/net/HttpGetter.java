@@ -46,7 +46,7 @@ import org.tantalum.util.L;
  */
 public class HttpGetter extends Task {
 
-    private static final Hashtable inFlightGets = new Hashtable();
+//    private static final Hashtable inFlightGets = new Hashtable();
     /**
      * The HTTP server has not yet been contacted, so no response code is yet
      * available
@@ -73,7 +73,7 @@ public class HttpGetter extends Task {
     private final Hashtable responseHeaders = new Hashtable();
     private Vector requestPropertyKeys = new Vector();
     private Vector requestPropertyValues = new Vector();
-    private HttpGetter duplicateTaskWeShouldJoinInsteadOfReGetting = null;
+//    private HttpGetter duplicateTaskWeShouldJoinInsteadOfReGetting = null;
     /**
      * Counter, estimated downloaded bytes during the app session.
      *
@@ -167,7 +167,7 @@ public class HttpGetter extends Task {
     public HttpGetter(final String key) {
         super(key);
 
-        duplicateTaskWeShouldJoinInsteadOfReGetting = getInFlightNetworkTasks();
+//        duplicateTaskWeShouldJoinInsteadOfReGetting = getInFlightNetworkTasks();
     }
 
     /**
@@ -182,13 +182,13 @@ public class HttpGetter extends Task {
         this.postMessage = postMessage;
     }
 
-    private HttpGetter getInFlightNetworkTasks() {
-        if (key == null) {
-            return null;
-        }
-
-        return (HttpGetter) HttpGetter.inFlightGets.get(key);
-    }
+//    private HttpGetter getInFlightNetworkTasks() {
+//        if (key == null) {
+//            return null;
+//        }
+//
+//        return (HttpGetter) HttpGetter.inFlightGets.get(key);
+//    }
 
     /**
      * Specify how many more times the HttpGetter should re-attempt HTTP GET if
@@ -262,19 +262,19 @@ public class HttpGetter extends Task {
 
         //#debug
         L.i(this.getClass().getName() + " start", key);
-        if (duplicateTaskWeShouldJoinInsteadOfReGetting == null) {
-            duplicateTaskWeShouldJoinInsteadOfReGetting = getInFlightNetworkTasks();
-        }
-        if (duplicateTaskWeShouldJoinInsteadOfReGetting != null) {
-            //#debug
-            L.i("Noticed a duplicate HttpGetter Task: join()ing that result rather than re-getting from web server", key);
-            try {
-                return duplicateTaskWeShouldJoinInsteadOfReGetting.get();
-            } catch (Exception e) {
-                //#debug
-                L.e("Can not join duplicate HttpGetter Task", key, e);
-            }
-        }
+//        if (duplicateTaskWeShouldJoinInsteadOfReGetting == null) {
+//            duplicateTaskWeShouldJoinInsteadOfReGetting = getInFlightNetworkTasks();
+//        }
+//        if (duplicateTaskWeShouldJoinInsteadOfReGetting != null) {
+//            //#debug
+//            L.i("Noticed a duplicate HttpGetter Task: join()ing that result rather than re-getting from web server", key);
+//            try {
+//                return duplicateTaskWeShouldJoinInsteadOfReGetting.get();
+//            } catch (Exception e) {
+//                //#debug
+//                L.e("Can not join duplicate HttpGetter Task", key, e);
+//            }
+//        }
         ByteArrayOutputStream bos = null;
         PlatformUtils.HttpConn httpConn = null;
         boolean tryAgain = false;
@@ -411,7 +411,7 @@ public class HttpGetter extends Task {
                 L.i("HTTP GET FAILED, cancel() of task and any chained Tasks", this.toString());
                 cancel(false, "HttpGetter failed response code and header check: " + this.toString());
             }
-            HttpGetter.inFlightGets.remove(key);
+//            HttpGetter.inFlightGets.remove(key);
             //#debug
             L.i("End " + this.getClass().getName(), key + " status=" + getStatus());
 
@@ -511,7 +511,7 @@ public class HttpGetter extends Task {
         }
 
         sb.append("\n duplicateTaskWeShouldJoinInsteadOfReGetting=");
-        sb.append(duplicateTaskWeShouldJoinInsteadOfReGetting);
+//        sb.append(duplicateTaskWeShouldJoinInsteadOfReGetting);
         sb.append('\n');
         sb.append(super.toString());
 
