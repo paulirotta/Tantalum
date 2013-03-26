@@ -57,6 +57,7 @@ subprojects {
         jreBootClasspath 'jre:jsse'
 
         compile configurations.bootClasspath
+        compile 'wtk:jsr75_1.0'
         compile 'wtk:jsr172_1.0'
         compile 'wtk:jsr177_1.0'
         compile 'wtk:jsr280_1.0'
