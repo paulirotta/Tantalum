@@ -652,7 +652,8 @@ public class StaticCache {
 
         return task;
     }
-
+    
+//#mdebug
     /**
      * For debugging use
      *
@@ -678,7 +679,8 @@ public class StaticCache {
             return str.toString();
         }
     }
-
+//#enddebug
+    
     /**
      * A helper class to get data asynchronously from the local ramCache without
      * attempting to get data from the web.

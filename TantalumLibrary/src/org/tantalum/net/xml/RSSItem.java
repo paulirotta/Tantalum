@@ -174,6 +174,8 @@ public class RSSItem {
         this.newItem = newItem;
     }
 
+//#mdebug
+    
     /**
      * Debug use
      * 
@@ -182,4 +184,5 @@ public class RSSItem {
     public synchronized String toString() {
         return "RSSItem- title:" + title + " truncatedTitle:" + truncatedTitle + " description:" + description + " link:" + link + " pubDate:" + pubDate + " thumbnail:" + thumbnail;
     }
+//#enddebug    
 }

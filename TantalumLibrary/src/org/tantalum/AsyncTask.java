@@ -223,6 +223,7 @@ public abstract class AsyncTask extends Task {
         fork();
     }
 
+    //#mdebug
     /**
      * Debug helper, override for more specific debug info if needed
      *
@@ -231,4 +232,5 @@ public abstract class AsyncTask extends Task {
     public String toString() {
         return this.getClass().getName() + ", AsyncTask params: " + params.toString();
     }
+    //#enddebug
 }
