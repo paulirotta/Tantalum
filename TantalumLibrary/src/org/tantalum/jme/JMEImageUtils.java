@@ -94,25 +94,30 @@ public final class JMEImageUtils {
 
     /**
      * Convenience class for scaling images. Images are only made smaller on one
-     * axis or both. Upscaling is not supported. 
-     * 
-     * This handles all the buffer
-     * management for you. It has higher peak memory usage and not buffer re-use
-     * which means the garbage collector will run more frequently. So if you
-     * will scale images in a tight loop, better performance can be achieved if
-     * you optimize your code and call the buffered scaling methods directly.
+     * axis or both. Upscaling is not supported.
+     *
+     * This handles all the buffer management for you. It has higher peak memory
+     * usage and not buffer re-use which means the garbage collector will run
+     * more frequently. So if you will scale images in a tight loop, better
+     * performance can be achieved if you optimize your code and call the
+     * buffered scaling methods directly.
      *
      * @param sourceImage
      * @param maxW - use Integer.MAX_VALUE if you do not want to scale by width
      * @param maxH - use Integer.MAX_VALUE if you do not want to scale by height
-     * @param preserveAspectRatio - set false to shrink by different amounts on each axis, but not more than needed to fit in the bounding box specified by maxW and maxH
+     * @param preserveAspectRatio - set false to shrink by different amounts on
+     * each axis, but not more than needed to fit in the bounding box specified
+     * by maxW and maxH
      * @param scalingAlgorithm
-     * @return 
+     * @return
      */
     public static Image scaleImage(final Image sourceImage, final int maxW,
             final int maxH, final boolean preserveAspectRatio, final int scalingAlgorithm) {
         if (maxW == sourceImage.getWidth() && maxH == sourceImage.getHeight()) {
             return sourceImage;
+        }
+        if (maxW < 1 || maxH < 1) {
+            throw new IllegalArgumentException("scaleImage requires maxW and maxH be >= 1");
         }
 
         final int[] inputImageARGB = new int[sourceImage.getWidth()
@@ -165,8 +170,10 @@ public final class JMEImageUtils {
      * the same as inputImageARGB if downscaling (faster)
      * @param srcW - Source image width
      * @param srcH - Source image height
-     * @param maxW - maximum (bounding box, will not upscale) width of scaled image
-     * @param maxH - maximum (bounding box, will not upscale) height of scaled image
+     * @param maxW - maximum (bounding box, will not upscale) width of scaled
+     * image
+     * @param maxH - maximum (bounding box, will not upscale) height of scaled
+     * image
      * @param preserveAspectRatio - set true except for special effects
      * @param scalingAlgorithm - a constant from JMEImageUtils specifying how to
      * scale
@@ -180,6 +187,12 @@ public final class JMEImageUtils {
             throw new IllegalArgumentException("Unsupported scaling algorithm "
                     + scalingAlgorithm + ", should be [0-"
                     + MAX_SCALING_ALGORITHM + "]");
+        }
+        if (maxW < 1 || maxH < 1 || srcW < 1 || srcH < 1) {
+            throw new IllegalArgumentException("scaleImage requires maxW, maxH, srcW and srcH be >= 1");
+        }
+        if (inputImageARGB == null || outputImageARGB == null) {
+            throw new IllegalArgumentException("scaleImage requires non-null input and output image buffers");
         }
 
         final float byWidth = maxW / (float) srcW;
@@ -277,6 +290,13 @@ public final class JMEImageUtils {
             final int y, final int[] inputImageARGB,
             final int[] outputImageARGB, int srcW, int srcH, int maxW,
             int maxH, final boolean processAlpha) {
+        if (maxW < 1 || maxH < 1 || srcW < 1 || srcH < 1) {
+            throw new IllegalArgumentException("drawFlipshade requires maxW, maxH, srcW and srcH be >= 1");
+        }
+        if (inputImageARGB == null || outputImageARGB == null) {
+            throw new IllegalArgumentException("drawFlipshade requires non-null input and output image buffers");
+        }
+
         while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
             JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW, srcH >>= 1);
             srcW >>= 1;
