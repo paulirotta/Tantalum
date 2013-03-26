@@ -93,20 +93,24 @@ public final class JMEImageUtils {
     private static final int BLUE = 0x000000FF;
 
     /**
-     * Convenience class for scaling images. This handles all the buffer
+     * Convenience class for scaling images. Images are only made smaller on one
+     * axis or both. Upscaling is not supported. 
+     * 
+     * This handles all the buffer
      * management for you. It has higher peak memory usage and not buffer re-use
      * which means the garbage collector will run more frequently. So if you
      * will scale images in a tight loop, better performance can be achieved if
-     * you optimise your code and call the buffered scaling methods directly.
+     * you optimize your code and call the buffered scaling methods directly.
      *
      * @param sourceImage
-     * @param maxW
-     * @param maxH
+     * @param maxW - use Integer.MAX_VALUE if you do not want to scale by width
+     * @param maxH - use Integer.MAX_VALUE if you do not want to scale by height
+     * @param preserveAspectRatio - set false to shrink by different amounts on each axis, but not more than needed to fit in the bounding box specified by maxW and maxH
      * @param scalingAlgorithm
-     * @return
+     * @return 
      */
     public static Image scaleImage(final Image sourceImage, final int maxW,
-            final int maxH, final int scalingAlgorithm) {
+            final int maxH, final boolean preserveAspectRatio, final int scalingAlgorithm) {
         if (maxW == sourceImage.getWidth() && maxH == sourceImage.getHeight()) {
             return sourceImage;
         }
@@ -127,7 +131,7 @@ public final class JMEImageUtils {
 
         return scaleImage(inputImageARGB, outputImageARGB,
                 sourceImage.getWidth(), sourceImage.getHeight(), maxW, maxH,
-                true, scalingAlgorithm);
+                preserveAspectRatio, scalingAlgorithm);
     }
 
     /**
@@ -159,10 +163,10 @@ public final class JMEImageUtils {
      * @param inputImageARGB - ARGB data for the original image
      * @param outputImageARGB - ARGB data buffer for the scaled image, can be
      * the same as inputImageARGB if downscaling (faster)
-     * @param srcW - Source data row width
-     * @param srcH - Source data column height
-     * @param maxW - maximum bounding width of scaled image
-     * @param maxH - maximum bounding size of scaled image
+     * @param srcW - Source image width
+     * @param srcH - Source image height
+     * @param maxW - maximum (bounding box, will not upscale) width of scaled image
+     * @param maxH - maximum (bounding box, will not upscale) height of scaled image
      * @param preserveAspectRatio - set true except for special effects
      * @param scalingAlgorithm - a constant from JMEImageUtils specifying how to
      * scale
