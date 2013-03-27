@@ -30,10 +30,8 @@ import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
-import org.tantalum.Task;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
-import org.tantalum.util.LengthLimitedVector;
 
 /**
  * RMS Utility methods
@@ -43,36 +41,36 @@ import org.tantalum.util.LengthLimitedVector;
 public final class RMSUtils {
 
     private static final int MAX_RECORD_NAME_LENGTH = 32;
-    private static final int MAX_OPEN_RECORD_STORES = 10;
+//    private static final int MAX_OPEN_RECORD_STORES = 10;
     private static final char RECORD_HASH_PREFIX = '@';
-    private static final LengthLimitedVector openRecordStores = new LengthLimitedVector(MAX_OPEN_RECORD_STORES) {
-        protected synchronized void lengthExceeded(final Object extra) {
-            /**
-             * We exceeded the maximum number of open record stores specified as
-             * a constant. Close the least-recently-used record store.
-             *
-             * TODO Although this works under must circumstances, under extreme
-             * conditions it may be that even the 10th least recently used
-             * record store is still in use. Look for a more positive-proof way
-             * to ensure we don't close anything we are still using.
-             */
-            final RecordStore rs = (RecordStore) extra;
-            String rsName = "";
-
-            try {
-                rsName = rs.getName();
-                //#debug
-                L.i("Closing LRU record store", rsName + " open=" + openRecordStores.size());
-                rs.closeRecordStore();
-                //#debug
-                L.i("LRU record store closed", rsName + " open=" + openRecordStores.size());
-                removeElement(rs);
-            } catch (Exception ex) {
-                //#debug
-                L.e("Can not close extra record store", rsName, ex);
-            }
-        }
-    };
+//    private static final LengthLimitedVector openRecordStores = new LengthLimitedVector(MAX_OPEN_RECORD_STORES) {
+//        protected synchronized void lengthExceeded(final Object extra) {
+//            /**
+//             * We exceeded the maximum number of open record stores specified as
+//             * a constant. Close the least-recently-used record store.
+//             *
+//             * TODO Although this works under must circumstances, under extreme
+//             * conditions it may be that even the 10th least recently used
+//             * record store is still in use. Look for a more positive-proof way
+//             * to ensure we don't close anything we are still using.
+//             */
+//            final RecordStore rs = (RecordStore) extra;
+//            String rsName = "";
+//
+//            try {
+//                rsName = rs.getName();
+//                //#debug
+//                L.i("Closing LRU record store", rsName + " open=" + openRecordStores.size());
+//                rs.closeRecordStore();
+//                //#debug
+//                L.i("LRU record store closed", rsName + " open=" + openRecordStores.size());
+//                removeElement(rs);
+//            } catch (Exception ex) {
+//                //#debug
+//                L.e("Can not close extra record store", rsName, ex);
+//            }
+//        }
+//    };
 
     private static class RMSUtilsHolder {
 
@@ -81,8 +79,8 @@ public final class RMSUtils {
 
     /**
      * Access the singleton
-     * 
-     * @return 
+     *
+     * @return
      */
     public static RMSUtils getInstance() {
         return RMSUtilsHolder.instance;
@@ -161,25 +159,25 @@ public final class RMSUtils {
      * corruption is detected.
      */
     public void wipeRMS() {
-        synchronized (openRecordStores) {
-            while (!openRecordStores.isEmpty()) {
-                final RecordStore rs = (RecordStore) openRecordStores.firstElement();
-                String rsName = "";
-
-                try {
-                    rsName = rs.getName();
-                    //#debug
-                    L.i("Closing record store before wipeRMS", rsName + " open=" + openRecordStores.size());
-                    rs.closeRecordStore();
-                    //#debug
-                    L.i("Record store closed before wipeRMS", rsName + " open=" + openRecordStores.size());
-                    openRecordStores.removeElement(rs);
-                } catch (Exception ex) {
-                    //#debug
-                    L.e("Can not close record store before wipeRMS", rsName, ex);
-                }
-            }
-        }
+//        synchronized (openRecordStores) {
+//            while (!openRecordStores.isEmpty()) {
+//                final RecordStore rs = (RecordStore) openRecordStores.firstElement();
+//                String rsName = "";
+//
+//                try {
+//                    rsName = rs.getName();
+//                    //#debug
+//                    L.i("Closing record store before wipeRMS", rsName + " open=" + openRecordStores.size());
+//                    rs.closeRecordStore();
+//                    //#debug
+//                    L.i("Record store closed before wipeRMS", rsName + " open=" + openRecordStores.size());
+//                    openRecordStores.removeElement(rs);
+//                } catch (Exception ex) {
+//                    //#debug
+//                    L.e("Can not close record store before wipeRMS", rsName, ex);
+//                }
+//            }
+//        }
 
         final String[] rs = RecordStore.listRecordStores();
 
@@ -221,7 +219,7 @@ public final class RMSUtils {
      * @param key
      * @param data
      * @throws RecordStoreFullException
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public void cacheWrite(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
         write(getRecordStoreCacheName(key), data);
@@ -233,10 +231,10 @@ public final class RMSUtils {
      * @param key
      * @param data
      * @throws RecordStoreFullException
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public void write(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
-        final RecordStore rs;
+        RecordStore rs = null;
         final String recordStoreName = truncateRecordStoreNameToLast32(key);
 
         if (key == null || key.length() == 0) {
@@ -266,9 +264,21 @@ public final class RMSUtils {
             try {
                 //#debug
                 L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
-                //delete(key);
+                delete(key);
             } finally {
                 throw new FlashDatabaseException("RMS write problem, delete was attempted: " + key + " : " + e);
+            }
+        } finally {
+            close(key, rs);
+        }
+    }
+
+    private void close(final String key, final RecordStore rs) throws FlashDatabaseException {
+        if (rs != null) {
+            try {
+                rs.closeRecordStore();
+            } catch (Exception e) {
+                throw new FlashDatabaseException("RMS close problem: " + key + " : " + e);
             }
         }
     }
@@ -293,7 +303,7 @@ public final class RMSUtils {
      * @throws FlashDatabaseException
      */
     public byte[] read(final String key) throws FlashDatabaseException {
-        final RecordStore rs;
+        RecordStore rs = null;
         final String recordStoreName = truncateRecordStoreNameToLast32(key);
         byte[] data = null;
 
@@ -313,6 +323,8 @@ public final class RMSUtils {
             //#debug
             L.e("Can not read RMS", recordStoreName, e);
             throw new FlashDatabaseException("Can not read record from RMS: " + key + " - " + recordStoreName + " : " + e);
+        } finally {
+            close(key, rs);
         }
 
         return data;
@@ -322,7 +334,7 @@ public final class RMSUtils {
      * Delete one item from a cache
      *
      * @param key
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public void cacheDelete(final String key) throws FlashDatabaseException {
         delete(getRecordStoreCacheName(key));
@@ -338,7 +350,7 @@ public final class RMSUtils {
      * @return null if the record store does not exist
      * @throws RecordStoreException
      */
-    private RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws FlashDatabaseException {
+    private RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException {
         RecordStore rs = null;
         boolean success = false;
 
@@ -346,9 +358,8 @@ public final class RMSUtils {
         L.i("getRecordStore", recordStoreName + " createIfNecessary:" + createIfNecessary);
         try {
             rs = RecordStore.openRecordStore(recordStoreName, createIfNecessary);
-            //#debug
-            if (rs == null) throw new FlashDatabaseException("BSEmu does not support RMS"); //FIXME and remove this test
-            openRecordStores.addElement(rs);
+            //            openRecordStores.addElement(rs);
+            
             success = true;
         } catch (RecordStoreNotFoundException e) {
             success = !createIfNecessary;
@@ -370,18 +381,18 @@ public final class RMSUtils {
      * Delete one item
      *
      * @param key
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public void delete(final String key) throws FlashDatabaseException {
         final String truncatedRecordStoreName = truncateRecordStoreNameToLast32(key);
 
         try {
-            final RecordStore[] recordStores;
+//            final RecordStore[] recordStores;
 
-            synchronized (openRecordStores) {
-                recordStores = new RecordStore[openRecordStores.size()];
-                openRecordStores.copyInto(recordStores);
-            }
+//            synchronized (openRecordStores) {
+//                recordStores = new RecordStore[openRecordStores.size()];
+//                openRecordStores.copyInto(recordStores);
+//            }
 
             /**
              * Close existing references to the record store
@@ -398,17 +409,17 @@ public final class RMSUtils {
              * read and remember the RMS contents on startup, use that as an
              * in-memory index... Still expensive. -paul
              */
-            for (int i = 0; i < recordStores.length; i++) {
-                try {
-                    if (recordStores[i].getName().equals(truncatedRecordStoreName)) {
-                        openRecordStores.markAsExtra(recordStores[i]);
-                    }
-                } catch (RecordStoreNotOpenException ex) {
-                    //#debug
-                    L.e("Mark as extra close of record store failed", truncatedRecordStoreName, ex);
-                }
-            }
-            RecordStore.deleteRecordStore(key);
+//            for (int i = 0; i < recordStores.length; i++) {
+//                try {
+//                    if (recordStores[i].getName().equals(truncatedRecordStoreName)) {
+//                        openRecordStores.markAsExtra(recordStores[i]);
+//                    }
+//                } catch (RecordStoreNotOpenException ex) {
+//                    //#debug
+//                    L.e("Mark as extra close of record store failed", truncatedRecordStoreName, ex);
+//                }
+//            }
+            RecordStore.deleteRecordStore(truncatedRecordStoreName);
         } catch (RecordStoreNotFoundException ex) {
             //#debug
             L.i("RMS not found (normal result)", key);
