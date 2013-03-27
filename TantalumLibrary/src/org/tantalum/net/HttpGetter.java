@@ -339,17 +339,25 @@ public class HttpGetter extends Task {
                 L.i(this.getClass().getName() + " start fixed_length read", key + " content_length=" + length);
                 int bytesRead = 0;
                 final byte[] bytes = new byte[(int) length];
-                while (bytesRead < bytes.length) {
-                    synchronized (NET_MUTEX) {
-                        final int br = inputStream.read(bytes, bytesRead, bytes.length - bytesRead);
-                        if (br >= 0) {
-                            bytesRead += br;
-                        } else {
-                            //#debug
-                            L.i(this.getClass().getName() + " recieved EOF before content_length exceeded", key + ", content_length=" + length + " bytes_read=" + bytesRead);
-                            break;
+                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
+                if (b >= 0) {
+                    bytesRead += 1;
+                    bytes[0] = (byte) b;
+                    while (bytesRead < bytes.length) {
+                        synchronized (NET_MUTEX) {
+                            final int br = inputStream.read(bytes, bytesRead, bytes.length - bytesRead);
+                            if (br >= 0) {
+                                bytesRead += br;
+                            } else {
+                                //#debug
+                                L.i(this.getClass().getName() + " recieved EOF before content_length exceeded", key + ", content_length=" + length + " bytes_read=" + bytesRead);
+                                break;
+                            }
                         }
                     }
+                } else {
+                    //#debug
+                    L.i(this.getClass().getName() + " recieved EOF on first byte", key + ", content_length=" + length + " bytes_read=" + bytesRead);
                 }
                 out = bytes;
                 //#debug
@@ -359,16 +367,22 @@ public class HttpGetter extends Task {
                 L.i(this.getClass().getName() + " start variable length read", key);
                 bos = new ByteArrayOutputStream();
                 final byte[] readBuffer = new byte[16384];
-
-                while (true) {
-                    synchronized (NET_MUTEX) {
-                        final int bytesRead = inputStream.read(readBuffer);
-                        if (bytesRead >= 0) {
-                            bos.write(readBuffer, 0, bytesRead);
-                        } else {
-                            break;
+                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
+                if (b >= 0) {
+                    bos.write(b);
+                    while (true) {
+                        synchronized (NET_MUTEX) {
+                            final int bytesRead = inputStream.read(readBuffer);
+                            if (bytesRead >= 0) {
+                                bos.write(readBuffer, 0, bytesRead);
+                            } else {
+                                break;
+                            }
                         }
                     }
+                } else {
+                    //#debug
+                    L.i(this.getClass().getName() + " recieved EOF on first byte", key + ", unknown content_length");
                 }
                 out = bos.toByteArray();
                 //#debug
