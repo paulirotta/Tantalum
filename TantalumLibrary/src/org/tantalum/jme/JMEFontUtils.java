@@ -31,7 +31,6 @@ public final class JMEFontUtils {
      * value is not shown. "..." is a typical value.
      */
     public final String elipsis;
-    private final int widthOfW;
 
     /**
      * Get an instance for the specified Font and, for those routines that need
@@ -47,7 +46,7 @@ public final class JMEFontUtils {
             throw new IllegalArgumentException("JMEFontUtils was passed a null font");
         }
         if (elipsis == null) {
-            throw new IllegalArgumentException("JMEFontUtils was passed a null elipsis");
+            throw new IllegalArgumentException("JMEFontUtils was passed a null ellipsis");
         }
         final int key = font.hashCode() ^ elipsis.hashCode();
         JMEFontUtils instance = (JMEFontUtils) instances.get(new Integer(key));
@@ -66,7 +65,6 @@ public final class JMEFontUtils {
 
         this.font = font;
         this.elipsis = elipsis;
-        widthOfW = charWidth('W');
     }
 
     /**
@@ -138,7 +136,7 @@ public final class JMEFontUtils {
     }
 
     private int widthIfAllCharsAreMaxWidth(final String str) {
-        return widthOfW * str.length();
+        return  charWidth('W') * str.length();
     }
 
     private String doKearningTruncate(final String str, final int maxWidth) {

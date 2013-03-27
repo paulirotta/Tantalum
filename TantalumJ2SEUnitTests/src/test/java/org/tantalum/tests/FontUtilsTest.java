@@ -2,11 +2,14 @@ package org.tantalum.tests;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareEverythingForTest;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.jme.JMEFontUtils;
+
 import static org.mockito.Mockito.*;
 
 
@@ -30,6 +33,7 @@ public class FontUtilsTest extends MockedStaticInitializers {
     public final void fontUtilsTestFixture() {
         font = PowerMockito.mock(Font.class);
         fontUtils = JMEFontUtils.getFontUtils(font, "...");
+        setupMocks();
     }
 
 
@@ -43,12 +47,25 @@ public class FontUtilsTest extends MockedStaticInitializers {
         final String expResult_1 = str_1.substring(0, 36) + "...";
         //String expResult_1 = "This is a a really long line of te...";
 
-        when(font.stringWidth()).thenReturn(str_1.length());
 
-        String result_1 = fontUtils.truncate(str_1, maxWidth_1);
-        System.out.println(expResult_1);
-        System.out.println(result_1);
+        String result_1 = fontUtils.truncate(str_1, maxWidth_1, false);
         assertEquals(expResult_1, result_1);
+    }
+
+    private void setupMocks() {
+        when(font.stringWidth(anyString())).thenAnswer(new Answer<Object>() {
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                System.out.println("Getting invocations for " + invocation);
+                Object[] arguments = invocation.getArguments();
+
+                System.out.println("Arguments are " + arguments);
+                return ((String) arguments[0]).length();
+
+            }
+        });
+
+        when(font.charWidth(anyChar())).thenReturn(1);
+
     }
 
     /**
