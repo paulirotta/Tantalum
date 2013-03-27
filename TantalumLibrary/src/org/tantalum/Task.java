@@ -816,8 +816,8 @@ public abstract class Task implements Runnable {
             }
         } catch (final Throwable t) {
             //#debug
-            L.e("Unhandled task exception", this.toString(), t);
-            this.cancel(false, "Unhandled task exception: " + this.toString() + " : " + t);
+            L.e("Exception during Task exec()", this.toString(), t);
+            cancel(false, "Unhandled task exception: " + this.toString() + " : " + t);
         }
 
         return v;
@@ -862,6 +862,13 @@ public abstract class Task implements Runnable {
                 case PENDING:
                     if (mayInterruptIfRunning) {
                         Worker.interruptTask(this);
+                        if (status == Task.CANCELED) {
+                            /*
+                             * If the Task.cancel() sent an interrupt which was
+                             * caught, the Task was canceled at that point.
+                             */
+                            break;
+                        }
                     }
                 // continue to default
 
