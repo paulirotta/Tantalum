@@ -10,19 +10,20 @@ import javax.microedition.lcdui.Font;
 
 /**
  * Some convenience utilities for working with J2ME Fonts and strings to lay out
- * a user interface on a Canvas or CustomItem. Some of these functions are backed
- * by character-width Hashtable structures to give a much faster alternative
- * calculations to the very slow Font.stringWidth() routine that can slow your
- * user interface.
- * 
+ * a user interface on a Canvas or CustomItem. Some of these functions are
+ * backed by character-width Hashtable structures to give a much faster
+ * alternative calculations to the very slow Font.stringWidth() routine that can
+ * slow your user interface.
+ *
  * @author phou
  */
 public final class JMEFontUtils {
+
     private static final Hashtable instances = new Hashtable();
     private final Hashtable charWidth = new Hashtable();
     /**
      * The Font which this instance operates on
-     * 
+     *
      */
     public final Font font;
     /**
@@ -30,16 +31,16 @@ public final class JMEFontUtils {
      * value is not shown. "..." is a typical value.
      */
     public final String elipsis;
-    private final int widthOfW = charWidth('W');
+    private final int widthOfW;
 
     /**
      * Get an instance for the specified Font and, for those routines that need
-     * it, elipsis (line ending addition such as '...' to indicate that the
-     * line was truncated)
-     * 
+     * it, elipsis (line ending addition such as '...' to indicate that the line
+     * was truncated)
+     *
      * @param font
      * @param elipsis
-     * @return 
+     * @return
      */
     public static synchronized JMEFontUtils getFontUtils(final Font font, final String elipsis) {
         if (font == null) {
@@ -50,7 +51,7 @@ public final class JMEFontUtils {
         }
         final int key = font.hashCode() ^ elipsis.hashCode();
         JMEFontUtils instance = (JMEFontUtils) instances.get(new Integer(key));
-        
+
         if (instance == null) {
             instance = new JMEFontUtils(font, elipsis);
         }
@@ -59,54 +60,60 @@ public final class JMEFontUtils {
     }
 
     private JMEFontUtils(final Font font, final String elipsis) {
+        if (font == null && elipsis != null) {
+            throw new IllegalArgumentException("JMEFontUtils requires a non-null font and elipsis");
+        }
+
         this.font = font;
         this.elipsis = elipsis;
+        widthOfW = charWidth('W');
     }
-    
+
     /**
-     * Return the approximate (within a few pixels) width of a <code>String</code> when rendered
-     * in the specified <code>Font</code>.
-     * 
+     * Return the approximate (within a few pixels) width of a
+     * <code>String</code> when rendered in the specified
+     * <code>Font</code>.
+     *
      * Note that since nearby characters are not known, this width does not take
-     * into account possible kerning of this character when placed next to others
-     * in a line of text. For most purposes this is acceptable, and the advantage
-     * of using this method vs the more precise <code>Font.stringWidth()</code>
-     * method is that this returns values which are good enough for most purposes
-     * much more quickly.
-     * 
+     * into account possible kerning of this character when placed next to
+     * others in a line of text. For most purposes this is acceptable, and the
+     * advantage of using this method vs the more precise
+     * <code>Font.stringWidth()</code> method is that this returns values which
+     * are good enough for most purposes much more quickly.
+     *
      * @param str
-     * @return 
+     * @return
      */
     public int stringWidth(final String str) {
         int w = 0;
         final char[] chars = str.toCharArray();
-        
+
         for (int i = 0; i < chars.length; i++) {
             i += charWidth(chars[i]);
         }
-        
+
         return w;
     }
 
     /**
      * Find the width of the character in the specified Font.
-     * 
+     *
      * Note that since nearby characters are not known, this width does not take
-     * into account possible kerning of this character when placed next to others
-     * in a line of text.
-     * 
+     * into account possible kerning of this character when placed next to
+     * others in a line of text.
+     *
      * @param c
-     * @return 
+     * @return
      */
     public int charWidth(final char c) {
         final Character ca = new Character(c);
         Integer width = (Integer) this.charWidth.get(ca);
-        
+
         if (width == null) {
             width = new Integer(font.stringWidth(ca.toString()));
             this.charWidth.put(ca, width);
         }
-        
+
         return width.intValue();
     }
 
@@ -126,17 +133,17 @@ public final class JMEFontUtils {
         if (useKerning) {
             return doKearningTruncate(str, maxWidth);
         }
-        
+
         return doHashAcceleratedTruncate(str, maxWidth);
     }
-    
+
     private int widthIfAllCharsAreMaxWidth(final String str) {
         return widthOfW * str.length();
     }
 
     private String doKearningTruncate(final String str, final int maxWidth) {
         String truncatedStr = str;
-        
+
         if (font.stringWidth(str) > maxWidth) {
             final StringBuffer truncated = new StringBuffer(str);
             while (font.stringWidth(truncated.toString()) > maxWidth) {
@@ -152,7 +159,7 @@ public final class JMEFontUtils {
 
     private String doHashAcceleratedTruncate(final String str, final int maxWidth) {
         String truncatedStr = str;
-        
+
         if (stringWidth(str) > maxWidth) {
             final StringBuffer truncated = new StringBuffer(str);
             while (stringWidth(truncated.toString()) > maxWidth) {
@@ -168,30 +175,31 @@ public final class JMEFontUtils {
 
     /**
      * Split a string in to several lines of text which will display within a
-     * maximum width. To return good but not exact line truncation points quickly,
-     * exact Font kerning is not considered. As a result the actual length
-     * of each line of text may be up to a few pixels more than a kerned render,
-     * so in rare cases lines may be broken one word earlier than they would
-     * otherwise.
+     * maximum width. To return good but not exact line truncation points
+     * quickly, exact Font kerning is not considered. As a result the actual
+     * length of each line of text may be up to a few pixels more than a kerned
+     * render, so in rare cases lines may be broken one word earlier than they
+     * would otherwise.
      *
      * @param text
      * @param maxWidth
-     * @return 
+     * @return
      */
     public Vector splitToLines(final String text, final int maxWidth) {
         return splitToLines(new Vector(), text, maxWidth, false);
     }
-    
+
     /**
      * Split a string in to several lines of text which will display within a
      * maximum width. Single lines of text are expected and only the common
-     * whitespace character <code>' '</code> is considered as a line break position.
+     * whitespace character
+     * <code>' '</code> is considered as a line break position.
      *
      * @param vector - The existing vector to which the lines should be appended
      * @param text
      * @param maxWidth
      * @param useKerning
-     * @return 
+     * @return
      */
     public Vector splitToLines(final Vector vector, final String text, final int maxWidth, final boolean useKerning) {
         int lastSpace = 0;
@@ -212,7 +220,7 @@ public final class JMEFontUtils {
             }
         }
         vector.addElement(text.trim());
-        
+
         return vector;
     }
 }
