@@ -46,6 +46,14 @@ import org.tantalum.util.L;
  */
 public class HttpGetter extends Task {
 
+    /**
+     * Prevent context switching to another HttpGetter during TCP buffer read
+     *
+     * You can also synchronized on this during a critical block in your UI
+     * code. By doing so you are effectively freezing any temporary downstream
+     * activity and thereby boosting the CPU cycles available for your activity.
+     */
+    public static final Object NET_MUTEX = new Object();
 //    private static final Hashtable inFlightGets = new Hashtable();
     /**
      * The HTTP server has not yet been contacted, so no response code is yet
@@ -189,7 +197,6 @@ public class HttpGetter extends Task {
 //
 //        return (HttpGetter) HttpGetter.inFlightGets.get(key);
 //    }
-
     /**
      * Specify how many more times the HttpGetter should re-attempt HTTP GET if
      * there is a network error.
@@ -333,13 +340,15 @@ public class HttpGetter extends Task {
                 int bytesRead = 0;
                 final byte[] bytes = new byte[(int) length];
                 while (bytesRead < bytes.length) {
-                    final int br = inputStream.read(bytes, bytesRead, bytes.length - bytesRead);
-                    if (br > 0) {
-                        bytesRead += br;
-                    } else {
-                        //#debug
-                        L.i(this.getClass().getName() + " recieved EOF before content_length exceeded", key + ", content_length=" + length + " bytes_read=" + bytesRead);
-                        break;
+                    synchronized (NET_MUTEX) {
+                        final int br = inputStream.read(bytes, bytesRead, bytes.length - bytesRead);
+                        if (br >= 0) {
+                            bytesRead += br;
+                        } else {
+                            //#debug
+                            L.i(this.getClass().getName() + " recieved EOF before content_length exceeded", key + ", content_length=" + length + " bytes_read=" + bytesRead);
+                            break;
+                        }
                     }
                 }
                 out = bytes;
@@ -352,11 +361,13 @@ public class HttpGetter extends Task {
                 final byte[] readBuffer = new byte[16384];
 
                 while (true) {
-                    final int bytesRead = inputStream.read(readBuffer);
-                    if (bytesRead > 0) {
-                        bos.write(readBuffer, 0, bytesRead);
-                    } else {
-                        break;
+                    synchronized (NET_MUTEX) {
+                        final int bytesRead = inputStream.read(readBuffer);
+                        if (bytesRead >= 0) {
+                            bos.write(readBuffer, 0, bytesRead);
+                        } else {
+                            break;
+                        }
                     }
                 }
                 out = bos.toByteArray();
