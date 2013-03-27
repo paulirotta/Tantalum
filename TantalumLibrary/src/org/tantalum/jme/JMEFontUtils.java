@@ -30,6 +30,7 @@ public final class JMEFontUtils {
      * value is not shown. "..." is a typical value.
      */
     public final String elipsis;
+    private final int widthOfW = charWidth('W');
 
     /**
      * Get an instance for the specified Font and, for those routines that need
@@ -118,12 +119,43 @@ public final class JMEFontUtils {
      * @return String - truncated string with ellipsis added to end of the
      * string
      */
-    public String truncate(final String str, final int maxWidth) {
+    public String truncate(final String str, final int maxWidth, final boolean useKerning) {
+        if (widthIfAllCharsAreMaxWidth(str) < maxWidth) {
+            return str;
+        }
+        if (useKerning) {
+            return doKearningTruncate(str, maxWidth);
+        }
+        
+        return doHashAcceleratedTruncate(str, maxWidth);
+    }
+    
+    private int widthIfAllCharsAreMaxWidth(final String str) {
+        return widthOfW * str.length();
+    }
+
+    private String doKearningTruncate(final String str, final int maxWidth) {
         String truncatedStr = str;
         
         if (font.stringWidth(str) > maxWidth) {
             final StringBuffer truncated = new StringBuffer(str);
             while (font.stringWidth(truncated.toString()) > maxWidth) {
+                truncated.deleteCharAt(truncated.length() - 1);
+            }
+            truncated.delete(truncated.length() - elipsis.length(), truncated.length());
+            truncated.append(elipsis);
+            truncatedStr = truncated.toString();
+        }
+
+        return truncatedStr;
+    }
+
+    private String doHashAcceleratedTruncate(final String str, final int maxWidth) {
+        String truncatedStr = str;
+        
+        if (stringWidth(str) > maxWidth) {
+            final StringBuffer truncated = new StringBuffer(str);
+            while (stringWidth(truncated.toString()) > maxWidth) {
                 truncated.deleteCharAt(truncated.length() - 1);
             }
             truncated.delete(truncated.length() - elipsis.length(), truncated.length());
@@ -176,8 +208,7 @@ public final class JMEFontUtils {
             }
             if (width > maxWidth) {
                 vector.addElement(text.substring(0, lastSpace + 1).trim());
-                splitToLines(vector, text.substring(lastSpace + 1), maxWidth, useKerning);
-                return vector;
+                return splitToLines(vector, text.substring(lastSpace + 1), maxWidth, useKerning);
             }
         }
         vector.addElement(text.trim());
