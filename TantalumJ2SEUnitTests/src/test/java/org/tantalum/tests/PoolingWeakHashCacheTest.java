@@ -24,53 +24,24 @@
  */
 package org.tantalum.tests;
 
-import jmunit.framework.cldc11.AssertionFailedException;
-import jmunit.framework.cldc11.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+
 import org.tantalum.util.PoolingWeakHashCache;
 
 /**
  * Unit tests for PoolingWeakHashCache
- * 
+ *
  * @author phou
  */
-public class PoolingWeakHashCacheTest extends TestCase {
-
-    /**
-     * Create a unit test harness
-     */
-    public PoolingWeakHashCacheTest() {
-        //The first parameter of inherited constructor is the number of test cases
-        super(3, "PoolingWeakHashCacheTest");
-    }
-
-    /**
-     * Invoke tests by number
-     * 
-     * @param testNumber
-     * @throws Throwable 
-     */
-    public void test(int testNumber) throws Throwable {
-        switch (testNumber) {
-            case 0:
-                testClear();
-                break;
-            case 1:
-                testRemove();
-                break;
-            case 2:
-                testGetFromPool();
-                break;
-            default:
-                break;
-        }
-    }
+public class PoolingWeakHashCacheTest {
 
     /**
      * Test of testClear method, of class PoolingWeakHashCache.
-     * 
-     * @throws AssertionFailedException 
      */
-    public void testClear() throws AssertionFailedException {
+    public void testClear() {
         System.out.println("clear");
         PoolingWeakHashCache instance = new PoolingWeakHashCache();
         instance.put("key", "value");
@@ -81,10 +52,8 @@ public class PoolingWeakHashCacheTest extends TestCase {
 
     /**
      * Test of testRemove method, of class PoolingWeakHashCache.
-     * 
-     * @throws AssertionFailedException 
      */
-    public void testRemove() throws AssertionFailedException {
+    public void testRemove() {
         System.out.println("remove");
         PoolingWeakHashCache instance = new PoolingWeakHashCache();
         instance.put("key", "value");
@@ -95,10 +64,8 @@ public class PoolingWeakHashCacheTest extends TestCase {
 
     /**
      * Test of testGetFromPool method, of class PoolingWeakHashCache.
-     * 
-     * @throws AssertionFailedException 
      */
-    public void testGetFromPool() throws AssertionFailedException {
+    public void testGetFromPool() {
         System.out.println("getFromPool");
         PoolingWeakHashCache instance = new PoolingWeakHashCache();
         instance.put("key", "value");

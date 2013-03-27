@@ -24,60 +24,26 @@
  */
 package org.tantalum.tests;
 
-import jmunit.framework.cldc11.*;
-import org.tantalum.PlatformUtils;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.WeakHashCache;
 
 /**
  * Unit tests for WeakHashCache
- * 
+ *
  * @author phou
  */
-public class WeakHashCacheTest extends TestCase {
-
-    /**
-     * Create the test harness
-     */
-    public WeakHashCacheTest() {
-        //The first parameter of inherited constructor is the number of test cases
-        super(5, "WeakHashCacheTest");
-        PlatformUtils.getInstance().setProgram(this, 4, false);
-    }
-
-    /**
-     * Invoke unit tests by number
-     * 
-     * @param testNumber
-     * @throws Throwable 
-     */
-    public void test(int testNumber) throws Throwable {
-        switch (testNumber) {
-            case 0:
-                testRemove();
-                break;
-            case 1:
-                testPut();
-                break;
-            case 2:
-                testGet();
-                break;
-            case 3:
-                testContainsKey();
-                break;
-            case 4:
-                testSize();
-                break;
-            default:
-                break;
-        }
-    }
+public class WeakHashCacheTest extends MockedStaticInitializers {
 
     /**
      * Test of testRemove method, of class WeakHashCache.
-     * 
-     * @throws AssertionFailedException 
      */
-    public void testRemove() throws AssertionFailedException {
+    @Test
+    public void testRemove() {
         System.out.println("remove");
         WeakHashCache instance = new WeakHashCache();
         String key1 = "";
@@ -93,10 +59,9 @@ public class WeakHashCacheTest extends TestCase {
 
     /**
      * Test of testPut method, of class WeakHashCache.
-     * 
-     * @throws AssertionFailedException 
      */
-    public void testPut() throws AssertionFailedException {
+    @Test
+    public void testPut() {
         System.out.println("put");
         WeakHashCache instance = new WeakHashCache();
         String key1 = "";
@@ -106,7 +71,7 @@ public class WeakHashCacheTest extends TestCase {
         instance.put(key2, "cake");
         try {
             instance.put(null, "dog");
-            this.fail("Did not catch null key put to WeakHashCache");
+            fail("Did not catch null key put to WeakHashCache");
         } catch (Exception e) {
         }
         assertEquals(instance.size(), 2);
@@ -123,10 +88,9 @@ public class WeakHashCacheTest extends TestCase {
 
     /**
      * Test of testGet method, of class WeakHashCache.
-     * 
-     * @throws AssertionFailedException 
      */
-    public void testGet() throws AssertionFailedException {
+    @Test
+    public void testGet() {
         System.out.println("get");
         WeakHashCache instance = new WeakHashCache();
         String key1 = "11";
@@ -143,10 +107,9 @@ public class WeakHashCacheTest extends TestCase {
 
     /**
      * Test of testContainsKey method, of class WeakHashCache.
-     * 
-     * @throws AssertionFailedException 
      */
-    public void testContainsKey() throws AssertionFailedException {
+    @Test
+    public void testContainsKey() {
         System.out.println("containsKey");
         WeakHashCache instance = new WeakHashCache();
         String key1 = "11";
@@ -166,10 +129,9 @@ public class WeakHashCacheTest extends TestCase {
 
     /**
      * Test of testSize method, of class WeakHashCache.
-     * 
-     * @throws AssertionFailedException 
      */
-    public void testSize() throws AssertionFailedException {
+    @Test
+    public void testSize() {
         System.out.println("size");
         WeakHashCache instance = new WeakHashCache();
         final int length = 10000;

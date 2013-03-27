@@ -24,57 +24,25 @@
  */
 package org.tantalum.tests;
 
-import org.tantalum.util.SortedVector;
+import org.junit.Before;
+import org.junit.Test;
 
-import jmunit.framework.cldc11.AssertionFailedException;
-import jmunit.framework.cldc11.TestCase;
+import static org.junit.Assert.*;
+
+import org.tantalum.util.SortedVector;
 
 /**
  * Unit tests for SortedVector
  *
  * @author phou
  */
-public class SortedVectorTest extends TestCase {
-
-    /**
-     * Create a new test harness
-     */
-    public SortedVectorTest() {
-        //The first parameter of inherited constructor is the number of test cases
-        super(4, "SortedVectorTest");
-    }
-
-    /**
-     * Invoke unit tests by number
-     *
-     * @param testNumber
-     * @throws Throwable
-     */
-    public void test(int testNumber) throws Throwable {
-        switch (testNumber) {
-            case 0:
-                testInsertElementAt();
-                break;
-            case 1:
-                testSetElementAt();
-                break;
-            case 2:
-                testAddElement();
-                break;
-            case 3:
-                testSequence();
-                break;
-            default:
-                break;
-        }
-    }
+public class SortedVectorTest {
 
     /**
      * Test of testInsertElementAt method, of class SortedVector.
-     *
-     * @throws AssertionFailedException
      */
-    public void testInsertElementAt() throws AssertionFailedException {
+    @Test
+    public void testInsertElementAt() {
         System.out.println("insertElementAt");
         SortedVector instance = new SortedVector(new SortedVector.Comparator() {
             public boolean before(Object o1, Object o2) {
@@ -93,10 +61,9 @@ public class SortedVectorTest extends TestCase {
 
     /**
      * Test of testSetElementAt method, of class SortedVector.
-     *
-     * @throws AssertionFailedException
      */
-    public void testSetElementAt() throws AssertionFailedException {
+    @Test
+    public void testSetElementAt() {
         System.out.println("setElementAt");
         SortedVector instance = new SortedVector(new SortedVector.Comparator() {
             public boolean before(Object o1, Object o2) {
@@ -115,10 +82,9 @@ public class SortedVectorTest extends TestCase {
 
     /**
      * Test of testAddElement method, of class SortedVector.
-     *
-     * @throws AssertionFailedException
      */
-    public void testAddElement() throws AssertionFailedException {
+    @Test
+    public void testAddElement() {
         System.out.println("addElement");
         SortedVector instance = new SortedVector(new SortedVector.Comparator() {
             public boolean before(Object o1, Object o2) {
@@ -138,12 +104,11 @@ public class SortedVectorTest extends TestCase {
 
     /**
      * Test an error discovered by air-dex to see it does not re-surface
-     * 
+     * <p/>
      * http://projects.developer.nokia.com/Tantalum/ticket/10
-     * 
-     * @throws AssertionFailedException 
      */
-    public void testSequence() throws AssertionFailedException {
+    @Test
+    public void testSequence() {
         System.out.println("testSequence");
         SortedVector instance = new SortedVector(new SortedVector.Comparator() {
             public boolean before(Object o1, Object o2) {
@@ -163,7 +128,7 @@ public class SortedVectorTest extends TestCase {
 
         Integer[] expected = {new Integer(10), new Integer(20), new Integer(30), new Integer(40), new Integer(50)};
         for (int i = 0; i < instance.size(); i++) {
-            assertEquals("sequence test " + (i+1), expected[i], (Integer) instance.elementAt(i));
+            assertEquals("sequence test " + (i + 1), expected[i], (Integer) instance.elementAt(i));
         }
     }
 }

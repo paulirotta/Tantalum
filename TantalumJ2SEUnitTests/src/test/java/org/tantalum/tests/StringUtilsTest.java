@@ -29,58 +29,25 @@ import javax.microedition.lcdui.Font;
 
 import org.tantalum.util.StringUtils;
 
-import jmunit.framework.cldc11.*;
-import org.tantalum.PlatformUtils;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for StringUtils
  *
  * @author phou
  */
-public class StringUtilsTest extends TestCase {
-
-    /**
-     * Create a new test harness
-     */
-    public StringUtilsTest() {
-        //The first parameter of inherited constructor is the number of test cases
-        super(4, "StringUtilsTest");
-
-        PlatformUtils.getInstance().setProgram(this, 4, false); // Init debug
-    }
-
-    /**
-     * Test invocation by number
-     *
-     * @param testNumber
-     * @throws Throwable
-     */
-    public void test(int testNumber) throws Throwable {
-        switch (testNumber) {
-            case 0:
-                testReadStringFromJAR();
-                break;
-            case 1:
-                testReadBytesFromJAR();
-                break;
-            case 2:
-                testTruncate();
-                break;
-            case 3:
-                testSplitToLines();
-                break;
-            default:
-                break;
-        }
-    }
+public class StringUtilsTest {
 
     /**
      * Test of testReadStringFromJAR method, of class StringUtils.
      *
-     * @throws AssertionFailedException
      * @throws Exception
      */
-    public void testReadStringFromJAR() throws AssertionFailedException, Exception {
+    @Test
+    public void testReadStringFromJAR() throws Exception {
         System.out.println("readStringFromJAR");
         String name_1 = "/test.txt";
         String expResult_1 = "Hello, this is test text";
@@ -90,45 +57,13 @@ public class StringUtilsTest extends TestCase {
 
     /**
      * Test of testReadBytesFromJAR method, of class StringUtils.
-     *
-     * @throws AssertionFailedException
      * @throws Exception
      */
-    public void testReadBytesFromJAR() throws AssertionFailedException, Exception {
+    @Test
+    public void testReadBytesFromJAR() throws Exception {
         System.out.println("readBytesFromJAR");
         byte[] result_1 = StringUtils.readBytesFromJAR("/rss.xml");
         assertEquals(66547, result_1.length);
     }
 
-    /**
-     * Test of testTruncate method, of class StringUtils.
-     *
-     * @throws AssertionFailedException
-     */
-    public void testTruncate() throws AssertionFailedException {
-        System.out.println("truncate");
-        String str_1 = "This is a a really long line of text--------------------------------------------------------------------------------------------------------------------------------";
-        Font font_1 = Font.getDefaultFont();
-        int maxWidth_1 = 240;
-        String expResult_1 = "This is a a really long line of te...";
-        String result_1 = StringUtils.truncate(str_1, font_1, maxWidth_1);
-        System.out.println(expResult_1);
-        System.out.println(result_1);
-        assertEquals(expResult_1, result_1);
-    }
-
-    /**
-     * Test of testSplitToLines method, of class StringUtils.
-     *
-     * @throws AssertionFailedException
-     */
-    public void testSplitToLines() throws AssertionFailedException {
-        System.out.println("splitToLines");
-        Vector vector_1 = new Vector();
-        String text_1 = "This is a a really long line of text";
-        Font font_1 = Font.getDefaultFont();
-        int maxWidth_1 = 100;
-        StringUtils.splitToLines(vector_1, text_1, font_1, maxWidth_1);
-        this.assertEquals(3, vector_1.size());
-    }
 }

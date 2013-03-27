@@ -24,10 +24,10 @@
  */
 package org.tantalum.tests;
 
+import junit.framework.TestCase;
 import org.tantalum.util.LengthLimitedVector;
-
-import jmunit.framework.cldc11.AssertionFailedException;
-import jmunit.framework.cldc11.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * LengthLimitedVector unit tests
@@ -39,38 +39,11 @@ public class LengthLimitedVectorTest extends TestCase {
     private boolean tooLong = false;
 
     /**
-     * Create a new test structure
-     */
-    public LengthLimitedVectorTest() {
-        //The first parameter of inherited constructor is the number of test cases
-        super(2, "LengthLimitedLRUVectorTest");
-    }
-
-    /**
-     * Invoke test by number
-     * 
-     * @param testNumber
-     * @throws Throwable 
-     */
-    public void test(int testNumber) throws Throwable {
-        switch (testNumber) {
-            case 0:
-                testAddElement();
-                break;
-            case 1:
-                testLengthExceeded();
-                break;
-            default:
-                break;
-        }
-    }
-
-    /**
      * Test of testAddElement method, of class LengthLimitedVector.
      *
-     * @throws AssertionFailedException
      */
-    public void testAddElement() throws AssertionFailedException {
+    @Test
+    public void testAddElement() {
         System.out.println("addElement");
         LengthLimitedVector instance = new LengthLimitedVector(3) {
             protected void lengthExceeded(Object extra) {
@@ -87,9 +60,9 @@ public class LengthLimitedVectorTest extends TestCase {
     /**
      * Test of testLengthExceeded method, of class LengthLimitedVector.
      *
-     * @throws AssertionFailedException
      */
-    public void testLengthExceeded() throws AssertionFailedException {
+    @Test
+    public void testLengthExceeded() {
         System.out.println("lengthExceeded");
         LengthLimitedVector instance = new LengthLimitedVector(3) {
             protected void lengthExceeded(Object o) {

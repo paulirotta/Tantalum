@@ -24,8 +24,14 @@
  */
 package org.tantalum.tests;
 
+
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
 import java.util.Vector;
-import jmunit.framework.cldc11.*;
+
 import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
@@ -37,90 +43,13 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public class TaskTest extends TestCase {
-
-    /**
-     * Unit tests for Task
-     */
-    public TaskTest() {
-        //The first parameter of inherited constructor is the number of test cases
-        super(20, "TaskTest");
-
-        PlatformUtils.getInstance().setProgram(this, 2, false);
-    }
-
-    /**
-     * Run unit tests by number
-     *
-     * @param testNumber
-     * @throws Throwable
-     */
-    public void test(int testNumber) throws Throwable {
-        switch (testNumber) {
-            case 0:
-                testFork();
-                break;
-            case 1:
-                testDoGet();
-                break;
-            case 2:
-                testJoin();
-                break;
-            case 3:
-                testGet();
-                break;
-            case 4:
-                testSetResult();
-                break;
-            case 5:
-                testNotifyTaskForked();
-                break;
-            case 6:
-                testGetResult();
-                break;
-            case 7:
-                testToString();
-                break;
-            case 8:
-                break;
-            case 9:
-                testCancel();
-                break;
-            case 10:
-                testOnCanceled();
-                break;
-            case 11:
-                testDoInBackground();
-                break;
-            case 12:
-                testChain();
-                break;
-            case 13:
-                testGetStatus();
-                break;
-            case 14:
-                testJoinAll();
-                break;
-            case 15:
-                testCancelSelf();
-                break;
-            case 16:
-                testCancelThread();
-                break;
-            case 17:
-                taskChainDelayTest();
-                break;
-            default:
-                break;
-        }
-    }
+public class TaskTest {
 
     /**
      * Test of testFork method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testFork() throws AssertionFailedException {
+    @Test
+    public void testFork() {
         System.out.println("fork");
         Task instance = new Task() {
             protected Object exec(Object in) {
@@ -144,10 +73,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testDoGet method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testDoGet() throws AssertionFailedException {
+    @Test
+    public void testDoGet() {
         System.out.println("doGet");
         Task instance = new Task("white") {
             protected Object exec(Object in) {
@@ -178,10 +106,10 @@ public class TaskTest extends TestCase {
     /**
      * Test of testJoin method, of class Task.
      *
-     * @throws AssertionFailedException
      * @throws Exception
      */
-    public void testJoin() throws AssertionFailedException, Exception {
+    @Test
+    public void testJoin() throws Exception {
         System.out.println("join");
         Task instance = new Task() {
             protected Object exec(Object in) {
@@ -281,10 +209,10 @@ public class TaskTest extends TestCase {
     /**
      * Test of testGet method, of class Task.
      *
-     * @throws AssertionFailedException
      * @throws Exception
      */
-    public void testGet() throws AssertionFailedException, Exception {
+    @Test
+    public void testGet() throws Exception {
         System.out.println("get");
         Task instance = new Task() {
             protected Object exec(Object in) {
@@ -319,10 +247,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testSetResult method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testSetResult() throws AssertionFailedException {
+    @Test
+    public void testSetResult() {
         System.out.println("setResult");
         try {
             Task instance = new Task() {
@@ -361,10 +288,10 @@ public class TaskTest extends TestCase {
     /**
      * Test of testNotifyTaskForked method, of class Task.
      *
-     * @throws AssertionFailedException
      * @throws Exception
      */
-    public void testNotifyTaskForked() throws AssertionFailedException, Exception {
+    @Test
+    public void testNotifyTaskForked() throws InterruptedException, Exception {
         System.out.println("notifyTaskForked");
         final Task instance = new Task() {
             protected Object exec(Object in) {
@@ -392,10 +319,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testGetResult method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testGetResult() throws AssertionFailedException {
+    @Test
+    public void testGetResult() {
         System.out.println("getResult");
         final Task instance = new Task("start") {
             protected Object exec(Object in) {
@@ -418,10 +344,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testToString method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testToString() throws AssertionFailedException {
+    @Test
+    public void testToString() {
         System.out.println("toString");
         final Task instance = new Task("start") {
             protected Object exec(Object in) {
@@ -429,15 +354,14 @@ public class TaskTest extends TestCase {
             }
         };
         String result_1 = instance.toString();
-        this.assertTrue(result_1.length() > 5);
+        assertTrue(result_1.length() > 5);
     }
 
     /**
      * Test of testCancel method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testCancel() throws AssertionFailedException {
+    @Test
+    public void testCancel() {
         final Vector errors = new Vector();
         System.out.println("cancel");
         final Task testCancelRunsToEnd = new Task("I AM") {
@@ -550,10 +474,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testOnCanceled method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testOnCanceled() throws AssertionFailedException {
+    @Test
+    public void testOnCanceled() {
         System.out.println("onCanceled");
         final Vector v = new Vector();
         final Task instance = new Task() {
@@ -587,10 +510,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testDoInBackground method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testDoInBackground() throws AssertionFailedException {
+    @Test
+    public void testDoInBackground() {
         System.out.println("doInBackground");
         final Task instance = new Task("ca") {
             @Override
@@ -608,10 +530,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testChain method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testChain() throws AssertionFailedException {
+    @Test
+    public void testChain() {
         System.out.println("chain");
         final Task instance = new Task("1") {
             protected Object exec(Object in) {
@@ -667,10 +588,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test of testGetStatus method, of class Task.
-     *
-     * @throws AssertionFailedException
      */
-    public void testGetStatus() throws AssertionFailedException {
+    @Test
+    public void testGetStatus() {
         System.out.println("getStatus");
         final Task instanceA = new Task() {
             protected Object exec(Object in) {
@@ -711,10 +631,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test joinAll().
-     *
-     * @throws AssertionFailedException
      */
-    public void testJoinAll() throws AssertionFailedException {
+    @Test
+    public void testJoinAll() {
         System.out.println("joinAll");
         final Task task1 = new Task("1") {
             protected Object exec(Object in) {
@@ -817,10 +736,9 @@ public class TaskTest extends TestCase {
 
     /**
      * Test joinAll().
-     *
-     * @throws AssertionFailedException
      */
-    public void testCancelSelf() throws AssertionFailedException {
+    @Test
+    public void testCancelSelf() {
         System.out.println("cancelSelf");
         final Task task1a = new Task("1") {
             @Override
@@ -899,7 +817,8 @@ public class TaskTest extends TestCase {
         }
     }
 
-    public void testCancelThread() throws AssertionFailedException {
+    @Test
+    public void testCancelThread() {
         System.out.println("cancelSelf");
         final Task task1 = new Task("1") {
             @Override

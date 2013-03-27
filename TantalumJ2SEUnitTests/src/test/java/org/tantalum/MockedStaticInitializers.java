@@ -35,6 +35,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.tantalum.PlatformUtils;
 import org.tantalum.util.L;
 
+import javax.microedition.lcdui.Font;
+
 
 /**
  * Base class for tests requiring Tantalum methods to be mocked out.
@@ -51,10 +53,10 @@ import org.tantalum.util.L;
  * To use this class in tests, just extend it. If some other Tantalum-classes
  * need to be mocked out, add them here.
  *
- * @author kink
+ * @author Kai Inkinen <kai.inkinen@futurice.com>
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({L.class, PlatformUtils.class})
+@PrepareForTest({L.class, PlatformUtils.class, Font.class})
 @SuppressStaticInitializationFor(
         {"org.tantalum.util.L",
                 "org.tantalum.PlatformUtils",
