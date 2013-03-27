@@ -341,9 +341,18 @@ public final class StaticWebCache extends StaticCache {
                     L.e("Can not get from StaticWebCache", (String) in, e);
                 }
             }
-            //#debug
-            L.i("End GetAnywhereTask " + in.toString(), out.toString());
-
+            //#mdebug
+            String inDebug = null;
+            String outDebug = null;
+           
+            if (in != null) {
+                inDebug = in.toString();
+            }
+            if (out != null) {
+                outDebug = out.toString();
+            }
+            L.i("End GetAnywhereTask " + inDebug, outDebug);
+            //#enddebug
             return out;
         }
     }
