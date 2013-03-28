@@ -26,6 +26,7 @@ package org.tantalum;
 
 import java.io.IOException;
 import java.util.Vector;
+import org.tantalum.jme.JMELog;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
@@ -44,6 +45,37 @@ import org.tantalum.util.L;
  * @author phou
  */
 public interface PlatformAdapter {
+
+    /**
+     * Send log output to the standard output device, usually your IDE log
+     * window
+     */
+    public static final int NORMAL_LOG_MODE = 0;
+    /**
+     * Open a serial port connection to terminal-emulator software opened to the
+     * USB serial port on your computer. On Windows open Control Panel - System
+     * - Devices to set the maximum baud rate, no parity and hardware CTS flow
+     * control and to the same in terminal emulation software such as Putty
+     *
+     * With the release build of the Tantalum library, this setting is ignored
+     * and there will not be any log output.
+     */
+    public static final int USB_SERIAL_PORT_LOG_MODE = 1;
+    /**
+     * Store the most recent run log data as "tantalum.log" on the phone's
+     * memory card in the root directory.
+     *
+     * With the release build of the Tantalum library, this setting is ignored
+     * and there will not be any log output.
+     */
+    public static final int MEMORY_CARD_LOG_MODE = 2;
+    /**
+     * Initialize logging
+     * 
+     * @param logMode 
+     */
+    public void init(int logMode);
+
 
     /**
      * Execute the run() method of the action on the platform's user interface
@@ -94,6 +126,14 @@ public interface PlatformAdapter {
      */
     public ImageTypeHandler getImageTypeHandler();
 
+    /**
+     * Vibrate the phone
+     * 
+     * @param frequency
+     * @param duration 
+     */
+    public void vibrateAsync(int frequency, int duration);
+    
     /**
      * Return the platform-specific Image type as a resource decompressed from
      * the application JAR

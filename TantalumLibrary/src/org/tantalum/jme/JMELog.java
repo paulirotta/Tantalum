@@ -31,6 +31,7 @@ import javax.microedition.io.CommConnection;
 import javax.microedition.io.Connection;
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
+import org.tantalum.PlatformAdapter;
 import org.tantalum.util.L;
 
 /**
@@ -47,30 +48,6 @@ import org.tantalum.util.L;
  * @author phou
  */
 public class JMELog extends L {
-
-    /**
-     * Send log output to the standard output device, usually your IDE log
-     * window
-     */
-    public static final int NORMAL_MODE = 0;
-    /**
-     * Open a serial port connection to terminal-emulator software opened to the
-     * USB serial port on your computer. On Windows open Control Panel - System
-     * - Devices to set the maximum baud rate, no parity and hardware CTS flow
-     * control and to the same in terminal emulation software such as Putty
-     *
-     * With the release build of the Tantalum library, this setting is ignored
-     * and there will not be any log output.
-     */
-    public static final int USB_SERIAL_PORT_MODE = 1;
-    /**
-     * Store the most recent run log data as "tantalum.log" on the phone's
-     * memory card in the root directory.
-     *
-     * With the release build of the Tantalum library, this setting is ignored
-     * and there will not be any log output.
-     */
-    public static final int MEMORY_CARD_MODE = 2;
     private final OutputStream os;
 //#mdebug
     private final byte[] CRLF = "\r\n".getBytes();
@@ -94,17 +71,17 @@ public class JMELog extends L {
         String uri = null;
         JMELog.LogWriter writer = null;
         switch (logMode) {
-            case NORMAL_MODE:
+            case PlatformAdapter.NORMAL_LOG_MODE:
                 break;
 
-            case USB_SERIAL_PORT_MODE:
+            case PlatformAdapter.USB_SERIAL_PORT_LOG_MODE:
                 System.out.println("Routing debug output to USB serial port");
                 final String commPort = System.getProperty("microedition.commports");
                 uri = "comm:" + commPort;
                 break;
 
 
-            case MEMORY_CARD_MODE:
+            case PlatformAdapter.MEMORY_CARD_LOG_MODE:
                 final String memoryCardPath = System.getProperty("fileconn.dir.memorycard");
                 uri = memoryCardPath + "tantalum.log";
                 System.out.println("Routing debug output to memory card log file: " + uri);
@@ -114,7 +91,7 @@ public class JMELog extends L {
                 throw new IllegalArgumentException("Log mode must be one of the pre-defined constants such as JMELog.NORMAL_LOG_MODE");
         }
         try {
-            writer = initWriter(uri, logMode == USB_SERIAL_PORT_MODE);
+            writer = initWriter(uri, logMode == PlatformAdapter.USB_SERIAL_PORT_LOG_MODE);
             if (writer != null) {
                 s = writer.getOutputStream();
             }

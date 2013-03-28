@@ -25,6 +25,7 @@
 package org.tantalum.jme;
 
 import javax.microedition.midlet.MIDlet;
+import org.tantalum.PlatformAdapter;
 import org.tantalum.PlatformUtils;
 
 /**
@@ -58,7 +59,7 @@ public abstract class TantalumMIDlet extends MIDlet {
      * @param numberOfWorkerThreads
      */
     protected TantalumMIDlet(final int numberOfWorkerThreads) {
-        this(numberOfWorkerThreads, JMELog.NORMAL_MODE);
+        this(numberOfWorkerThreads, PlatformAdapter.NORMAL_LOG_MODE);
     }
     /**
      * If you create a MIDlet constructor, you must call super() as the first

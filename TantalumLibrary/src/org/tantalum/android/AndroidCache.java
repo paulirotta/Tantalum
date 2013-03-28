@@ -24,14 +24,12 @@
  */
 package org.tantalum.android;
 
-import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import java.util.Vector;
-import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
@@ -98,14 +96,7 @@ public final class AndroidCache extends FlashCache {
     public AndroidCache(final char priority) {
         super(priority);
 
-        final Context c;
-        synchronized (AndroidCache.class) {
-            if (context == null) {
-                context = ((Activity) PlatformUtils.getInstance().getProgram()).getApplicationContext();
-            }
-            c = context;
-        }
-        helper = new SQLiteOpenHelper(c, databaseName, null, DB_VERSION);
+        helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION);
         (new Task() {
             public Object exec(final Object in2) {
                 if (db != null) {

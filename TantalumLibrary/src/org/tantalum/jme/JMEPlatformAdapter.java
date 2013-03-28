@@ -24,6 +24,7 @@
  */
 package org.tantalum.jme;
 
+import com.nokia.mid.ui.DeviceControl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -57,7 +58,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
      *
      */
     public final Display display;
-    private final L log;
+    private L log;
 
     /**
      * Create a new instance of the JME platform port helper class.
@@ -69,8 +70,16 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
      * may ignore this parameter because they have their own mechanism for
      * remote debugging.
      */
-    public JMEPlatformAdapter(final int logMode) {
+    public JMEPlatformAdapter() {
         display = Display.getDisplay((MIDlet) PlatformUtils.getInstance().getProgram());
+    }
+    
+    /**
+     * Initialize logging
+     * 
+     * @param logMode 
+     */
+    public void init(final int logMode) {
         log = new JMELog(logMode);
     }
 
@@ -145,6 +154,21 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         final byte[] bytes = StringUtils.readBytesFromJAR(jarPathAndFilename);
 
         return Image.createImage(bytes, 0, bytes.length);
+    }
+
+    /**
+     * We always vibrate from the UI thread. Undocumented platform feature- it
+     * seems more reliable that way.
+     *
+     * @param frequency
+     * @param duration
+     */
+    public void vibrateAsync(final int frequency, final int duration) {
+//        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
+//            public void run() {
+                DeviceControl.startVibra(frequency, duration);
+//            }
+//        });
     }
 
 

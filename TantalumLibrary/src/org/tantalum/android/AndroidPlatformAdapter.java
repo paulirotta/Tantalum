@@ -26,8 +26,9 @@ package org.tantalum.android;
 
 import org.tantalum.PlatformAdapter;
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.BitmapFactory;
-import java.io.ByteArrayInputStream;
+import android.os.Vibrator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -50,9 +51,22 @@ import org.tantalum.util.StringUtils;
 public final class AndroidPlatformAdapter implements PlatformAdapter {
 
     private final L log;
+    private final Context applicationContext;
 
-    public AndroidPlatformAdapter() {
+    public AndroidPlatformAdapter(final Activity activity) {
         log = new AndroidLog();
+        applicationContext = activity.getApplicationContext();
+    }
+
+    /**
+     * This method is not ´called during startup.
+     *
+     * Default Android logging is supported and any changes to how you want the
+     * log displayed should be done there.
+     *
+     * @param logMode
+     */
+    public void init(int logMode) {
     }
 
     /**
@@ -109,7 +123,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
             httpConn.httpConnection.setDoOutput(doOutput);
             httpConn.httpConnection.setDoInput(true);
             httpConn.httpConnection.setRequestMethod(requestMethod);
-            
+
             if (bytes != null) {
                 out = httpConn.httpConnection.getOutputStream();
                 out.write(bytes);
@@ -139,6 +153,11 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
         final byte[] bytes = StringUtils.readBytesFromJAR(jarPathAndFilename);
 
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+    }
+
+    public void vibrateAsync(final int frequency, final int duration) {
+        Vibrator v = (Vibrator) applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+        v.vibrate(duration);
     }
 
     /**
@@ -182,7 +201,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
 
             return is;
         }
-        
+
         /**
          * Get the OutputStream associated with this HTTP connection
          *

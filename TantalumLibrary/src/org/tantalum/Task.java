@@ -845,40 +845,45 @@ public abstract class Task implements Runnable {
      */
     public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
         synchronized (MUTEX) {
-            boolean canceled = false;
-
             if (reason == null || reason.length() == 0) {
                 throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
             }
 
-            //#debug
-            L.i("Begin cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
-            switch (status) {
-                case FINISHED:
-                    //#debug
-                    L.i("Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
-                    break;
+            boolean canceled = status != Task.CANCELED;
 
-                case PENDING:
-                    if (mayInterruptIfRunning) {
-                        canceled = true;
-                        Worker.interruptTask(this);
-                        if (status == Task.CANCELED) {
-                            /*
-                             * If the Task.cancel() sent an interrupt which was
-                             * caught, the Task was canceled at that point.
-                             */
-                            break;
+            if (canceled) {
+                //#debug
+                L.i("Ignore cancel() - " + reason, "already CANCELED: " + this);
+            } else {
+                //#debug
+                L.i("Begin cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
+                switch (status) {
+                    case FINISHED:
+                        //#debug
+                        L.i("Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
+                        break;
+
+                    case PENDING:
+                        if (mayInterruptIfRunning) {
+                            canceled = true;
+                            Worker.interruptTask(this);
+                            if (status == Task.CANCELED) {
+                                /*
+                                 * If the Task.cancel() sent an interrupt which was
+                                 * caught, the Task was canceled at that point.
+                                 */
+                                break;
+                            }
                         }
-                    }
-                // continue to default
+                    // continue to default
 
-                default:
-                    canceled = true;
-                    doSetStatus(CANCELED);
+                    default:
+                        canceled = true;
+                        doSetStatus(CANCELED);
+                }
+                //#debug
+                L.i("End cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
             }
-            //#debug
-            L.i("End cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
 
             return canceled;
         }

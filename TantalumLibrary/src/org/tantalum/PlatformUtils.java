@@ -140,8 +140,7 @@ public final class PlatformUtils {
         try {
             if (Class.forName("android.app.Activity").isAssignableFrom(program.getClass())) {
                 platform = PLATFORM_ANDROID;
-                platformAdapter = new AndroidPlatformAdapter();
-                init();
+                platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.android.AndroidPlatformAdapter").newInstance();
                 return;
             }
         } catch (Throwable t) {
@@ -151,8 +150,8 @@ public final class PlatformUtils {
             if (Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(program.getClass())
                     || program.getClass().getName().toLowerCase().indexOf("test") > 0) {
                 platform = PLATFORM_JME;
-                platformAdapter = new JMEPlatformAdapter(logMode);
-                init();
+                platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.jme.JMEPlatformAdapter").newInstance();
+                init(logMode);
                 return;
             }
         } catch (Throwable t) {
@@ -174,9 +173,11 @@ public final class PlatformUtils {
 
     /**
      * Complete cross-platform initialization
-     *
+     * 
+     * @param logMode 
      */
-    private void init() {
+    private void init(final int logMode) {
+        platformAdapter.init(logMode);
         Worker.init(numberOfWorkers);
         runOnUiThread(new Runnable() {
             public void run() {
@@ -218,6 +219,10 @@ public final class PlatformUtils {
         //#debug
         L.i("Call to notifyDestroyed", reasonDestroyed);
         platformAdapter.shutdownComplete();
+    }
+    
+    public void vibrate(final int frequency, final int duration) {
+        
     }
 
     /**
