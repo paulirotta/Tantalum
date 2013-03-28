@@ -41,36 +41,7 @@ import org.tantalum.util.L;
 public final class RMSUtils {
 
     private static final int MAX_RECORD_NAME_LENGTH = 32;
-//    private static final int MAX_OPEN_RECORD_STORES = 10;
     private static final char RECORD_HASH_PREFIX = '@';
-//    private static final LengthLimitedVector openRecordStores = new LengthLimitedVector(MAX_OPEN_RECORD_STORES) {
-//        protected synchronized void lengthExceeded(final Object extra) {
-//            /**
-//             * We exceeded the maximum number of open record stores specified as
-//             * a constant. Close the least-recently-used record store.
-//             *
-//             * TODO Although this works under must circumstances, under extreme
-//             * conditions it may be that even the 10th least recently used
-//             * record store is still in use. Look for a more positive-proof way
-//             * to ensure we don't close anything we are still using.
-//             */
-//            final RecordStore rs = (RecordStore) extra;
-//            String rsName = "";
-//
-//            try {
-//                rsName = rs.getName();
-//                //#debug
-//                L.i("Closing LRU record store", rsName + " open=" + openRecordStores.size());
-//                rs.closeRecordStore();
-//                //#debug
-//                L.i("LRU record store closed", rsName + " open=" + openRecordStores.size());
-//                removeElement(rs);
-//            } catch (Exception ex) {
-//                //#debug
-//                L.e("Can not close extra record store", rsName, ex);
-//            }
-//        }
-//    };
 
     private static class RMSUtilsHolder {
 
@@ -91,17 +62,6 @@ public final class RMSUtils {
      *
      */
     private RMSUtils() {
-//        (new Task() {
-//            public Object exec(final Object in) {
-//                //#debug
-//                L.i("Closing record stores during shutdown", "open=" + openRecordStores.size());
-//                openRecordStores.setMaxLength(0);
-//                //#debug
-//                L.i("Closed record stores during shutdown", "open=" + openRecordStores.size());
-//
-//                return in;
-//            }
-//        }).fork(Task.SHUTDOWN);
     }
 
     /**
@@ -159,26 +119,6 @@ public final class RMSUtils {
      * corruption is detected.
      */
     public void wipeRMS() {
-//        synchronized (openRecordStores) {
-//            while (!openRecordStores.isEmpty()) {
-//                final RecordStore rs = (RecordStore) openRecordStores.firstElement();
-//                String rsName = "";
-//
-//                try {
-//                    rsName = rs.getName();
-//                    //#debug
-//                    L.i("Closing record store before wipeRMS", rsName + " open=" + openRecordStores.size());
-//                    rs.closeRecordStore();
-//                    //#debug
-//                    L.i("Record store closed before wipeRMS", rsName + " open=" + openRecordStores.size());
-//                    openRecordStores.removeElement(rs);
-//                } catch (Exception ex) {
-//                    //#debug
-//                    L.e("Can not close record store before wipeRMS", rsName, ex);
-//                }
-//            }
-//        }
-
         final String[] rs = RecordStore.listRecordStores();
 
         for (int i = 0; i < rs.length; i++) {
@@ -387,38 +327,6 @@ public final class RMSUtils {
         final String truncatedRecordStoreName = truncateRecordStoreNameToLast32(key);
 
         try {
-//            final RecordStore[] recordStores;
-
-//            synchronized (openRecordStores) {
-//                recordStores = new RecordStore[openRecordStores.size()];
-//                openRecordStores.copyInto(recordStores);
-//            }
-
-            /**
-             * Close existing references to the record store
-             *
-             * NOTE: This does not absolutely guarantee that there is no other
-             * thread accessing this record store at this exact moment. If that
-             * happens, you will be prevented from deleting the record store and
-             * "RMS delete problem" message will show up in your debug. For this
-             * reason, your application's logic may need to take into account
-             * that a delete might not be completed.
-             *
-             * TODO Without adding complexity, a file locking mechanism or other
-             * solution may be added in future. Another solution might be to
-             * read and remember the RMS contents on startup, use that as an
-             * in-memory index... Still expensive. -paul
-             */
-//            for (int i = 0; i < recordStores.length; i++) {
-//                try {
-//                    if (recordStores[i].getName().equals(truncatedRecordStoreName)) {
-//                        openRecordStores.markAsExtra(recordStores[i]);
-//                    }
-//                } catch (RecordStoreNotOpenException ex) {
-//                    //#debug
-//                    L.e("Mark as extra close of record store failed", truncatedRecordStoreName, ex);
-//                }
-//            }
             RecordStore.deleteRecordStore(truncatedRecordStoreName);
         } catch (RecordStoreNotFoundException ex) {
             //#debug
