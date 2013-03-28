@@ -230,14 +230,20 @@ public final class PlatformUtils {
      *
      * You can specify a lockoutTime to filter out repeated vibrations in too
      * short an interval
-     *
-     * @param duration in milliseconds
-     * @param lockoutTime if we vibrate, for how long vibration stops do we
-     * prevent a new vibration from starting
+     * 
+     * @param duration in milliseconds. Zero is allowed, there will be no vibration
+     * @param lockoutTime if we vibrate, for how long after vibration stops should the phone ignore additional vibration requests
+     * prevent a new vibration from starting. Set zero to not set a timeout
      */
     public void vibrateAsync(final int duration, final int lockoutTime) {
-        Runnable timekeeperLambda = null;
+        if (duration < 0 || lockoutTime < 0) {
+            throw new IllegalArgumentException("vibrateAsync() requires positive duration and lockTimeout: duration=" + duration + " lockTimeout=" + lockoutTime);
+        }
+        if (duration == 0) {
+            return;
+        }
 
+        Runnable timekeeperLambda = null;
         if (lockoutTime > 0) {
             timekeeperLambda = new Runnable() {
                 public void run() {
