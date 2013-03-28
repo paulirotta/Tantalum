@@ -86,25 +86,6 @@ import org.tantalum.util.L;
  */
 public abstract class Task implements Runnable {
 
-    static final int PRIORITY_MASK = 0x000F;
-    private static final int UI_PRIORITY_MASK = 0xFFF0;
-    /**
-     * The task is queued at
-     * <code>HIGH_PRIORITY</code> to be the next task started as with
-     * <code>HIGH_PRIORITY</code>. You may alternately binary "or" this value
-     * with any other state. For example,
-     * <code>myTask.fork(Task.SERIAL | Task.UI)</code>
-     *
-     * After the
-     * <code>Task</code> completes successfully and enters the
-     * <code>FINISHED</code> state,
-     * <code>Task.run()</code> will be forked to the UI thread. All
-     * <code>Task</code>s at this priority must therefore override
-     * <code>run()</code>, and most will want the to use the result available
-     * with
-     * <code>Task.getValue()</code>.
-     */
-    public static final int UI = 0x10;
     /**
      * Start the task as soon as possible, LIFO with no guaranteed sequence
      * order and higher absolute priority than
@@ -126,9 +107,12 @@ public abstract class Task implements Runnable {
      * <code>HIGH_PRIORITY</code> fork operations occur before a Worker start
      * execution.
      *
-     * This is the normal priority for user interface tasks where the user
-     * expects a fast response regardless of previous incomplete requests they
-     * may have made.
+     * This is the priority to use if your UI-related task must execute soon
+     * even under heavy load AND it never takes very long to to execute. A good
+     * example example reading from the local file system. A good example of
+     * what not to put in the fastlane is reading from or writing to the network
+     * as this can block for a long time and then the fastlane is not so fast
+     * anymore.
      */
     public static final int HIGH_PRIORITY = 5;
     /**
@@ -143,19 +127,19 @@ public abstract class Task implements Runnable {
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * Start execution if there is nothing else for the Workers to do. At least
      * one Worker will always be left idle for immediate activation if only
-     * <code>LOW_PRIORITY</code> work is queued for execution. This is intended
+     * <code>IDLE_PRIORITY</code> work is queued for execution. This is intended
      * for background tasks such as pre-fetch and pre-processing of data that
      * doe not affect the current user view.
      */
-    public static final int LOW_PRIORITY = 3;
+    public static final int IDLE_PRIORITY = 3;
     /**
      * FIFO with guaranteed sequence (single-thread concurrent execution, this
      * one thread also does
      * <code>FASTLANE</code> work first, but then
-     * <code>SERIAL</code> tasks are prioritized above other priorities).
+     * <code>SERIAL_PRIORITY</code> tasks are prioritized above other priorities).
      *
      * All
-     * <code>SERIAL</code> tasks are executed on a single thread for guaranteed
+     * <code>SERIAL_PRIORITY</code> tasks are executed on a single thread for guaranteed
      * sequential execution in the order in which they are
      * <code>fork()</code>ed.
      *
@@ -168,7 +152,7 @@ public abstract class Task implements Runnable {
      * <code>Task</code> chains to or forks other
      * <code>Task</code>s.
      */
-    public static final int SERIAL = 2;
+    public static final int SERIAL_PRIORITY = 2;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      *
@@ -265,6 +249,39 @@ public abstract class Task implements Runnable {
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
     private int forkPriority = Task.PRIORITY_NOT_SET; // Access only in synchronized(MUTEX) block
     private final Object MUTEX = new Object();
+    /*
+     * Should we run() this task on the UI thread after successful execution
+     */
+    private boolean runOnUIThreadWhenFinished = false;
+
+    /**
+     * Indicate if spawn to UI thread will be automatically called on this Task
+     * after successful exec()
+     *
+     * The default value is false.
+     *
+     * @return
+     */
+    public boolean isRunOnUIThreadWhenFinished() {
+        synchronized (MUTEX) {
+            return runOnUIThreadWhenFinished;
+        }
+    }
+
+    /**
+     * Tell this task if it should spawn to UI thread to complete an override of
+     * the run() method after successful exec()
+     *
+     * @param runOnUIThreadWhenFinished
+     * @return 
+     */
+    public Task setRunOnUIThreadWhenFinished(boolean runOnUIThreadWhenFinished) {
+        synchronized (MUTEX) {
+            this.runOnUIThreadWhenFinished = runOnUIThreadWhenFinished;
+            
+            return this;
+        }
+    }
 
     /**
      * Create a
@@ -453,9 +470,7 @@ public abstract class Task implements Runnable {
     }
 
     private Task doFork(final int taskPriority) {
-        Worker.fork(this, taskPriority);
-
-        return this;
+        return Worker.fork(this, taskPriority);
     }
 
     /**
@@ -504,7 +519,7 @@ public abstract class Task implements Runnable {
      *
      * If you call
      * <code>join()</code> a
-     * <code>Task.SERIAL</code> priority
+     * <code>Task.SERIAL_PRIORITY</code> priority
      * <code>Task</code>, note that there is by definition no out-of-order
      * execution so you must wait for normal completion at the designated
      * priority.
@@ -762,20 +777,13 @@ public abstract class Task implements Runnable {
      */
     private Task setForkPriority(final int priority) {
         synchronized (MUTEX) {
-            final int maskedPriority = priority & Task.PRIORITY_MASK;
-            final int maskedUIPriority = (priority & Task.UI_PRIORITY_MASK) | Task.UI;
-
-            if ((maskedPriority < Task.SHUTDOWN && priority != Task.UI) || maskedPriority > Task.HIGH_PRIORITY || maskedUIPriority != Task.UI) {
+            if ((priority < Task.SHUTDOWN) || priority > Task.FASTLANE_PRIORITY) {
                 throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
             }
             if (forkPriority != Task.PRIORITY_NOT_SET) {
                 throw new IllegalStateException("Task priority has alrady been set: " + this);
             }
-            if (priority == Task.UI) {
-                forkPriority = priority | Task.HIGH_PRIORITY;
-            } else {
-                forkPriority = priority;
-            }
+            forkPriority = priority;
 
             return this;
         }
@@ -838,7 +846,7 @@ public abstract class Task implements Runnable {
                 if (executionSuccessful) {
                     value = v;
                     t = chainedTask;
-                    doRun = (forkPriority & PRIORITY_MASK) != 0;
+                    doRun = this.runOnUIThreadWhenFinished;
                     setStatus(FINISHED);
                 } else {
                     // Task was canceled

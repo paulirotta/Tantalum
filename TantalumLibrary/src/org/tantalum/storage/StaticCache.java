@@ -261,19 +261,21 @@ public class StaticCache {
      * Retrieve an object from RAM or RMS storage.
      *
      * @param key
-     * @param priority - default is Work.NORMAL_PRIORITY set to
-     * Work.HIGH_PRIORITY if you want the results quickly to update the UI.
+     * @param priority - set to Work.FASTLANE_PRIORITY if you want the results
+     * quickly to update the UI.
      * @param chainedTask
      * @return
      */
-    public Task getAsync(final String key, final int priority, final Task chainedTask) {
+    public Task getAsync(final String key, int priority, final Task chainedTask) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
-
-        final Task task = new GetLocalTask(key);
+        if (priority == Task.HIGH_PRIORITY) {
+            priority = Task.FASTLANE_PRIORITY;
+        }
+        final Task task = new GetLocalTask(key, priority);
         task.chain(chainedTask);
-        task.fork(priority);
+        task.fork();
 
         return task;
     }
@@ -340,7 +342,7 @@ public class StaticCache {
         }
         final Object useForm = convertAndPutToHeapCache(key, bytes);
         if (flashCacheEnabled) {
-            (new Task(Task.SERIAL) {
+            (new Task(Task.SERIAL_PRIORITY) {
                 public Object exec(final Object in) {
                     try {
                         synchronousFlashPut(key, bytes);
@@ -528,7 +530,7 @@ public class StaticCache {
             }
         };
         task.chain(chainedTask);
-        task.fork(Task.SERIAL);
+        task.fork(Task.SERIAL_PRIORITY);
 
         return task;
     }
@@ -652,7 +654,7 @@ public class StaticCache {
 
         return task;
     }
-    
+
 //#mdebug
     /**
      * For debugging use
@@ -680,7 +682,7 @@ public class StaticCache {
         }
     }
 //#enddebug
-    
+
     /**
      * A helper class to get data asynchronously from the local ramCache without
      * attempting to get data from the web.
@@ -692,22 +694,30 @@ public class StaticCache {
      */
     protected final class GetLocalTask extends Task {
 
+        final int priority;
+
         /**
          * Create a new get operation. The url will be supplied as an input to
          * this chained Task (the output of the previous Task in the chain).
+         *
+         * @param priority
          */
-        public GetLocalTask() {
+        public GetLocalTask(final int priority) {
             super();
+
+            this.priority = priority;
         }
 
         /**
          * Create a new get operation, specifying the url in advance.
          *
          * @param key
+         * @param priority
          */
-        public GetLocalTask(final String key) {
+        public GetLocalTask(final String key, final int priority) {
             super(key);
 
+            this.priority = priority;
             // Better not to interrupt RMS read operation, just in case
             setShutdownBehaviour(Task.DEQUEUE_ON_SHUTDOWN);
         }

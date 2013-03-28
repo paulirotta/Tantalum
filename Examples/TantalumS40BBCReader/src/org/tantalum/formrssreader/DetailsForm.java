@@ -107,7 +107,7 @@ public final class DetailsForm extends Form implements CommandListener {
             } else if (!selectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
-                imageCache.getAsync(selectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.UI) {
+                imageCache.getAsync(selectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.HIGH_PRIORITY) {
 
                     protected Object exec(final Object in) {
                         L.i("IMAGE DEBUG", selectedItem.getThumbnail());
@@ -118,7 +118,7 @@ public final class DetailsForm extends Form implements CommandListener {
                     public void run(final Object result) {
                         DetailsForm.this.appendImageItem();
                     }
-                });
+                }.setRunOnUIThreadWhenFinished(true));
             }
         }
     }

@@ -166,22 +166,20 @@ public final class StaticWebCache extends StaticCache {
      * @param key - The web service location to HTTP_GET the cacheable data
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
-     * @param priority
-     * - <code>Worker.HIGH_PRIORITY</code>, <code>Worker.NORMAL_PRIORITY</code>,
-     * or <code>Worker.LOW_PRIORITY</code>
-     * @param getType 
-     * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
+     * @param priority - note that HIGH_PRIORITY requests will be automatically
+     * bumped into FASTLINE_PRIORITY unless it is a GET_WEB operation.
+     * @param getType *      * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param chainedTask - your <code>Task</code> which is given the data
      * returned and executed after the getAsync operation.
      *
      * @return a new Task containing the result
      */
-    public Task getAsync(final String key, final byte[] postMessage, final int priority, final int getType, final Task chainedTask) {
+    public Task getAsync(final String key, final byte[] postMessage, int priority, final int getType, final Task chainedTask) {
         if (key == null) {
             throw new IllegalArgumentException("Can not getAsync() with null key");
         }
-        
+
         final Task getTask;
 
         //#debug
@@ -190,19 +188,28 @@ public final class StaticWebCache extends StaticCache {
             case GET_LOCAL:
                 //#debug
                 L.i("GET_LOCAL", key);
-                getTask = new StaticCache.GetLocalTask(key);
+                getTask = new StaticCache.GetLocalTask(key, priority);
+                if (priority == Task.HIGH_PRIORITY) {
+                    priority = Task.FASTLANE_PRIORITY;
+                }
                 break;
 
             case GET_ANYWHERE:
                 //#debug
                 L.i("GET_ANYWHERE", key);
-                getTask = new StaticWebCache.GetAnywhereTask(key, postMessage);
+                getTask = new StaticWebCache.GetAnywhereTask(key, priority, postMessage);
+                if (priority == Task.HIGH_PRIORITY) {
+                    priority = Task.FASTLANE_PRIORITY;
+                }
                 break;
 
             case GET_WEB:
                 //#debug
                 L.i("GET_WEB", key);
-                getTask = new StaticWebCache.GetWebTask(key, postMessage);
+                getTask = new StaticWebCache.GetWebTask(key, priority, postMessage);
+                if (priority == Task.FASTLANE_PRIORITY) {
+                    priority = Task.HIGH_PRIORITY;
+                }
                 break;
 
             default:
@@ -224,7 +231,7 @@ public final class StaticWebCache extends StaticCache {
             (new Task() {
                 public Object exec(final Object in) {
                     try {
-                        getAsync(key, Task.LOW_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
+                        getAsync(key, Task.IDLE_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
                     } catch (Exception e) {
                         //#debug
                         L.e("Can not prefetch", key, e);
@@ -232,7 +239,7 @@ public final class StaticWebCache extends StaticCache {
 
                     return in;
                 }
-            }).fork(Task.LOW_PRIORITY);
+            }).fork(Task.IDLE_PRIORITY);
         }
     }
 
@@ -277,24 +284,21 @@ public final class StaticWebCache extends StaticCache {
      */
     final public class GetAnywhereTask extends Task {
 
+        final int priority;
         final byte[] postMessage;
 
         /**
-         * Create a
-         * <code>StaticWebCache.GET_ANYWHERE</code> actor which will execute on
-         * the
-         * <code>Worker</code> thread using as input the
-         * <code>chain()</code>ed output from a previous
-         * <code>Task</code>.
+         * Create a chainable task where key will be provided as the output from
+         * the previous step in the chain.
          *
-         * For most purposes, it is easier to use the convenience method
-         * <code>StaticWebCache.getAsync()</code> to chain your
-         * <code>Task</code> after the getAsync operation before
-         * <code>fork()</code>ing the Task for background execution.
+         * @param priority
+         * @param postMessage
          */
-        public GetAnywhereTask() {
+        public GetAnywhereTask(final int priority, final byte[] postMessage) {
             super();
-            this.postMessage = null;
+
+            this.postMessage = postMessage;
+            this.priority = priority;
         }
 
         /**
@@ -312,11 +316,14 @@ public final class StaticWebCache extends StaticCache {
          * <code>fork()</code>ing the Task for background execution.
          *
          * @param key
+         * @param priority
          * @param postMessage
          */
-        public GetAnywhereTask(final String key, final byte[] postMessage) {
+        public GetAnywhereTask(final String key, final int priority, final byte[] postMessage) {
             super(key);
+
             this.postMessage = postMessage;
+            this.priority = priority;
         }
 
         protected Object exec(final Object in) {
@@ -334,7 +341,7 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i("StaticWebCache: not found locally, get from the web", (String) in);
-                        out = new GetWebTask((String) in, postMessage).fork().get();
+                        out = new GetWebTask((String) in, priority, postMessage).fork(priority).get();
                     }
                 } catch (Exception e) {
                     //#debug
@@ -344,7 +351,7 @@ public final class StaticWebCache extends StaticCache {
             //#mdebug
             String inDebug = null;
             String outDebug = null;
-           
+
             if (in != null) {
                 inDebug = in.toString();
             }
@@ -402,6 +409,7 @@ public final class StaticWebCache extends StaticCache {
      */
     final public class GetWebTask extends Task {
 
+        final int priority;
         final byte[] postMessage;
 
         /**
@@ -416,9 +424,10 @@ public final class StaticWebCache extends StaticCache {
          *
          * @param postMessage
          */
-        public GetWebTask(final byte[] postMessage) {
+        public GetWebTask(final int priority, final byte[] postMessage) {
             super();
 
+            this.priority = priority;
             this.postMessage = postMessage;
         }
 
@@ -439,9 +448,10 @@ public final class StaticWebCache extends StaticCache {
          * @param key
          * @param postMessage
          */
-        public GetWebTask(final String key, final byte[] postMessage) {
+        public GetWebTask(final String key, final int priority, final byte[] postMessage) {
             super(key);
 
+            this.priority = priority;
             this.postMessage = postMessage;
         }
 
@@ -495,9 +505,9 @@ public final class StaticWebCache extends StaticCache {
      * If you override this default implementation, you can add custom header
      * parameters to the HTTP request and act on custom header fields such as
      * cookies in the HTTP response.
-     * 
-     * If your override returns null, that is an indication that the HTTP GET
-     * is obsolete and no longer desired by the application.
+     *
+     * If your override returns null, that is an indication that the HTTP GET is
+     * obsolete and no longer desired by the application.
      */
     public static class HttpTaskFactory {
 

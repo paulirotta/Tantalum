@@ -158,7 +158,7 @@ public final class ListForm extends Form implements CommandListener {
         }
 
         if (forceLoad) {
-            uiTask = new Task(Task.UI) {
+            uiTask = new Task(Task.HIGH_PRIORITY) {
                 protected Object exec(final Object in) {
                     return in;
                 }
@@ -177,9 +177,10 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
             };
+            uiTask.setRunOnUIThreadWhenFinished(true);
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
-            uiTask = new Task(Task.UI) {
+            uiTask = new Task(Task.HIGH_PRIORITY) {
                 protected Object exec(final Object in) {
                     return in;
                 }
@@ -201,6 +202,7 @@ public final class ListForm extends Form implements CommandListener {
                     return false;
                 }
             };
+            uiTask.setRunOnUIThreadWhenFinished(true);
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
         }
 

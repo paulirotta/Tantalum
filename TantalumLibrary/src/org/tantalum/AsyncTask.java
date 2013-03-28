@@ -90,7 +90,7 @@ public abstract class AsyncTask extends Task {
 
                 return in;
             }
-        }).fork(Task.SERIAL);
+        }).fork(Task.SERIAL_PRIORITY);
     }
 
     /**
@@ -112,7 +112,7 @@ public abstract class AsyncTask extends Task {
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 onPreExecute();
-                AsyncTask.this.fork(Task.SERIAL);
+                AsyncTask.this.fork(Task.SERIAL_PRIORITY);
             }
         });
 
