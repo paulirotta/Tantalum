@@ -29,12 +29,15 @@ import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
 import com.sun.lwuit.plaf.DefaultLookAndFeel;
 import com.sun.lwuit.plaf.UIManager;
-import org.tantalum.jme.TantalumMIDlet;
+import javax.microedition.midlet.MIDlet;
+import javax.microedition.midlet.MIDletStateChangeException;
+import org.tantalum.PlatformAdapter;
+import org.tantalum.PlatformUtils;
 
 /**
  * @author tsaa
  */
-public class RSSReader extends TantalumMIDlet {
+public class RSSReader extends MIDlet {
 
     public static int SCREEN_WIDTH;
     public static int SCREEN_HEIGHT;
@@ -46,11 +49,8 @@ public class RSSReader extends TantalumMIDlet {
     public static Font italicFont;
     public static Font underlinedFont;
 
-    public RSSReader() {
-        super(DEFAULT_NUMBER_OF_WORKER_THREADS);
-    }
-    
     public void startApp() {
+        PlatformUtils.getInstance().setProgram(this, 4, PlatformAdapter.NORMAL_LOG_MODE);
         Display.init(this);
         UIManager.getInstance().setLookAndFeel(new DefaultLookAndFeel());
 
@@ -86,5 +86,9 @@ public class RSSReader extends TantalumMIDlet {
     }
 
     protected void pauseApp() {
+    }
+
+    protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
+        PlatformUtils.getInstance().shutdown(unconditional);
     }
 }

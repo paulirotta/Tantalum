@@ -62,7 +62,7 @@ public final class DetailsForm extends Form implements CommandListener {
 
     private void openLink() {
         try {
-            boolean needsToClose = rssReader.platformRequest(ListForm.getInstance().getDetailsView().getSelectedItem().getLink());
+            boolean needsToClose = this.rssReader.platformRequest(ListForm.getInstance().getDetailsView().getSelectedItem().getLink());
             if (needsToClose) {
                 PlatformUtils.getInstance().shutdown(false);
             }

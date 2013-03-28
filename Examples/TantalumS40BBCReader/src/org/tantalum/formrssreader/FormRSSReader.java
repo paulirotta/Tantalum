@@ -25,12 +25,15 @@
 package org.tantalum.formrssreader;
 
 import javax.microedition.lcdui.*;
-import org.tantalum.jme.TantalumMIDlet;
+import javax.microedition.midlet.MIDlet;
+import javax.microedition.midlet.MIDletStateChangeException;
+import org.tantalum.PlatformAdapter;
+import org.tantalum.PlatformUtils;
 
 /**
  * @author vand
  */
-public class FormRSSReader extends TantalumMIDlet implements CommandListener {
+public class FormRSSReader extends MIDlet implements CommandListener {
 
     public static final String INITIAL_FEED_URL = "http://feeds.bbci.co.uk/news/rss.xml";
     private boolean midletPaused = false;
@@ -44,8 +47,9 @@ public class FormRSSReader extends TantalumMIDlet implements CommandListener {
     //</editor-fold>//GEN-END:|methods|0|
     //<editor-fold defaultstate="collapsed" desc=" Generated Method: initialize ">//GEN-BEGIN:|0-initialize|0|0-preInitialize
     /**
-     * Initializes the application.
-     * It is called only once when the MIDlet is started. The method is called before the <code>startMIDlet</code> method.
+     * Initializes the application. It is called only once when the MIDlet is
+     * started. The method is called before the
+     * <code>startMIDlet</code> method.
      */
     private void initialize() {//GEN-END:|0-initialize|0|0-preInitialize
         // write pre-initialize user code here
@@ -79,8 +83,14 @@ public class FormRSSReader extends TantalumMIDlet implements CommandListener {
 
     //<editor-fold defaultstate="collapsed" desc=" Generated Method: switchDisplayable ">//GEN-BEGIN:|5-switchDisplayable|0|5-preSwitch
     /**
-     * Switches a current displayable in a display. The <code>display</code> instance is taken from <code>getDisplay</code> method. This method is used by all actions in the design for switching displayable.
-     * @param alert the Alert which is temporarily set to the display; if <code>null</code>, then <code>nextDisplayable</code> is set immediately
+     * Switches a current displayable in a display. The
+     * <code>display</code> instance is taken from
+     * <code>getDisplay</code> method. This method is used by all actions in the
+     * design for switching displayable.
+     *
+     * @param alert the Alert which is temporarily set to the display;
+     * if <code>null</code>, then <code>nextDisplayable</code> is set
+     * immediately
      * @param nextDisplayable the Displayable to be set
      */
     public void switchDisplayable(Alert alert, Displayable nextDisplayable) {//GEN-END:|5-switchDisplayable|0|5-preSwitch
@@ -95,10 +105,6 @@ public class FormRSSReader extends TantalumMIDlet implements CommandListener {
     }//GEN-BEGIN:|5-switchDisplayable|2|
     //</editor-fold>//GEN-END:|5-switchDisplayable|2|
 
-    public FormRSSReader() {
-        super(DEFAULT_NUMBER_OF_WORKER_THREADS);
-    }
-    
     public ListForm getList() {
         if (list == null) {
             list = new ListForm(this, "Tantalum3 BBC");
@@ -156,5 +162,9 @@ public class FormRSSReader extends TantalumMIDlet implements CommandListener {
      */
     public void pauseApp() {
         midletPaused = true;
+    }
+
+    protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
+        PlatformUtils.getInstance().shutdown(unconditional);
     }
 }

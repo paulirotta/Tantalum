@@ -25,15 +25,17 @@
 package org.tantalum.canvasrssreader;
 
 import javax.microedition.lcdui.*;
+import javax.microedition.midlet.MIDlet;
+import javax.microedition.midlet.MIDletStateChangeException;
+import org.tantalum.PlatformAdapter;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.jme.TantalumMIDlet;
 import org.tantalum.util.L;
 
 /**
  * @author ssaa
  */
-public class RSSReader extends TantalumMIDlet implements CommandListener {
+public class RSSReader extends MIDlet implements CommandListener {
 
     // This is read from the JAD-file
     public static final String INITIAL_FEED_URL = "http://feeds.bbci.co.uk/news/rss.xml";
@@ -46,10 +48,6 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     public static int COLOR_BORDER;
     public static int COLOR_HIGHLIGHTED_BORDER;
 
-    public RSSReader() {
-        super(DEFAULT_NUMBER_OF_WORKER_THREADS);
-    }
-    
     /**
      * Switches a current displayable in a display. The
      * <code>display</code> instance is taken from
@@ -124,6 +122,7 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
      */
     public void startApp() {
         try {
+            PlatformUtils.getInstance().setProgram(this, 4, PlatformAdapter.NORMAL_LOG_MODE);
             final Task reloadTask = getCanvas().getListView().reloadAsync(false);
             final Display display = getDisplay();
             COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
@@ -147,5 +146,9 @@ public class RSSReader extends TantalumMIDlet implements CommandListener {
     }
 
     protected void pauseApp() {
+    }
+
+    protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
+        PlatformUtils.getInstance().shutdown(unconditional);
     }
 }
