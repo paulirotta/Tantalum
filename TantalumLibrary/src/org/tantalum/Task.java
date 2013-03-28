@@ -106,7 +106,21 @@ public abstract class Task implements Runnable {
      */
     public static final int UI = 0x10;
     /**
-     * Start the task as soon as possible. The
+     * Start the task as soon as possible, LIFO with no guaranteed sequence
+     * order and higher absolute priority than
+     * <code>HIGH_PRIORITY</code>.
+     *
+     * Unlike other priorities, there is one worker thread always held in
+     * reserve and only available to fastlane tasks.
+     *
+     * This is useful for example to perform operations quickly even when all
+     * the other threads are busy with tasks such as HTTP GET that can more than
+     * a few milliseconds to complete.
+     */
+    public static final int FASTLANE_PRIORITY = 6;
+    /**
+     * LIFO with no guaranteed sequence (multi-thread concurrent execution)
+     * start the task as soon as possible. The
      * <code>fork()</code> operation will place this as the next Task to be
      * completed unless subsequent
      * <code>HIGH_PRIORITY</code> fork operations occur before a Worker start
@@ -118,6 +132,7 @@ public abstract class Task implements Runnable {
      */
     public static final int HIGH_PRIORITY = 5;
     /**
+     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * Start execution after any previously
      * <code>fork()</code>ed work, first in is usually first out, however
      * multiple Workers in parallel means that execution start and completion
@@ -125,6 +140,7 @@ public abstract class Task implements Runnable {
      */
     public static final int NORMAL_PRIORITY = 4;
     /**
+     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * Start execution if there is nothing else for the Workers to do. At least
      * one Worker will always be left idle for immediate activation if only
      * <code>LOW_PRIORITY</code> work is queued for execution. This is intended
@@ -133,6 +149,11 @@ public abstract class Task implements Runnable {
      */
     public static final int LOW_PRIORITY = 3;
     /**
+     * FIFO with guaranteed sequence (single-thread concurrent execution, this
+     * one thread also does
+     * <code>FASTLANE</code> work first, but then
+     * <code>SERIAL</code> tasks are prioritized above other priorities).
+     *
      * All
      * <code>SERIAL</code> tasks are executed on a single thread for guaranteed
      * sequential execution in the order in which they are
@@ -149,6 +170,8 @@ public abstract class Task implements Runnable {
      */
     public static final int SERIAL = 2;
     /**
+     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
+     *
      * Start execution when
      * <code>PlatformUtils.getInstance().shutdown()</code> is called, and do not
      * exit the program until all such shutdown tasks are completed.
@@ -360,11 +383,10 @@ public abstract class Task implements Runnable {
      * execution completes.
      *
      * @return
-     * @throws InterruptedException
      * @throws CancellationException
      * @throws TimeoutException
      */
-    public final Object get() throws InterruptedException, CancellationException, TimeoutException {
+    public final Object get() throws CancellationException, TimeoutException {
         return join(MAX_TIMEOUT);
     }
 
@@ -440,44 +462,61 @@ public abstract class Task implements Runnable {
      * Wait for up to MAX_TIMEOUT milliseconds for the Task to complete.
      *
      * @return
-     * @throws InterruptedException
      * @throws CancellationException
      * @throws TimeoutException
      */
-    public final Object join() throws InterruptedException, CancellationException, TimeoutException {
+    public final Object join() throws CancellationException, TimeoutException {
         return join(MAX_TIMEOUT);
     }
 
     /**
-     * Wait for a maximum of timeout milliseconds for the Task to run and return
-     * it's evaluation value, otherwise throw a TimeoutExeception.
+     * Wait for a maximum of timeout milliseconds for the
+     * <code>Task</code> to run and return it's evaluation value, otherwise
+     * throw a
+     * <code>TimeoutExeception</code>.
      *
-     * Similar to get(), except the total wait() time if the AsyncTask has not
-     * completed is explicitly limited to prevent long delays.
+     * Similar to
+     * <code>get()</code>, except the total
+     * <code>wait()</code> time if the AsyncTask has not completed is explicitly
+     * limited to prevent long delays.
      *
-     * Never call join() from the UI thread with a timeout greater than 100ms.
-     * This is still bad design and better handled with a chained Task or
-     * UITask. You will receive a debug warning, but are not prevented from
-     * making longer join() calls from the user interface Thread.
+     * Always fork() the Task or some previous Task in the chain before calling
+     * <code>join()</code>. Note that out-of-order execution may speed
+     * <code>join()</code> of a
+     * <code>PENDING</code> task, but only if the
+     * <code>Task</code> you
+     * <code>join()</code> is the first in a chain.
      *
-     * If you call join() on chain()ed Task, note that there is by definition no
-     * out-of-order execution so you must wait for every previous step of the
-     * chain() to start and complete at their designated priorities.
+     * Never call
+     * <code>join()</code> from the UI thread with a timeout greater than 100ms.
+     * This is still bad design and better handled with a chained
+     * <code>Task</code>. You will receive a debug warning, but are not
+     * prevented from making longer
+     * <code>join()</code> calls from the user interface Thread.
      *
-     * If you call join() a Task.SERIAL priority Task, note that there is by
-     * definition no out-of-order execution so you must wait for normal
-     * completion at the designated priority.
+     * If you call
+     * <code>join()</code> on
+     * <code>chain()</code>ed
+     * <code>Task</code>, note that there is by definition no out-of-order
+     * execution so you must wait for every previous step of the
+     * <code>chain()</code> to start and complete at their designated
+     * priorities.
+     *
+     * If you call
+     * <code>join()</code> a
+     * <code>Task.SERIAL</code> priority
+     * <code>Task</code>, note that there is by definition no out-of-order
+     * execution so you must wait for normal completion at the designated
+     * priority.
      *
      * @param timeout in milliseconds
      * @return final evaluation result of the Task
-     * @throws InterruptedException - task was running when it was explicitly
-     * canceled by another thread
      * @throws CancellationException - task was explicitly canceled by another
      * thread
      * @throws TimeoutException - UITask failed to complete within timeout
      * milliseconds
      */
-    public final Object join(long timeout) throws InterruptedException, CancellationException, TimeoutException {
+    public final Object join(long timeout) throws CancellationException, TimeoutException {
         if (timeout < 0) {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
@@ -505,14 +544,19 @@ public abstract class Task implements Runnable {
                             L.i("Start join() wait", this.toString());
                             final long t = System.currentTimeMillis();
 
-                            MUTEX.wait(timeout);
+                            try {
+                                MUTEX.wait(timeout);
+                            } catch (InterruptedException e) {
+                                //#debug
+                                L.e("InterruptedException during join() wait", "Task will canel: " + this, e);
+                            }
                             if (status == FINISHED) {
                                 break;
                             }
                             if (System.currentTimeMillis() > t) {
                                 throw new TimeoutException("join(" + timeout + ") was to a Task which did not complete within the specified time: " + this);
                             }
-                            throw new CancellationException("join() was to a Task which was PENDING but was then canceled: " + this);
+                            throw new CancellationException("join() was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
                         }
                     } finally {
                         //#debug
@@ -540,11 +584,10 @@ public abstract class Task implements Runnable {
      * associated Exception to occur will be thrown.
      *
      * @param tasks
-     * @throws InterruptedException
      * @throws CancellationException
      * @throws TimeoutException
      */
-    public static void joinAll(final Task[] tasks) throws InterruptedException, CancellationException, TimeoutException {
+    public static void joinAll(final Task[] tasks) throws CancellationException, TimeoutException {
         joinAll(tasks, Task.MAX_TIMEOUT);
     }
 
@@ -556,11 +599,10 @@ public abstract class Task implements Runnable {
      * @param tasks - list of Tasks to wait for
      * @param timeout - milliseconds, max total time from for all Tasks to
      * complete
-     * @throws InterruptedException
      * @throws CancellationException
      * @throws TimeoutException
      */
-    public static void joinAll(final Task[] tasks, final long timeout) throws InterruptedException, CancellationException, TimeoutException {
+    public static void joinAll(final Task[] tasks, final long timeout) throws CancellationException, TimeoutException {
         if (tasks == null) {
             throw new IllegalArgumentException("Can not joinAll(), list of tasks to join is null");
         }

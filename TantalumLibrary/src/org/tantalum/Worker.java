@@ -48,6 +48,7 @@ final class Worker extends Thread {
      * such dedicated compute to do will drop back to the more general q
      */
     private final Vector serialQ = new Vector();
+    private static final Vector fastlaneQ = new Vector();
     private static final Vector lowPriorityQ = new Vector();
     private static final Vector shutdownQ = new Vector();
     private static int currentlyIdleCount = 0;
@@ -106,6 +107,12 @@ final class Worker extends Thread {
             throw new IllegalStateException("Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time: " + task);
         }
         switch (priority & Task.PRIORITY_MASK) {
+            case Task.FASTLANE_PRIORITY:
+                synchronized (fastlaneQ) {
+                    fastlaneQ.insertElementAt(task, 0);
+                    q.notify();
+                }
+                break;
             case Task.HIGH_PRIORITY:
                 synchronized (q) {
                     q.insertElementAt(task, 0);
@@ -145,10 +152,16 @@ final class Worker extends Thread {
      * @return
      */
     static boolean tryUnfork(final Task task) {
-        final boolean success;
+        boolean success;
 
         synchronized (q) {
             success = q.removeElement(task);
+            if (!success) {
+                success = fastlaneQ.removeElement(task);
+            }
+            if (!success) {
+                success = lowPriorityQ.removeElement(task);
+            }
         }
         //#debug
         L.i("Unfork", task + " success=" + success);
@@ -271,6 +284,8 @@ final class Worker extends Thread {
                 }
             }
         } catch (InterruptedException ex) {
+            //#debug
+            L.e("Shutdown was interrupted", "", ex);
         }
     }
 

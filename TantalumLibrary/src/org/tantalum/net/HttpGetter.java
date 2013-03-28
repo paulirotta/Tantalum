@@ -803,6 +803,7 @@ public class HttpGetter extends Task {
                 try {
                     Thread.sleep(HTTP_RETRY_DELAY);
                 } catch (InterruptedException ex) {
+                    cancel(false, "Interrupted HttpGetter while sleeping between retries: " + this);
                 }
                 out = exec(url);
             } else if (!success) {

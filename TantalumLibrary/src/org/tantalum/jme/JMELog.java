@@ -167,6 +167,8 @@ public class JMELog extends L {
                         writer.wait(1000);
                     }
                 } catch (InterruptedException ex) {
+                    //#debug
+                    System.out.println("JMELog.LogWriter was interrupted while waiting one second during shutdown");
                 }
             }
         }
