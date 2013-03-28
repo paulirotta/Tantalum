@@ -221,8 +221,15 @@ public final class PlatformUtils {
         platformAdapter.shutdownComplete();
     }
     
-    public void vibrate(final int frequency, final int duration) {
-        
+    /**
+     * Vibrate the phone
+     * 
+     * @param duration in milliseconds
+     */
+    public void vibrateAsync(final int duration) {
+        //#debug
+        L.i("Call to vibrate", "duration=" + duration);
+        platformAdapter.vibrateAsync(duration);
     }
 
     /**

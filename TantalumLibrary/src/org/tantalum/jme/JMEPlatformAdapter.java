@@ -163,12 +163,12 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
      * @param frequency
      * @param duration
      */
-    public void vibrateAsync(final int frequency, final int duration) {
-//        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
-//            public void run() {
-                DeviceControl.startVibra(frequency, duration);
-//            }
-//        });
+    public void vibrateAsync(final int duration) {
+        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
+            public void run() {
+                display.vibrate(duration);
+            }
+        });
     }
 
 

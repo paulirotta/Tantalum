@@ -129,10 +129,9 @@ public interface PlatformAdapter {
     /**
      * Vibrate the phone
      * 
-     * @param frequency
-     * @param duration 
+     * @param duration in milliseconds
      */
-    public void vibrateAsync(int frequency, int duration);
+    public void vibrateAsync(int duration);
     
     /**
      * Return the platform-specific Image type as a resource decompressed from
