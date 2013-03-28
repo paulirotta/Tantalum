@@ -15,8 +15,6 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
 import org.tantalum.Task;
-import org.tantalum.UITask;
-import org.tantalum.Worker;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.util.L;
 
@@ -43,16 +41,17 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         headerHeight = 0;
     }
 
-    public UITask loadFeed(final String search, final int getType) {
-        final UITask task = new UITask() {
-            protected void onPostExecute(final Object result) {
+    public Task loadFeed(final String search, final int getType) {
+        final Task task = new Task() {
+
+            protected Object exec(Object in) {
                 try {
                     //#debug
                     L.i("Load feed success, type=" + getType, search);
                     scrollY = 0;
                     imageObjectModel.removeAllElements();
                     images.clear();
-                    final Vector newModel = (Vector) result;
+                    final Vector newModel = (Vector) get();
                     for (int i = 0; i < newModel.size(); i++) {
                         imageObjectModel.addElement(newModel.elementAt(i));
                         PicasaStorage.imageCache.prefetch(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl);
@@ -63,8 +62,10 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                     //#debug
                     L.e("Can not get images to grid", "", ex);
                 }
-            }
 
+                return in;
+            }
+            
             public void onCanceled() {
                 //#debug
                 L.i("Load feed canceled, type=" + getType, search);
@@ -79,7 +80,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
         //#debug
         L.i("loadFeed", search);
-        PicasaStorage.getImageObjects(search, Worker.HIGH_PRIORITY, getType, task);
+        PicasaStorage.getImageObjects(search, Task.HIGH_PRIORITY, getType, task);
         if (getType != StaticWebCache.GET_LOCAL) {
             startSpinner();
         }
@@ -113,8 +114,8 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                     g.drawString("No Result.", 0, headerHeight, Graphics.TOP | Graphics.LEFT);
                 } else {
                     // Start loading the image, draw a placeholder
-                    PicasaStorage.imageCache.get(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl,
-                            Worker.NORMAL_PRIORITY, StaticWebCache.GET_ANYWHERE, new ImageResult(imageObjectModel.elementAt(i)));
+                    PicasaStorage.imageCache.getAsync(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl,
+                            Task.NORMAL_PRIORITY, StaticWebCache.GET_ANYWHERE, new ImageResult(imageObjectModel.elementAt(i)));
                     g.setColor(0x111111);
                     g.fillRect(xPosition, yPosition, imageSide, imageSide);
                 }
@@ -172,7 +173,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
             this.key = key;
         }
 
-        public Object doInBackground(final Object in) {
+        public Object exec(final Object in) {
             if (in != null) {
                 images.put(key, in);
                 repaint();

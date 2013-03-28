@@ -17,7 +17,6 @@ import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.TextField;
 
 import org.tantalum.PlatformUtils;
-import org.tantalum.UITask;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.util.L;
 
@@ -25,6 +24,7 @@ import com.nokia.common.picasaviewerapp.PicasaImageObject;
 import com.nokia.common.picasaviewerapp.PicasaStorage;
 import com.nokia.mid.ui.TextEditor;
 import com.nokia.mid.ui.TextEditorListener;
+import org.tantalum.Task;
 
 /**
  * Class for displaying the search bar and search results.
@@ -85,7 +85,7 @@ public final class SearchCanvas extends ImageGridCanvas {
              * SDK 1.0 and 1.1 phones don't use an onscreen keyboard, so enter
              * edit mode right away so the user can just start typing
              */
-            PlatformUtils.runOnUiThread(new Runnable() {
+            PlatformUtils.getInstance().runOnUiThread(new Runnable() {
                 public void run() {
                     enableKeyboard();
                 }
@@ -145,7 +145,7 @@ public final class SearchCanvas extends ImageGridCanvas {
                         midlet.goDetailCanvas();
                     }
                 } else {
-                    PlatformUtils.runOnUiThread(new Runnable() {
+                    PlatformUtils.getInstance().runOnUiThread(new Runnable() {
                         public void run() {
                             disableKeyboard(true);
                         }
@@ -157,7 +157,7 @@ public final class SearchCanvas extends ImageGridCanvas {
                         && startY < HEADER_BAR_HEIGHT) {
                     startSearch();
                 } else {
-                    PlatformUtils.runOnUiThread(new Runnable() {
+                    PlatformUtils.getInstance().runOnUiThread(new Runnable() {
                         public void run() {
                             enableKeyboard();
                             repaint();
@@ -172,7 +172,7 @@ public final class SearchCanvas extends ImageGridCanvas {
         return false;
     }
 
-    private UITask startSearch() {
+    private Task startSearch() {
         if (searchField != null) {
             searchText = searchField.getContent().trim().toLowerCase();
         }

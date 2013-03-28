@@ -15,15 +15,15 @@ import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
 
 import org.tantalum.PlatformUtils;
-import org.tantalum.Worker;
-import org.tantalum.j2me.TantalumMIDlet;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.util.L;
 
 import com.nokia.common.picasaviewerapp.PicasaStorage;
+import javax.microedition.midlet.MIDlet;
+import javax.microedition.midlet.MIDletStateChangeException;
 
 
-public final class PicasaViewer extends TantalumMIDlet {
+public final class PicasaViewer extends MIDlet {
 
     FeaturedCanvas featuredView;
     SearchCanvas searchView;
@@ -32,6 +32,7 @@ public final class PicasaViewer extends TantalumMIDlet {
     private CategoryBarHandler categoryBarHandler = null;
 
     public void startApp() {
+        PlatformUtils.getInstance().setProgram(this, 4);
         try {
             categoryBarHandler = (CategoryBarHandler) Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler").newInstance();
             categoryBarHandler.setMidlet(this);
@@ -44,11 +45,11 @@ public final class PicasaViewer extends TantalumMIDlet {
         } catch (Exception ex) {
             //#debug
             L.e("Can not create FeaturedCanvas", null, ex);
-            Worker.shutdown(true);
+            PlatformUtils.getInstance().shutdown(false);
         }
         PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
         try {
-            featuredView.loadFeed(null, StaticWebCache.GET_ANYWHERE).join(200);
+            featuredView.loadFeed(null, StaticWebCache.GET_ANYWHERE).fork(); //.join(200);
         } catch (Exception ex) {
             //#debug
             L.e("Slow initial feed load", null, ex);
@@ -67,7 +68,7 @@ public final class PicasaViewer extends TantalumMIDlet {
 
     public void goDetailCanvas() {
         lastView = Display.getDisplay(PicasaViewer.this).getCurrent();
-        PlatformUtils.runOnUiThread(new Runnable() {
+        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 if (phoneSupportsCategoryBar()) {
                     categoryBarHandler.setVisibility(false);
@@ -78,7 +79,7 @@ public final class PicasaViewer extends TantalumMIDlet {
     }
 
     public void goBack() {
-        PlatformUtils.runOnUiThread(new Runnable() {
+        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 if (phoneSupportsCategoryBar()) {
                     categoryBarHandler.setVisibility(true);
@@ -90,7 +91,7 @@ public final class PicasaViewer extends TantalumMIDlet {
 
     public void goSearchCanvas() {
         lastView = searchView;
-        PlatformUtils.runOnUiThread(new Runnable() {
+        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 Display.getDisplay(PicasaViewer.this).setCurrent(searchView);
             }
@@ -99,7 +100,7 @@ public final class PicasaViewer extends TantalumMIDlet {
 
     public void goFeaturedCanvas() {
         lastView = featuredView;
-        PlatformUtils.runOnUiThread(new Runnable() {
+        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
                 Display.getDisplay(PicasaViewer.this).setCurrent(featuredView);
             }
@@ -114,5 +115,12 @@ public final class PicasaViewer extends TantalumMIDlet {
         if (categoryBarHandler != null) {
             categoryBarHandler.setVisibility(visibility);
         }
+    }
+
+    protected void pauseApp() {
+    }
+
+    protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
+        PlatformUtils.getInstance().shutdown(unconditional);
     }
 }

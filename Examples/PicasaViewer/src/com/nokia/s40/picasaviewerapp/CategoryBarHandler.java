@@ -14,7 +14,6 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Image;
 
-import org.tantalum.Worker;
 import org.tantalum.util.L;
 
 
@@ -22,6 +21,7 @@ import com.nokia.mid.ui.CategoryBar;
 import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.ElementListener;
 import com.nokia.mid.ui.IconCommand;
+import org.tantalum.PlatformUtils;
 
 /**
  *
@@ -106,7 +106,7 @@ public final class CategoryBarHandler implements ElementListener {
     public void notifyElementSelected(CategoryBar cb, int i) {
         switch (i) {
             case ElementListener.BACK:
-                Worker.shutdown(false);
+                PlatformUtils.getInstance().shutdown(false);
                 break;
             case 0:
                 midlet.goFeaturedCanvas();

@@ -8,6 +8,7 @@ import javax.microedition.lcdui.ItemCommandListener;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import org.tantalum.PlatformUtils;
+import org.tantalum.jme.JMELog;
 import org.tantalum.util.L;
 
 public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandListener, ItemCommandListener {
@@ -18,11 +19,6 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
      * switching between threads.
      */
     private static final int NUMBER_OF_WORKER_THREADS = 4;
-    /*
-     * Change to true if you want debug output from the phone sent to the USB serial
-     * port for display on a terminal.
-     */
-    private static final boolean USB_DEBUG_ENABLED = false;
     private final Form exampleForm = new Form("Example Form");
     private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
 
@@ -31,7 +27,7 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
      * something as the current display item before this routine returns.
      */
     protected void startApp() {
-        PlatformUtils.getInstance().setProgram(this, NUMBER_OF_WORKER_THREADS, USB_DEBUG_ENABLED);
+        PlatformUtils.getInstance().setProgram(this, NUMBER_OF_WORKER_THREADS, JMELog.NORMAL_MODE);
         init();
         Display.getDisplay(this).setCurrent(exampleForm);
     }

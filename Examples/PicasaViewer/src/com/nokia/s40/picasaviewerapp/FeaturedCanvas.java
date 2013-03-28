@@ -11,8 +11,8 @@ package com.nokia.s40.picasaviewerapp;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
+import org.tantalum.PlatformUtils;
 
-import org.tantalum.Worker;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.util.L;
 
@@ -56,7 +56,7 @@ public final class FeaturedCanvas extends ImageGridCanvas {
         } else if (c == searchCommand) {
             midlet.goSearchCanvas();
         } else if (c.getCommandType() == Command.EXIT) {
-            Worker.shutdown(false);
+            PlatformUtils.getInstance().shutdown(false);
         }
     }
 

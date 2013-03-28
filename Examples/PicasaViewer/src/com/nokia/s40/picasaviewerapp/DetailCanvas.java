@@ -18,13 +18,12 @@ import javax.microedition.lcdui.Image;
 
 import org.tantalum.Task;
 import org.tantalum.TimeoutException;
-import org.tantalum.Worker;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.util.L;
-import org.tantalum.util.StringUtils;
 
 import com.nokia.common.picasaviewerapp.PicasaImageObject;
 import com.nokia.common.picasaviewerapp.PicasaStorage;
+import org.tantalum.jme.JMEFontUtils;
 
 /**
  * The class displaying the larger image, title and photographer.
@@ -37,10 +36,11 @@ public final class DetailCanvas extends GestureCanvas {
     private static final double R = 12;
     private final double YC = 50.0;
     private final int width;
-    private Vector titleLines;
+    private final Vector titleLines = new Vector();
     private int textY = 0;
     private int bottom = 0;
-    private Command backCommand = new Command("Back", Command.BACK, 0);
+    private final Command backCommand = new Command("Back", Command.BACK, 0);
+    private final JMEFontUtils fontUtils = JMEFontUtils.getFontUtils(Font.getDefaultFont(), " ..");
 
     public DetailCanvas(final PicasaViewer midlet) {
         super(midlet);
@@ -51,7 +51,6 @@ public final class DetailCanvas extends GestureCanvas {
         if (!midlet.phoneSupportsCategoryBar()) {
             addCommand(backCommand);
         }
-        titleLines = new Vector();
     }
 
     public void commandAction(Command c, Displayable d) {
@@ -64,8 +63,10 @@ public final class DetailCanvas extends GestureCanvas {
 
     public void paint(final Graphics g) {
         final PicasaImageObject selectedImage = PicasaStorage.getSelectedImage();
-        if (titleLines.isEmpty()) {
-            StringUtils.splitToLines(titleLines, selectedImage.title, Font.getDefaultFont(), width - 2 * PADDING);
+        if (selectedImage != null) {
+            if (titleLines.isEmpty()) {
+                fontUtils.splitToLines(titleLines, selectedImage.title, width, true);
+            }
         }
 
         //#debug
@@ -82,18 +83,18 @@ public final class DetailCanvas extends GestureCanvas {
                 startSpinner();
                 startingSpin = true;
                 try {
-                    PicasaStorage.imageCache.get(selectedImage.imageUrl,
-                            Worker.HIGH_PRIORITY,
-                            StaticWebCache.GET_ANYWHERE,                            
+                    PicasaStorage.imageCache.getAsync(selectedImage.imageUrl,
+                            Task.HIGH_PRIORITY,
+                            StaticWebCache.GET_ANYWHERE,
                             new Task() {
-                        public Object doInBackground(final Object in) {
+                        public Object exec(final Object in) {
                             if (in != null && selectedImage == PicasaStorage.getSelectedImage()) {
                                 image = (Image) in;
                                 stopSpinner();
                             }
                             return in;
                         }
-                    }).join(100);
+                    }).fork().join(100);
                 } catch (TimeoutException ex) {
                     // Normal for slow load
                 } catch (Exception ex) {

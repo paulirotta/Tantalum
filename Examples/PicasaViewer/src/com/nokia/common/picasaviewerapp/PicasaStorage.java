@@ -53,7 +53,7 @@ public class PicasaStorage {
     public static synchronized void init(final int width) {
 
         if (feedCache == null) {
-            final ImageTypeHandler imageTypeHandler = PlatformUtils.getImageTypeHandler();
+            final ImageTypeHandler imageTypeHandler = PlatformUtils.getInstance().getImageTypeHandler();
 
             screenWidth = width;
             if (screenWidth < 256) {
@@ -64,8 +64,8 @@ public class PicasaStorage {
                 imageSize = 720; //Picasa size for "fullsize" images
             }
             imageTypeHandler.setMaxSize(width, width);
-            imageCache = new StaticWebCache('4', imageTypeHandler);
-            feedCache = new StaticWebCache('5', new ImageObjectTypeHandler());
+            imageCache = StaticWebCache.getWebCache('4', imageTypeHandler);
+            feedCache = StaticWebCache.getWebCache('5', new ImageObjectTypeHandler());
 
             thumbSize = imageSide + "c"; // c is for cropped, ensures image proportions
 
@@ -97,7 +97,7 @@ public class PicasaStorage {
     public static Task getImageObjects(final String search, final int getPriority, final int getType, final Task callback) {
         final String url = search != null ? searchURL + search : featURL;
 
-        return feedCache.get(url, getPriority, getType, callback);
+        return feedCache.getAsync(url, getPriority, getType, callback);
     }
 
     /**

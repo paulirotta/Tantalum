@@ -45,6 +45,403 @@ import org.tantalum.util.L;
  * @author pahought
  */
 public class HttpGetter extends Task {
+    /*
+     * HTTP Method constants
+     */
+    /**
+     * HTTP GET is the default operation
+     */
+    public static final String HTTP_GET = "GET";
+    /**
+     * HTTP HEAD is not supported by JME
+     */
+    public static final String HTTP_HEAD = "HEAD";
+    /**
+     * HTTP POST is used if a byte[] to send is provided by the <code>HttpPoster</code>
+     */
+    public static final String HTTP_POST = "POST";
+    /**
+     * HTTP PUT is not supported by JME
+     */
+    public static final String HTTP_PUT = "PUT";
+    /**
+     * HTTP DELETE is not supported by JME
+     */
+    public static final String HTTP_DELETE = "DELETE";
+    /**
+     * HTTP TRACE is not supported by JME
+     */
+    public static final String HTTP_TRACE = "TRACE";
+    /**
+     * HTTP CONNECT is not supported by JME
+     */
+    public static final String HTTP_CONNECT = "CONNECT";
+    /*
+     * HTTP Status constants
+     */
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_100_CONTINUE = 100;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_101_SWITCHING_PROTOCOLS = 101;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_102_PROCESSING = 102;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_200_OK = 200;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_201_CREATED = 201;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_202_ACCEPTED = 202;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_203_NON_AUTHORITATIVE_INFORMATION = 203;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_204_NO_CONTENT = 204;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_205_RESET_CONTENT = 205;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_206_PARTIAL_CONTENT = 206;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_207_MULTI_STATUS = 207;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_208_ALREADY_REPORTED = 208;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_250_LOW_ON_STORAGE_SPACE = 250;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_226_IM_USED = 226;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_300_MULTIPLE_CHOICES = 300;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_301_MOVED_PERMANENTLY = 301;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_302_FOUND = 302;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_303_SEE_OTHER = 303;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_304_NOT_MODIFIED = 304;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_305_USE_PROXY = 305;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_306_SWITCH_PROXY = 306;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_307_TEMPORARY_REDIRECT = 307;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_308_PERMANENT_REDIRECT = 308;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_400_BAD_REQUEST = 400;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_401_UNAUTHORIZED = 401;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_402_PAYMENT_REQUIRED = 402;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_403_FORBIDDEN = 403;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_404_NOT_FOUND = 404;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_405_METHOD_NOT_ALLOWED = 405;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_406_NOT_ACCEPTABLE = 406;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_407_PROXY_AUTHENTICATION_REQUIRED = 407;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_408_REQUEST_TIMEOUT = 408;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_409_CONFLICT = 409;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_410_GONE = 410;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_411_LENGTH_REQUIRED = 411;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_412_PRECONDITION_FAILED = 412;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_413_REQUEST_ENTITY_TOO_LARGE = 413;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_414_REQUEST_URI_TOO_LONG = 414;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_415_UNSUPPORTED_MEDIA_TYPE = 415;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE = 416;
+    /**
+     * HTTP response code value
+     */
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_417_EXPECTATION_FAILED = 417;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_418_IM_A_TEAPOT = 418;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_420_ENHANCE_YOUR_CALM = 420;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_422_UNPROCESSABLE_ENTITY = 422;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_423_LOCKED = 423;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_424_FAILED_DEPENDENCY = 424;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_424_METHOD_FAILURE = 424;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_425_UNORDERED_COLLECTION = 425;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_426_UPGRADE_REQUIRED = 426;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_428_PRECONDITION_REQUIRED = 428;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_429_TOO_MANY_REQUESTS = 429;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE = 431;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_444_NO_RESPONSE = 444;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_449_RETRY_WITH = 449;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_450_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_451_PARAMETER_NOT_UNDERSTOOD = 451;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_451_REDIRECT = 451;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_452_CONFERENCE_NOT_FOUND = 452;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_453_NOT_ENOUGH_BANDWIDTH = 453;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_454_SESSION_NOT_FOUND = 454;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_455_METHOD_NOT_VALID_IN_THIS_STATE = 455;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_456_HEADER_FIELD_NOT_VALID_FOR_RESOURCE = 456;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_457_INVALID_RANGE = 457;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_458_PARAMETER_IS_READ_ONLY = 458;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_459_AGGREGATE_OPERATION_NOT_ALLOWED = 459;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_460_ONLY_AGGREGATE_OPERATION_ALLOWED = 460;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_461_UNSUPPORTED_TRANSPORT = 461;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_462_DESTINATION_UNREACHABLE = 462;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_494_REQUEST_HEADER_TOO_LARGE = 494;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_495_CERT_ERROR = 495;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_496_NO_CERT = 496;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_497_HTTP_TO_HTTPS = 497;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_499_CLIENT_CLOSED_REQUEST = 499;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_500_INTERNAL_SERVER_ERROR = 500;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_501_NOT_IMPLEMENTED = 501;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_502_BAD_GATEWAY = 502;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_503_SERVICE_UNAVAILABLE = 503;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_504_GATEWAY_TIMEOUT = 504;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_505_HTTP_VERSION_NOT_SUPPORTED = 505;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_506_VARIANT_ALSO_NEGOTIATES = 506;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_507_INSUFFICIENT_STORAGE = 507;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_508_LOOP_DETECTED = 508;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_509_BANDWIDTH_LIMIT_EXCEEDED = 509;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_510_NOT_EXTENDED = 510;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = 511;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_550_PERMISSION_DENIED = 550;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_551_OPTION_NOT_SUPPORTED = 551;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_598_NETWORK_READ_TIMEOUT_ERROR = 598;
+    /**
+     * HTTP response code value
+     */
+    public static final int HTTP_599_NETWORK_CONNECT_TIMEOUT_ERROR = 599;
 
     /**
      * Prevent context switching to another HttpGetter during TCP buffer read
@@ -54,7 +451,6 @@ public class HttpGetter extends Task {
      * activity and thereby boosting the CPU cycles available for your activity.
      */
     public static final Object NET_MUTEX = new Object();
-//    private static final Hashtable inFlightGets = new Hashtable();
     /**
      * The HTTP server has not yet been contacted, so no response code is yet
      * available
@@ -81,7 +477,6 @@ public class HttpGetter extends Task {
     private final Hashtable responseHeaders = new Hashtable();
     private Vector requestPropertyKeys = new Vector();
     private Vector requestPropertyValues = new Vector();
-//    private HttpGetter duplicateTaskWeShouldJoinInsteadOfReGetting = null;
     /**
      * Counter, estimated downloaded bytes during the app session.
      *
@@ -157,7 +552,8 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Get the byte[] from a specified web service URL.
+     * Create a Task which which will, when fork()ed, get the byte[] from a
+     * specified web service URL.
      *
      * Be default, the client will automatically retry 3 times if the web
      * service does not respond on the first attempt (happens frequently with
@@ -174,8 +570,6 @@ public class HttpGetter extends Task {
      */
     public HttpGetter(final String key) {
         super(key);
-
-//        duplicateTaskWeShouldJoinInsteadOfReGetting = getInFlightNetworkTasks();
     }
 
     /**
@@ -190,13 +584,6 @@ public class HttpGetter extends Task {
         this.postMessage = postMessage;
     }
 
-//    private HttpGetter getInFlightNetworkTasks() {
-//        if (key == null) {
-//            return null;
-//        }
-//
-//        return (HttpGetter) HttpGetter.inFlightGets.get(key);
-//    }
     /**
      * Specify how many more times the HttpGetter should re-attempt HTTP GET if
      * there is a network error.
@@ -269,19 +656,6 @@ public class HttpGetter extends Task {
 
         //#debug
         L.i(this.getClass().getName() + " start", key);
-//        if (duplicateTaskWeShouldJoinInsteadOfReGetting == null) {
-//            duplicateTaskWeShouldJoinInsteadOfReGetting = getInFlightNetworkTasks();
-//        }
-//        if (duplicateTaskWeShouldJoinInsteadOfReGetting != null) {
-//            //#debug
-//            L.i("Noticed a duplicate HttpGetter Task: join()ing that result rather than re-getting from web server", key);
-//            try {
-//                return duplicateTaskWeShouldJoinInsteadOfReGetting.get();
-//            } catch (Exception e) {
-//                //#debug
-//                L.e("Can not join duplicate HttpGetter Task", key, e);
-//            }
-//        }
         ByteArrayOutputStream bos = null;
         PlatformUtils.HttpConn httpConn = null;
         boolean tryAgain = false;
@@ -436,7 +810,6 @@ public class HttpGetter extends Task {
                 L.i("HTTP GET FAILED, cancel() of task and any chained Tasks", this.toString());
                 cancel(false, "HttpGetter failed response code and header check: " + this.toString());
             }
-//            HttpGetter.inFlightGets.remove(key);
             //#debug
             L.i("End " + this.getClass().getName(), key + " status=" + getStatus());
 
@@ -535,8 +908,6 @@ public class HttpGetter extends Task {
             }
         }
 
-        sb.append("\n duplicateTaskWeShouldJoinInsteadOfReGetting=");
-//        sb.append(duplicateTaskWeShouldJoinInsteadOfReGetting);
         sb.append('\n');
         sb.append(super.toString());
 
@@ -595,107 +966,4 @@ public class HttpGetter extends Task {
     protected synchronized static void addUpstreamDataCount(final int byteCount) {
         upstreamDataCount += byteCount;
     }
-    /*
-     * HTTP Method constants
-     */
-    public static final String HTTP_GET = "GET";
-    public static final String HTTP_HEAD = "HEAD";
-    public static final String HTTP_POST = "POST";
-    public static final String HTTP_PUT = "PUT";
-    public static final String HTTP_DELETE = "DELETE";
-    public static final String HTTP_TRACE = "TRACE";
-    public static final String HTTP_CONNECT = "CONNECT";
-    /*
-     * HTTP Status constants
-     */
-    public static final int HTTP_100_CONTINUE = 100;
-    public static final int HTTP_101_SWITCHING_PROTOCOLS = 101;
-    public static final int HTTP_102_PROCESSING = 102;
-    public static final int HTTP_200_OK = 200;
-    public static final int HTTP_201_CREATED = 201;
-    public static final int HTTP_202_ACCEPTED = 202;
-    public static final int HTTP_203_NON_AUTHORITATIVE_INFORMATION = 203;
-    public static final int HTTP_204_NO_CONTENT = 204;
-    public static final int HTTP_205_RESET_CONTENT = 205;
-    public static final int HTTP_206_PARTIAL_CONTENT = 206;
-    public static final int HTTP_207_MULTI_STATUS = 207;
-    public static final int HTTP_208_ALREADY_REPORTED = 208;
-    public static final int HTTP_250_LOW_ON_STORAGE_SPACE = 250;
-    public static final int HTTP_226_IM_USED = 226;
-    public static final int HTTP_300_MULTIPLE_CHOICES = 300;
-    public static final int HTTP_301_MOVED_PERMANENTLY = 301;
-    public static final int HTTP_302_FOUND = 302;
-    public static final int HTTP_303_SEE_OTHER = 303;
-    public static final int HTTP_304_NOT_MODIFIED = 304;
-    public static final int HTTP_305_USE_PROXY = 305;
-    public static final int HTTP_306_SWITCH_PROXY = 306;
-    public static final int HTTP_307_TEMPORARY_REDIRECT = 307;
-    public static final int HTTP_308_PERMANENT_REDIRECT = 308;
-    public static final int HTTP_400_BAD_REQUEST = 400;
-    public static final int HTTP_401_UNAUTHORIZED = 401;
-    public static final int HTTP_402_PAYMENT_REQUIRED = 402;
-    public static final int HTTP_403_FORBIDDEN = 403;
-    public static final int HTTP_404_NOT_FOUND = 404;
-    public static final int HTTP_405_METHOD_NOT_ALLOWED = 405;
-    public static final int HTTP_406_NOT_ACCEPTABLE = 406;
-    public static final int HTTP_407_PROXY_AUTHENTICATION_REQUIRED = 407;
-    public static final int HTTP_408_REQUEST_TIMEOUT = 408;
-    public static final int HTTP_409_CONFLICT = 409;
-    public static final int HTTP_410_GONE = 410;
-    public static final int HTTP_411_LENGTH_REQUIRED = 411;
-    public static final int HTTP_412_PRECONDITION_FAILED = 412;
-    public static final int HTTP_413_REQUEST_ENTITY_TOO_LARGE = 413;
-    public static final int HTTP_414_REQUEST_URI_TOO_LONG = 414;
-    public static final int HTTP_415_UNSUPPORTED_MEDIA_TYPE = 415;
-    public static final int HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE = 416;
-    public static final int HTTP_417_EXPECTATION_FAILED = 417;
-    public static final int HTTP_418_IM_A_TEAPOT = 418;
-    public static final int HTTP_420_ENHANCE_YOUR_CALM = 420;
-    public static final int HTTP_422_UNPROCESSABLE_ENTITY = 422;
-    public static final int HTTP_423_LOCKED = 423;
-    public static final int HTTP_424_FAILED_DEPENDENCY = 424;
-    public static final int HTTP_424_METHOD_FAILURE = 424;
-    public static final int HTTP_425_UNORDERED_COLLECTION = 425;
-    public static final int HTTP_426_UPGRADE_REQUIRED = 426;
-    public static final int HTTP_428_PRECONDITION_REQUIRED = 428;
-    public static final int HTTP_429_TOO_MANY_REQUESTS = 429;
-    public static final int HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE = 431;
-    public static final int HTTP_444_NO_RESPONSE = 444;
-    public static final int HTTP_449_RETRY_WITH = 449;
-    public static final int HTTP_450_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450;
-    public static final int HTTP_451_PARAMETER_NOT_UNDERSTOOD = 451;
-    public static final int HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451;
-    public static final int HTTP_451_REDIRECT = 451;
-    public static final int HTTP_452_CONFERENCE_NOT_FOUND = 452;
-    public static final int HTTP_453_NOT_ENOUGH_BANDWIDTH = 453;
-    public static final int HTTP_454_SESSION_NOT_FOUND = 454;
-    public static final int HTTP_455_METHOD_NOT_VALID_IN_THIS_STATE = 455;
-    public static final int HTTP_456_HEADER_FIELD_NOT_VALID_FOR_RESOURCE = 456;
-    public static final int HTTP_457_INVALID_RANGE = 457;
-    public static final int HTTP_458_PARAMETER_IS_READ_ONLY = 458;
-    public static final int HTTP_459_AGGREGATE_OPERATION_NOT_ALLOWED = 459;
-    public static final int HTTP_460_ONLY_AGGREGATE_OPERATION_ALLOWED = 460;
-    public static final int HTTP_461_UNSUPPORTED_TRANSPORT = 461;
-    public static final int HTTP_462_DESTINATION_UNREACHABLE = 462;
-    public static final int HTTP_494_REQUEST_HEADER_TOO_LARGE = 494;
-    public static final int HTTP_495_CERT_ERROR = 495;
-    public static final int HTTP_496_NO_CERT = 496;
-    public static final int HTTP_497_HTTP_TO_HTTPS = 497;
-    public static final int HTTP_499_CLIENT_CLOSED_REQUEST = 499;
-    public static final int HTTP_500_INTERNAL_SERVER_ERROR = 500;
-    public static final int HTTP_501_NOT_IMPLEMENTED = 501;
-    public static final int HTTP_502_BAD_GATEWAY = 502;
-    public static final int HTTP_503_SERVICE_UNAVAILABLE = 503;
-    public static final int HTTP_504_GATEWAY_TIMEOUT = 504;
-    public static final int HTTP_505_HTTP_VERSION_NOT_SUPPORTED = 505;
-    public static final int HTTP_506_VARIANT_ALSO_NEGOTIATES = 506;
-    public static final int HTTP_507_INSUFFICIENT_STORAGE = 507;
-    public static final int HTTP_508_LOOP_DETECTED = 508;
-    public static final int HTTP_509_BANDWIDTH_LIMIT_EXCEEDED = 509;
-    public static final int HTTP_510_NOT_EXTENDED = 510;
-    public static final int HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = 511;
-    public static final int HTTP_550_PERMISSION_DENIED = 550;
-    public static final int HTTP_551_OPTION_NOT_SUPPORTED = 551;
-    public static final int HTTP_598_NETWORK_READ_TIMEOUT_ERROR = 598;
-    public static final int HTTP_599_NETWORK_CONNECT_TIMEOUT_ERROR = 599;
 }

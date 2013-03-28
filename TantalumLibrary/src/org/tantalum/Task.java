@@ -635,15 +635,15 @@ public abstract class Task implements Runnable {
     }
 
     private void doSetStatus(final int status) {
-        if (status > FINISHED) {
-            throw new IllegalArgumentException("setStatus(" + Task.STATUS_STRINGS[status] + ") not allowed, already FINISHED or CANCELED: " + this);
-        }
         final Task t;
         synchronized (MUTEX) {
             if (this.status == status) {
                 //#debug
                 L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
                 return;
+            }
+            if (status > FINISHED) {
+                throw new IllegalArgumentException("setStatus(" + Task.STATUS_STRINGS[status] + ") not allowed, already FINISHED or CANCELED: " + this);
             }
             this.status = status;
             MUTEX.notifyAll();
@@ -861,6 +861,7 @@ public abstract class Task implements Runnable {
 
                 case PENDING:
                     if (mayInterruptIfRunning) {
+                        canceled = true;
                         Worker.interruptTask(this);
                         if (status == Task.CANCELED) {
                             /*
@@ -873,8 +874,8 @@ public abstract class Task implements Runnable {
                 // continue to default
 
                 default:
-                    doSetStatus(CANCELED);
                     canceled = true;
+                    doSetStatus(CANCELED);
             }
             //#debug
             L.i("End cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
