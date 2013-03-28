@@ -155,8 +155,12 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
     }
 
-    public void vibrateAsync(final int duration) {
-        Vibrator v = (Vibrator) applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+    public void vibrateAsync(final int duration, final Runnable timekeeperLambda) {
+        final Vibrator v = (Vibrator) applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+
+        if (timekeeperLambda != null) {
+            timekeeperLambda.run();
+        }
         v.vibrate(duration);
     }
 

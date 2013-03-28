@@ -29,8 +29,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
-import org.tantalum.android.AndroidPlatformAdapter;
-import org.tantalum.jme.JMEPlatformAdapter;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
@@ -81,6 +79,12 @@ public final class PlatformUtils {
      * The platform-specific persistent memory handler
      */
     protected FlashCache flashCache;
+    private static final Object MUTEX = new Object();
+
+    /*
+     * When can we next fire the vibrate mode. This filter prevents too-frequence calls to vibrate
+     */
+    private long nextAvailableVibrationtime = 0;
 
     /**
      * Singleton constructor
@@ -173,8 +177,8 @@ public final class PlatformUtils {
 
     /**
      * Complete cross-platform initialization
-     * 
-     * @param logMode 
+     *
+     * @param logMode
      */
     private void init(final int logMode) {
         platformAdapter.init(logMode);
@@ -220,16 +224,46 @@ public final class PlatformUtils {
         L.i("Call to notifyDestroyed", reasonDestroyed);
         platformAdapter.shutdownComplete();
     }
-    
+
     /**
      * Vibrate the phone
-     * 
+     *
+     * You can specify a lockoutTime to filter out repeated vibrations in too
+     * short an interval
+     *
      * @param duration in milliseconds
+     * @param lockoutTime if we vibrate, for how long vibration stops do we
+     * prevent a new vibration from starting
      */
-    public void vibrateAsync(final int duration) {
-        //#debug
-        L.i("Call to vibrate", "duration=" + duration);
-        platformAdapter.vibrateAsync(duration);
+    public void vibrateAsync(final int duration, final int lockoutTime) {
+        Runnable timekeeperLambda = null;
+
+        if (lockoutTime > 0) {
+            timekeeperLambda = new Runnable() {
+                public void run() {
+                    synchronized (MUTEX) {
+                        nextAvailableVibrationtime = System.currentTimeMillis() + duration + lockoutTime;
+                    }
+                }
+            };
+        }
+
+        synchronized (MUTEX) {
+            if (System.currentTimeMillis() > nextAvailableVibrationtime) {
+                //#debug
+                L.i("Call to vibrate", "duration=" + duration + " lockoutTime=" + lockoutTime);
+                if (timekeeperLambda != null) {
+                    // We update the filter when actually running async on the UI thread
+                    nextAvailableVibrationtime = Long.MAX_VALUE;
+                } else {
+                    nextAvailableVibrationtime = 0;
+                }
+                platformAdapter.vibrateAsync(duration, timekeeperLambda);
+            } else {
+                //#debug
+                L.i("Vibrate filtered out- we are still in the previous vibration's lockout time window", "duration=" + duration + " lockoutTime=" + lockoutTime);
+            }
+        }
     }
 
     /**
@@ -312,6 +346,8 @@ public final class PlatformUtils {
      */
     public HttpConn getHttpPostConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes) throws IOException {
         return PlatformUtils.getInstance().platformAdapter.getHttpConn(url, requestPropertyKeys, requestPropertyValues, bytes, "POST");
+
+
     }
 
     /**

@@ -130,8 +130,9 @@ public interface PlatformAdapter {
      * Vibrate the phone
      * 
      * @param duration in milliseconds
+     * @param timekeeperLambda code which is run just before vibration begins
      */
-    public void vibrateAsync(int duration);
+    public void vibrateAsync(int duration, Runnable timekeeperLambda);
     
     /**
      * Return the platform-specific Image type as a resource decompressed from

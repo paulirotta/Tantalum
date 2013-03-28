@@ -65,19 +65,19 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
      *
      * This is created for you when your MIDlet extends AndroidMIDlet and calls
      * the super() constructor.
-     * 
-     * @param routeDebugOutputToSerialPort - some platform implementation (Android)
-     * may ignore this parameter because they have their own mechanism for
-     * remote debugging.
+     *
+     * @param routeDebugOutputToSerialPort - some platform implementation
+     * (Android) may ignore this parameter because they have their own mechanism
+     * for remote debugging.
      */
     public JMEPlatformAdapter() {
         display = Display.getDisplay((MIDlet) PlatformUtils.getInstance().getProgram());
     }
-    
+
     /**
      * Initialize logging
-     * 
-     * @param logMode 
+     *
+     * @param logMode
      */
     public void init(final int logMode) {
         log = new JMELog(logMode);
@@ -149,7 +149,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
     public L getLog() {
         return log;
     }
-    
+
     public Object readImageFromJAR(final String jarPathAndFilename) throws IOException {
         final byte[] bytes = StringUtils.readBytesFromJAR(jarPathAndFilename);
 
@@ -163,14 +163,16 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
      * @param frequency
      * @param duration
      */
-    public void vibrateAsync(final int duration) {
+    public void vibrateAsync(final int duration, final Runnable timekeeperLambda) {
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
+                if (timekeeperLambda != null) {
+                    timekeeperLambda.run();
+                }
                 display.vibrate(duration);
             }
         });
     }
-
 
     /**
      * A convenience class abstracting HTTP connection operations between
@@ -211,7 +213,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
 
             return is;
         }
-        
+
         /**
          * Get the OutputStream from the platform-specific HTTP connection
          *
@@ -257,7 +259,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
                 is.close();
                 is = null;
             }
-			if (os != null) {
+            if (os != null) {
                 os.close();
                 os = null;
             }
