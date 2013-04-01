@@ -793,10 +793,10 @@ public class TaskTest {
         };
 
         try {
-            task1a.fork(Task.UI).join();
+            task1a.fork(Task.FASTLANE_PRIORITY).join();
             assertEquals("task1a was not EXEC_FINISHED", Task.FINISHED, task1a.getStatus());
 
-            task1b.fork(Task.NORMAL_PRIORITY | Task.UI).join();
+            task1b.fork(Task.NORMAL_PRIORITY | Task.FASTLANE_PRIORITY).join();
             assertEquals("task1b was not EXEC_FINISHED", Task.FINISHED, task1b.getStatus());
 
             task2.fork().join();
