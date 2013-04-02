@@ -329,6 +329,7 @@ final class Worker extends Thread {
         return workers.length;
     }
 
+    //#mdebug
     private static String toStringWorkers() {
         final StringBuffer sb = new StringBuffer();
 
@@ -346,8 +347,12 @@ final class Worker extends Thread {
             if (w != null) {
                 sb.append(" [");
                 sb.append(w.getName());
-                sb.append(" serialQsize=");
-                sb.append(w.serialQ.size());
+                if (w.serialQ == null) {
+                    sb.append(" (no serialQ)");
+                } else {
+                    sb.append(" serialQsize=");
+                    sb.append(w.serialQ.size());
+                }
                 sb.append(" currentTask=");
                 sb.append(w.currentTask);
                 sb.append("] ");
@@ -356,6 +361,7 @@ final class Worker extends Thread {
 
         return sb.toString();
     }
+    //#enddebug
 
     /**
      * Main worker loop. Each Worker thread pulls tasks from the common

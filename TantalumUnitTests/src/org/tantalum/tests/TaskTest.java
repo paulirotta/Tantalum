@@ -46,7 +46,7 @@ public class TaskTest extends TestCase {
         //The first parameter of inherited constructor is the number of test cases
         super(20, "TaskTest");
 
-        PlatformUtils.getInstance().setProgram(this, 2, false);
+        PlatformUtils.getInstance().setProgram(this, 2);
     }
 
     /**
@@ -510,7 +510,6 @@ public class TaskTest extends TestCase {
             }
         };
         final Task instance5 = new Task("instance5") {
-            @Override
             protected Object exec(Object in) {
                 try {
                     instance4.join(400);
@@ -593,7 +592,6 @@ public class TaskTest extends TestCase {
     public void testDoInBackground() throws AssertionFailedException {
         System.out.println("doInBackground");
         final Task instance = new Task("ca") {
-            @Override
             protected Object exec(Object in) {
                 return (String) in + "tty";
             }
@@ -823,7 +821,6 @@ public class TaskTest extends TestCase {
     public void testCancelSelf() throws AssertionFailedException {
         System.out.println("cancelSelf");
         final Task task1a = new Task("1") {
-            @Override
             protected Object exec(Object in) {
                 return (String) in + "2";
             }
@@ -852,7 +849,6 @@ public class TaskTest extends TestCase {
             }
         };
         final Task task2 = new Task("5") {
-            @Override
             protected Object exec(Object in) {
                 cancel(true, "testing");
 
@@ -902,14 +898,12 @@ public class TaskTest extends TestCase {
     public void testCancelThread() throws AssertionFailedException {
         System.out.println("cancelSelf");
         final Task task1 = new Task("1") {
-            @Override
             protected Object exec(Object in) {
                 assertNotEquals("doInBackground() blue must not run on UI thread", true, PlatformUtils.getInstance().isUIThread());
                 cancel(false, "Test cancel thread");
                 return (String) in + "2";
             }
 
-            @Override
             protected void onCanceled() {
                 assertEquals("onCanceled() blue must run on UI thread", true, PlatformUtils.getInstance().isUIThread());
                 try {
