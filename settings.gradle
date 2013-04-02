@@ -1,5 +1,5 @@
 include 'TantalumLibrary'
-include 'TantalumJ2SEUnitTests'
+include 'TantalumUnitTests'
 
 // Can we include these only in the Examples-project?
 include 'Examples:CachedGeocodeExample'
