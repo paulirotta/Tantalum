@@ -32,10 +32,7 @@ import static org.junit.Assert.*;
 
 import java.util.Vector;
 
-import org.tantalum.CancellationException;
-import org.tantalum.PlatformUtils;
-import org.tantalum.Task;
-import org.tantalum.TimeoutException;
+import org.tantalum.*;
 import org.tantalum.util.L;
 
 /**
@@ -43,7 +40,7 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public class TaskTest {
+public class TaskTest extends MockedStaticInitializers {
 
     /**
      * Test of testFork method, of class Task.

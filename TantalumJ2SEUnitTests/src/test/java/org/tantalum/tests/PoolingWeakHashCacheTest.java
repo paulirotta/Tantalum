@@ -29,6 +29,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 
+import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.PoolingWeakHashCache;
 
 /**
@@ -36,7 +37,7 @@ import org.tantalum.util.PoolingWeakHashCache;
  *
  * @author phou
  */
-public class PoolingWeakHashCacheTest {
+public class PoolingWeakHashCacheTest extends MockedStaticInitializers {
 
     /**
      * Test of testClear method, of class PoolingWeakHashCache.

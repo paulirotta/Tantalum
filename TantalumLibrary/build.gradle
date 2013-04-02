@@ -29,14 +29,14 @@ sourceSets {
 }
 
 // Run static checks on the library code
-apply plugin: 'jdepend'
-apply plugin: 'pmd'
-apply plugin: 'project-report'
-apply plugin: 'findbugs'
-
-// Don't fail the build for static analysis warnings
-project.findbugs.ignoreFailures = true
-project.pmd.ignoreFailures = true
+//apply plugin: 'jdepend'
+//apply plugin: 'pmd'
+//apply plugin: 'project-report'
+//apply plugin: 'findbugs'
+//
+//// Don't fail the build for static analysis warnings
+//project.findbugs.ignoreFailures = true
+//project.pmd.ignoreFailures = true
 
 // Use this as the name for the generated jars
 

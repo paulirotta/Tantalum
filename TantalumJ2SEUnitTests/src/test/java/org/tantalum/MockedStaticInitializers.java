@@ -66,7 +66,8 @@ public abstract class MockedStaticInitializers {
 
     // Declare a publicly available mock for all the subclasses to use
     public PlatformUtils platformUtils;
-    
+    public L log;
+
     @Before
     public final void tantalumMockTestFixture() {
         PowerMockito.mockStatic(PlatformUtils.class);
@@ -74,6 +75,10 @@ public abstract class MockedStaticInitializers {
         
         platformUtils = mock(PlatformUtils.class);
         when(PlatformUtils.getInstance()).thenReturn(platformUtils);
+
+        log = mock(L.class);
+        when(platformUtils.getLog()).thenReturn(log);
+
     }
 
 }
