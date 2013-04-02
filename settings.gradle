@@ -1,5 +1,4 @@
 include 'TantalumLibrary'
-include 'TantalumUnitTests'
 include 'TantalumJ2SEUnitTests'
 
 // Can we include these only in the Examples-project?
