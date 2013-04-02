@@ -41,6 +41,7 @@ public class PoolingWeakHashCacheTest {
     /**
      * Test of testClear method, of class PoolingWeakHashCache.
      */
+    @Test
     public void testClear() {
         System.out.println("clear");
         PoolingWeakHashCache instance = new PoolingWeakHashCache();
@@ -53,6 +54,7 @@ public class PoolingWeakHashCacheTest {
     /**
      * Test of testRemove method, of class PoolingWeakHashCache.
      */
+    @Test
     public void testRemove() {
         System.out.println("remove");
         PoolingWeakHashCache instance = new PoolingWeakHashCache();
@@ -65,6 +67,7 @@ public class PoolingWeakHashCacheTest {
     /**
      * Test of testGetFromPool method, of class PoolingWeakHashCache.
      */
+    @Test
     public void testGetFromPool() {
         System.out.println("getFromPool");
         PoolingWeakHashCache instance = new PoolingWeakHashCache();
