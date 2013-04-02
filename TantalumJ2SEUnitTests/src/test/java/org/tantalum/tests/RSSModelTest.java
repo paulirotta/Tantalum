@@ -26,58 +26,57 @@ package org.tantalum.tests;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.tantalum.PlatformUtils;
-import static org.junit.Assert.*;
-
+import org.tantalum.MockedStaticInitializers;
 import org.tantalum.net.xml.RSSModel;
 import org.tantalum.util.StringUtils;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for RSSModel
  *
  * @author phou
  */
-public class RSSModelTest {
+public class RSSModelTest extends MockedStaticInitializers {
 
     byte[] xml;
+    private RSSModel instance;
+
+    @Before
+    public final void rssModelTestFixture() throws IOException {
+        xml = StringUtils.readBytesFromJAR("/rss.xml");
+        instance = new RSSModel(100);
+    }
 
     /**
      * Test of testParseElement method, of class RSSModel.
      */
     @Test
-    public void testParseElement() {
-        System.out.println("parseElement");
-        RSSModel instance = new RSSModel(100);
-        try {
-            instance.setXML(xml);
-        } catch (Exception ex) {
-            fail("Can not parse RSS: " + ex);
-        }
+    public void testParseElement() throws SAXException {
+        instance.setXML(xml);
         assertEquals("rss size", 86, instance.size());
-        try {
-            instance.setXML(null);
-            fail("Should not attempt to parse null RSS");
-        } catch (IllegalArgumentException e) {
-            // Correct answer
-        } catch (Exception ex) {
-            fail("Can not parse null RSS: " + ex);
-        }
-        try {
-            instance.setXML(new byte[0]);
-            fail("Should not handle 0 byte RSS");
-        } catch (IllegalArgumentException e) {
-            // Correct answer
-        } catch (Exception ex) {
-            fail("Can not handle 0 byte RSS: " + ex);
-        }
-        try {
-            instance.setXML(new byte[1]);
-            fail("Should not handle 1 byte RSS");
-        } catch (SAXException ex) {
-            // Correct
-        } catch (Exception e) {
-            fail("Wrong exception on parse bad 1 byte RSS: " + e);
-        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void dontAcceptZeroSizedInput() throws SAXException {
+        instance.setXML(new byte[0]);
+        fail("Should not handle 0 byte RSS");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void dontAllowNullInput() throws SAXException {
+        instance.setXML(null);
+        fail("Should not attempt to parse null RSS");
+    }
+
+    @Test(expected = SAXException.class)
+    public void dontAllowOneByteInput() throws SAXException {
+        instance.setXML(new byte[1]);
+        fail("Should not handle 1 byte RSS");
+
     }
 }
