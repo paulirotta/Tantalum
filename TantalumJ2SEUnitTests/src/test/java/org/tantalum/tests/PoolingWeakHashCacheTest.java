@@ -54,7 +54,6 @@ public class PoolingWeakHashCacheTest extends MockedStaticInitializers {
 
     /**
      * Test of testRemove method, of class PoolingWeakHashCache.
-     */
     @Test
     public void testRemove() {
         System.out.println("remove");

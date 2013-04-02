@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.SortedVector;
 
 /**
@@ -36,7 +37,7 @@ import org.tantalum.util.SortedVector;
  *
  * @author phou
  */
-public class SortedVectorTest {
+public class SortedVectorTest extends MockedStaticInitializers {
 
     /**
      * Test of testInsertElementAt method, of class SortedVector.

@@ -25,6 +25,7 @@
 package org.tantalum.tests;
 
 import junit.framework.TestCase;
+import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.LengthLimitedVector;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -34,7 +35,7 @@ import static org.junit.Assert.*;
  *
  * @author phou
  */
-public class LengthLimitedVectorTest extends TestCase {
+public class LengthLimitedVectorTest extends MockedStaticInitializers {
 
     private boolean tooLong = false;
 

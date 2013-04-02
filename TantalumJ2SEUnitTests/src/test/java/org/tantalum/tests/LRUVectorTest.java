@@ -24,6 +24,7 @@
  */
 package org.tantalum.tests;
 
+import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.LRUVector;
 import org.junit.Test;
 
@@ -34,7 +35,7 @@ import static org.junit.Assert.*;
  *
  * @author phou
  */
-public class LRUVectorTest {
+public class LRUVectorTest extends MockedStaticInitializers {
 
     /**
      * Test of testSetElementAt method, of class LRUVector.
