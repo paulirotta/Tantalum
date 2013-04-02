@@ -25,12 +25,11 @@
 package org.tantalum.tests;
 
 import org.junit.Test;
-
-import static org.junit.Assert.*;
-
-
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.PoolingWeakHashCache;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Unit tests for PoolingWeakHashCache

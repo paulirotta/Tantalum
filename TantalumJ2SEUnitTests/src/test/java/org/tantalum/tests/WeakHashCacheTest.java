@@ -24,13 +24,11 @@
  */
 package org.tantalum.tests;
 
-import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
-
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.WeakHashCache;
+
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for WeakHashCache

@@ -24,11 +24,12 @@
  */
 package org.tantalum.tests;
 
+import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.LRUVector;
-import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * LRUVector unit tests.

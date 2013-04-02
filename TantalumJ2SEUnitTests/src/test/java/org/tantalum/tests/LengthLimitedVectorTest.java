@@ -24,11 +24,11 @@
  */
 package org.tantalum.tests;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.LengthLimitedVector;
-import org.junit.Test;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * LengthLimitedVector unit tests

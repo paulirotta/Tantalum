@@ -5,18 +5,15 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareEverythingForTest;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.jme.JMEFontUtils;
-
-import static org.mockito.Mockito.*;
-
 
 import javax.microedition.lcdui.Font;
 import java.util.Vector;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
 
 /**
  * User: kink

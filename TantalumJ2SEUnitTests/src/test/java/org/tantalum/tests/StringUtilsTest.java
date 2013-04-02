@@ -24,17 +24,14 @@
  */
 package org.tantalum.tests;
 
-import java.io.InputStream;
-import java.util.Vector;
-import javax.microedition.lcdui.Font;
-
+import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.StringUtils;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.io.InputStream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Unit tests for StringUtils
