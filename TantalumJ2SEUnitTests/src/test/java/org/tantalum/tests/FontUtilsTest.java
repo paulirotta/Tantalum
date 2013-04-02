@@ -26,6 +26,8 @@ import static org.junit.Assert.assertEquals;
 @PrepareForTest(JMEFontUtils.class)
 public class FontUtilsTest extends MockedStaticInitializers {
 
+    static final int DEFAULT_CHARACTER_WIDTH_FOR_FONT = 1;
+
     private Font font;
     private JMEFontUtils fontUtils;
 
@@ -42,29 +44,31 @@ public class FontUtilsTest extends MockedStaticInitializers {
      */
     @Test
     public void testTruncate() {
-        final String str_1 = "This is a a really long line of text--------------------------------------------------------------------------------------------------------------------------------";
-        int maxWidth_1 = 240;
-        final String expResult_1 = str_1.substring(0, 36) + "...";
-        //String expResult_1 = "This is a a really long line of te...";
-
-
+        final String part1 = "This is a a really long line of text";
+        final String part2 = "--------------------------------------------------------------------------------------------------------------------------------";
+        final String str_1 = part1 + part2;
+        final String ellipsis = "...";
+        final String expResult_1 = part1 + ellipsis;
+        int maxWidth_1 = expResult_1.length();
         String result_1 = fontUtils.truncate(str_1, maxWidth_1, false);
         assertEquals(expResult_1, result_1);
     }
 
+    /**
+     * Mock the font, since it is either not available in the test context, or if it is we cannot still guarantee that
+     * the width is known. Hence we use the length of the string as the width, i.e. every character is width 1.
+     */
     private void setupMocks() {
         when(font.stringWidth(anyString())).thenAnswer(new Answer<Object>() {
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                System.out.println("Getting invocations for " + invocation);
                 Object[] arguments = invocation.getArguments();
-
-                System.out.println("Arguments are " + arguments);
                 return ((String) arguments[0]).length();
 
             }
         });
 
-        when(font.charWidth(anyChar())).thenReturn(1);
+
+        when(font.charWidth(anyChar())).thenReturn(DEFAULT_CHARACTER_WIDTH_FOR_FONT);
 
     }
 
@@ -73,10 +77,9 @@ public class FontUtilsTest extends MockedStaticInitializers {
      */
     @Test
     public void testSplitToLines() {
-        System.out.println("splitToLines");
         Vector vector_1 = new Vector();
         String text_1 = "This is a a really long line of text";
-        int maxWidth_1 = 100;
+        int maxWidth_1 = text_1.length() / 3 + 1;
 
         fontUtils.splitToLines(vector_1, text_1, maxWidth_1, false);
         assertEquals(3, vector_1.size());
