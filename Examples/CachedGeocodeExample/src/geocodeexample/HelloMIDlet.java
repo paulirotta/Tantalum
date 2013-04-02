@@ -1,23 +1,25 @@
 package geocodeexample;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import javax.microedition.lcdui.*;
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.jme.TantalumMIDlet;
-import org.tantalum.util.L;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.util.L;
+
+import javax.microedition.lcdui.*;
+import javax.microedition.midlet.MIDlet;
+import javax.microedition.midlet.MIDletStateChangeException;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
  * Demonstration of a JSON service which returns locally cached values if the
  * same web service request has been performed before.
- *
+ * <p/>
  * Note that you can force the cache to update with the latest results from the
  * web server by calling locationsCache.get() with the parameter
  * StaticWebCache.GET_WEB. You can also force offline-only operation to run off
@@ -25,24 +27,25 @@ import org.tantalum.storage.DataTypeHandler;
  *
  * @author phou
  */
-public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
+public class HelloMIDlet extends MIDlet implements CommandListener {
 
     private boolean midletPaused = false;
 
     public HelloMIDlet() {
-        super(DEFAULT_NUMBER_OF_WORKER_THREADS);
     }
+
+
     /*
-     * Think of a cache as a Hashtable of key-value pairs, where the key is the
-     * URL of a web service (HTTP GET of a unique URL).
-     * 
-     * This cache keep local copies of the web service to speed up the application
-     * and allow it to work also when there is no network available (online-offline
-     * application). When the phone runs out of flash memory for storing cached
-     * data (too many pictures etc on the phone) the cache will automatically delete the
-     * least-recently-used local data. If that data is requested again, it will
-     * be requested from the web server.
-     */
+    * Think of a cache as a Hashtable of key-value pairs, where the key is the
+    * URL of a web service (HTTP GET of a unique URL).
+    *
+    * This cache keep local copies of the web service to speed up the application
+    * and allow it to work also when there is no network available (online-offline
+    * application). When the phone runs out of flash memory for storing cached
+    * data (too many pictures etc on the phone) the cache will automatically delete the
+    * least-recently-used local data. If that data is requested again, it will
+    * be requested from the web server.
+    */
     private final StaticWebCache locationsCache = StaticWebCache.getWebCache('0', new DataTypeHandler() {
         /**
          * This method converts the JSON byte[] received from the web service,
@@ -68,7 +71,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
             return out;
         }
     });
-//<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
+    //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
     private Command exitCommand;
     private Command okCommand;
     private Form form;
@@ -79,6 +82,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
 //</editor-fold>//GEN-END:|methods|0|
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: initialize ">//GEN-BEGIN:|0-initialize|0|0-preInitialize
+
     /**
      * Initializes the application. It is called only once when the MIDlet is
      * started. The method is called before the
@@ -93,6 +97,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|0-initialize|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: startMIDlet ">//GEN-BEGIN:|3-startMIDlet|0|3-preAction
+
     /**
      * Performs an action assigned to the Mobile Device - MIDlet Started point.
      */
@@ -104,6 +109,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|3-startMIDlet|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: resumeMIDlet ">//GEN-BEGIN:|4-resumeMIDlet|0|4-preAction
+
     /**
      * Performs an action assigned to the Mobile Device - MIDlet Resumed point.
      */
@@ -115,15 +121,16 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|4-resumeMIDlet|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: switchDisplayable ">//GEN-BEGIN:|5-switchDisplayable|0|5-preSwitch
+
     /**
      * Switches a current displayable in a display. The
      * <code>display</code> instance is taken from
      * <code>getDisplay</code> method. This method is used by all actions in the
      * design for switching displayable.
      *
-     * @param alert the Alert which is temporarily set to the display;
-     * if <code>null</code>, then <code>nextDisplayable</code> is set
-     * immediately
+     * @param alert           the Alert which is temporarily set to the display;
+     *                        if <code>null</code>, then <code>nextDisplayable</code> is set
+     *                        immediately
      * @param nextDisplayable the Displayable to be set
      */
     public void switchDisplayable(Alert alert, Displayable nextDisplayable) {//GEN-END:|5-switchDisplayable|0|5-preSwitch
@@ -139,11 +146,12 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|5-switchDisplayable|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: commandAction for Displayables ">//GEN-BEGIN:|7-commandAction|0|7-preCommandAction
+
     /**
      * Called by a system to indicated that a command has been invoked on a
      * particular displayable.
      *
-     * @param command the Command that was invoked
+     * @param command     the Command that was invoked
      * @param displayable the Displayable where the command was invoked
      */
     public void commandAction(Command command, Displayable displayable) {//GEN-END:|7-commandAction|0|7-preCommandAction
@@ -165,11 +173,11 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                  * user wants to see the result of their latest action as soon as possible
                  * without the UI ever locking up.
                  */
-                this.locationsCache.getAsync(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.UI) {
+                this.locationsCache.getAsync(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.FASTLANE_PRIORITY) {
                     protected Object exec(Object o) {
                         return o;
                     }
-                    
+
                     public void run(Object result) {
                         // UI Thread callback on success
                         HelloMIDlet.this.getLocationStringItem().setText((String) result);
@@ -187,6 +195,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|7-commandAction|6|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: exitCommand ">//GEN-BEGIN:|18-getter|0|18-preInit
+
     /**
      * Returns an initialized instance of exitCommand component.
      *
@@ -203,6 +212,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|18-getter|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: form ">//GEN-BEGIN:|14-getter|0|14-preInit
+
     /**
      * Returns an initialized instance of form component.
      *
@@ -222,6 +232,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|14-getter|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: locationStringItem ">//GEN-BEGIN:|16-getter|0|16-preInit
+
     /**
      * Returns an initialized instance of locationStringItem component.
      *
@@ -238,6 +249,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|16-getter|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: okCommand ">//GEN-BEGIN:|22-getter|0|22-preInit
+
     /**
      * Returns an initialized instance of okCommand component.
      *
@@ -254,6 +266,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|22-getter|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: addressTextField ">//GEN-BEGIN:|24-getter|0|24-preInit
+
     /**
      * Returns an initialized instance of addressTextField component.
      *
@@ -310,6 +323,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
     public String getGeocodeUrl(String address) {
         return "http://maps.googleapis.com/maps/api/geocode/json?sensor=false&address=" + urlEncode(address);
     }
+
     private final static String UNRESERVED_CHARS = ".-_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQURSTUVWXYZ*~";
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
 
@@ -338,5 +352,9 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
         }
 
         return buf.toString();
+    }
+
+    protected void destroyApp(boolean b) throws MIDletStateChangeException {
+
     }
 }

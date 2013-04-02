@@ -4,19 +4,21 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import javax.microedition.lcdui.*;
+import javax.microedition.midlet.MIDlet;
+import javax.microedition.midlet.MIDletStateChangeException;
+
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.jme.TantalumMIDlet;
 import org.tantalum.net.HttpGetter;
 import org.tantalum.util.L;
 
 /**
  * @author phou
  */
-public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
+public class HelloMIDlet extends MIDlet implements CommandListener {
 
     private boolean midletPaused = false;
 //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
@@ -28,8 +30,8 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|fields|0|
 
     public HelloMIDlet() {
-        super(DEFAULT_NUMBER_OF_WORKER_THREADS);
     }
+
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
 //</editor-fold>//GEN-END:|methods|0|
@@ -115,7 +117,7 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
                 final Task getter = new HttpGetter(getGeocodeUrl(this.getAddressTextField().getString()));
 
                 // Add a task which will run after the HTTP GET
-                getter.chain(new Task(Task.UI) {
+                getter.chain(new Task(Task.FASTLANE_PRIORITY) {
                     public Object exec(final Object in) {
                         // Parse the JSON on the background Worker thread
                         // Using the background thread keeps the UI fast and responsive
@@ -310,4 +312,8 @@ public class HelloMIDlet extends TantalumMIDlet implements CommandListener {
 
         return buf.toString();
     }
+
+    protected void destroyApp(boolean b) throws MIDletStateChangeException {
+    }
+
 }
