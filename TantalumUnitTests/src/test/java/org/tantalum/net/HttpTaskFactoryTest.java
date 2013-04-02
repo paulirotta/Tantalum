@@ -23,10 +23,11 @@
  */
 package org.tantalum.net;
 
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
+
+import static org.junit.Assert.assertFalse;
 
 /**
  * Unit tests for <code>StaticWebCache.HttpTaskFactory</code>
