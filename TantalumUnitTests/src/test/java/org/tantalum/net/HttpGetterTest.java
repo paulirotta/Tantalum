@@ -24,17 +24,20 @@
  */
 package org.tantalum.net;
 
-import java.io.IOException;
-import java.util.Vector;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.*;
 import org.powermock.api.mockito.PowerMockito;
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.PlatformUtils;
 import org.tantalum.util.L;
+
+import java.io.IOException;
+import java.util.Vector;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for the default implementation of

@@ -23,7 +23,6 @@ public final class JMEFontUtils {
     private final Hashtable charWidth = new Hashtable();
     /**
      * The Font which this instance operates on
-     *
      */
     public final Font font;
     /**
@@ -31,7 +30,6 @@ public final class JMEFontUtils {
      * value is not shown. "..." is a typical value.
      */
     public final String elipsis;
-    private final int widthOfW;
 
     /**
      * Get an instance for the specified Font and, for those routines that need
@@ -47,7 +45,7 @@ public final class JMEFontUtils {
             throw new IllegalArgumentException("JMEFontUtils was passed a null font");
         }
         if (elipsis == null) {
-            throw new IllegalArgumentException("JMEFontUtils was passed a null elipsis");
+            throw new IllegalArgumentException("JMEFontUtils was passed a null ellipsis");
         }
         final int key = font.hashCode() ^ elipsis.hashCode();
         JMEFontUtils instance = (JMEFontUtils) instances.get(new Integer(key));
@@ -66,14 +64,13 @@ public final class JMEFontUtils {
 
         this.font = font;
         this.elipsis = elipsis;
-        widthOfW = charWidth('W');
     }
 
     /**
      * Return the approximate (within a few pixels) width of a
      * <code>String</code> when rendered in the specified
      * <code>Font</code>.
-     *
+     * <p/>
      * Note that since nearby characters are not known, this width does not take
      * into account possible kerning of this character when placed next to
      * others in a line of text. For most purposes this is acceptable, and the
@@ -89,7 +86,7 @@ public final class JMEFontUtils {
         final char[] chars = str.toCharArray();
 
         for (int i = 0; i < chars.length; i++) {
-            i += charWidth(chars[i]);
+            w += charWidth(chars[i]);
         }
 
         return w;
@@ -97,7 +94,7 @@ public final class JMEFontUtils {
 
     /**
      * Find the width of the character in the specified Font.
-     *
+     * <p/>
      * Note that since nearby characters are not known, this width does not take
      * into account possible kerning of this character when placed next to
      * others in a line of text.
@@ -124,7 +121,7 @@ public final class JMEFontUtils {
      * @param str
      * @param maxWidth
      * @return String - truncated string with ellipsis added to end of the
-     * string
+     *         string
      */
     public String truncate(final String str, final int maxWidth, final boolean useKerning) {
         if (widthIfAllCharsAreMaxWidth(str) < maxWidth) {
@@ -138,7 +135,7 @@ public final class JMEFontUtils {
     }
 
     private int widthIfAllCharsAreMaxWidth(final String str) {
-        return widthOfW * str.length();
+        return charWidth('W') * str.length();
     }
 
     private String doKearningTruncate(final String str, final int maxWidth) {
@@ -195,7 +192,7 @@ public final class JMEFontUtils {
      * whitespace character
      * <code>' '</code> is considered as a line break position.
      *
-     * @param vector - The existing vector to which the lines should be appended
+     * @param vector     - The existing vector to which the lines should be appended
      * @param text
      * @param maxWidth
      * @param useKerning

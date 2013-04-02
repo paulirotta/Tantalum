@@ -26,14 +26,17 @@ package org.tantalum;
 
 import org.junit.Before;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import static org.mockito.Mockito.*;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.tantalum.PlatformUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.SystemOutLogger;
+
+import javax.microedition.lcdui.Font;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 /**
@@ -51,10 +54,10 @@ import org.tantalum.util.L;
  * To use this class in tests, just extend it. If some other Tantalum-classes
  * need to be mocked out, add them here.
  *
- * @author kink
+ * @author Kai Inkinen <kai.inkinen@futurice.com>
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({L.class, PlatformUtils.class})
+@PrepareForTest({L.class, PlatformUtils.class, Font.class})
 @SuppressStaticInitializationFor(
         {"org.tantalum.util.L",
                 "org.tantalum.PlatformUtils",
@@ -64,14 +67,17 @@ public abstract class MockedStaticInitializers {
 
     // Declare a publicly available mock for all the subclasses to use
     public PlatformUtils platformUtils;
-    
+    public L log;
+
     @Before
     public final void tantalumMockTestFixture() {
         PowerMockito.mockStatic(PlatformUtils.class);
         PowerMockito.mockStatic(L.class);
-        
+
         platformUtils = mock(PlatformUtils.class);
         when(PlatformUtils.getInstance()).thenReturn(platformUtils);
-    }
 
+        log = new SystemOutLogger();
+        when(platformUtils.getLog()).thenReturn(log);
+    }
 }

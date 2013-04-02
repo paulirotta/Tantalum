@@ -1,32 +1,75 @@
-sourceSets {
-    main {
-        java {
-            srcDir 'src'
-        }
-    }
-}
+/**
+ * TantalumJ2SEUnitTests/build.gradle
+ *
+ * The J2SE-project has a set of unit tests, which are compiled and executed using
+ * Java Standard Edition rather than JME. This allows us to use normal Java tools,
+ * and higher level libraries for test execution, including Junit 4.x and mocking
+ * libraries like mockito.
+ *
+ * In order to keep IDE:s happy, this project will need to be separate, so that
+ * we can build it using the correct source/target levels. Cobertura, however, does
+ * not work well with multi-project setups, so some extra configuration is needed.
+ *
+ * In order to be able to calculate code coverage, this project depends on the special
+ * config in the main project, called 'codeCoverageJar'. This config exposes the
+ * instrumented classes as a jar-file. This jar file is used to compile and execute the
+ * tests. A final step is to also copy the '.ser'-file, containing serialization data
+ * for the classes to a known location, so that we can amend the file, rather than
+ * overwrite it with a new one. A directory symlink would be the right way, but
+ * that would break platform agnosticism.
+ */
 
 dependencies {
-    compile project(':TantalumLibrary')
-    compile files('../lib/jmunit4cldc11-1.2.1.jar')
-
-    testCompile "org.microemu:microemulator:2.0.4"
-    testCompile "org.microemu:microemu-midp:2.0.4"
-    testCompile "org.microemu:microemu-cldc:2.0.4"
-    testCompile "org.microemu:microemu-jsr-75:2.0.4"
-    testCompile("org.microemu:microemu-jsr-135:2.0.4") {
-        exclude module: 'microemu-midp'
-        exclude module: 'microemu-cldc'
-    }
-
+    testCompile project(path: ':TantalumLibrary', configuration: 'codeCoverageJar')
 }
 
-task compileJava(overwrite: true, dependsOn: wtkbuild) << {
+final Project mainProject = project(':TantalumLibrary')
+final def coberturaDirectory = "/cobertura"
+
+task createDirs << {
+    file(project.buildDir.toString() + coberturaDirectory).mkdirs()
 }
 
-project.tasks["assemble"].dependsOn {
+// Make sure the order is mainProject->test,
+project.tasks["compileTestJava"].dependsOn {
     [
-            wtkpackage
+            createDirs,
+            mainProject.tasks['test']
     ]
+}
+
+final def mainProjectCoberturaDir = mainProject.buildDir.toString() + coberturaDirectory
+final def thisProjectCoberturaDir = project.buildDir.toString() + coberturaDirectory
+
+
+/**
+ * Amend the task with a pre- and a post-processsor steps, where we copy the required
+ * cobertura files here and back, once finished.
+ */
+def runTestsTask = project.tasks["test"]
+
+/**
+ * The ordering of the elements is significant. The JRE-classes must come before
+ * the midp and cldc classes, or the J2SE unit tests will fail. 
+ */
+project.tasks['test'].bootstrapClasspath = configurations.jreBootClasspath + configurations.testBootClasspath
+
+runTestsTask.doFirst {
+    // Copy the coverage serialization data, as else Cobertura will create a new report file
+    copy {
+        from mainProjectCoberturaDir
+        into thisProjectCoberturaDir
+        include '**/*.ser'
+    }
+}
+
+runTestsTask.doLast {
+    // Copy the coverage serialization data back, so Cobertura 
+    // report will be written based on the actual test coverage
+    copy {
+        into mainProjectCoberturaDir
+        from thisProjectCoberturaDir
+        include '**/*.ser'
+    }
 }
 
