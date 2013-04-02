@@ -26,16 +26,17 @@ package org.tantalum;
 
 import org.junit.Before;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import static org.mockito.Mockito.*;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.tantalum.PlatformUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.SystemOutLogger;
 
 import javax.microedition.lcdui.Font;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 /**
@@ -72,13 +73,11 @@ public abstract class MockedStaticInitializers {
     public final void tantalumMockTestFixture() {
         PowerMockito.mockStatic(PlatformUtils.class);
         PowerMockito.mockStatic(L.class);
-        
+
         platformUtils = mock(PlatformUtils.class);
         when(PlatformUtils.getInstance()).thenReturn(platformUtils);
 
-        log = mock(L.class);
+        log = new SystemOutLogger();
         when(platformUtils.getLog()).thenReturn(log);
-
     }
-
 }
