@@ -24,9 +24,11 @@
  */
 package org.tantalum.tests;
 
+import java.io.InputStream;
 import java.util.Vector;
 import javax.microedition.lcdui.Font;
 
+import org.tantalum.MockedStaticInitializers;
 import org.tantalum.util.StringUtils;
 
 import org.junit.Before;
@@ -39,7 +41,10 @@ import static org.junit.Assert.*;
  *
  * @author phou
  */
-public class StringUtilsTest {
+public class StringUtilsTest extends MockedStaticInitializers {
+
+    static final String EXAMPLE_FILE_NAME = "/rss.xml";
+
 
     /**
      * Test of testReadStringFromJAR method, of class StringUtils.
@@ -48,7 +53,6 @@ public class StringUtilsTest {
      */
     @Test
     public void testReadStringFromJAR() throws Exception {
-        System.out.println("readStringFromJAR");
         String name_1 = "/test.txt";
         String expResult_1 = "Hello, this is test text";
         String result_1 = StringUtils.readStringFromJAR(name_1);
@@ -57,13 +61,20 @@ public class StringUtilsTest {
 
     /**
      * Test of testReadBytesFromJAR method, of class StringUtils.
+     *
      * @throws Exception
      */
     @Test
     public void testReadBytesFromJAR() throws Exception {
-        System.out.println("readBytesFromJAR");
-        byte[] result_1 = StringUtils.readBytesFromJAR("/rss.xml");
-        assertEquals(66547, result_1.length);
+        //ClassLoader classLoader = this.getClass()
+        // JSE classloader to verify the length of the file, rather than using a magic number
+        InputStream stream = getClass().getResourceAsStream(EXAMPLE_FILE_NAME);
+
+        assertNotNull("Could not read example file from classpath", stream);
+
+        byte[] result_1 = StringUtils.readBytesFromJAR(EXAMPLE_FILE_NAME);
+        assertNotNull(result_1);
+        assertEquals(stream.available(), result_1.length);
     }
 
 }
