@@ -390,7 +390,7 @@ final class Worker extends Thread {
                         currentTask = null;
                         final boolean qIsEmpty = q.isEmpty();
 
-                        if (fastlaneQ.isEmpty()) {
+                        if (!fastlaneQ.isEmpty()) {
                             try {
                                 t = (Task) fastlaneQ.firstElement();
                                 currentTask = t;
