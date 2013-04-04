@@ -32,6 +32,7 @@ import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
+import org.tantalum.util.StringUtils;
 
 /**
  * RMS Utility methods
@@ -41,7 +42,8 @@ import org.tantalum.util.L;
 public final class RMSUtils {
 
     private static final int MAX_RECORD_NAME_LENGTH = 32;
-    private static final char RECORD_HASH_PREFIX = '@';
+    private static final char RECORD_HASH_PREFIX = '_';
+    private static final int RADIX = 32;
 
     private static class RMSUtilsHolder {
 
@@ -131,26 +133,63 @@ public final class RMSUtils {
         }
     }
 
-    private String getRecordStoreCacheName(final String key) {
+    private String getRecordStoreCacheName(final char priority, final byte[] digest) {
         final StringBuffer sb = new StringBuffer(MAX_RECORD_NAME_LENGTH);
 
         sb.append(RECORD_HASH_PREFIX);
-        if (key.length() > MAX_RECORD_NAME_LENGTH - 1) {
-            final String hashString = Integer.toString(key.hashCode(), Character.MAX_RADIX);
-            final int fillLength = MAX_RECORD_NAME_LENGTH - 1 - hashString.length();
-            sb.append(key.substring(0, fillLength));
-            sb.append(hashString);
-        } else {
-            // Short key, just prepend 
-            sb.append(key);
-        }
+        sb.append(priority);
+        appendDigestAsShortString(digest, sb);
 
         final String s = sb.toString();
         //#debug
-        L.i("key to rms cache key", key + " -> " + s);
+        L.i("digest to rms cache key", StringUtils.toHex(digest) + " -> " + s);
 
         return s;
     }
+
+    /**
+     * The digest length must be evenly divisible by 8
+     * 
+     * @param digest
+     * @param sb 
+     */
+    private void appendDigestAsShortString(final byte[] digest, final StringBuffer sb) {
+        for (int i = 0; i < digest.length; i+=8) {
+            final long l = bytesToLong(digest, i, 8);
+            sb.append(Long.toString(l, RADIX));
+        }
+    }
+    
+    private long bytesToLong(final byte[] bytes, int start, final int length) {
+        long l = 0;
+
+        for (int i = 0; i < length; i++) {
+            l |= (bytes[i + start] << (8*i));
+        }
+        
+        return l;
+    }
+
+//    private String getRecordStoreCacheName(final String key) {
+//        final StringBuffer sb = new StringBuffer(MAX_RECORD_NAME_LENGTH);
+//
+//        sb.append(RECORD_HASH_PREFIX);
+//        if (key.length() > MAX_RECORD_NAME_LENGTH - 1) {
+//            final String hashString = Integer.toString(key.hashCode(), Character.MAX_RADIX);
+//            final int fillLength = MAX_RECORD_NAME_LENGTH - 1 - hashString.length();
+//            sb.append(key.substring(0, fillLength));
+//            sb.append(hashString);
+//        } else {
+//            // Short key, just prepend 
+//            sb.append(key);
+//        }
+//
+//        final String s = sb.toString();
+//        //#debug
+//        L.i("key to rms cache key", key + " -> " + s);
+//
+//        return s;
+//    }
 
     /**
      * Write to the record store a cached value based on the hashcode of the key
@@ -161,8 +200,8 @@ public final class RMSUtils {
      * @throws RecordStoreFullException
      * @throws FlashDatabaseException
      */
-    public void cacheWrite(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
-        write(getRecordStoreCacheName(key), data);
+    public void cacheWrite(final char priority, final byte[] digest, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
+        write(getRecordStoreCacheName(priority, digest), data);
     }
 
     /**
@@ -231,8 +270,8 @@ public final class RMSUtils {
      * @return
      * @throws FlashDatabaseException
      */
-    public byte[] cacheRead(final String key) throws FlashDatabaseException {
-        return read(getRecordStoreCacheName(key));
+    public byte[] cacheRead(final char priority, final byte[] digest) throws FlashDatabaseException {
+        return read(getRecordStoreCacheName(priority, digest));
     }
 
     /**
@@ -276,8 +315,8 @@ public final class RMSUtils {
      * @param key
      * @throws FlashDatabaseException
      */
-    public void cacheDelete(final String key) throws FlashDatabaseException {
-        delete(getRecordStoreCacheName(key));
+    public void cacheDelete(final char priority, final byte[] digest) throws FlashDatabaseException {
+        delete(getRecordStoreCacheName(priority, digest));
     }
 
     /**
@@ -290,7 +329,7 @@ public final class RMSUtils {
      * @return null if the record store does not exist
      * @throws RecordStoreException
      */
-    private RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException {
+    RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException {
         RecordStore rs = null;
         boolean success = false;
 

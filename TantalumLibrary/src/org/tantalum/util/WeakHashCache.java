@@ -25,6 +25,7 @@
 package org.tantalum.util;
 
 import java.lang.ref.WeakReference;
+import java.util.Enumeration;
 import java.util.Hashtable;
 
 /**
@@ -160,5 +161,20 @@ public class WeakHashCache {
      */
     public void clear() {
         hash.clear();
+    }
+
+    /**
+     * Keep the index values of the collection, but clear all values to which
+     * they point.
+     * 
+     */
+    public void clearValues() {
+        synchronized(hash) {
+            final Enumeration keys = hash.keys();
+            
+            while (keys.hasMoreElements()) {
+                hash.put(keys, new WeakReference(null));
+            }
+        }
     }
 }

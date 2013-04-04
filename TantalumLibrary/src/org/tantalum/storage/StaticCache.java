@@ -24,12 +24,15 @@
  */
 package org.tantalum.storage;
 
+import java.io.UnsupportedEncodingException;
+import java.security.DigestException;
 import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
+import org.tantalum.util.StringUtils;
 import org.tantalum.util.WeakHashCache;
 
 /**
@@ -56,6 +59,9 @@ public class StaticCache {
             return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
         }
     });
+    /*
+     * Always access withing a synchronized block
+     */
     private final FlashCache flashCache;
     /**
      * A heap memory ramCache in the form of a Hashtable from which data can be
@@ -99,8 +105,10 @@ public class StaticCache {
     protected int sizeAsBytes = 0;
     /*
      *  For testing and performance comparison
+     * 
+     *  Always access within a synchronized block
      */
-    private volatile boolean flashCacheEnabled = true;
+    private boolean flashCacheEnabled = true;
     /**
      * All synchronization is not on "this", but on the hidden MUTEX Object to
      * encapsulate synch and disallow the bad practice of externally
@@ -154,11 +162,12 @@ public class StaticCache {
      * loading into the RAM ramCache.
      * @return
      */
-    public static synchronized StaticCache getCache(final char priority, final DataTypeHandler handler) {
+    public static synchronized StaticCache getCache(final char priority, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
         StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
 
         if (c == null) {
             c = new StaticCache(priority, handler);
+            caches.addElement(c);
         }
 
         return c;
@@ -170,11 +179,10 @@ public class StaticCache {
      * @param priority
      * @param handler
      */
-    protected StaticCache(final char priority, final DataTypeHandler handler) {
+    protected StaticCache(final char priority, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
         if (priority < '0') {
             throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
-        caches.addElement(this);
         this.priority = priority;
         this.handler = handler;
         flashCache = PlatformUtils.getInstance().getFlashCache(priority);
@@ -187,12 +195,11 @@ public class StaticCache {
      * We want to use the RAM Hashtable to know what the ramCache contains, even
      * though we do not pre-load from flash all the values
      */
-    private void init() {
+    private void init() throws DigestException, UnsupportedEncodingException, UnsupportedEncodingException {
         try {
-            Vector keys = flashCache.getKeys();
-            for (int i = 0; i < keys.size(); i++) {
-                String key = (String) keys.elementAt(i);
-                this.ramCache.put(key, null);
+            final byte[][] digest = flashCache.getDigests();
+            for (int i = 0; i < digest.length; i++) {
+                ramCache.put(digest[i], null);
             }
         } catch (FlashDatabaseException ex) {
             //#debug
@@ -288,7 +295,7 @@ public class StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    protected Object synchronousGet(final String key) throws FlashDatabaseException {
+    protected Object synchronousGet(final String key) throws FlashDatabaseException, UnsupportedEncodingException, DigestException {
         Object o = synchronousRAMCacheGet(key);
 
         //#debug
@@ -296,10 +303,12 @@ public class StaticCache {
         if (o == null) {
             // Load from flash memory
             final byte[] bytes;
-            if (flashCacheEnabled) {
-                bytes = flashCache.getData(key);
-            } else {
-                bytes = null;
+            synchronized (MUTEX) {
+                if (flashCacheEnabled) {
+                    bytes = flashCache.getData(key);
+                } else {
+                    bytes = null;
+                }
             }
 
             //#debug
@@ -381,19 +390,21 @@ public class StaticCache {
         }
         try {
             do {
-                try {
-                    //#debug
-                    L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
-                    flashCache.putData(key, bytes);
-                    //#debug
-                    L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
-                    break;
-                } catch (FlashFullException ex) {
-                    //#debug
-                    L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
-                    if (!clearSpace(bytes.length)) {
+                synchronized (MUTEX) {
+                    try {
                         //#debug
-                        L.i("Can not clear enough space for data, ABORTING", key);
+                        L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
+                        flashCache.putData(key, bytes);
+                        //#debug
+                        L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
+                        break;
+                    } catch (FlashFullException ex) {
+                        //#debug
+                        L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
+                        if (!clearSpace(bytes.length)) {
+                            //#debug
+                            L.i("Can not clear enough space for data, ABORTING", key);
+                        }
                     }
                 }
             } while (true);
@@ -410,36 +421,36 @@ public class StaticCache {
      * @param minSpaceToClear - in bytes
      * @return true if the requested amount of space has been cleared
      */
-    private boolean clearSpace(final int minSpaceToClear) throws FlashDatabaseException {
+    private boolean clearSpace(final int minSpaceToClear) throws FlashDatabaseException, UnsupportedEncodingException, DigestException {
         int spaceCleared = 0;
-        //FIXME Not appropriate for Android. Why is there no compilation bad reference error?
-        final Vector rsv = flashCache.getKeys();
+
+        final byte[][] rsv = flashCache.getDigests();
 
         //#debug
         L.i("Clearing RMS space", minSpaceToClear + " bytes");
 
         // First: clear cached objects not currently appearing in any open ramCache
-        for (int i = rsv.size() - 1; i >= 0; i--) {
-            final String key = (String) rsv.elementAt(i);
-            final StaticCache sc = getCacheContainingKey(key);
+        for (int i = rsv.length - 1; i >= 0; i--) {
+            final byte[] digest = rsv[i];
+            final StaticCache sc = getCacheContainingDigest(digest);
 
             if (sc != null) {
-                spaceCleared += getByteSizeByKey(key);
-                sc.remove(key);
+                spaceCleared += getByteSizeByDigest(digest);
+                sc.remove(digest);
             }
         }
         //#debug
         L.i("End phase 1: clearing RMS space", spaceCleared + " bytes recovered");
 
         // Second: remove currently cached items, first from low priority caches
-        while (spaceCleared < minSpaceToClear && rsv.size() > 0) {
+        while (spaceCleared < minSpaceToClear && rsv.length > 0) {
             for (int i = 0; i < caches.size(); i++) {
                 final StaticCache sc = (StaticCache) caches.elementAt(i);
 
                 while (!sc.accessOrder.isEmpty() && spaceCleared < minSpaceToClear) {
-                    final String key = (String) sc.accessOrder.removeLeastRecentlyUsed();
-                    spaceCleared += getByteSizeByKey(key);
-                    sc.remove(key);
+                    final byte[] digest = (byte[]) sc.accessOrder.removeLeastRecentlyUsed();
+                    spaceCleared += getByteSizeByDigest(digest);
+                    sc.remove(digest);
                 }
             }
         }
@@ -449,27 +460,27 @@ public class StaticCache {
         return spaceCleared >= minSpaceToClear;
     }
 
-    private int getByteSizeByKey(final String key) throws FlashDatabaseException {
+    private int getByteSizeByDigest(final byte[] digest) throws FlashDatabaseException, UnsupportedEncodingException, DigestException {
         int size = 0;
 
-        final byte[] bytes = flashCache.getData(key);
+        final byte[] bytes = flashCache.getData(digest);
         if (bytes != null) {
             size = bytes.length;
         } else {
             //#debug
-            L.i("Can not check size of record store to clear space", key);
+            L.i("Can not check size of record store to clear space", StringUtils.toHex(digest));
         }
 
         return size;
     }
 
-    private static StaticCache getCacheContainingKey(String key) {
+    private static StaticCache getCacheContainingDigest(final byte[] digest) {
         StaticCache cache = null;
 
         synchronized (caches) {
             for (int i = 0; i < caches.size(); i++) {
                 final StaticCache currentCache = (StaticCache) caches.elementAt(i);
-                if (currentCache.containsKey(key)) {
+                if (currentCache.containsDigest(digest)) {
                     cache = currentCache;
                     break;
                 }
@@ -480,26 +491,28 @@ public class StaticCache {
     }
 
     /**
-     * Note that delete is synchronous, so while this operation does not take
-     * long, other operations using the RMS may cause a slight stagger or pause
-     * before this operation can complete.
+     * Note that delete from flash is synchronous, so while this operation does
+     * not take long, other operations using the RMS may cause a slight stagger
+     * or pause before this operation can complete. On some phones this may be
+     * visible as UI thread jitter even though the UI thread is only weakly linked
+     * to the flash operations by concurrency.
      *
-     * @param key
+     * @param digest
      */
-    protected void remove(final String key) {
+    protected void remove(final byte[] digest) {
         try {
-            if (containsKey(key)) {
+            if (containsDigest(digest)) {
                 synchronized (MUTEX) {
-                    accessOrder.removeElement(key);
-                    ramCache.remove(key);
+                    accessOrder.removeElement(digest);
+                    ramCache.remove(digest);
+                    flashCache.removeData(digest);
                 }
-                flashCache.removeData(key);
                 //#debug
-                L.i("Cache remove (from RAM and RMS)", key);
+                L.i("Cache remove (from RAM and RMS)", StringUtils.toHex(digest));
             }
         } catch (Exception e) {
             //#debug
-            L.e("Couldn't remove object from cache", key, e);
+            L.e("Couldn't remove object from cache", StringUtils.toHex(digest), e);
         }
     }
 
@@ -514,14 +527,9 @@ public class StaticCache {
             protected Object exec(final Object in) {
                 //#debug
                 L.i("Start Cache Clear", "ID=" + priority);
-                final String[] keys;
-
                 synchronized (MUTEX) {
-                    keys = new String[accessOrder.size()];
-                    accessOrder.copyInto(keys);
-                }
-                for (int i = 0; i < keys.length; i++) {
-                    remove(keys[i]);
+                    flashCache.clear();
+                    accessOrder.removeAllElements();
                 }
                 //#debug
                 L.i("Cache cleared", "ID=" + priority);
@@ -559,8 +567,7 @@ public class StaticCache {
                 synchronized (MUTEX) {
                     //#debug
                     L.i("Heap cached clear start", "" + priority);
-                    ramCache.clear();
-                    init();
+                    ramCache.clearValues();
                     //#debug
                     L.i("Heap cached cleared", "" + priority);
                 }
@@ -580,14 +587,14 @@ public class StaticCache {
      * @param key
      * @return
      */
-    public boolean containsKey(final String key) {
-        if (key == null) {
-            throw new IllegalArgumentException("containsKey was passed null");
+    public boolean containsDigest(final byte[] digest) {
+        if (digest == null) {
+            throw new IllegalArgumentException("containsDigest was passed null");
         }
 
         boolean contained;
         synchronized (MUTEX) {
-            contained = ramCache.containsKey(key);
+            contained = ramCache.containsKey(digest);
         }
 
         return contained;
@@ -634,27 +641,26 @@ public class StaticCache {
      * @param chainedTask
      * @return
      */
-    public Task getKeysAsync(final Task chainedTask) {
-        final Task task = new Task() {
-            protected Object exec(Object in) {
-                try {
-                    return flashCache.getKeys();
-                } catch (Exception e) {
-                    //#debug
-                    L.e("Can not complete", "getKeysTask", e);
-                    cancel(false, "Exception during async keys get");
-                    flashCache.clear();
-
-                    return new Vector();
-                }
-            }
-        };
-        task.chain(chainedTask);
-        task.fork();
-
-        return task;
-    }
-
+//    public Task getKeysAsync(final Task chainedTask) {
+//        final Task task = new Task() {
+//            protected Object exec(Object in) {
+//                try {
+//                    return flashCache.getKeys();
+//                } catch (Exception e) {
+//                    //#debug
+//                    L.e("Can not complete", "getKeysTask", e);
+//                    cancel(false, "Exception during async keys get");
+//                    flashCache.clear();
+//
+//                    return new Vector();
+//                }
+//            }
+//        };
+//        task.chain(chainedTask);
+//        task.fork();
+//
+//        return task;
+//    }
 //#mdebug
     /**
      * For debugging use

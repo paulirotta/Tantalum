@@ -24,6 +24,8 @@
  */
 package org.tantalum.net;
 
+import java.io.UnsupportedEncodingException;
+import java.security.DigestException;
 import java.util.Hashtable;
 import org.tantalum.Task;
 import org.tantalum.storage.DataTypeHandler;
@@ -79,8 +81,10 @@ public final class StaticWebCache extends StaticCache {
      * @param priority
      * @param handler
      * @return
+     * @throws DigestException
+     * @throws UnsupportedEncodingException 
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler) {
+    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
         return (StaticWebCache) getWebCache(priority, handler, DEFAULT_HTTP_GETTER_FACTORY);
     }
 
@@ -99,13 +103,20 @@ public final class StaticWebCache extends StaticCache {
      * server you are caching does not return an HTTP header error code but
      * rather gives an unexpected response body that you need to watch for
      * before deciding to cache the response.
+     * 
+     * @param priority
+     * @param handler
+     * @param httpTaskFactory
      * @return
+     * @throws DigestException
+     * @throws UnsupportedEncodingException 
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) {
+    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws DigestException, UnsupportedEncodingException {
         StaticWebCache c = (StaticWebCache) getExistingCache(priority, handler, httpTaskFactory, StaticWebCache.class);
 
         if (c == null) {
             c = new StaticWebCache(priority, handler, httpTaskFactory);
+            caches.addElement(c);
         }
 
         return c;
@@ -119,8 +130,10 @@ public final class StaticWebCache extends StaticCache {
      * @param priority
      * @param handler
      * @param httpTaskFactory
+     * @throws DigestException
+     * @throws UnsupportedEncodingException 
      */
-    private StaticWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) {
+    private StaticWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws DigestException, UnsupportedEncodingException {
         super(priority, handler);
 
         this.httpTaskFactory = httpTaskFactory;

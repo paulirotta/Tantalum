@@ -24,8 +24,9 @@
  */
 package org.tantalum.storage;
 
+import java.io.UnsupportedEncodingException;
+import java.security.DigestException;
 import java.util.Hashtable;
-import java.util.Vector;
 
 /**
  * A Hashtable-style interface for persistent data.
@@ -59,41 +60,85 @@ public abstract class FlashCache {
         
         this.priority = priority;
     }
-    
+
     /**
-     * Get the data object associated with the key from persistent memory
-     *
+     * Convert the String key into a shorter byte[] digest to save memory in the
+     * hashtable
+     * 
      * @param key
      * @return
-     * @throws FlashDatabaseException
+     * @throws DigestException
+     * @throws UnsupportedEncodingException 
      */
-    public abstract byte[] getData(String key) throws FlashDatabaseException;
+    public abstract byte[] toDigest(final String key) throws DigestException, UnsupportedEncodingException;
+    
+    public abstract String toString(final byte[] digest) throws FlashDatabaseException, UnsupportedEncodingException;
 
+    /**
+     * Calculate a shorter, byte[] key for use in the hashtable. This reduces
+     * total memory consumption since the String keys can be quite long.
+     * 
+     * A cryptographic has function such as MD5 is usually used to implement this.
+     * A trivial implementation would be to convert the String into a byte array.
+     * 
+     * @param key
+     * @return
+     * @throws UnsupportedEncodingException
+     * @throws DigestException
+     * @throws FlashDatabaseException 
+     */
+    public final byte[] getData(final String key) throws UnsupportedEncodingException, DigestException, FlashDatabaseException {
+        final byte[] digest = toDigest(key);
+
+        return getData(digest);
+    }
+
+    /**
+     * Get the object from flash memory
+     * 
+     * @param digest
+     * @return
+     * @throws FlashDatabaseException 
+     */
+    public abstract byte[] getData(byte[] digest) throws DigestException, FlashDatabaseException;
+    
     /**
      * Store the data object to persistent memory
      *
      * @param key
      * @param bytes
+     * @throws DigestException
+     * @throws UnsupportedEncodingException
      * @throws FlashFullException
-     * @throws FlashDatabaseException
+     * @throws FlashDatabaseException 
      */
-    public abstract void putData(String key, byte[] bytes) throws FlashFullException, FlashDatabaseException;
+    public abstract void putData(String key, byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException;
 
     /**
      * Remove the data object from persistent memory
      *
      * @param key
-     * @throws FlashDatabaseException
+     * @throws DigestException
+     * @throws UnsupportedEncodingException
+     * @throws FlashDatabaseException 
      */
-    public abstract void removeData(String key) throws FlashDatabaseException;
+    public final void removeData(final String key) throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+        final byte[] digest = toDigest(key);
+
+        removeData(digest);
+    }
+    
+    public abstract void removeData(byte[] digest) throws FlashDatabaseException;
 
     /**
-     * Provide a list of all keys for objects stored in persistent memory
+     * Return a list of all keys for objects stored in persistent memory
      *
      * @return
-     * @throws FlashDatabaseException
+     * @throws DigestException
+     * @throws UnsupportedEncodingException
+     * @throws FlashDatabaseException 
      */
-    public abstract Vector getKeys() throws FlashDatabaseException;
+    public abstract byte[][] getDigests() throws DigestException, UnsupportedEncodingException, FlashDatabaseException;
     
     /**
      * Remove all items from this flash cache

@@ -29,12 +29,14 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import java.util.Vector;
+import java.io.UnsupportedEncodingException;
+import java.security.DigestException;
 import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
 import org.tantalum.util.L;
+import org.tantalum.util.StringUtils;
 
 /**
  * Android implementation of cross-platform persistent storage using an SQLite
@@ -68,7 +70,7 @@ public final class AndroidCache extends FlashCache {
     /**
      * Database key column tag
      */
-    private static final String COL_KEY = "key";
+    private static final String COL_DIGEST = "digest";
     /**
      * Database data column tag
      */
@@ -81,7 +83,7 @@ public final class AndroidCache extends FlashCache {
      * SQL to create the database
      */
     private final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS "
-            + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_KEY
+            + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_DIGEST
             + " TEXT NOT NULL, " + COL_DATA + " BLOB NOT NULL)";
     private final String CLEAR_TABLE = "DROP TABLE " + TABLE_NAME;
     private SQLiteDatabase db = null;
@@ -133,22 +135,27 @@ public final class AndroidCache extends FlashCache {
     /**
      * Get the stored byte[] associated with the specified key
      *
-     * @param key
+     * @param digest
      * @return
      * @throws FlashDatabaseException
      */
-    public synchronized byte[] getData(final String key) throws FlashDatabaseException {
+    public byte[] getData(final byte[] digest) throws FlashDatabaseException {
         Cursor cursor = null;
 
         final String[] fields = new String[]{COL_DATA};
+        //#debug
         L.i("db getData", "1");
         try {
+            final String key = toString(digest);
+            
             if (db == null) {
                 db = helper.getWritableDatabase();
             }
+            //#debug
             L.i("db getData", "2");
-            cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
-                    new String[]{String.valueOf(key)}, null, null, null, null);
+            cursor = db.query(TABLE_NAME, fields, COL_DIGEST + "=?",
+                    new String[]{key}, null, null, null, null);
+            //#debug
             L.i("db getData", "3");
 
             if (cursor == null || cursor.getCount() == 0) {
@@ -159,12 +166,15 @@ public final class AndroidCache extends FlashCache {
                 return cursor.getBlob(0);
             }
         } catch (NullPointerException e) {
+            //#debug
             L.e("db not initialized, join() then try again", "getData", e);
             return null;
         } catch (Exception e) {
-            L.e("db can not be initialized", "getData, key=" + key, e);
-            throw new FlashDatabaseException("db init error on getData, key=" + key + " : " + e);
+            //#debug
+            L.e("db can not be initialized", "getData, key=" + digest, e);
+            throw new FlashDatabaseException("db init error on getData, key=" + StringUtils.toHex(digest) + " : " + e);
         } finally {
+            //#debug
             L.i("db getData", "end");
             if (cursor != null) {
                 cursor.close();
@@ -183,7 +193,7 @@ public final class AndroidCache extends FlashCache {
     public synchronized void putData(final String key, final byte[] data) throws FlashFullException, FlashDatabaseException {
         final ContentValues values = new ContentValues();
 
-        values.put(COL_KEY, key);
+        values.put(COL_DIGEST, key);
         values.put(COL_DATA, data);
 
         try {
@@ -197,9 +207,10 @@ public final class AndroidCache extends FlashCache {
                     throw new FlashFullException("Android database full, attempting cleanup of old..." + key + " : " + e);
                 }
             } catch (ClassNotFoundException e2) {
+                //#debug
                 L.e("Introspection error", "android.database.sqlite.SQLiteFullException", e2);
-
             }
+            //#debug
             L.e("Android database error when putting data", key, e);
             throw new FlashDatabaseException("key = " + key + " : " + e);
         }
@@ -211,8 +222,8 @@ public final class AndroidCache extends FlashCache {
      * @param key
      * @throws FlashDatabaseException
      */
-    public synchronized void removeData(final String key) throws FlashDatabaseException {
-        final String where = COL_KEY + "==\"" + key + "\"";
+    public synchronized void removeData(final byte[] digest) throws FlashDatabaseException {
+        final String where = COL_DIGEST + "==\"" + digest + "\"";
 
         try {
             if (db == null) {
@@ -220,7 +231,8 @@ public final class AndroidCache extends FlashCache {
             }
             db.delete(TABLE_NAME, where, null);
         } catch (Exception e) {
-            L.e("Can not access database on removeData()", key, e);
+            //#debug
+            L.e("Can not access database on removeData()", StringUtils.toHex(digest), e);
             throw new FlashDatabaseException("Can not remove data from database: " + e);
         }
     }
@@ -231,23 +243,29 @@ public final class AndroidCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public synchronized Vector getKeys() throws FlashDatabaseException {
-        final Vector keys = new Vector();
+    public synchronized byte[][] getDigests() throws FlashDatabaseException {
+        byte[][] digests = null;
         Cursor cursor = null;
 
         try {
             if (db == null) {
                 db = helper.getWritableDatabase();
             }
-            cursor = db.query(TABLE_NAME, new String[]{COL_KEY}, "*",
+            cursor = db.query(TABLE_NAME, new String[]{COL_DIGEST}, "*",
                     null, null, null, null, null);
             if (cursor != null && cursor.getCount() > 0) {
+                digests = new byte[cursor.getCount()][];
                 cursor.moveToFirst();
-                do {
-                    keys.addElement(new String(cursor.getBlob(0)));
-                } while (cursor.moveToNext());
+                for (int i = 0; i < digests.length; i++) {
+                    if (i != 0) {
+                        cursor.moveToNext();
+                    }
+                    final String s = new String(cursor.getBlob(0));
+                    digests[i] = toDigest(s);
+                }
             }
         } catch (Exception e) {
+            //#debug
             L.e("Can not access database on getKeys()", "", e);
             throw new FlashDatabaseException("Can not acccess database on getKeys() : " + e);
         } finally {
@@ -256,7 +274,7 @@ public final class AndroidCache extends FlashCache {
             }
         }
 
-        return keys;
+        return digests;
     }
 
     /**
@@ -266,5 +284,21 @@ public final class AndroidCache extends FlashCache {
      */
     public synchronized void clear() {
         db.execSQL(CLEAR_TABLE);
+    }
+
+    /**
+     * TODO replace with Android MD5 hash
+     *
+     * @param key
+     * @return
+     * @throws DigestException
+     * @throws UnsupportedEncodingException
+     */
+    public byte[] toDigest(String key) throws UnsupportedEncodingException {
+        return key.getBytes("UTF-8");
+    }
+
+    public String toString(final byte[] digest) throws UnsupportedEncodingException {
+        return new String(digest, "UTF-8");
     }
 }
