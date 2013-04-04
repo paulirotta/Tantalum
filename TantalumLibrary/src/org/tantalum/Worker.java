@@ -126,7 +126,7 @@ final class Worker extends Thread {
                     q.notify();
                     break;
                 case Task.SERIAL_PRIORITY:
-                    Worker.forkSerial(task);
+                    workers[0].serialQ.addElement(task);
                     q.notifyAll();
                     break;
                 case Task.HIGH_PRIORITY:
@@ -142,7 +142,7 @@ final class Worker extends Thread {
                     q.notifyAll();
                     break;
                 case Task.SHUTDOWN:
-                    Worker.forkShutdownTask(task);
+                    shutdownQ.addElement(task);
                     q.notifyAll();
                     break;
                 default:
@@ -213,41 +213,6 @@ final class Worker extends Thread {
                     break;
                 }
             }
-        }
-    }
-
-    /**
-     * Queue compute to the Worker specified by serialQIndex. This compute will
-     * be done after any previously serialQueue()d compute to this Worker. This
-     * Worker will do only serialQueue() tasks until they are complete, then
-     * will revert to doing general forkSerial(), forkPriority() and
-     * forkLowPriority()
-     *
-     * @param task
-     * @param serialQueueNumber
-     */
-    static Task forkSerial(final Task task) {
-        workers[0].serialQ.addElement(task);
-        synchronized (q) {
-            /*
-             * We must notifyAll to ensure the specified Worker is notified to
-             * begin execution on this Task if it was asleep
-             */
-            q.notifyAll();
-        }
-
-        return task;
-    }
-
-    /**
-     * Add an object to be executed in the background on the worker thread
-     *
-     * @param task
-     */
-    public static void forkShutdownTask(final Task task) {
-        synchronized (q) {
-            shutdownQ.addElement(task);
-            q.notify();
         }
     }
 
@@ -490,33 +455,42 @@ final class Worker extends Thread {
 
     //#mdebug
     static Vector getCurrentState() {
-        final StringBuffer sb = new StringBuffer();
-        final int n = Worker.getNumberOfWorkers();
-        final Vector lines = new Vector(n + 1);
+        synchronized (q) {
+            final StringBuffer sb = new StringBuffer();
+            final int n = Worker.getNumberOfWorkers();
+            final Vector lines = new Vector(n + 1);
 
-        if (!workers[0].serialQ.isEmpty()) {
-            sb.append('S');
-            sb.append(workers[0].serialQ.size());
-            sb.append('-');
-        }
-        sb.append('q');
-        sb.append(Worker.q.size());
-        sb.append('-');
-        for (int i = 0; i < n; i++) {
-            final Worker w = Worker.workers[i];
-            if (w != null) {
-                final Task task = w.currentTask;
-                sb.append(task != null ? "T" : "t");
-                sb.append(i);
-                sb.append(':');
-                if (task != null) {
-                    lines.addElement(trimmedNameNoPackage(task.getClass().getName()));
+            if (!fastlaneQ.isEmpty()) {
+                sb.append('F');
+                sb.append(fastlaneQ.size());
+                sb.append('-');
+            }
+            if (!workers[0].serialQ.isEmpty()) {
+                sb.append('S');
+                sb.append(workers[0].serialQ.size());
+                sb.append('-');
+            }
+            if (!q.isEmpty()) {
+                sb.append('Q');
+                sb.append(Worker.q.size());
+                sb.append('-');
+            }
+            for (int i = 0; i < n; i++) {
+                final Worker w = Worker.workers[i];
+                if (w != null) {
+                    final Task task = w.currentTask;
+                    sb.append(task != null ? "T" : "t");
+                    sb.append(i);
+                    sb.append(':');
+                    if (task != null) {
+                        lines.addElement(trimmedNameNoPackage(task.getClass().getName()));
+                    }
                 }
             }
-        }
-        lines.insertElementAt(sb.toString(), 0);
+            lines.insertElementAt(sb.toString(), 0);
 
-        return lines;
+            return lines;
+        }
     }
 
     private static String trimmedNameNoPackage(String className) {
