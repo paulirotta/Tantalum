@@ -48,15 +48,19 @@ final class Worker extends Thread {
      */
     private final Vector serialQ;
     private static final Vector fastlaneQ = new Vector();
-    private static final Vector lowPriorityQ = new Vector();
+    private static final Vector backgroundPriorityQ = new Vector();
     private static final Vector shutdownQ = new Vector();
     private static int currentlyIdleCount = 0;
     private static boolean shuttingDown = false;
     private Task currentTask = null; // Access only within synchronized(q)
+    private final boolean isBackgroundPriorityWorker;
+    private final boolean isDedicatedFastlaneWorker;
 
-    private Worker(final String name, final boolean addSerialQueue) {
+    private Worker(final String name, final boolean addSerialQueue, final boolean isBackgroundPriorityWorker, final boolean isDedicatedFastlaneWorker) {
         super(name);
 
+        this.isBackgroundPriorityWorker = isBackgroundPriorityWorker;
+        this.isDedicatedFastlaneWorker = isDedicatedFastlaneWorker;
         if (addSerialQueue) {
             serialQ = new Vector();
         } else {
@@ -76,7 +80,7 @@ final class Worker extends Thread {
     static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
         for (int i = 0; i < numberOfWorkers; i++) {
-            workers[i] = new Worker("Worker" + i, i == 0);
+            workers[i] = new Worker("Worker" + i, i == 0, i == 1, i == numberOfWorkers - 1);
             workers[i].start();
         }
     }
@@ -111,43 +115,42 @@ final class Worker extends Thread {
         if (task.getStatus() != Task.PENDING) {
             throw new IllegalStateException("Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time: " + task);
         }
-        switch (priority) {
-            case Task.FASTLANE_PRIORITY:
-                synchronized (q) {
+        synchronized (q) {
+            switch (priority) {
+                case Task.FASTLANE_PRIORITY:
                     fastlaneQ.insertElementAt(task, 0);
+                    /*
+                     * Any thread will do as all will take Fastlane tasks, so
+                     * notifyAll() is not needed
+                     */
                     q.notify();
-                }
-                break;
-            case Task.SERIAL_PRIORITY:
-                Worker.forkSerial(task);
-                break;
-            case Task.HIGH_PRIORITY:
-                synchronized (q) {
+                    break;
+                case Task.SERIAL_PRIORITY:
+                    Worker.forkSerial(task);
+                    q.notifyAll();
+                    break;
+                case Task.HIGH_PRIORITY:
                     q.insertElementAt(task, 0);
-                    q.notify();
-                }
-                break;
-            case Task.NORMAL_PRIORITY:
-                synchronized (q) {
+                    q.notifyAll();
+                    break;
+                case Task.NORMAL_PRIORITY:
                     q.addElement(task);
-                    q.notify();
-                }
+                    q.notifyAll();
+                    break;
+                case Task.IDLE_PRIORITY:
+                    backgroundPriorityQ.addElement(task);
+                    q.notifyAll();
+                    break;
+                case Task.SHUTDOWN:
+                    Worker.forkShutdownTask(task);
+                    q.notifyAll();
+                    break;
+                default:
+                    throw new IllegalArgumentException("Illegal priority '" + priority + "'");
+            }
 
-                break;
-            case Task.IDLE_PRIORITY:
-                synchronized (q) {
-                    lowPriorityQ.addElement(task);
-                    q.notify();
-                }
-                break;
-            case Task.SHUTDOWN:
-                Worker.forkShutdownTask(task);
-                break;
-            default:
-                throw new IllegalArgumentException("Illegal priority '" + priority + "'");
+            return task;
         }
-
-        return task;
     }
 
     /**
@@ -167,7 +170,7 @@ final class Worker extends Thread {
                 success = fastlaneQ.removeElement(task);
             }
             if (!success) {
-                success = lowPriorityQ.removeElement(task);
+                success = backgroundPriorityQ.removeElement(task);
             }
         }
         //#debug
@@ -340,7 +343,7 @@ final class Worker extends Thread {
         sb.append(" shutdownQ.size()=");
         sb.append(Worker.shutdownQ.size());
         sb.append(" lowPriorityQ.size()=");
-        sb.append(Worker.lowPriorityQ.size());
+        sb.append(Worker.backgroundPriorityQ.size());
 
         for (int i = 0; i < workers.length; i++) {
             final Worker w = workers[i];
@@ -388,67 +391,67 @@ final class Worker extends Thread {
                         final boolean qIsEmpty = q.isEmpty();
 
                         if (fastlaneQ.isEmpty()) {
-                            if (serialQ == null || serialQ.isEmpty()) {
-                                if (!qIsEmpty) {
-                                    // Normal compute, hardened against async interrupt
-                                    try {
-                                        t = (Task) q.firstElement();
-                                        currentTask = t;
-                                    } finally {
-                                        // Ensure we don't re-run in case of interrupt
-                                        q.removeElementAt(0);
-                                    }
-                                } else {
-                                    if (shuttingDown) {
-                                        if (!shutdownQ.isEmpty()) {
-                                            // SHUTDOWN PHASE 1: Execute shutdown actions
-                                            t = (Task) shutdownQ.firstElement();
-                                            shutdownQ.removeElementAt(0);
-                                        } else if (currentlyIdleCount < workers.length - 1) {
-                                            // Nothing more to do, but other threads are still finishing last tasks
-                                            ++currentlyIdleCount;
-                                            q.wait();
-                                            t = null;
-                                            --currentlyIdleCount;
-                                        } else {
-                                            // PHASE 2: Shutdown actions are all complete
-                                            PlatformUtils.getInstance().notifyDestroyed("currentlyIdleCount=" + currentlyIdleCount);
-                                            //#mdebug
-                                            L.i("Log notifyDestroyed", "");
-                                            L.shutdown();
-                                            //#enddebug
-                                            t = null;
-                                            shuttingDown = false;
-                                        }
-                                    } else if (currentlyIdleCount >= workers.length && lowPriorityQ.size() > 0) {
-                                        // Idle compute, at least half available threads in the pool are left for new normal priority tasks
-                                        try {
-                                            t = (Task) lowPriorityQ.firstElement();
-                                            currentTask = t;
-                                        } finally {
-                                            lowPriorityQ.removeElementAt(0);
-                                        }
-                                    } else {
-                                        ++currentlyIdleCount;
-                                        q.wait();
-                                        --currentlyIdleCount;
-                                        t = null;
-                                    }
-                                }
-                            } else {
-                                try {
-                                    t = (Task) serialQ.firstElement();
-                                    currentTask = t;
-                                } finally {
-                                    serialQ.removeElementAt(0);
-                                }
-                            }
-                        } else {
                             try {
                                 t = (Task) fastlaneQ.firstElement();
                                 currentTask = t;
                             } finally {
                                 fastlaneQ.removeElementAt(0);
+                            }
+                        } else if (isDedicatedFastlaneWorker) {
+                            t = null;
+                        } else if (serialQ != null && !serialQ.isEmpty()) {
+                            try {
+                                t = (Task) serialQ.firstElement();
+                                currentTask = t;
+                            } finally {
+                                serialQ.removeElementAt(0);
+                            }
+                        } else {
+                            if (!qIsEmpty) {
+                                // Normal compute, hardened against async interrupt
+                                try {
+                                    t = (Task) q.firstElement();
+                                    currentTask = t;
+                                } finally {
+                                    // Ensure we don't re-run in case of interrupt
+                                    q.removeElementAt(0);
+                                }
+                            } else {
+                                if (shuttingDown) {
+                                    if (!shutdownQ.isEmpty()) {
+                                        // SHUTDOWN PHASE 1: Execute shutdown actions
+                                        t = (Task) shutdownQ.firstElement();
+                                        shutdownQ.removeElementAt(0);
+                                    } else if (currentlyIdleCount < workers.length - 1) {
+                                        // Nothing more to do, but other threads are still finishing last tasks
+                                        ++currentlyIdleCount;
+                                        q.wait();
+                                        t = null;
+                                        --currentlyIdleCount;
+                                    } else {
+                                        // PHASE 2: Shutdown actions are all complete
+                                        PlatformUtils.getInstance().notifyDestroyed("currentlyIdleCount=" + currentlyIdleCount);
+                                        //#mdebug
+                                        L.i("Log notifyDestroyed", "");
+                                        L.shutdown();
+                                        //#enddebug
+                                        t = null;
+                                        shuttingDown = false;
+                                    }
+                                } else if (isBackgroundPriorityWorker && backgroundPriorityQ.size() > 0 && currentlyIdleCount >= workers.length) {
+                                    // Idle tasks- nothing else to do and other threads have finished their ongoing tasks
+                                    try {
+                                        t = (Task) backgroundPriorityQ.firstElement();
+                                        currentTask = t;
+                                    } finally {
+                                        backgroundPriorityQ.removeElementAt(0);
+                                    }
+                                } else {
+                                    ++currentlyIdleCount;
+                                    q.wait();
+                                    --currentlyIdleCount;
+                                    t = null;
+                                }
                             }
                         }
                     }
@@ -457,21 +460,28 @@ final class Worker extends Thread {
                         t.executeTask(null);
                     }
                 } catch (InterruptedException e) {
+                    //#mdebug
                     synchronized (q) {
-                        //#debug
                         L.i("Worker interrupted by call to Task.cancel(true, \"blah\"", "Obscure race conditions can do this, but the code is hardened to deal with it and continue smoothly to the next task. task=" + currentTask);
                     }
+                    //#enddebug
                 } catch (Exception e) {
+                    //#mdebug
                     synchronized (q) {
-                        //#debug
                         L.e("Uncaught Task exception", "task=" + currentTask, e);
                     }
+                    //#enddebug
                 }
             }
         } catch (Throwable t) {
+            //#mdebug
             synchronized (q) {
-                //#debug
                 L.e("Fatal worker error", "task=" + currentTask, t);
+            }
+            //#enddebug
+        } finally {
+            synchronized (q) {
+                currentTask = null;
             }
         }
         //#debug
