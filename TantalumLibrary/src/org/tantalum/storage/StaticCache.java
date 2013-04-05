@@ -151,18 +151,18 @@ public class StaticCache {
      * Caches with higher priority are more likely to keep their data when space
      * is limited.
      *
-     * You will getDigests IllegalArgumentException if you call this multiple times for
-     * the same cache priority but with a different (not .equals())
+     * You will getDigests IllegalArgumentException if you call this multiple
+     * times for the same cache priority but with a different (not .equals())
      * DataTypeHandler.
      *
-     * @param priority - a character from '0' to '9', higher numbers getDigests a
-     * preference for space. Letters are also allowed.
+     * @param priority - a character from '0' to '9', higher numbers getDigests
+     * a preference for space. Letters are also allowed.
      * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
      * @param handler - a routine to convert from byte[] to Object form when
      * loading into the RAM ramCache.
      * @return
      * @throws DigestException
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
     public static synchronized StaticCache getCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
         StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
@@ -182,7 +182,7 @@ public class StaticCache {
      * @param cacheType
      * @param handler
      * @throws DigestException
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
     protected StaticCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
         if (priority < '0') {
@@ -235,14 +235,15 @@ public class StaticCache {
      * @param bytes
      * @return
      */
-    protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
+    protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
         //#debug
         L.i("Start to convert", key + " bytes length=" + bytes.length);
         final Object o = handler.convertToUseForm(key, bytes);
 
         synchronized (MUTEX) {
-            accessOrder.addElement(key);
-            ramCache.put(key, o);
+            final byte[] digest = flashCache.toDigest(key);
+            accessOrder.addElement(digest);
+            ramCache.put(digest, o);
         }
         //#debug
         L.i("End convert", key);
@@ -256,17 +257,24 @@ public class StaticCache {
      * @param key
      * @return
      */
-    public Object synchronousRAMCacheGet(final String key) {
+    public Object synchronousRAMCacheGet(final String key) throws FlashDatabaseException {
         synchronized (MUTEX) {
-            Object o = ramCache.get(key);
+            try {
+                final byte[] digest = flashCache.toDigest(key);
+                Object o = ramCache.get(digest);
 
-            if (o != null) {
-                //#debug            
-                L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
-                this.accessOrder.addElement(key);
+                if (o != null) {
+                    //#debug            
+                    L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
+                    this.accessOrder.addElement(key);
+                }
+
+                return o;
+            } catch (Exception e) {
+                //#debug
+                L.e("Can not synchronousRAMCacheGet", key, e);
+                throw new FlashDatabaseException("Can not get from heap cache: " + key + " - " + e);
             }
-
-            return o;
         }
     }
 
@@ -301,30 +309,40 @@ public class StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    protected Object synchronousGet(final String key) throws FlashDatabaseException, UnsupportedEncodingException, DigestException {
+    protected Object synchronousGet(final String key) throws FlashDatabaseException {
         Object o = synchronousRAMCacheGet(key);
 
         //#debug
-        L.i("StaticCache RAM result", "(" + priority + ") " + key + " : " + o);
+        L.i("StaticCache RAM get result", "(" + priority + ") " + key + " : " + o);
         if (o == null) {
-            // Load from flash memory
-            final byte[] bytes;
-            synchronized (MUTEX) {
-                if (flashCacheEnabled) {
-                    bytes = flashCache.get(key);
-                } else {
-                    bytes = null;
+            try {
+                // Load from flash memory
+                final byte[] bytes;
+                synchronized (MUTEX) {
+                    if (flashCacheEnabled) {
+                        bytes = flashCache.get(key);
+                    } else {
+                        bytes = null;
+                    }
                 }
-            }
 
-            //#debug
-            L.i("StaticCache flash intermediate result", "(" + priority + ") " + key + " : " + bytes);
-            if (bytes != null) {
                 //#debug
-                L.i("StaticCache flash hit", "(" + priority + ") " + key);
-                o = convertAndPutToHeapCache(key, bytes);
+                L.i("StaticCache flash intermediate result", "(" + priority + ") " + key + " : " + bytes);
+                if (bytes != null) {
+                    //#debug
+                    L.i("StaticCache flash hit", "(" + priority + ") " + key);
+                    o = convertAndPutToHeapCache(key, bytes);
+                    //#debug
+                    L.i("StaticCache flash hit result", "(" + priority + ") " + key + " : " + o);
+                }
+            } catch (DigestException e) {
                 //#debug
-                L.i("StaticCache flash hit result", "(" + priority + ") " + key + " : " + o);
+                L.e("Can not synchronousGet", key, e);
+                throw new FlashDatabaseException("Can not synchronousGet: " + key + " - " + e);
+            } catch (UnsupportedEncodingException e) {
+                //#debug
+                L.e("Can not synchronousGet", key, e);
+                throw new FlashDatabaseException("Can not synchronousGet: " + key + " - " + e);
             }
         }
 
@@ -347,28 +365,41 @@ public class StaticCache {
      * @param key
      * @param bytes
      * @return the byte[] converted to use form by the ramCache's Handler
+     * @throws FlashDatabaseException 
      */
-    public Object putAsync(final String key, final byte[] bytes) {
+    public Object putAsync(final String key, final byte[] bytes) throws FlashDatabaseException {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }
         if (bytes == null || bytes.length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
-        final Object useForm = convertAndPutToHeapCache(key, bytes);
+        final Object useForm;
+        try {
+            useForm = convertAndPutToHeapCache(key, bytes);
+        } catch (DigestException ex) {
+            //#debug
+            L.e("Can not putAync", key, ex);
+            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+        } catch (UnsupportedEncodingException ex) {
+            //#debug
+            L.e("Can not putAync", key, ex);
+            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+        }
         if (flashCacheEnabled) {
-            (new Task(Task.SERIAL_PRIORITY) {
+            (new Task() {
                 public Object exec(final Object in) {
                     try {
                         synchronousFlashPut(key, bytes);
-                    } catch (Exception e) {
+                    } catch (FlashDatabaseException e) {
                         //#debug
-                        L.e("Can not synch write to RMS", key, e);
+                        L.e("Can not synch write to flash", key, e);
+                        cancel(false, "Can not sync write to flash: " + key + " - " + e);
                     }
 
                     return in;
                 }
-            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN)).fork();
+            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN)).fork(Task.SERIAL_PRIORITY);
         }
 
         return useForm;
@@ -390,7 +421,7 @@ public class StaticCache {
      * already done this
      * @return
      */
-    private void synchronousFlashPut(final String key, final byte[] bytes) {
+    private void synchronousFlashPut(final String key, final byte[] bytes) throws FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("Null key put to cache");
         }
@@ -414,9 +445,14 @@ public class StaticCache {
                     }
                 }
             } while (true);
-        } catch (Exception e) {
+        } catch (DigestException e) {
             //#debug
-            L.e("Couldn't store object to RMS", key, e);
+            L.e("Couldn't store object to flash", key, e);
+            throw new FlashDatabaseException("Could not store object to flash: " + key + " - " + e);
+        } catch (UnsupportedEncodingException e) {
+            //#debug
+            L.e("Couldn't store object to flash", key, e);
+            throw new FlashDatabaseException("Could not store object to flash: " + key + " - " + e);
         }
     }
 
@@ -468,7 +504,7 @@ public class StaticCache {
 
     private int getByteSizeByDigest(final byte[] digest) throws FlashDatabaseException, DigestException {
         final byte[] bytes = flashCache.get(digest);
-        
+
         return bytes.length;
     }
 
@@ -492,8 +528,8 @@ public class StaticCache {
      * Note that delete from flash is synchronous, so while this operation does
      * not take long, other operations using the RMS may cause a slight stagger
      * or pause before this operation can complete. On some phones this may be
-     * visible as UI thread jitter even though the UI thread is only weakly linked
-     * to the flash operations by concurrency.
+     * visible as UI thread jitter even though the UI thread is only weakly
+     * linked to the flash operations by concurrency.
      *
      * @param digest
      */
@@ -688,21 +724,23 @@ public class StaticCache {
 //#enddebug
 
     /**
-     * A helper class to getDigests data asynchronously from the local ramCache without
-     * attempting to getDigests data from the web.
+     * A helper class to getDigests data asynchronously from the local ramCache
+     * without attempting to getDigests data from the web.
      *
      * Usually you do not invoke this directly, but rather call
-     * StaticCache.getAsync() or StaticWebCache.getDigests(StaticWebCache.GET_LOCAL) to
-     * invoke this with chain() support. You can use this to build your own
-     * custom asynchronous background processing Task chain.
+     * StaticCache.getAsync() or
+     * StaticWebCache.getDigests(StaticWebCache.GET_LOCAL) to invoke this with
+     * chain() support. You can use this to build your own custom asynchronous
+     * background processing Task chain.
      */
     protected final class GetLocalTask extends Task {
 
         final int priority;
 
         /**
-         * Create a new getDigests operation. The url will be supplied as an input to
-         * this chained Task (the output of the previous Task in the chain).
+         * Create a new getDigests operation. The url will be supplied as an
+         * input to this chained Task (the output of the previous Task in the
+         * chain).
          *
          * @param priority
          */

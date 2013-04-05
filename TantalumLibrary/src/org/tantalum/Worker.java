@@ -363,6 +363,12 @@ final class Worker extends Thread {
                                 fastlaneQ.removeElementAt(0);
                             }
                         } else if (isDedicatedFastlaneWorker) {
+                            if (shuttingDown) {
+                                // Nothing more to do, but other threads are still finishing last tasks
+                                ++currentlyIdleCount;
+                                q.wait();
+                                --currentlyIdleCount;
+                            }
                             t = null;
                         } else if (serialQ != null && !serialQ.isEmpty()) {
                             try {

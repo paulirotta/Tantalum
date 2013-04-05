@@ -94,7 +94,13 @@ public class RMSFastCache extends FlashCache {
      * @throws UnsupportedEncodingException
      */
     private void initIndex(final int hashTableSize) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException, DigestException, UnsupportedEncodingException {
+        /*
+         * All value records not pointed to by a an entry in the keyRS
+         */
         final Hashtable unreferencedValueRecordIdHash = new Hashtable(hashTableSize);
+        /*
+         * All value records which are already pointed to one time in the keyRS
+         */
         final Hashtable referencedValueRecordIdHash = new Hashtable(hashTableSize);
 
         readAllValueRecordIds(unreferencedValueRecordIdHash);
@@ -133,12 +139,13 @@ public class RMSFastCache extends FlashCache {
      * @param keyRecordId
      * @return
      */
-    private boolean isValueRecordIdAlreadyInUse(final Hashtable h, final int valueRecordId) {
+    private boolean isValueRecordIdAlreadyInUse(final Hashtable h, final int valueRecordId, final int keyRecordId) {
         final Integer v = new Integer(valueRecordId);
+        final Integer k = new Integer(keyRecordId);
         final boolean in = h.containsKey(v);
 
         if (!in) {
-            h.put(v, v);
+            h.put(v, k);
         }
 
         return in;
@@ -157,20 +164,19 @@ public class RMSFastCache extends FlashCache {
         forEachRecord(keyRS, new RecordTask() {
             void exec() {
                 try {
-                    final byte[] indexBytes = keyRS.getRecord(recordIndex);
-                    final int valueRecordId = toValueIndex(indexBytes);
+                    final byte[] keyIndexBytes = keyRS.getRecord(recordIndex);
+                    final int valueRecordId = toValueIndex(keyIndexBytes);
+                    final String key = toStringKey(keyIndexBytes); // Check integrity by decoding the key String from bytes
 
-                    if (isValueRecordIdAlreadyInUse(referencedValueRecordIdHash, valueRecordId)) {
-                        final Integer duplicateKeyId = (Integer) referencedValueRecordIdHash.get(new Integer(valueRecordId));
-                        final int duplicateKeyRecordId = duplicateKeyId.intValue();
+                    if (isValueRecordIdAlreadyInUse(referencedValueRecordIdHash, valueRecordId, recordIndex)) {
+                        final int duplicateKeyIndex = ((Integer) referencedValueRecordIdHash.get(new Integer(valueRecordId))).intValue();
                         //#debug
-                        L.i("Found multiple keys pointing to the same value record", "deleting key " + recordIndex + " and key " + duplicateKeyRecordId + " and value " + valueRecordId);
+                        L.i("Found multiple keys pointing to the same value record", "deleting key " + key + " index=" + recordIndex + " and duplicate keyindex=" + duplicateKeyIndex + " value index=" + valueRecordId);
                         keyRS.deleteRecord(recordIndex);
-                        keyRS.deleteRecord(duplicateKeyRecordId);
+                        keyRS.deleteRecord(duplicateKeyIndex);
                         valueRS.deleteRecord(valueRecordId);
                     } else {
                         final Integer referencedValueId = new Integer(valueRecordId);
-                        final String key = toStringKey(indexBytes);
                         if (unreferencedValueRecordIdHash.contains(referencedValueId)) {
                             unreferencedValueRecordIdHash.remove(referencedValueId);
                             indexHashPut(key, recordIndex, valueRecordId);
@@ -182,7 +188,7 @@ public class RMSFastCache extends FlashCache {
                     }
                 } catch (Exception e) {
                     //#debug
-                    L.e("Can not clear rms", "" + recordIndex, e);
+                    L.e("Can not readAllIndexRecords", "" + recordIndex, e);
                 }
             }
         });
@@ -430,7 +436,7 @@ public class RMSFastCache extends FlashCache {
         if (digest.length != DIGEST_LENGTH) {
             throw new IllegalArgumentException("You attempted to get from the cache with a digest that is " + digest.length + " bytes, but should be " + DIGEST_LENGTH + " bytes");
         }
-        
+
         synchronized (MUTEX) {
             final Long hashValue = ((Long) indexHash.get(digest));
 
@@ -499,7 +505,7 @@ public class RMSFastCache extends FlashCache {
         if (digest == null) {
             throw new IllegalArgumentException("You attempted to remove a null digest from the cache");
         }
-        
+
         synchronized (MUTEX) {
             try {
                 final Long indexEntry = indexHashGet(digest);
@@ -530,7 +536,7 @@ public class RMSFastCache extends FlashCache {
             for (int i = 0; i < digests.length; i++) {
                 digests[i] = (byte[]) enu.nextElement();
             }
-            
+
             return digests;
         }
     }

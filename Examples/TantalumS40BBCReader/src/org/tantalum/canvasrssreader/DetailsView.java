@@ -35,6 +35,7 @@ import org.tantalum.Task;
 import org.tantalum.jme.JMEFontUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -137,7 +138,12 @@ public final class DetailsView extends View {
 
         final String url = item.getThumbnail();
         if (url != null) {
-            image = (Image) imageCache.synchronousRAMCacheGet(url);
+            try {
+                image = (Image) imageCache.synchronousRAMCacheGet(url);
+            } catch (FlashDatabaseException ex) {
+                //#debug
+                L.e("Can not get image", url, ex);
+            }
             if (image != null) {
                 currentIcon = image;
                 if (canvas.isPortrait()) {

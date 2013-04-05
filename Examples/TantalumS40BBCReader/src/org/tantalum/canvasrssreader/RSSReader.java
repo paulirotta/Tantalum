@@ -139,7 +139,7 @@ public class RSSReader extends MIDlet implements CommandListener {
             switchDisplayable(null, canvas);
         } catch (Exception ex) {
             //#debug
-            L.e("Startup execption", "", ex);
+            L.e("Startup exception", "", ex);
             PlatformUtils.getInstance().shutdown(false);
         }
     }

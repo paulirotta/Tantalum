@@ -647,9 +647,9 @@ public class HttpGetter extends Task {
      * @return - a JSONModel of the data provided by the HTTP server
      */
     public Object exec(final Object url) {
-        Object out = url;
+        Object out = null;
 
-        if (!(url instanceof String) || url == null || ((String) url).indexOf(':') <= 0) {
+        if (!(url instanceof String) || ((String) url).indexOf(':') <= 0) {
             throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
         }
         this.key = (String) url;

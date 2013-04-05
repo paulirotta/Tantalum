@@ -29,6 +29,7 @@ import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSModel;
 import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 import org.xml.sax.SAXException;
 
@@ -46,7 +47,7 @@ public abstract class RSSListView extends View {
         super(canvas);
 
         feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
-	public Object convertToUseForm(final Object key, byte[] bytes) {
+            public Object convertToUseForm(final Object key, byte[] bytes) {
                 try {
                     rssModel.setXML(bytes);
 
@@ -62,13 +63,11 @@ public abstract class RSSListView extends View {
 
     protected void clearCache() {
         feedCache.clearAsync(new Task() {
-
             protected Object exec(final Object in) {
                 reloadAsync(true);
-                
+
                 return in;
             }
-            
         });
         DetailsView.imageCache.clearAsync(null);
     }
@@ -124,7 +123,12 @@ public abstract class RSSListView extends View {
             if (currentItem != null && qName.equals("item")) {
                 if (items.size() < maxLength) {
                     if (prefetchImages) {
-                        DetailsView.imageCache.prefetch(currentItem.getThumbnail());
+                        try {
+                            DetailsView.imageCache.prefetch(currentItem.getThumbnail());
+                        } catch (FlashDatabaseException ex) {
+                            //#debug
+                            L.e("Can not get prefetch image", currentItem.getThumbnail(), ex);
+                        }
                     }
                     canvas.refresh();
                 }

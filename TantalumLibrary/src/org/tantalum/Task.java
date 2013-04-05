@@ -136,11 +136,12 @@ public abstract class Task implements Runnable {
      * FIFO with guaranteed sequence (single-thread concurrent execution, this
      * one thread also does
      * <code>FASTLANE</code> work first, but then
-     * <code>SERIAL_PRIORITY</code> tasks are prioritized above other priorities).
+     * <code>SERIAL_PRIORITY</code> tasks are prioritized above other
+     * priorities).
      *
      * All
-     * <code>SERIAL_PRIORITY</code> tasks are executed on a single thread for guaranteed
-     * sequential execution in the order in which they are
+     * <code>SERIAL_PRIORITY</code> tasks are executed on a single thread for
+     * guaranteed sequential execution in the order in which they are
      * <code>fork()</code>ed.
      *
      * This is normally used for persistence operations like flash write. In the
@@ -273,12 +274,12 @@ public abstract class Task implements Runnable {
      * the run() method after successful exec()
      *
      * @param runOnUIThreadWhenFinished
-     * @return 
+     * @return
      */
     public Task setRunOnUIThreadWhenFinished(boolean runOnUIThreadWhenFinished) {
         synchronized (MUTEX) {
             this.runOnUIThreadWhenFinished = runOnUIThreadWhenFinished;
-            
+
             return this;
         }
     }
@@ -730,38 +731,40 @@ public abstract class Task implements Runnable {
     }
 
     /**
-     * Set a
-     * <code>Task</code> which will
+     * Set or insert a
+     * <code>Task</code> as the next node which will
      * <code>fork()</code>ed after the current
-     * <code>Task</code> completes. nextTask == null is legal and has no effect.
+     * <code>Task</code> completes successfully.
+     *
+     * nextTask == null is legal and has no effect.
      *
      * Each
      * <code>Task</code> in a chain will run at the same priority as the
      * previous
-     * <code>Task</code> in the chain unless you explicitly set a different
-     * priority for it.
+     * <code>Task</code> unless you explicitly set a different
+     * priority for it. Best practice is for you to explicitly set the priority
+     * for each <code>Task</code> in a chain for code clarity.
+     *
+     * If the
+     * <code>Task</code> is already chained, this new
+     * <code>Task</code> will be inserted into the chain immediately after the
+     * current task.
      *
      * @param nextTask
      * @return nextTask
      */
     public final Task chain(final Task nextTask) {
         if (nextTask != null) {
-            final Task multiLinkChain;
+            final Task previouslyChainedTask;
             synchronized (MUTEX) {
-                if (chainedTask == null) {
-                    chainedTask = nextTask;
-                    multiLinkChain = null;
-                } else {
-                    // Already chained- we must add to the end of the chain
-                    multiLinkChain = chainedTask;
-                }
+                previouslyChainedTask = chainedTask;
+                chainedTask = nextTask;
             }
-            if (multiLinkChain != null) {
+            if (previouslyChainedTask != null) {
                 /*
-                 * Call this outside the above synchronized block so that we are not
-                 * holding multiple locks for Tasks at the same time
+                 * nextTask is inserted as the next node in the chain
                  */
-                multiLinkChain.chain(nextTask);
+                nextTask.chain(previouslyChainedTask);
             }
         }
 
