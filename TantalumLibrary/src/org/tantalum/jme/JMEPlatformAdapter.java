@@ -113,7 +113,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
 
     public FlashCache getFlashCache(final char priority, final int cacheType) {
         switch (cacheType) {
-            case PlatformAdapter.PHONE_DATABASE_CACHE:
+            case PlatformUtils.PHONE_DATABASE_CACHE:
                 return new RMSCache(priority);
 
             default:
@@ -252,7 +252,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
                 }
                 final String value = httpConnection.getHeaderField(i);
                 headers.put(key, value);
-            };
+            }
         }
 
         public long getLength() {

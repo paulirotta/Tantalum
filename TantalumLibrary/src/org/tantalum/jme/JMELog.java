@@ -31,7 +31,7 @@ import javax.microedition.io.CommConnection;
 import javax.microedition.io.Connection;
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
-import org.tantalum.PlatformAdapter;
+import org.tantalum.PlatformUtils;
 import org.tantalum.util.L;
 
 /**
@@ -71,17 +71,17 @@ public class JMELog extends L {
         String uri = null;
         JMELog.LogWriter writer = null;
         switch (logMode) {
-            case PlatformAdapter.NORMAL_LOG_MODE:
+            case PlatformUtils.NORMAL_LOG_MODE:
                 break;
 
-            case PlatformAdapter.USB_SERIAL_PORT_LOG_MODE:
+            case PlatformUtils.USB_SERIAL_PORT_LOG_MODE:
                 System.out.println("Routing debug output to USB serial port");
                 final String commPort = System.getProperty("microedition.commports");
                 uri = "comm:" + commPort;
                 break;
 
 
-            case PlatformAdapter.MEMORY_CARD_LOG_MODE:
+            case PlatformUtils.MEMORY_CARD_LOG_MODE:
                 final String memoryCardPath = System.getProperty("fileconn.dir.memorycard");
                 uri = memoryCardPath + "tantalum.log";
                 System.out.println("Routing debug output to memory card log file: " + uri);
@@ -91,7 +91,7 @@ public class JMELog extends L {
                 throw new IllegalArgumentException("Log mode must be one of the pre-defined constants such as JMELog.NORMAL_LOG_MODE");
         }
         try {
-            writer = initWriter(uri, logMode == PlatformAdapter.USB_SERIAL_PORT_LOG_MODE);
+            writer = initWriter(uri, logMode == PlatformUtils.USB_SERIAL_PORT_LOG_MODE);
             if (writer != null) {
                 s = writer.getOutputStream();
             }

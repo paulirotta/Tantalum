@@ -38,7 +38,6 @@ import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.PlatformUtils.HttpConn;
-import org.tantalum.jme.RMSCache;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
@@ -144,7 +143,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
 
     public FlashCache getFlashCache(final char priority, final int cacheType) {
         switch (cacheType) {
-            case PlatformAdapter.PHONE_DATABASE_CACHE:
+            case PlatformUtils.PHONE_DATABASE_CACHE:
                 return new AndroidCache(priority);
 
             default:

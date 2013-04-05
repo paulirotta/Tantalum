@@ -26,7 +26,6 @@ package org.tantalum.storage;
 
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
-import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.L;
@@ -158,15 +157,18 @@ public class StaticCache {
      *
      * @param priority - a character from '0' to '9', higher numbers get a
      * preference for space. Letters are also allowed.
+     * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
      * @param handler - a routine to convert from byte[] to Object form when
      * loading into the RAM ramCache.
      * @return
+     * @throws DigestException
+     * @throws UnsupportedEncodingException 
      */
-    public static synchronized StaticCache getCache(final char priority, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
+    public static synchronized StaticCache getCache(final char priority, final int cacheType, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
         StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
 
         if (c == null) {
-            c = new StaticCache(priority, handler);
+            c = new StaticCache(priority, cacheType, handler);
             caches.addElement(c);
         }
 
@@ -177,15 +179,18 @@ public class StaticCache {
      * Create a named Cache
      *
      * @param priority
+     * @param cacheType
      * @param handler
+     * @throws DigestException
+     * @throws UnsupportedEncodingException 
      */
-    protected StaticCache(final char priority, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
+    protected StaticCache(final char priority, final int cacheType, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
         if (priority < '0') {
             throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
         this.priority = priority;
         this.handler = handler;
-        flashCache = PlatformUtils.getInstance().getFlashCache(priority);
+        flashCache = PlatformUtils.getInstance().getFlashCache(priority, cacheType);
         init();
     }
 
