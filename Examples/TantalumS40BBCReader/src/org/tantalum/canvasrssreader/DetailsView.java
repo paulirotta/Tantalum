@@ -44,7 +44,7 @@ import org.tantalum.util.L;
  */
 public final class DetailsView extends View {
 
-    public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.getInstance().getImageTypeHandler());
+    public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler());
     private static final JMEFontUtils titleFontUtils = JMEFontUtils.getFontUtils(RSSReaderCanvas.FONT_TITLE, "...");
     private static final JMEFontUtils descriptionFontUtils = JMEFontUtils.getFontUtils(RSSReaderCanvas.FONT_DESCRIPTION, "...");
 

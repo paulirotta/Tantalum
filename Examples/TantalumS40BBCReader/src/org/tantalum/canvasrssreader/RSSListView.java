@@ -24,6 +24,7 @@
  */
 package org.tantalum.canvasrssreader;
 
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSModel;
@@ -44,7 +45,7 @@ public abstract class RSSListView extends View {
     public RSSListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        feedCache = StaticWebCache.getWebCache('5', new DataTypeHandler() {
+        feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
 	public Object convertToUseForm(final Object key, byte[] bytes) {
                 try {
                     rssModel.setXML(bytes);

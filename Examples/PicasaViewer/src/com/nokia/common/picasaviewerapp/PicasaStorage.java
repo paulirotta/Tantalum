@@ -64,8 +64,8 @@ public class PicasaStorage {
                 imageSize = 720; //Picasa size for "fullsize" images
             }
             imageTypeHandler.setMaxSize(width, width);
-            imageCache = StaticWebCache.getWebCache('4', imageTypeHandler);
-            feedCache = StaticWebCache.getWebCache('5', new ImageObjectTypeHandler());
+            imageCache = StaticWebCache.getWebCache('4', PlatformUtils.PHONE_DATABASE_CACHE, imageTypeHandler);
+            feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new ImageObjectTypeHandler());
 
             thumbSize = imageSide + "c"; // c is for cropped, ensures image proportions
 

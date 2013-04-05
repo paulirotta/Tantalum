@@ -79,14 +79,13 @@ public final class StaticWebCache extends StaticCache {
      * before deciding to cache the response.
      *
      * @param priority
+     * @param cacheType
      * @param handler
-     * @return
-     * @throws DigestException
-     * @throws UnsupportedEncodingException 
+     * @return 
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler) {
+    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final DataTypeHandler handler) {
         try {
-            return (StaticWebCache) getWebCache(priority, handler, DEFAULT_HTTP_GETTER_FACTORY);
+            return (StaticWebCache) getWebCache(priority, cacheType, handler, DEFAULT_HTTP_GETTER_FACTORY);
         } catch (Exception e) {
             //#debug
             L.e("Can not create StaticWebCache", "" + priority, e);
@@ -117,11 +116,11 @@ public final class StaticWebCache extends StaticCache {
      * @throws DigestException
      * @throws UnsupportedEncodingException 
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws DigestException, UnsupportedEncodingException {
+    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws DigestException, UnsupportedEncodingException {
         StaticWebCache c = (StaticWebCache) getExistingCache(priority, handler, httpTaskFactory, StaticWebCache.class);
 
         if (c == null) {
-            c = new StaticWebCache(priority, handler, httpTaskFactory);
+            c = new StaticWebCache(priority, cacheType, handler, httpTaskFactory);
             caches.addElement(c);
         }
 
@@ -134,13 +133,23 @@ public final class StaticWebCache extends StaticCache {
      * cache-miss items from the web.
      *
      * @param priority
+     * @param cacheType
      * @param handler
      * @param httpTaskFactory
      * @throws DigestException
      * @throws UnsupportedEncodingException 
      */
-    private StaticWebCache(final char priority, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws DigestException, UnsupportedEncodingException {
-        super(priority, handler);
+    /**
+     * 
+     * @param priority
+     * @param cacheType
+     * @param handler
+     * @param httpTaskFactory
+     * @throws DigestException
+     * @throws UnsupportedEncodingException 
+     */
+    private StaticWebCache(final char priority, final int cacheType, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws DigestException, UnsupportedEncodingException {
+        super(priority, cacheType, handler);
 
         this.httpTaskFactory = httpTaskFactory;
     }

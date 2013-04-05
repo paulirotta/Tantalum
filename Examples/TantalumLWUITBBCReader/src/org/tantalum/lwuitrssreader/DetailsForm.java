@@ -32,6 +32,7 @@ import com.sun.lwuit.animations.CommonTransitions;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import java.util.Vector;
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
@@ -52,7 +53,7 @@ public class DetailsForm extends Form implements ActionListener {
     private Vector linkLabels;
     private RSSReader midlet;
     private RSSItem current;
-    private static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', new LWUITImageTypeHandler());
+    private static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, new LWUITImageTypeHandler());
 
     public DetailsForm(String title, RSSReader midlet) {
         super(title);

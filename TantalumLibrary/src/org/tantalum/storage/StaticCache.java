@@ -200,7 +200,7 @@ public class StaticCache {
      * We want to use the RAM Hashtable to know what the ramCache contains, even
      * though we do not pre-load from flash all the values
      */
-    private void init() throws DigestException, UnsupportedEncodingException, UnsupportedEncodingException {
+    private void init() throws DigestException, UnsupportedEncodingException {
         try {
             final byte[][] digest = flashCache.getDigests();
             for (int i = 0; i < digest.length; i++) {

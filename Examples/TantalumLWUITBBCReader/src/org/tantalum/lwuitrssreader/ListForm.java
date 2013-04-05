@@ -44,7 +44,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
     static final Command exitCommand = new Command("Exit");
     private final ListModel listModel = new ListModel(this);
     public final List list = new List(listModel);
-    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', listModel);
+    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, listModel);
     private RSSReader midlet;
     private boolean isReloading = false;
 

@@ -40,7 +40,7 @@ public final class DetailsForm extends Form implements CommandListener {
 
     private FormRSSReader rssReader;
     private RSSItem selectedItem;
-    private static StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.getInstance().getImageTypeHandler());
+    private static StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler());
     private Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private Command backCommand = new Command("Back", Command.BACK, 0);
 
