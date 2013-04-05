@@ -328,6 +328,10 @@ public final class StaticWebCache extends StaticCache {
          * getAsync operation before
          * <code>fork()</code>ing the Task for background execution.
          *
+         * If you chain to a GetAnywhereTask, be aware that the output is either
+         * the use form (if found locally) or a Task to get the result from the
+         * web.
+         * 
          * @param key
          * @param priority
          * @param postMessage
@@ -354,7 +358,7 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i("StaticWebCache: not found locally, get from the web", (String) in);
-                        out = new GetWebTask((String) in, priority, postMessage).fork(priority).get();
+                        out = new GetWebTask((String) in, priority, postMessage).fork(Task.HIGH_PRIORITY).get();
                     }
                 } catch (Exception e) {
                     //#debug
