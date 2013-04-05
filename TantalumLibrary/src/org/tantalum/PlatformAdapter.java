@@ -32,8 +32,8 @@ import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 
 /**
- * For each platform we support (JME, Android, ..) there is an implementation
- * of PlatformAdapter which hooks to the appropriate platform code.
+ * For each platform we support (JME, Android, ..) there is an implementation of
+ * PlatformAdapter which hooks to the appropriate platform code.
  *
  * Note that by design this is a very minimal set of functions that provide
  * object persistence, logging, creating an image, UI thread access and network
@@ -46,6 +46,24 @@ import org.tantalum.util.L;
  */
 public interface PlatformAdapter {
 
+    /**
+     * A cache type stored in the flash memory on the phone in the phone's own
+     * database format
+     */
+    public static final int PHONE_DATABASE_CACHE = 0;
+    /**
+     * A cache type stored in the flash memory on the phone in the file system
+     * 
+     * This type is not yet supported- value is reserved for future use
+     */
+    public static final int PHONE_FILESYSTEM_CACHE = 1;
+    /**
+     * A cache type stored in the flash memory on the phone's memory card in the
+     * file system
+     * 
+     * This type is not yet supported- value is reserved for future use
+     */
+    public static final int MEMORY_CARD_FILESYSTEM_CACHE = 2;
     /**
      * Send log output to the standard output device, usually your IDE log
      * window
@@ -69,13 +87,13 @@ public interface PlatformAdapter {
      * and there will not be any log output.
      */
     public static final int MEMORY_CARD_LOG_MODE = 2;
+
     /**
      * Initialize logging
-     * 
-     * @param logMode 
+     *
+     * @param logMode
      */
     public void init(int logMode);
-
 
     /**
      * Execute the run() method of the action on the platform's user interface
@@ -106,8 +124,8 @@ public interface PlatformAdapter {
     /**
      * Get a platform-specific logging class. Add Tantalum logs to the
      * platform's own logs allows you to use filters, redirect from remote
-     * device, and any any similar features as for example on Android. On JME
-     * we provide USB debugging in a terminal on your PC.
+     * device, and any any similar features as for example on Android. On JME we
+     * provide USB debugging in a terminal on your PC.
      *
      * @return
      */
@@ -128,19 +146,19 @@ public interface PlatformAdapter {
 
     /**
      * Vibrate the phone
-     * 
+     *
      * @param duration in milliseconds
      * @param timekeeperLambda code which is run just before vibration begins
      */
     public void vibrateAsync(int duration, Runnable timekeeperLambda);
-    
+
     /**
      * Return the platform-specific Image type as a resource decompressed from
      * the application JAR
      *
      * @param jarPathAndFilename
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public Object readImageFromJAR(String jarPathAndFilename) throws IOException;
 
@@ -151,9 +169,10 @@ public interface PlatformAdapter {
      * unique within each application.
      *
      * @param priority
-     * @return
+     * @param cacheType
+     * @return the existing or new cache
      */
-    public FlashCache getFlashCache(char priority);
+    public FlashCache getFlashCache(char priority, int cacheType);
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform

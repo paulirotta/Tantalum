@@ -32,7 +32,6 @@ import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
 import org.tantalum.util.L;
-import org.tantalum.util.StringUtils;
 
 /**
  * Persistent storage implementation for JME

@@ -111,8 +111,14 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         return new JMEImageTypeHandler();
     }
 
-    public FlashCache getFlashCache(final char priority) {
-        return new RMSCache(priority);
+    public FlashCache getFlashCache(final char priority, final int cacheType) {
+        switch (cacheType) {
+            case PlatformAdapter.PHONE_DATABASE_CACHE:
+                return new RMSCache(priority);
+
+            default:
+                throw new IllegalArgumentException("Unsupported cache type " + cacheType + ": only PlatformAdapter.PHONE_DATABASE_CACHE is supported at this time");
+        }
     }
 
     /**
