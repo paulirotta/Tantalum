@@ -423,7 +423,7 @@ public class RMSFastCache extends FlashCache {
      * @return the bytes of the value
      * @throws FlashDatabaseException
      */
-    public byte[] getData(final byte[] digest) throws FlashDatabaseException {
+    public byte[] get(final byte[] digest) throws FlashDatabaseException {
         if (digest == null) {
             throw new IllegalArgumentException("You attempted to get a null digest from the cache");
         }
@@ -457,7 +457,7 @@ public class RMSFastCache extends FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public void putData(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException {
+    public void put(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("You attempted to put a null key to the cache");
         }

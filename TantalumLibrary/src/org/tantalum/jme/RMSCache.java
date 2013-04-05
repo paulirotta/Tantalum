@@ -70,7 +70,7 @@ public final class RMSCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public byte[] getData(final byte[] digest) throws FlashDatabaseException {
+    public byte[] get(final byte[] digest) throws FlashDatabaseException {
         return RMSUtils.getInstance().cacheRead(priority, digest);
     }
 
@@ -82,7 +82,7 @@ public final class RMSCache extends FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public void putData(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException, DigestException, UnsupportedEncodingException {
+    public void put(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException, DigestException, UnsupportedEncodingException {
         try {
             final byte[] digest = toDigest(key);
             RMSUtils.getInstance().cacheWrite(priority, digest, bytes);

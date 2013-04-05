@@ -30,6 +30,7 @@ import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 
@@ -322,8 +323,9 @@ public final class PlatformUtils {
      * collected first
      * @param cacheType
      * @return the new or existing cache object
+     * @throws FlashDatabaseException 
      */
-    public FlashCache getFlashCache(final char priority, final int cacheType) {
+    public FlashCache getFlashCache(final char priority, final int cacheType) throws FlashDatabaseException {
         return platformAdapter.getFlashCache(priority, cacheType);
     }
 

@@ -88,14 +88,14 @@ public abstract class FlashCache {
      * @throws DigestException
      * @throws FlashDatabaseException
      */
-    public final byte[] getData(final String key) throws UnsupportedEncodingException, DigestException, FlashDatabaseException {
+    public final byte[] get(final String key) throws UnsupportedEncodingException, DigestException, FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("You attempted to get a null digest from the cache");
         }
 
         final byte[] digest = toDigest(key);
 
-        return getData(digest);
+        return get(digest);
     }
 
     /**
@@ -105,7 +105,7 @@ public abstract class FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public abstract byte[] getData(byte[] digest) throws DigestException, FlashDatabaseException;
+    public abstract byte[] get(byte[] digest) throws DigestException, FlashDatabaseException;
 
     /**
      * Store the data object to persistent memory
@@ -117,7 +117,7 @@ public abstract class FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public abstract void putData(String key, byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException;
+    public abstract void put(String key, byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException;
 
     /**
      * Remove the data object from persistent memory

@@ -54,20 +54,20 @@ public class RMSFastCacheTest extends MockedStaticInitializers {
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalArgumentExceptionThrownWhenPutNullKey() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
-        rmsFastCache.putData(null, new byte[16]);
+        rmsFastCache.put(null, new byte[16]);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalArgumentExceptionThrownWhenPutNullData() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
-        rmsFastCache.putData("fah", null);
+        rmsFastCache.put("fah", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalArgumentExceptionThrownWhenGetNullDigest() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
-        rmsFastCache.getData((byte[]) null);
+        rmsFastCache.get((byte[]) null);
     }
     @Test(expected = IllegalArgumentException.class)
     public void illegalArgumentExceptionThrownWhenGetNullString() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
-        rmsFastCache.getData((String) null);
+        rmsFastCache.get((String) null);
     }
 }

@@ -27,6 +27,7 @@ package org.tantalum;
 import java.io.IOException;
 import java.util.Vector;
 import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 
@@ -127,8 +128,9 @@ public interface PlatformAdapter {
      * @param priority
      * @param cacheType
      * @return the existing or new cache
+     * @throws FlashDatabaseException 
      */
-    public FlashCache getFlashCache(char priority, int cacheType);
+    public FlashCache getFlashCache(char priority, int cacheType) throws FlashDatabaseException;
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform

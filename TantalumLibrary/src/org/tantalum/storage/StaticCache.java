@@ -151,11 +151,11 @@ public class StaticCache {
      * Caches with higher priority are more likely to keep their data when space
      * is limited.
      *
-     * You will get IllegalArgumentException if you call this multiple times for
+     * You will getDigests IllegalArgumentException if you call this multiple times for
      * the same cache priority but with a different (not .equals())
      * DataTypeHandler.
      *
-     * @param priority - a character from '0' to '9', higher numbers get a
+     * @param priority - a character from '0' to '9', higher numbers getDigests a
      * preference for space. Letters are also allowed.
      * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
      * @param handler - a routine to convert from byte[] to Object form when
@@ -202,9 +202,9 @@ public class StaticCache {
      */
     private void init() throws DigestException, UnsupportedEncodingException {
         try {
-            final byte[][] digest = flashCache.getDigests();
-            for (int i = 0; i < digest.length; i++) {
-                ramCache.put(digest[i], null);
+            final byte[][] digests = flashCache.getDigests();
+            for (int i = 0; i < digests.length; i++) {
+                ramCache.put(digests[i], null);
             }
         } catch (FlashDatabaseException ex) {
             //#debug
@@ -310,7 +310,7 @@ public class StaticCache {
             final byte[] bytes;
             synchronized (MUTEX) {
                 if (flashCacheEnabled) {
-                    bytes = flashCache.getData(key);
+                    bytes = flashCache.get(key);
                 } else {
                     bytes = null;
                 }
@@ -399,7 +399,7 @@ public class StaticCache {
                     try {
                         //#debug
                         L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
-                        flashCache.putData(key, bytes);
+                        flashCache.put(key, bytes);
                         //#debug
                         L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
                         break;
@@ -466,7 +466,7 @@ public class StaticCache {
     }
 
     private int getByteSizeByDigest(final byte[] digest) throws FlashDatabaseException, DigestException {
-        final byte[] bytes = flashCache.getData(digest);
+        final byte[] bytes = flashCache.get(digest);
         
         return bytes.length;
     }
@@ -646,7 +646,7 @@ public class StaticCache {
 //                } catch (Exception e) {
 //                    //#debug
 //                    L.e("Can not complete", "getKeysTask", e);
-//                    cancel(false, "Exception during async keys get");
+//                    cancel(false, "Exception during async keys getDigests");
 //                    flashCache.clear();
 //
 //                    return new Vector();
@@ -687,11 +687,11 @@ public class StaticCache {
 //#enddebug
 
     /**
-     * A helper class to get data asynchronously from the local ramCache without
-     * attempting to get data from the web.
+     * A helper class to getDigests data asynchronously from the local ramCache without
+     * attempting to getDigests data from the web.
      *
      * Usually you do not invoke this directly, but rather call
-     * StaticCache.getAsync() or StaticWebCache.get(StaticWebCache.GET_LOCAL) to
+     * StaticCache.getAsync() or StaticWebCache.getDigests(StaticWebCache.GET_LOCAL) to
      * invoke this with chain() support. You can use this to build your own
      * custom asynchronous background processing Task chain.
      */
@@ -700,7 +700,7 @@ public class StaticCache {
         final int priority;
 
         /**
-         * Create a new get operation. The url will be supplied as an input to
+         * Create a new getDigests operation. The url will be supplied as an input to
          * this chained Task (the output of the previous Task in the chain).
          *
          * @param priority
@@ -712,7 +712,7 @@ public class StaticCache {
         }
 
         /**
-         * Create a new get operation, specifying the url in advance.
+         * Create a new getDigests operation, specifying the url in advance.
          *
          * @param key
          * @param priority

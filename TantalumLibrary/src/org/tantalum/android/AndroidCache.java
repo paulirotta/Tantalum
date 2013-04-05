@@ -144,7 +144,7 @@ public final class AndroidCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public byte[] getData(final byte[] digest) throws FlashDatabaseException {
+    public byte[] get(final byte[] digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             Cursor cursor = null;
 
@@ -197,7 +197,7 @@ public final class AndroidCache extends FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public synchronized void putData(final String key, final byte[] data) throws FlashFullException, FlashDatabaseException, UnsupportedEncodingException {
+    public synchronized void put(final String key, final byte[] data) throws FlashFullException, FlashDatabaseException, UnsupportedEncodingException {
         if (key == null) {
             throw new IllegalArgumentException("You attempted to put a null key to the cache");
         }
