@@ -84,12 +84,11 @@ public final class RMSCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public void putData(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException, DigestException, UnsupportedEncodingException {
-        final byte[] digest = toDigest(key);
-
         try {
+            final byte[] digest = toDigest(key);
             RMSUtils.getInstance().cacheWrite(priority, digest, bytes);
         } catch (RecordStoreFullException ex) {
-            throw new FlashFullException("key = " + StringUtils.toHex(digest) + " : " + ex);
+            throw new FlashFullException("key = " + key + " : " + ex);
         }
     }
 

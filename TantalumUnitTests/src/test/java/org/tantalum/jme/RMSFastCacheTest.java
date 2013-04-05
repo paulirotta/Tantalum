@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.tantalum.MockedStaticInitializers;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -32,7 +33,41 @@ public class RMSFastCacheTest extends MockedStaticInitializers {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void illegalArgumentExceptionThrownWhenNullStringToDigest() throws DigestException, UnsupportedEncodingException {
+    public void illegalArgumentExceptionThrownWhenNullToDigest() throws DigestException, UnsupportedEncodingException {
         rmsFastCache.toDigest(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void illegalArgumentExceptionThrownWhenNullToString() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+        rmsFastCache.toString(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void illegalArgumentExceptionThrownWhenNullStringRemoveData() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+        rmsFastCache.removeData((String) null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void illegalArgumentExceptionThrownWhenNullDigestRemoveData() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+        rmsFastCache.removeData((byte[]) null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void illegalArgumentExceptionThrownWhenPutNullKey() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+        rmsFastCache.putData(null, new byte[16]);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void illegalArgumentExceptionThrownWhenPutNullData() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+        rmsFastCache.putData("fah", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void illegalArgumentExceptionThrownWhenGetNullDigest() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+        rmsFastCache.getData((byte[]) null);
+    }
+    @Test(expected = IllegalArgumentException.class)
+    public void illegalArgumentExceptionThrownWhenGetNullString() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+        rmsFastCache.getData((String) null);
     }
 }

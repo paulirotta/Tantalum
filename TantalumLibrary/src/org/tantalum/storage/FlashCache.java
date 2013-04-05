@@ -36,8 +36,8 @@ import java.util.Hashtable;
  * @author phou
  */
 public abstract class FlashCache {
-    private static final Hashtable priorities = new Hashtable();
 
+    private static final Hashtable priorities = new Hashtable();
     /**
      * A unique local identifier for the cache.
      */
@@ -57,37 +57,42 @@ public abstract class FlashCache {
             throw new IllegalArgumentException("Duplicate FlashCache priority '" + priority + "' has already been created by your application. Keep a reference to this object or use a different priority");
         }
         priorities.put(c, c);
-        
+
         this.priority = priority;
     }
 
     /**
      * Convert the String key into a shorter byte[] digest to save memory in the
      * hashtable
-     * 
+     *
      * @param key
      * @return
      * @throws DigestException
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
     public abstract byte[] toDigest(final String key) throws DigestException, UnsupportedEncodingException;
-    
+
     public abstract String toString(final byte[] digest) throws FlashDatabaseException, UnsupportedEncodingException;
 
     /**
      * Calculate a shorter, byte[] key for use in the hashtable. This reduces
      * total memory consumption since the String keys can be quite long.
-     * 
-     * A cryptographic has function such as MD5 is usually used to implement this.
-     * A trivial implementation would be to convert the String into a byte array.
-     * 
+     *
+     * A cryptographic has function such as MD5 is usually used to implement
+     * this. A trivial implementation would be to convert the String into a byte
+     * array.
+     *
      * @param key
      * @return
      * @throws UnsupportedEncodingException
      * @throws DigestException
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public final byte[] getData(final String key) throws UnsupportedEncodingException, DigestException, FlashDatabaseException {
+        if (key == null) {
+            throw new IllegalArgumentException("You attempted to get a null digest from the cache");
+        }
+
         final byte[] digest = toDigest(key);
 
         return getData(digest);
@@ -95,13 +100,13 @@ public abstract class FlashCache {
 
     /**
      * Get the object from flash memory
-     * 
+     *
      * @param digest
      * @return
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public abstract byte[] getData(byte[] digest) throws DigestException, FlashDatabaseException;
-    
+
     /**
      * Store the data object to persistent memory
      *
@@ -110,7 +115,7 @@ public abstract class FlashCache {
      * @throws DigestException
      * @throws UnsupportedEncodingException
      * @throws FlashFullException
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public abstract void putData(String key, byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException;
 
@@ -120,15 +125,19 @@ public abstract class FlashCache {
      * @param key
      * @throws DigestException
      * @throws UnsupportedEncodingException
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public final void removeData(final String key) throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+        if (key == null) {
+            throw new IllegalArgumentException("You attempted to remove a null string key from the cache");
+        }
+
         final byte[] digest = toDigest(key);
 
         removeData(digest);
     }
-    
-    public abstract void removeData(byte[] digest) throws FlashDatabaseException;
+
+    public abstract void removeData(byte[] digest) throws UnsupportedEncodingException, FlashDatabaseException;
 
     /**
      * Return a list of all keys for objects stored in persistent memory
@@ -136,13 +145,13 @@ public abstract class FlashCache {
      * @return
      * @throws DigestException
      * @throws UnsupportedEncodingException
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public abstract byte[][] getDigests() throws DigestException, UnsupportedEncodingException, FlashDatabaseException;
-    
+
     /**
      * Remove all items from this flash cache
-     * 
+     *
      */
     public abstract void clear();
 }

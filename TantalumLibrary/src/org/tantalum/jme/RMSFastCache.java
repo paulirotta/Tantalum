@@ -307,6 +307,10 @@ public class RMSFastCache extends FlashCache {
      * @throws UnsupportedEncodingException
      */
     public String toString(final byte[] digest) throws FlashDatabaseException, UnsupportedEncodingException {
+        if (digest == null) {
+            throw new IllegalArgumentException("You attempted to convert a null digest into a key");
+        }
+
         synchronized (MUTEX) {
             final Long keyAndValueIndexes = indexHashGet(digest);
 
@@ -435,6 +439,13 @@ public class RMSFastCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public byte[] getData(final byte[] digest) throws FlashDatabaseException {
+        if (digest == null) {
+            throw new IllegalArgumentException("You attempted to get a null digest from the cache");
+        }
+        if (digest.length != DIGEST_LENGTH) {
+            throw new IllegalArgumentException("You attempted to get from the cache with a digest that is " + digest.length + " bytes, but should be " + DIGEST_LENGTH + " bytes");
+        }
+        
         synchronized (MUTEX) {
             final Long hashValue = ((Long) indexHash.get(digest));
 
@@ -462,6 +473,13 @@ public class RMSFastCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public void putData(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException {
+        if (key == null) {
+            throw new IllegalArgumentException("You attempted to put a null key to the cache");
+        }
+        if (bytes == null) {
+            throw new IllegalArgumentException("You attempted to put null data to the cache");
+        }
+
         synchronized (MUTEX) {
             try {
                 final byte[] digest = toDigest(key);
@@ -493,6 +511,10 @@ public class RMSFastCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public void removeData(final byte[] digest) throws FlashDatabaseException {
+        if (digest == null) {
+            throw new IllegalArgumentException("You attempted to remove a null digest from the cache");
+        }
+        
         synchronized (MUTEX) {
             try {
                 final Long indexEntry = indexHashGet(digest);
