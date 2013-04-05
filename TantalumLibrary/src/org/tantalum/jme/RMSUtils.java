@@ -53,7 +53,7 @@ public final class RMSUtils {
     /**
      * Access the singleton
      *
-     * @return
+     * @return the singleton
      */
     public static RMSUtils getInstance() {
         return RMSUtilsHolder.instance;
@@ -70,7 +70,7 @@ public final class RMSUtils {
      * Return of a list of record stores whose name indicates that they are
      * caches
      *
-     * @return
+     * @return list of cache-related RMS names as strings
      */
     public Vector getCacheRecordStoreNames() {
         final String[] rs = RecordStore.listRecordStores();
@@ -94,7 +94,7 @@ public final class RMSUtils {
     /**
      * Return of a list of record stores which are not part of a cache
      *
-     * @return
+     * @return all RMS names, whether part of the cache or not
      */
     public Vector getNoncacheRecordStoreNames() {
         final String[] rs = RecordStore.listRecordStores();
@@ -267,7 +267,7 @@ public final class RMSUtils {
      * key to the data
      *
      * @param key
-     * @return
+     * @return bytes stored in phone flash memory
      * @throws FlashDatabaseException
      */
     public byte[] cacheRead(final char priority, final byte[] digest) throws FlashDatabaseException {
@@ -278,7 +278,7 @@ public final class RMSUtils {
      * Reads the data from the given record store.
      *
      * @param key
-     * @return
+     * @return bytes stored in phone flash memory
      * @throws FlashDatabaseException
      */
     public byte[] read(final String key) throws FlashDatabaseException {
@@ -381,7 +381,7 @@ public final class RMSUtils {
      * Shorten the name to fit within the 32 character limit imposed by RMS.
      *
      * @param recordStoreName
-     * @return
+     * @return (possibly) shortened string suitable for use as an RMS (file system) name
      */
     private String truncateRecordStoreNameToLast32(String recordStoreName) {
         if (recordStoreName == null || recordStoreName.length() == 0) {

@@ -32,7 +32,7 @@ public class RMSFastCache extends FlashCache {
      * Longer hashes use more RAM as they are stored as keys in a Hashtable. The
      * longer hashes may also take longer to calculate, but reduce the
      * theoretical probability of two Strings producing the exact same digest.
-     * 
+     *
      * The length should probably be evenly divisible by 8
      */
     private static final int DIGEST_LENGTH = 16;
@@ -278,11 +278,14 @@ public class RMSFastCache extends FlashCache {
      * cryptographic digest.
      *
      * @param key
-     * @return
+     * @return 16 byte cryptographic has
      * @throws DigestException
      * @throws UnsupportedEncodingException
      */
     public byte[] toDigest(final String key) throws DigestException, UnsupportedEncodingException {
+        if (key == null) {
+            throw new IllegalArgumentException("You attempted to convert a null string into a hash digest");
+        }
         synchronized (MUTEX) {
             final byte[] bytes = key.getBytes("UTF-8");
             final byte[] hashKey = new byte[DIGEST_LENGTH];
@@ -298,8 +301,8 @@ public class RMSFastCache extends FlashCache {
      * Read the associated RMS entry from the index to find the original string
      * from which this digest was constructed.
      *
-     * @param digest
-     * @return
+     * @param digest 16 byte cryptographic hash
+     * @return the original string used to generate the digest
      * @throws FlashDatabaseException
      * @throws UnsupportedEncodingException
      */
@@ -326,28 +329,62 @@ public class RMSFastCache extends FlashCache {
      *
      * @param keyIndex
      * @param valueIndex
-     * @return
+     * @return keyIndex and valueIndex coded into a single Long object to keep
+     * in memory as a Hashtable value
      */
     private Long toIndexHash(final int keyIndex, final int valueIndex) {
         return new Long(((long) keyIndex << 32) | valueIndex);
     }
 
+    /**
+     * Extract the index into the key RMS from Long value stored in the
+     * hashtable
+     *
+     * @param hashValue
+     * @return record number in keyRMS
+     */
     private int toKeyIndex(final Long hashValue) {
         return (int) ((hashValue.longValue() >>> 32) & 0xFFFF);
     }
 
+    /**
+     * Extract the index into the value RMS from Long value stored in the
+     * hashtable
+     *
+     * @param hashValue
+     * @return record number in valueRMS
+     */
     private int toValueIndex(final Long hashValue) {
         return (int) (hashValue.longValue() & 0xFFFF);
     }
 
+    /**
+     * The file name
+     *
+     * @return the keyRMS name based on the cache priority
+     */
     private String getKeyRSName() {
         return RECORD_HASH_PREFIX + priority + "key";
     }
 
+    /**
+     * The file name
+     *
+     * @return the valueRMS name based on the cache priority
+     */
     private String getValueRSName() {
         return '_' + priority + "val";
     }
 
+    /**
+     * Encode the key and an index into the valueRMS into a byte[] to store in
+     * the keyRMS
+     *
+     * @param key
+     * @param valueIndex
+     * @return the bytes to put in the keyRMS
+     * @throws UnsupportedEncodingException
+     */
     private byte[] toIndexBytes(final String key, final int valueIndex) throws UnsupportedEncodingException {
         final byte[] bytes = key.getBytes("UTF-8");
         final byte[] bytesWithValue = new byte[bytes.length + 4];
@@ -362,10 +399,23 @@ public class RMSFastCache extends FlashCache {
         return bytesWithValue;
     }
 
+    /**
+     * The string part extracted from the byte[] stored in the keyRMS
+     *
+     * @param indexBytes
+     * @return the key used to add a value to the cache
+     */
     private String toStringKey(final byte[] indexBytes) {
         return new String(indexBytes, 4, indexBytes.length - 4);
     }
 
+    /**
+     * The int part extracted from the byte[] stored in the keyRMS
+     *
+     * @param indexBytes
+     * @return the valueRMS index from which the associated value can be
+     * extracted
+     */
     private int toValueIndex(final byte[] indexBytes) {
         int i = indexBytes[0] << 8;
         i |= indexBytes[1];
@@ -377,6 +427,13 @@ public class RMSFastCache extends FlashCache {
         return i;
     }
 
+    /**
+     * Get the value associated with this key digest from phone flash memory
+     *
+     * @param digest
+     * @return the bytes of the value
+     * @throws FlashDatabaseException
+     */
     public byte[] getData(final byte[] digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             final Long hashValue = ((Long) indexHash.get(digest));
@@ -394,6 +451,16 @@ public class RMSFastCache extends FlashCache {
         }
     }
 
+    /**
+     * Put new or replacement data associated with a key into the cache
+     *
+     * @param key
+     * @param bytes
+     * @throws DigestException
+     * @throws UnsupportedEncodingException
+     * @throws FlashFullException
+     * @throws FlashDatabaseException
+     */
     public void putData(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException {
         synchronized (MUTEX) {
             try {
@@ -419,6 +486,12 @@ public class RMSFastCache extends FlashCache {
         }
     }
 
+    /**
+     * Remove the key and value associated with a key digest from the cache
+     *
+     * @param digest
+     * @throws FlashDatabaseException
+     */
     public void removeData(final byte[] digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             try {
@@ -436,18 +509,33 @@ public class RMSFastCache extends FlashCache {
         }
     }
 
+    /**
+     * Get a list of all digests in this cache
+     *
+     * @return an array of byte[] digest-of-key objects in the cache
+     * @throws FlashDatabaseException
+     */
     public byte[][] getDigests() throws FlashDatabaseException {
         synchronized (MUTEX) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     }
 
-    private void forEachRecord(final RecordStore rms, final RecordTask task) throws RecordStoreNotOpenException {
+    /**
+     * Iterate and perform a task on every RMS entry in the specified record
+     * store. The record store is locked to prevent any changes during this
+     * loop.
+     *
+     * @param recordStore
+     * @param task
+     * @throws RecordStoreNotOpenException
+     */
+    private void forEachRecord(final RecordStore recordStore, final RecordTask task) throws RecordStoreNotOpenException {
         RecordEnumeration recordEnum = null;
 
         try {
             synchronized (MUTEX) {
-                recordEnum = rms.enumerateRecords(null, null, false);
+                recordEnum = recordStore.enumerateRecords(null, null, false);
                 while (recordEnum.hasNextElement()) {
                     int recordId = 0;
 
@@ -467,11 +555,17 @@ public class RMSFastCache extends FlashCache {
         }
     }
 
-    private void clear(final RecordStore rms) throws RecordStoreNotOpenException {
-        forEachRecord(rms, new RecordTask() {
+    /**
+     * Delete all records in the record store
+     *
+     * @param recordStore
+     * @throws RecordStoreNotOpenException
+     */
+    private void clear(final RecordStore recordStore) throws RecordStoreNotOpenException {
+        forEachRecord(recordStore, new RecordTask() {
             void exec() {
                 try {
-                    rms.deleteRecord(recordIndex);
+                    recordStore.deleteRecord(recordIndex);
                 } catch (Exception e) {
                     //#debug
                     L.e("Can not clear rms", "" + recordIndex, e);
@@ -480,10 +574,16 @@ public class RMSFastCache extends FlashCache {
         });
     }
 
+    /**
+     * Delete all key and value objects from heap memory and from the phone
+     * flash memory
+     *
+     */
     public void clear() {
         synchronized (MUTEX) {
             //#debug
             L.i("Clearing RMSFastCache", "" + priority);
+            indexHash.clear();
             try {
                 clear(valueRS);
             } catch (RecordStoreNotOpenException ex) {
@@ -496,10 +596,13 @@ public class RMSFastCache extends FlashCache {
                 //#debug
                 L.e("Can not clear RMS keys", "aborting", ex);
             }
-            indexHash.clear();
         }
     }
 
+    /**
+     * Extend this to perform an operation on all records in a record store
+     * using the forEachRecord() method
+     */
     private static abstract class RecordTask {
 
         public int recordIndex;
