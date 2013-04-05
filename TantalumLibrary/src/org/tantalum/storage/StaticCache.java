@@ -164,7 +164,7 @@ public class StaticCache {
      * @throws DigestException
      * @throws UnsupportedEncodingException 
      */
-    public static synchronized StaticCache getCache(final char priority, final int cacheType, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
+    public static synchronized StaticCache getCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
         StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
 
         if (c == null) {
@@ -184,7 +184,7 @@ public class StaticCache {
      * @throws DigestException
      * @throws UnsupportedEncodingException 
      */
-    protected StaticCache(final char priority, final int cacheType, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
+    protected StaticCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
         if (priority < '0') {
             throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
@@ -200,20 +200,21 @@ public class StaticCache {
      * We want to use the RAM Hashtable to know what the ramCache contains, even
      * though we do not pre-load from flash all the values
      */
-    private void init() throws DigestException, UnsupportedEncodingException {
+    private void init() throws FlashDatabaseException {
         try {
             final byte[][] digests = flashCache.getDigests();
             for (int i = 0; i < digests.length; i++) {
                 ramCache.put(digests[i], null);
             }
-        } catch (FlashDatabaseException ex) {
+        } catch (Exception ex) {
             //#debug
             L.e("Can not load keys to RAM during init() cache", "cache priority=" + priority, ex);
+            throw new FlashDatabaseException("Can not load cache keys during init for cache '" + priority + "' : " + ex);
         }
     }
 
     /**
-     * Turn off persistent local storage use for read and write to see what
+     * Turn off persistent local storage' use for read and write to see what
      * happens to the application performance. This is most useful for
      * StaticWebCache but may be useful in other test cases.
      *
@@ -742,7 +743,7 @@ public class StaticCache {
             L.i("Async StaticCache get", (String) in);
             if (in == null || !(in instanceof String)) {
                 //#debug
-                L.i("ERROR", "StaticCache.GetLocalTask must receive a String url, but got " + in == null ? "null" : in.toString());
+                L.i("ERROR", "StaticCache.GetLocalTask must receive a String url, but got " + (in == null ? "null" : in.toString()));
                 cancel(false, "StaticCache.GetLocalTask got bad input to exec(): " + in);
 
                 return in;

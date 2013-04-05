@@ -24,11 +24,10 @@
  */
 package org.tantalum.net;
 
-import java.io.UnsupportedEncodingException;
-import java.security.DigestException;
 import java.util.Hashtable;
 import org.tantalum.Task;
 import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.StaticCache;
 import org.tantalum.util.L;
 
@@ -113,10 +112,9 @@ public final class StaticWebCache extends StaticCache {
      * @param handler
      * @param httpTaskFactory
      * @return
-     * @throws DigestException
-     * @throws UnsupportedEncodingException 
+     * @throws FlashDatabaseException 
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws DigestException, UnsupportedEncodingException {
+    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
         StaticWebCache c = (StaticWebCache) getExistingCache(priority, handler, httpTaskFactory, StaticWebCache.class);
 
         if (c == null) {
@@ -145,10 +143,9 @@ public final class StaticWebCache extends StaticCache {
      * @param cacheType
      * @param handler
      * @param httpTaskFactory
-     * @throws DigestException
-     * @throws UnsupportedEncodingException 
+     * @throws FlashDatabaseException 
      */
-    private StaticWebCache(final char priority, final int cacheType, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws DigestException, UnsupportedEncodingException {
+    private StaticWebCache(final char priority, final int cacheType, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
         super(priority, cacheType, handler);
 
         this.httpTaskFactory = httpTaskFactory;
@@ -363,7 +360,7 @@ public final class StaticWebCache extends StaticCache {
 
             if (in == null || !(in instanceof String)) {
                 //#debug
-                L.i("ERROR", "StaticWebCache.GetAnywhereTask must receive a String url, but got " + in == null ? "null" : in.toString());
+                L.i("ERROR", "StaticWebCache.GetAnywhereTask must receive a String url, but got " + (in == null ? "null" : in.toString()));
                 cancel(false, "StaticWebCache.getAnywhereTask got bad input: " + in);
             } else {
                 //#debug

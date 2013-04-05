@@ -263,7 +263,7 @@ public final class PlatformUtils {
      *
      * @param reasonDestroyed
      */
-    public void notifyDestroyed(final String reasonDestroyed) {
+    public void shutdownComplete(final String reasonDestroyed) {
         //#debug
         L.i("Call to notifyDestroyed", reasonDestroyed);
         platformAdapter.shutdownComplete();

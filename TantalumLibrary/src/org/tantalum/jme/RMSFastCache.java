@@ -115,7 +115,7 @@ public class RMSFastCache extends FlashCache {
         forEachRecord(valueRS, new RecordTask() {
             void exec() {
                 final Integer v = new Integer(recordIndex);
-                unreferencedValueRecordIdHash.put(v, null);
+                unreferencedValueRecordIdHash.put(v, v);
             }
         });
     }
@@ -524,7 +524,14 @@ public class RMSFastCache extends FlashCache {
      */
     public byte[][] getDigests() throws FlashDatabaseException {
         synchronized (MUTEX) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            final byte[][] digests = new byte[indexHash.size()][];
+            final Enumeration enu = indexHash.keys();
+
+            for (int i = 0; i < digests.length; i++) {
+                digests[i] = (byte[]) enu.nextElement();
+            }
+            
+            return digests;
         }
     }
 
