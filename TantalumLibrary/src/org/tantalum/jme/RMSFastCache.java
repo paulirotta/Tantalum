@@ -161,9 +161,8 @@ public class RMSFastCache extends FlashCache {
                     final int valueRecordId = toValueIndex(indexBytes);
 
                     if (isValueRecordIdAlreadyInUse(referencedValueRecordIdHash, valueRecordId)) {
-                        //#debug
                         final Integer duplicateKeyId = (Integer) referencedValueRecordIdHash.get(new Integer(valueRecordId));
-                        final int duplicateKeyRecordId = (duplicateKeyId).intValue();
+                        final int duplicateKeyRecordId = duplicateKeyId.intValue();
                         //#debug
                         L.i("Found multiple keys pointing to the same value record", "deleting key " + recordIndex + " and key " + duplicateKeyRecordId + " and value " + valueRecordId);
                         keyRS.deleteRecord(recordIndex);

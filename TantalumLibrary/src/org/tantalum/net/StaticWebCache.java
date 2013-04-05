@@ -84,8 +84,14 @@ public final class StaticWebCache extends StaticCache {
      * @throws DigestException
      * @throws UnsupportedEncodingException 
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler) throws DigestException, UnsupportedEncodingException {
-        return (StaticWebCache) getWebCache(priority, handler, DEFAULT_HTTP_GETTER_FACTORY);
+    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler) {
+        try {
+            return (StaticWebCache) getWebCache(priority, handler, DEFAULT_HTTP_GETTER_FACTORY);
+        } catch (Exception e) {
+            //#debug
+            L.e("Can not create StaticWebCache", "" + priority, e);
+            return null;
+        }
     }
 
     /**
