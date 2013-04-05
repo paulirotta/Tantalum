@@ -460,18 +460,10 @@ public class StaticCache {
         return spaceCleared >= minSpaceToClear;
     }
 
-    private int getByteSizeByDigest(final byte[] digest) throws FlashDatabaseException, UnsupportedEncodingException, DigestException {
-        int size = 0;
-
+    private int getByteSizeByDigest(final byte[] digest) throws FlashDatabaseException, DigestException {
         final byte[] bytes = flashCache.getData(digest);
-        if (bytes != null) {
-            size = bytes.length;
-        } else {
-            //#debug
-            L.i("Can not check size of record store to clear space", StringUtils.toHex(digest));
-        }
-
-        return size;
+        
+        return bytes.length;
     }
 
     private static StaticCache getCacheContainingDigest(final byte[] digest) {
