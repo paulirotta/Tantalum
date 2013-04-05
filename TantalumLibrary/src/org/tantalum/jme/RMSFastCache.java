@@ -249,21 +249,6 @@ public class RMSFastCache extends FlashCache {
      * Get the RMS index value for the key and value RMSs from the heap
      * hashtable
      *
-     * @param key
-     * @return
-     * @throws DigestException
-     * @throws UnsupportedEncodingException
-     */
-    private Long indexHashGet(final String key) throws DigestException, UnsupportedEncodingException {
-        final byte[] digest = toDigest(key);
-
-        return indexHashGet(digest);
-    }
-
-    /**
-     * Get the RMS index value for the key and value RMSs from the heap
-     * hashtable
-     *
      * @param digest
      * @return
      */

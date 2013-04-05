@@ -87,6 +87,7 @@ public final class AndroidCache extends FlashCache {
             + " TEXT NOT NULL, " + COL_DATA + " BLOB NOT NULL)";
     private final String CLEAR_TABLE = "DROP TABLE " + TABLE_NAME;
     private SQLiteDatabase db = null;
+    private final Object MUTEX = new Object();
 
     /**
      * Create a new AndroidCache. You should not call this method directly, but
@@ -117,7 +118,9 @@ public final class AndroidCache extends FlashCache {
      * @param db
      */
     public void onCreate(final SQLiteDatabase db) {
-        db.execSQL(CREATE_TABLE);
+        synchronized (MUTEX) {
+            db.execSQL(CREATE_TABLE);
+        }
     }
 
     /**
@@ -128,8 +131,10 @@ public final class AndroidCache extends FlashCache {
      * @param newVersion
      */
     public void onUpgrade(final SQLiteDatabase db, final int oldVersion, final int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-        onCreate(db);
+        synchronized (MUTEX) {
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+            onCreate(db);
+        }
     }
 
     /**
@@ -140,44 +145,46 @@ public final class AndroidCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public byte[] getData(final byte[] digest) throws FlashDatabaseException {
-        Cursor cursor = null;
+        synchronized (MUTEX) {
+            Cursor cursor = null;
 
-        final String[] fields = new String[]{COL_DATA};
-        //#debug
-        L.i("db getData", "1");
-        try {
-            final String key = toString(digest);
-
-            if (db == null) {
-                db = helper.getWritableDatabase();
-            }
+            final String[] fields = new String[]{COL_DATA};
             //#debug
-            L.i("db getData", "2");
-            cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
-                    new String[]{key}, null, null, null, null);
-            //#debug
-            L.i("db getData", "3");
+            L.i("db getData", "1");
+            try {
+                final String key = toString(digest);
 
-            if (cursor == null || cursor.getCount() == 0) {
+                if (db == null) {
+                    db = helper.getWritableDatabase();
+                }
+                //#debug
+                L.i("db getData", "2");
+                cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
+                        new String[]{key}, null, null, null, null);
+                //#debug
+                L.i("db getData", "3");
+
+                if (cursor == null || cursor.getCount() == 0) {
+                    return null;
+                } else {
+                    cursor.moveToFirst();
+
+                    return cursor.getBlob(0);
+                }
+            } catch (NullPointerException e) {
+                //#debug
+                L.e("db not initialized, join() then try again", "getData", e);
                 return null;
-            } else {
-                cursor.moveToFirst();
-
-                return cursor.getBlob(0);
-            }
-        } catch (NullPointerException e) {
-            //#debug
-            L.e("db not initialized, join() then try again", "getData", e);
-            return null;
-        } catch (Exception e) {
-            //#debug
-            L.e("db can not be initialized", "getData, key=" + digest, e);
-            throw new FlashDatabaseException("db init error on getData, key=" + StringUtils.toHex(digest) + " : " + e);
-        } finally {
-            //#debug
-            L.i("db getData", "end");
-            if (cursor != null) {
-                cursor.close();
+            } catch (Exception e) {
+                //#debug
+                L.e("db can not be initialized", "getData, key=" + digest, e);
+                throw new FlashDatabaseException("db init error on getData, key=" + StringUtils.toHex(digest) + " : " + e);
+            } finally {
+                //#debug
+                L.i("db getData", "end");
+                if (cursor != null) {
+                    cursor.close();
+                }
             }
         }
     }
@@ -198,27 +205,29 @@ public final class AndroidCache extends FlashCache {
             throw new IllegalArgumentException("You attempted to put null data to the cache");
         }
 
-        final ContentValues values = new ContentValues();
+        synchronized (MUTEX) {
+            final ContentValues values = new ContentValues();
 
-        values.put(COL_KEY, key);
-        values.put(COL_DATA, data);
+            values.put(COL_KEY, key);
+            values.put(COL_DATA, data);
 
-        try {
-            if (db == null) {
-                db = helper.getWritableDatabase();
-            }
-            db.insert(TABLE_NAME, null, values);
-        } catch (Exception e) {
             try {
-                if (Class.forName("android.database.sqlite.SQLiteFullException").isAssignableFrom(e.getClass())) {
-                    throw new FlashFullException("Android database full, attempting cleanup of old..." + key + " : " + e);
+                if (db == null) {
+                    db = helper.getWritableDatabase();
                 }
-            } catch (ClassNotFoundException e2) {
-                //#debug
-                L.e("Introspection error", "android.database.sqlite.SQLiteFullException", e2);
+                db.insert(TABLE_NAME, null, values);
+            } catch (Exception e) {
+                try {
+                    if (Class.forName("android.database.sqlite.SQLiteFullException").isAssignableFrom(e.getClass())) {
+                        throw new FlashFullException("Android database full, attempting cleanup of old..." + key + " : " + e);
+                    }
+                } catch (ClassNotFoundException e2) {
+                    //#debug
+                    L.e("Introspection error", "android.database.sqlite.SQLiteFullException", e2);
+                }
+                //#debugtoString(digest)
+                throw new FlashDatabaseException("key = " + key + " : " + e);
             }
-            //#debugtoString(digest)
-            throw new FlashDatabaseException("key = " + key + " : " + e);
         }
     }
 
@@ -233,18 +242,20 @@ public final class AndroidCache extends FlashCache {
             throw new IllegalArgumentException("You attempted to remove a null digest from the cache");
         }
 
-        final String where;
-        where = COL_KEY + "==\"" + toString(digest) + "\"";
+        synchronized (MUTEX) {
+            final String where;
+            where = COL_KEY + "==\"" + toString(digest) + "\"";
 
-        try {
-            if (db == null) {
-                db = helper.getWritableDatabase();
+            try {
+                if (db == null) {
+                    db = helper.getWritableDatabase();
+                }
+                db.delete(TABLE_NAME, where, null);
+            } catch (Exception e) {
+                //#debug
+                L.e("Can not access database on removeData()", toString(digest), e);
+                throw new FlashDatabaseException("Can not remove data from database: " + e);
             }
-            db.delete(TABLE_NAME, where, null);
-        } catch (Exception e) {
-            //#debug
-            L.e("Can not access database on removeData()", toString(digest), e);
-            throw new FlashDatabaseException("Can not remove data from database: " + e);
         }
     }
 
@@ -255,37 +266,39 @@ public final class AndroidCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public synchronized byte[][] getDigests() throws FlashDatabaseException {
-        byte[][] digests = null;
-        Cursor cursor = null;
+        synchronized (MUTEX) {
+            byte[][] digests = null;
+            Cursor cursor = null;
 
-        try {
-            if (db == null) {
-                db = helper.getWritableDatabase();
-            }
-            cursor = db.query(TABLE_NAME, new String[]{COL_KEY}, "*",
-                    null, null, null, null, null);
-            if (cursor != null && cursor.getCount() > 0) {
-                digests = new byte[cursor.getCount()][];
-                cursor.moveToFirst();
-                for (int i = 0; i < digests.length; i++) {
-                    if (i != 0) {
-                        cursor.moveToNext();
+            try {
+                if (db == null) {
+                    db = helper.getWritableDatabase();
+                }
+                cursor = db.query(TABLE_NAME, new String[]{COL_KEY}, "*",
+                        null, null, null, null, null);
+                if (cursor != null && cursor.getCount() > 0) {
+                    digests = new byte[cursor.getCount()][];
+                    cursor.moveToFirst();
+                    for (int i = 0; i < digests.length; i++) {
+                        if (i != 0) {
+                            cursor.moveToNext();
+                        }
+                        final String s = new String(cursor.getBlob(0));
+                        digests[i] = toDigest(s);
                     }
-                    final String s = new String(cursor.getBlob(0));
-                    digests[i] = toDigest(s);
+                }
+            } catch (Exception e) {
+                //#debug
+                L.e("Can not access database on getKeys()", "", e);
+                throw new FlashDatabaseException("Can not acccess database on getKeys() : " + e);
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
                 }
             }
-        } catch (Exception e) {
-            //#debug
-            L.e("Can not access database on getKeys()", "", e);
-            throw new FlashDatabaseException("Can not acccess database on getKeys() : " + e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
 
-        return digests;
+            return digests;
+        }
     }
 
     /**
@@ -293,8 +306,10 @@ public final class AndroidCache extends FlashCache {
      * each cache, other caches still contain values.
      *
      */
-    public synchronized void clear() {
-        db.execSQL(CLEAR_TABLE);
+    public void clear() {
+        synchronized (MUTEX) {
+            db.execSQL(CLEAR_TABLE);
+        }
     }
 
     /**
