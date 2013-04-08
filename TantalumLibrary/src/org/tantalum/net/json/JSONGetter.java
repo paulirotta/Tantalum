@@ -63,8 +63,8 @@ public class JSONGetter extends HttpGetter {
             jsonModel.setJSON(value);
         } catch (Exception e) {
             //#debug
-            L.e("JSONGetter HTTP response problem", key + " : " + value, e);
-            cancel(false, "JSONGetter exception - " + key + " : " + e);
+            L.e("JSONGetter HTTP response problem", "value=" + value, e);
+            cancel(false, "JSONGetter exception - " + value + " : " + e);
         }
 
         return jsonModel;

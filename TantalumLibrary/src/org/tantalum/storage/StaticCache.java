@@ -204,7 +204,7 @@ public class StaticCache {
         try {
             final byte[][] digests = flashCache.getDigests();
             for (int i = 0; i < digests.length; i++) {
-                ramCache.put(digests[i], null);
+                ramCache.markContains(digests[i]);
             }
         } catch (Exception ex) {
             //#debug

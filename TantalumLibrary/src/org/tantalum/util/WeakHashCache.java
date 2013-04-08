@@ -95,14 +95,38 @@ public class WeakHashCache {
         if (key == null) {
             throw new IllegalArgumentException("null key put to WeakHashCache");
         }
+        if (value == null) {
+            throw new IllegalArgumentException("null key put to WeakHashCache");
+        }
+//        synchronized (hash) {
+//            if (value == null) {
+//                //#debug
+//                L.i("WeakHash put", "value is null, key removed");
+//                hash.remove(key);
+//                return;
+//            }
+        hash.put(key, new WeakReference(value));
+//        }
+    }
+
+    /**
+     * Mark the collection as containing this key, but do not yet provide a
+     * value associated with the key
+     *
+     * This can be useful for initialization and when the set of keys is treated
+     * as a set
+     *
+     * @param key
+     */
+    public void markContains(final Object key) {
+        if (key == null) {
+            throw new IllegalArgumentException("markContains(null) to WeakHashCache");
+        }
         synchronized (hash) {
-            if (value == null) {
-                //#debug
-                L.i("WeakHash put", "value is null, key removed");
-                hash.remove(key);
+            if (hash.containsKey(key)) {
                 return;
             }
-            hash.put(key, new WeakReference(value));
+            hash.put(key, new WeakReference(null));
         }
     }
 
@@ -166,12 +190,12 @@ public class WeakHashCache {
     /**
      * Keep the index values of the collection, but clear all values to which
      * they point.
-     * 
+     *
      */
     public void clearValues() {
-        synchronized(hash) {
+        synchronized (hash) {
             final Enumeration keys = hash.keys();
-            
+
             while (keys.hasMoreElements()) {
                 hash.put(keys, new WeakReference(null));
             }

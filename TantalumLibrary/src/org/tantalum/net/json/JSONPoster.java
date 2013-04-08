@@ -39,10 +39,10 @@ public abstract class JSONPoster extends HttpPoster {
     /**
      * HTTP POST a JSONModel to a server
      * 
-     * @param key 
+     * @param url 
      */
-    public JSONPoster(final String key) {
-        super(key);
+    public JSONPoster(final String url) {
+        super(url);
     }
 
     /**

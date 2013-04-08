@@ -468,7 +468,7 @@ public final class StaticWebCache extends StaticCache {
                 return new HttpGetter(key);
             } else {
                 final HttpPoster poster = new HttpPoster(key);
-                poster.setMessage(postMessage);
+                poster.setPostData(postMessage);
 
                 return poster;
             }

@@ -34,7 +34,7 @@ public class HttpPoster extends HttpGetter {
     /**
      * HTTP POST a message to a given URL
      *
-     * Make sure you call setMessage(byte[]) to specify what you want to POST or
+     * Make sure you call setPostData(byte[]) to specify what you want to POST or
      * you will get an IllegalArgumentException
      *
      * @param key - The url we will HTTP POST to, plus optional lines of text to
@@ -47,25 +47,25 @@ public class HttpPoster extends HttpGetter {
     /**
      * Create an HTTP POST operation
      * 
-     * @param key
+     * @param url
      * @param message 
      */
-    public HttpPoster(final String key, final byte[] message) {
-        super(key, message);
+    public HttpPoster(final String url, final byte[] message) {
+        super(url, message);
     }
 
     /**
      * Set the message to be HTTP POSTed to the server
      * 
-     * @param message
+     * @param postData
      * @return 
      */
-    public HttpPoster setMessage(final byte[] message) {
-        if (message == null) {
-            throw new IllegalArgumentException(this.getClass().getName() + " was passed null message- meaningless POST or PUT operation: " + key);
+    public HttpPoster setPostData(final byte[] postData) {
+        if (postData == null) {
+            throw new IllegalArgumentException(this.getClass().getName() + " was passed null message- meaningless POST or PUT operation: " + (String) getValue());
         }
-        this.postMessage = new byte[message.length];
-        System.arraycopy(message, 0, this.postMessage, 0, message.length);
+        this.postMessage = new byte[postData.length];
+        System.arraycopy(postData, 0, this.postMessage, 0, postData.length);
 
         return this;
     }

@@ -20,6 +20,7 @@ import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 
 /**
@@ -35,11 +36,9 @@ public class RMSFastCache extends FlashCache {
      *
      * The length should probably be evenly divisible by 8
      */
-    private static final int DIGEST_LENGTH = 16;
     private static final char RECORD_HASH_PREFIX = '_';
     private final RecordStore keyRS;
     private final RecordStore valueRS;
-    private final MessageDigest messageDigest;
     private final Object MUTEX = new Object();
     /*
      * The Integer index of each key record in the hashtable
@@ -75,7 +74,6 @@ public class RMSFastCache extends FlashCache {
                 }
             }
         }).fork(Task.SHUTDOWN);
-        messageDigest = MessageDigest.getInstance("MD5");
         initIndex(hashTableSize);
     }
 
@@ -265,30 +263,6 @@ public class RMSFastCache extends FlashCache {
     }
 
     /**
-     * Convert from String form, which may take a lot of RAM, into a fixed size
-     * cryptographic digest.
-     *
-     * @param key
-     * @return 16 byte cryptographic has
-     * @throws DigestException
-     * @throws UnsupportedEncodingException
-     */
-    public byte[] toDigest(final String key) throws DigestException, UnsupportedEncodingException {
-        if (key == null) {
-            throw new IllegalArgumentException("You attempted to convert a null string into a hash digest");
-        }
-        synchronized (MUTEX) {
-            final byte[] bytes = key.getBytes("UTF-8");
-            final byte[] hashKey = new byte[DIGEST_LENGTH];
-
-            messageDigest.update(bytes, 0, bytes.length);
-            messageDigest.digest(hashKey, 0, DIGEST_LENGTH);
-
-            return hashKey;
-        }
-    }
-
-    /**
      * Read the associated RMS entry from the index to find the original string
      * from which this digest was constructed.
      *
@@ -433,8 +407,8 @@ public class RMSFastCache extends FlashCache {
         if (digest == null) {
             throw new IllegalArgumentException("You attempted to get a null digest from the cache");
         }
-        if (digest.length != DIGEST_LENGTH) {
-            throw new IllegalArgumentException("You attempted to get from the cache with a digest that is " + digest.length + " bytes, but should be " + DIGEST_LENGTH + " bytes");
+        if (digest.length != CryptoUtils.DIGEST_LENGTH) {
+            throw new IllegalArgumentException("You attempted to get from the cache with a digest that is " + digest.length + " bytes, but should be " + CryptoUtils.DIGEST_LENGTH + " bytes");
         }
 
         synchronized (MUTEX) {
@@ -617,6 +591,10 @@ public class RMSFastCache extends FlashCache {
                 L.e("Can not clear RMS keys", "aborting", ex);
             }
         }
+    }
+
+    public byte[] toDigest(String key) throws DigestException, UnsupportedEncodingException {
+        return CryptoUtils.getInstance().toDigest(key);
     }
 
     /**
