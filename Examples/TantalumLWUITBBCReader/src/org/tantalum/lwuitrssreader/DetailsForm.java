@@ -113,7 +113,7 @@ public class DetailsForm extends Form implements ActionListener {
             
             public void run() {
                 try {
-                    imgLabel.setIcon((Image) getValue());
+                    imgLabel.setIcon((Image) get());
                     DetailsForm.this.repaint();
                 } catch (Exception ex) {
                     //#debug

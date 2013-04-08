@@ -834,13 +834,13 @@ public class HttpGetter extends Task {
         } else if (responseCode < 500) {
             // We might be able to extract some useful information in case of a 400+ error code
             //#debug
-            L.i("Bad response code (" + responseCode + ")", "" + getValue());
+            L.i("Bad response code (" + responseCode + ")", "");
             ok = false;
         } else {
             // 500+ error codes, which means that something went wrong on server side. 
             // Probably not recoverable, so should we throw an exception instead?
             //#debug
-            L.i("Server side error. Bad response code (" + responseCode + ")", "" + getValue());
+            L.i("Server side error. Bad response code (" + responseCode + ")", "");
             ok = false;
         }
 
