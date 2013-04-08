@@ -998,7 +998,7 @@ public abstract class Task implements Runnable {
      */
     public String toString() {
         synchronized (MUTEX) {
-            return "TASK: status=" + getStatusString() + " result=" + value + " nextTask=(" + chainedTask + ")";
+            return "{TASK: status=" + getStatusString() + " result=" + value + "\nCHAINED TASK: " + chainedTask + "}";
         }
     }
     //#enddebug
