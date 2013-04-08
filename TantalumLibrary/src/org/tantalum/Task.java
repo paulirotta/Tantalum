@@ -367,7 +367,7 @@ public abstract class Task implements Runnable {
      *
      * @return
      */
-    protected final Object getValue() {
+    final Object getValue() {
         synchronized (MUTEX) {
             return value;
         }
@@ -822,16 +822,11 @@ public abstract class Task implements Runnable {
      *
      * @return
      */
-    final Object executeTask(Object v) {
+    final Object executeTask(final Object in) {
+        Object out = null;
+        
         try {
             synchronized (MUTEX) {
-                if (v == null) {
-                    // No input provided- used the stored value as input
-                    v = value;
-                } else {
-                    // Input is provided- override the stored value
-                    value = v;
-                }
                 if (status == Task.CANCELED) {
                     throw new IllegalStateException(this.getStatusString() + " state can not be executed: " + this);
                 }
@@ -839,7 +834,7 @@ public abstract class Task implements Runnable {
             /*
              * Execute the Task without holding any locks
              */
-            v = exec(v);
+            out = exec(in);
 
             final boolean doRun;
             final boolean executionSuccessful;
@@ -847,7 +842,7 @@ public abstract class Task implements Runnable {
             synchronized (MUTEX) {
                 executionSuccessful = status == Task.PENDING;
                 if (executionSuccessful) {
-                    value = v;
+                    value = out;
                     t = chainedTask;
                     doRun = this.runOnUIThreadWhenFinished;
                     setStatus(FINISHED);
@@ -862,8 +857,8 @@ public abstract class Task implements Runnable {
             }
             if (t != null) {
                 //#debug
-                L.i("Begin fork chained task", t.toString() + " INPUT: " + v);
-                t.set(v);
+                L.i("Begin fork chained task", t.toString() + " INPUT: " + in);
+                t.set(out);
                 t.assertForkPriority(forkPriority);
                 t.fork();
             }
@@ -871,9 +866,10 @@ public abstract class Task implements Runnable {
             //#debug
             L.e("Exception during Task exec()", this.toString(), t);
             cancel(false, "Unhandled task exception: " + this.toString() + " : " + t);
+            out = null;
         }
 
-        return v;
+        return out;
     }
 
     /**

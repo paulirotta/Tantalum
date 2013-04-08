@@ -213,27 +213,23 @@ public final class DetailsView extends View {
         this.rightItem = rightItem;
         if (leftItem != null) {
             imageCache.getAsync(leftItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
-                public Object exec(final Object params) {
-                    final Object r = getValue();
-
+                public Object exec(final Object image) {
                     if (DetailsView.this.leftItem == leftItem) {
-                        leftIcon = (Image) r;
+                        leftIcon = (Image) image;
                     }
 
-                    return r;
+                    return image;
                 }
             });
         }
         if (rightItem != null) {
             imageCache.getAsync(rightItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
-                public Object exec(final Object params) {
-                    final Object r = getValue();
-
+                public Object exec(final Object image) {
                     if (DetailsView.this.rightItem == rightItem) {
-                        rightIcon = (Image) r;
+                        rightIcon = (Image) image;
                     }
 
-                    return r;
+                    return image;
                 }
             });
         }
