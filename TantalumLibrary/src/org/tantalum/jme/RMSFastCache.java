@@ -36,7 +36,7 @@ public class RMSFastCache extends FlashCache {
      *
      * The length should probably be evenly divisible by 8
      */
-    private static final char RECORD_HASH_PREFIX = '_';
+    static final char RECORD_HASH_PREFIX = '_';
     private final RecordStore keyRS;
     private final RecordStore valueRS;
     private final Object MUTEX = new Object();
@@ -342,7 +342,7 @@ public class RMSFastCache extends FlashCache {
      * @return the valueRMS name based on the cache priority
      */
     private String getValueRSName() {
-        return '_' + priority + "val";
+        return RECORD_HASH_PREFIX + priority + "val";
     }
 
     /**

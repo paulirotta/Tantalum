@@ -192,13 +192,13 @@ public final class AndroidCache extends FlashCache {
     /**
      * Store the specified byte[] to flash memory for later retrieval by key
      *
-     * @param key
+     * @param url
      * @param data
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public synchronized void put(final String key, final byte[] data) throws FlashFullException, FlashDatabaseException, UnsupportedEncodingException {
-        if (key == null) {
+    public synchronized void put(final String url, final byte[] data) throws FlashFullException, FlashDatabaseException, UnsupportedEncodingException {
+        if (url == null) {
             throw new IllegalArgumentException("You attempted to put a null key to the cache");
         }
         if (data == null) {
@@ -208,7 +208,7 @@ public final class AndroidCache extends FlashCache {
         synchronized (MUTEX) {
             final ContentValues values = new ContentValues();
 
-            values.put(COL_KEY, key);
+            values.put(COL_KEY, url);
             values.put(COL_DATA, data);
 
             try {
@@ -219,14 +219,15 @@ public final class AndroidCache extends FlashCache {
             } catch (Exception e) {
                 try {
                     if (Class.forName("android.database.sqlite.SQLiteFullException").isAssignableFrom(e.getClass())) {
-                        throw new FlashFullException("Android database full, attempting cleanup of old..." + key + " : " + e);
+                        throw new FlashFullException("Android database full, attempting cleanup of old..." + url + " : " + e);
                     }
                 } catch (ClassNotFoundException e2) {
                     //#debug
                     L.e("Introspection error", "android.database.sqlite.SQLiteFullException", e2);
                 }
-                //#debugtoString(digest)
-                throw new FlashDatabaseException("key = " + key + " : " + e);
+                //#debug
+                L.e("Android cache put database exception", "" + url, e);
+                throw new FlashDatabaseException("key = " + url + " : " + e);
             }
         }
     }
