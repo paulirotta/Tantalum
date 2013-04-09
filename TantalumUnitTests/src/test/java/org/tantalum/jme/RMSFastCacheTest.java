@@ -14,6 +14,7 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.*;
@@ -36,11 +37,13 @@ public class RMSFastCacheTest extends MockedStaticInitializers {
     
     // To test
     RMSFastCache rmsFastCache;
-
+    
     @Before
     public final void httpGetterTestFixture() throws Exception {
         createMocks();
-        rmsFastCache = new RMSFastCache('0');
+        if (rmsFastCache == null) {
+            rmsFastCache = new RMSFastCache('0');
+        }
     }
 
     private void createMocks() throws FlashDatabaseException, FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException {
