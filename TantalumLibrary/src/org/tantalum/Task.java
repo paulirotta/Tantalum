@@ -136,11 +136,12 @@ public abstract class Task implements Runnable {
      * FIFO with guaranteed sequence (single-thread concurrent execution, this
      * one thread also does
      * <code>FASTLANE</code> work first, but then
-     * <code>SERIAL_PRIORITY</code> tasks are prioritized above other priorities).
+     * <code>SERIAL_PRIORITY</code> tasks are prioritized above other
+     * priorities).
      *
      * All
-     * <code>SERIAL_PRIORITY</code> tasks are executed on a single thread for guaranteed
-     * sequential execution in the order in which they are
+     * <code>SERIAL_PRIORITY</code> tasks are executed on a single thread for
+     * guaranteed sequential execution in the order in which they are
      * <code>fork()</code>ed.
      *
      * This is normally used for persistence operations like flash write. In the
@@ -273,12 +274,12 @@ public abstract class Task implements Runnable {
      * the run() method after successful exec()
      *
      * @param runOnUIThreadWhenFinished
-     * @return 
+     * @return
      */
     public Task setRunOnUIThreadWhenFinished(boolean runOnUIThreadWhenFinished) {
         synchronized (MUTEX) {
             this.runOnUIThreadWhenFinished = runOnUIThreadWhenFinished;
-            
+
             return this;
         }
     }
@@ -543,47 +544,49 @@ public abstract class Task implements Runnable {
         boolean doExec = false;
         Object out;
 
-        synchronized (MUTEX) {
-            //#debug
-            L.i("Start join", "timeout=" + timeout + " " + this);
-            switch (status) {
-                case PENDING:
-                    try {
-                        //#debug
-                        L.i("Start join of EXEC_PENDING task", "timeout=" + timeout + " " + this.toString());
-                        if (Worker.tryUnfork(this)) {
-                            doExec = true;
-                            break;
-                        } else {
+        synchronized (Worker.q) {
+            synchronized (MUTEX) {
+                //#debug
+                L.i("Start join", "timeout=" + timeout + " " + this);
+                switch (status) {
+                    case PENDING:
+                        try {
                             //#debug
-                            L.i("Start join() wait", this.toString());
-                            final long t = System.currentTimeMillis();
-
-                            try {
-                                MUTEX.wait(timeout);
-                            } catch (InterruptedException e) {
-                                //#debug
-                                L.e("InterruptedException during join() wait", "Task will canel: " + this, e);
-                            }
-                            if (status == FINISHED) {
+                            L.i("Start join of EXEC_PENDING task", "timeout=" + timeout + " " + this.toString());
+                            if (Worker.tryUnfork(this)) {
+                                doExec = true;
                                 break;
-                            }
-                            if (System.currentTimeMillis() > t) {
-                                throw new TimeoutException("join(" + timeout + ") was to a Task which did not complete within the specified time: " + this);
-                            }
-                            throw new CancellationException("join() was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
-                        }
-                    } finally {
-                        //#debug
-                        L.i("End join() wait", this.toString());
-                    }
+                            } else {
+                                //#debug
+                                L.i("Start join() wait", this.toString());
+                                final long t = System.currentTimeMillis();
 
-                case CANCELED:
-                    throw new CancellationException("join() was to a Task which was canceled: " + this);
-                default:
-                    ;
+                                try {
+                                    MUTEX.wait(timeout);
+                                } catch (InterruptedException e) {
+                                    //#debug
+                                    L.e("InterruptedException during join() wait", "Task will canel: " + this, e);
+                                }
+                                if (status == FINISHED) {
+                                    break;
+                                }
+                                if (System.currentTimeMillis() > t) {
+                                    throw new TimeoutException("join(" + timeout + ") was to a Task which did not complete within the specified time: " + this);
+                                }
+                                throw new CancellationException("join() was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
+                            }
+                        } finally {
+                            //#debug
+                            L.i("End join() wait", this.toString());
+                        }
+
+                    case CANCELED:
+                        throw new CancellationException("join() was to a Task which was canceled: " + this);
+                    default:
+                        ;
+                }
+                out = value;
             }
-            out = value;
         }
         if (doExec) {
             //#debug
@@ -821,7 +824,7 @@ public abstract class Task implements Runnable {
      */
     final Object executeTask(final Object in) {
         Object out = null;
-        
+
         try {
             synchronized (MUTEX) {
                 if (status == Task.CANCELED) {

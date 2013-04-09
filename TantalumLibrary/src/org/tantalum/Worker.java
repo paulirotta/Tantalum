@@ -39,7 +39,7 @@ final class Worker extends Thread {
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
-    private static final Vector q = new Vector();
+    static final Vector q = new Vector();
     private static Worker[] workers;
     /*
      * Higher priority forkSerial of tasks to be done only by this thread, in the
@@ -364,6 +364,7 @@ final class Worker extends Thread {
                  * of race a condition.
                  */
                 try {
+                    final Task t;
                     Object in = null;
                     synchronized (q) {
                         try {
@@ -426,14 +427,13 @@ final class Worker extends Thread {
                                 } finally {
                                     --currentlyIdleCount;
                                 }
-                            } else {
-                                in = currentTask.getValue();
                             }
+                            t = currentTask;
                         }
                     }
 
-                    if (currentTask != null) {
-                        currentTask.executeTask(in);
+                    if (t != null) {
+                        t.executeTask(t.getValue());
                     }
                 } catch (InterruptedException e) {
                     //#mdebug
