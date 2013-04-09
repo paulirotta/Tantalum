@@ -497,7 +497,7 @@ public final class StaticWebCache extends StaticCache {
                 }
             } catch (Exception e) {
                 //#debug
-                L.e("Can not async StaticCache web get", in.toString(), e);
+                L.e("Can not async StaticCache web get", "" + in, e);
                 cancel(false, "Exception in StaticWebCache.GetWebTask - " + in + " : " + e);
             }
 

@@ -164,17 +164,15 @@ final class Worker extends Thread {
     static boolean tryUnfork(final Task task) {
         boolean success;
 
-        synchronized (q) {
-            success = q.removeElement(task);
-            if (!success) {
-                success = fastlaneQ.removeElement(task);
-            }
-            if (!success) {
-                success = backgroundQ.removeElement(task);
-            }
+        success = q.removeElement(task);
+        if (!success) {
+            success = fastlaneQ.removeElement(task);
+        }
+        if (!success) {
+            success = backgroundQ.removeElement(task);
         }
         //#debug
-        L.i("Unfork", task + " success=" + success);
+        L.i("tryUnfork success=" + success, task.toString());
 
         return success;
     }
