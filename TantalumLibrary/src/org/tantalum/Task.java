@@ -304,6 +304,7 @@ public abstract class Task implements Runnable {
      * @param priority
      */
     public Task(final int priority) {
+        this();
         setForkPriority(priority);
     }
 
@@ -316,7 +317,13 @@ public abstract class Task implements Runnable {
      * @param initialValue
      */
     public Task(final Object initialValue) {
+        this();
         set(initialValue);
+    }
+
+    public Task(final int priority, final Object initialValue) {
+        this(initialValue);
+        setForkPriority(priority);
     }
 
     /**
@@ -405,7 +412,7 @@ public abstract class Task implements Runnable {
      * @throws TimeoutException
      */
     public final Object get() throws CancellationException, TimeoutException {
-        return join(MAX_TIMEOUT);
+        return join();
     }
 
     /**
@@ -544,18 +551,16 @@ public abstract class Task implements Runnable {
         Object out = null;
 
         if (getStatus() == PENDING && Worker.tryUnfork(this)) {
-            //#debug
-            L.i("Successful unfork of start join of PENDING task", "out of order execution starting on this thread: " + this.toString());
-            return executeTask(out);
+            return executeOutOfOrderAfterSuccessfulUnfork();
         }
-        
+
         synchronized (MUTEX) {
             //#debug
             L.i("Start join", "timeout=" + timeout + " " + this);
             switch (status) {
                 case FINISHED:
                     return value;
-                    
+
                 case PENDING:
                     final long t = System.currentTimeMillis();
                     try {
@@ -584,6 +589,31 @@ public abstract class Task implements Runnable {
                 case CANCELED:
                     throw new CancellationException("join() was to a Task which was canceled: " + this);
             }
+        }
+    }
+
+    /**
+     * Run the application on the current thread. In almost all cases the task
+     * is still PENDING and will run, but there is a rare race condition whereby
+     * at this point the Task state may have changed, so check again.
+     *
+     * @return
+     * @throws CancellationException
+     */
+    private Object executeOutOfOrderAfterSuccessfulUnfork() throws CancellationException {
+        //#debug
+        L.i("Successful unfork of start join of PENDING task", "out of order execution starting on this thread: " + this.toString());
+
+        switch (getStatus()) {
+            case PENDING:
+                return executeTask(getValue());
+
+            case FINISHED:
+                return value;
+
+            default:
+            case CANCELED:
+                throw new CancellationException("join() was to a Task which was canceled: " + this);
         }
     }
 
