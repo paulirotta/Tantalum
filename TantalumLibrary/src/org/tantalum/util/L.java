@@ -42,10 +42,13 @@ public abstract class L {
      * @param tag name of the class logging this message
      * @param message message to i
      */
-    public static void i(final String tag, final String message) {
+    public static final void i(final String tag, final String message) {
 //#mdebug
         final StringBuffer sb = getMessage(tag, message);
-        PlatformUtils.getInstance().getLog().printMessage(sb, null);
+        
+        synchronized (L.class) {
+            PlatformUtils.getInstance().getLog().printMessage(sb, null);
+        }
 //#enddebug
     }
 
@@ -56,7 +59,7 @@ public abstract class L {
      * @param message explanation
      * @param t exception
      */
-    public static void e(final String tag, final String message, final Throwable t) {
+    public static final void e(final String tag, final String message, final Throwable t) {
 //#mdebug
         final StringBuffer sb = getMessage(tag, message);
         sb.append(", EXCEPTION: ");

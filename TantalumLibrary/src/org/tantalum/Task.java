@@ -304,6 +304,7 @@ public abstract class Task implements Runnable {
      * @param priority
      */
     public Task(final int priority) {
+        this();
         setForkPriority(priority);
     }
 
@@ -316,7 +317,13 @@ public abstract class Task implements Runnable {
      * @param initialValue
      */
     public Task(final Object initialValue) {
+        this();
         set(initialValue);
+    }
+
+    public Task(final int priority, final Object initialValue) {
+        this(initialValue);
+        setForkPriority(priority);
     }
 
     /**
@@ -405,7 +412,7 @@ public abstract class Task implements Runnable {
      * @throws TimeoutException
      */
     public final Object get() throws CancellationException, TimeoutException {
-        return join(MAX_TIMEOUT);
+        return join();
     }
 
     /**
@@ -532,7 +539,7 @@ public abstract class Task implements Runnable {
      * @throws TimeoutException - UITask failed to complete within timeout
      * milliseconds
      */
-    public final Object join(long timeout) throws CancellationException, TimeoutException {
+    public final Object join(final long timeout) throws CancellationException, TimeoutException {
         if (timeout < 0) {
             throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
         }
@@ -541,57 +548,73 @@ public abstract class Task implements Runnable {
             L.i("WARNING- slow Task.join() on UI Thread", "timeout=" + timeout + " " + this);
         }
         //#enddebug
-        boolean doExec = false;
-        Object out;
+        Object out = null;
+
+        if (getStatus() == PENDING && Worker.tryUnfork(this)) {
+            return executeOutOfOrderAfterSuccessfulUnfork();
+        }
 
         synchronized (MUTEX) {
             //#debug
             L.i("Start join", "timeout=" + timeout + " " + this);
             switch (status) {
+                case FINISHED:
+                    return value;
+
                 case PENDING:
+                    final long t = System.currentTimeMillis();
                     try {
                         //#debug
-                        L.i("Start join of EXEC_PENDING task", "timeout=" + timeout + " " + this.toString());
-                        if (Worker.tryUnfork(this)) {
-                            doExec = true;
-                            break;
-                        } else {
-                            //#debug
-                            L.i("Start join() wait", this.toString());
-                            final long t = System.currentTimeMillis();
+                        L.i("Can not unfork, must be an executing or chained task. Start join() wait", "timeout=" + timeout + " - " + this.toString());
 
-                            try {
-                                MUTEX.wait(timeout);
-                            } catch (InterruptedException e) {
-                                //#debug
-                                L.e("InterruptedException during join() wait", "Task will canel: " + this, e);
-                            }
-                            if (status == FINISHED) {
-                                break;
-                            }
-                            if (System.currentTimeMillis() > t) {
-                                throw new TimeoutException("join(" + timeout + ") was to a Task which did not complete within the specified time: " + this);
-                            }
-                            throw new CancellationException("join() was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
+                        try {
+                            MUTEX.wait(timeout);
+                        } catch (InterruptedException e) {
+                            //#debug
+                            L.e("InterruptedException during join() wait", "Task will canel: " + this, e);
                         }
+                        if (status == FINISHED) {
+                            return value;
+                        }
+                        if (System.currentTimeMillis() > t) {
+                            throw new TimeoutException("join(" + timeout + ") was to a Task which did not complete within the specified timeout: " + this);
+                        }
+                        throw new CancellationException("join(" + timeout + ") was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
                     } finally {
                         //#debug
-                        L.i("End join() wait", this.toString());
+                        L.i("End join(" + timeout + ") wait", "join wait time=" + (System.currentTimeMillis() - t) + " - " + this.toString());
                     }
 
+                default:
                 case CANCELED:
                     throw new CancellationException("join() was to a Task which was canceled: " + this);
-                default:
-                    ;
             }
-            out = value;
         }
-        if (doExec) {
-            //#debug
-            L.i("Start exec() out-of-sequence exec() after join() and successful unfork()", this.toString());
-            out = executeTask(out);
+    }
+
+    /**
+     * Run the application on the current thread. In almost all cases the task
+     * is still PENDING and will run, but there is a rare race condition whereby
+     * at this point the Task state may have changed, so check again.
+     *
+     * @return
+     * @throws CancellationException
+     */
+    private Object executeOutOfOrderAfterSuccessfulUnfork() throws CancellationException {
+        //#debug
+        L.i("Successful unfork of start join of PENDING task", "out of order execution starting on this thread: " + this.toString());
+
+        switch (getStatus()) {
+            case PENDING:
+                return executeTask(getValue());
+
+            case FINISHED:
+                return value;
+
+            default:
+            case CANCELED:
+                throw new CancellationException("join() was to a Task which was canceled: " + this);
         }
-        return out;
     }
 
     /**
@@ -824,7 +847,7 @@ public abstract class Task implements Runnable {
      */
     final Object executeTask(final Object in) {
         Object out = null;
-        
+
         try {
             synchronized (MUTEX) {
                 if (status == Task.CANCELED) {

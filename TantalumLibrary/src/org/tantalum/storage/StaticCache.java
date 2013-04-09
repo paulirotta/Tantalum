@@ -781,7 +781,7 @@ public class StaticCache {
             L.i("Async StaticCache get", (String) in);
             if (in == null || !(in instanceof String)) {
                 //#debug
-                L.i("ERROR", "StaticCache.GetLocalTask must receive a String url, but got " + (in == null ? "null" : in.toString()));
+                L.i("ERROR", "StaticCache.GetLocalTask must receive a String url, but got " + in);
                 cancel(false, "StaticCache.GetLocalTask got bad input to exec(): " + in);
 
                 return in;

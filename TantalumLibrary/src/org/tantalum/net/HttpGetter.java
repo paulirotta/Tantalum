@@ -52,6 +52,7 @@ public class HttpGetter extends Task {
     /*
      * HTTP Method constants
      */
+
     /**
      * HTTP GET is the default operation
      */
@@ -61,7 +62,8 @@ public class HttpGetter extends Task {
      */
     public static final String HTTP_HEAD = "HEAD";
     /**
-     * HTTP POST is used if a byte[] to send is provided by the <code>HttpPoster</code>
+     * HTTP POST is used if a byte[] to send is provided by the
+     * <code>HttpPoster</code>
      */
     public static final String HTTP_POST = "POST";
     /**
@@ -446,7 +448,6 @@ public class HttpGetter extends Task {
      * HTTP response code value
      */
     public static final int HTTP_599_NETWORK_CONNECT_TIMEOUT_ERROR = 599;
-
     /**
      * Prevent context switching to another HttpGetter during TCP buffer read
      *
@@ -710,61 +711,17 @@ public class HttpGetter extends Task {
                 //#debug
                 L.i(this.getClass().getName() + " exec", "No response. Stream is null, or length is 0");
             } else if (length > 0 && length < 1000000) {
-                //#debug
-                L.i(this.getClass().getName() + " start fixed_length read", url + " content_length=" + length);
-                int bytesRead = 0;
                 final byte[] bytes = new byte[(int) length];
-                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
-                if (b >= 0) {
-                    bytesRead += 1;
-                    bytes[0] = (byte) b;
-                    while (bytesRead < bytes.length) {
-                        synchronized (NET_MUTEX) {
-                            final int br = inputStream.read(bytes, bytesRead, bytes.length - bytesRead);
-                            if (br >= 0) {
-                                bytesRead += br;
-                            } else {
-                                //#debug
-                                L.i(this.getClass().getName() + " recieved EOF before content_length exceeded", url + ", content_length=" + length + " bytes_read=" + bytesRead);
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    //#debug
-                    L.i(this.getClass().getName() + " recieved EOF on first byte", url + ", content_length=" + length + " bytes_read=" + bytesRead);
-                }
+                readBytesFixedLength(url, inputStream, bytes);
                 out = bytes;
-                //#debug
-                L.i(this.getClass().getName() + " end fixed_length read", url + " content_length=" + length);
             } else {
-                //#debug
-                L.i(this.getClass().getName() + " start variable length read", url);
-                bos = new ByteArrayOutputStream();
-                final byte[] readBuffer = new byte[16384];
-                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
-                if (b >= 0) {
-                    bos.write(b);
-                    while (true) {
-                        synchronized (NET_MUTEX) {
-                            final int bytesRead = inputStream.read(readBuffer);
-                            if (bytesRead >= 0) {
-                                bos.write(readBuffer, 0, bytesRead);
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    //#debug
-                    L.i(this.getClass().getName() + " recieved EOF on first byte", url + ", unknown content_length");
-                }
+                bos = new ByteArrayOutputStream(16384);
+                readBytesVariableLength(inputStream, bos);
                 out = bos.toByteArray();
-                //#debug
-                L.i(this.getClass().getName() + " end variable length read (" + ((byte[]) out).length + " bytes)", url);
             }
 
-            addDownstreamDataCount(((byte[]) out).length);
+            addDownstreamDataCount(
+                    ((byte[]) out).length);
 
             success = checkResponseCode(responseCode, responseHeaders);
         } catch (IllegalArgumentException e) {
@@ -816,6 +773,69 @@ public class HttpGetter extends Task {
             L.i("End " + this.getClass().getName(), url + " status=" + getStatus());
 
             return out;
+        }
+    }
+
+    private void readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
+        int totalBytesRead = 0;
+
+        //#debug
+        L.i(this.getClass().getName() + " start Content-Length=" + bytes.length + " read", "" + this);
+        try {
+            while (totalBytesRead < bytes.length) {
+                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
+                if (b >= 0) {
+                    bytes[totalBytesRead++] = (byte) b;
+                    synchronized (NET_MUTEX) {
+                        final int br = inputStream.read(bytes, totalBytesRead, bytes.length - totalBytesRead);
+                        if (br >= 0) {
+                            totalBytesRead += br;
+                        } else {
+                            prematureEOF(url, totalBytesRead, bytes.length);
+                        }
+                    }
+                } else {
+                    prematureEOF(url, totalBytesRead, bytes.length);
+                }
+            }
+        } finally {
+            //#debug
+            L.i(this.getClass().getName() + " end Content-Length=" + bytes.length + " read", "" + this);
+        }
+    }
+
+    private void prematureEOF(final String url, final int bytesRead, final int length) throws IOException {
+        final String s = this.getClass().getName() + " recieved EOF before content_length exceeded";
+        //#debug
+        L.i(s, url + ", content_length=" + length + " bytes_read=" + bytesRead);
+        throw new IOException(s);
+    }
+    
+    private void readBytesVariableLength(final InputStream inputStream, final OutputStream bos) throws IOException {
+        //#debug
+        L.i(this.getClass().getName() + " start variable length read", "" + this);
+        try {
+            final byte[] readBuffer = new byte[16384];
+            while (true) {
+                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
+                if (b >= 0) {
+                    bos.write(b);
+                    synchronized (NET_MUTEX) {
+                        final int bytesRead = inputStream.read(readBuffer);
+                        if (bytesRead >= 0) {
+                            bos.write(readBuffer, 0, bytesRead);
+                        } else {
+                            break;
+                        }
+                    }
+                } else {
+                    //#debug
+                    L.i("Suspicious zero length result from a web service that does not set the Content-Length header: " + this.getClass().getName(), "" + this);
+                }
+            }
+        } finally {
+            //#debug
+            L.i(this.getClass().getName() + " end variable length read", "" + this);
         }
     }
 

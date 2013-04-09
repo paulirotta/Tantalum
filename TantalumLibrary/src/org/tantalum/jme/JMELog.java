@@ -132,8 +132,7 @@ public class JMELog extends L {
         if (os != null) {
             byteArrayQueue.addElement(sb.toString().getBytes());
             synchronized (L.class) {
-                L.class
-                        .notifyAll();
+                L.class.notifyAll();
             }
         } else {
             synchronized (L.class) {
@@ -156,8 +155,7 @@ public class JMELog extends L {
         if (writer != null) {
             synchronized (L.class) {
                 writer.shutdownStarted = true;
-                L.class
-                        .notifyAll();
+                L.class.notifyAll();
             }
 
             // Give the queue time to flush final messages
