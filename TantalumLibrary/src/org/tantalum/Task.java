@@ -764,9 +764,9 @@ public abstract class Task implements Runnable {
      * Each
      * <code>Task</code> in a chain will run at the same priority as the
      * previous
-     * <code>Task</code> unless you explicitly set a different
-     * priority for it. Best practice is for you to explicitly set the priority
-     * for each <code>Task</code> in a chain for code clarity.
+     * <code>Task</code> unless you explicitly set a different priority for it.
+     * Best practice is for you to explicitly set the priority for each
+     * <code>Task</code> in a chain for code clarity.
      *
      * If the
      * <code>Task</code> is already chained, this new
@@ -1017,7 +1017,19 @@ public abstract class Task implements Runnable {
      */
     public String toString() {
         synchronized (MUTEX) {
-            return "{TASK: status=" + getStatusString() + " result=" + value + "\nCHAINED TASK: " + chainedTask + "}";
+            StringBuffer sb = new StringBuffer(300);
+
+            sb.append("{TASK: status=");
+            sb.append(getStatusString());
+            sb.append(" value=");
+            sb.append(value);
+            if (chainedTask != null) {
+                sb.append("\nCHAINED TASK: ");
+                sb.append(chainedTask.toString());
+            }
+            sb.append("}");
+            
+            return sb.toString();
         }
     }
     //#enddebug

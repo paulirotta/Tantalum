@@ -899,9 +899,10 @@ public class HttpGetter extends Task {
     public String toString() {
         final StringBuffer sb = new StringBuffer();
 
-        sb.append("HttpGetter: retriesRemaining=");
+        sb.append("HttpGetter: url=");
+        sb.append(super.toString());
+        sb.append(" retriesRemaining=");
         sb.append(retriesRemaining);
-
         sb.append(" postMessageLength=");
         if (postMessage == null) {
             sb.append("<null>");
@@ -938,7 +939,6 @@ public class HttpGetter extends Task {
         }
 
         sb.append('\n');
-        sb.append(super.toString());
 
         return sb.toString();
     }
