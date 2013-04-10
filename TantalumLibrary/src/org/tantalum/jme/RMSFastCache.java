@@ -333,7 +333,7 @@ public class RMSFastCache extends FlashCache {
      * @return the keyRMS name based on the cache priority
      */
     private String getKeyRSName() {
-        return RECORD_HASH_PREFIX + priority + "key";
+        return "" + RECORD_HASH_PREFIX + priority + "key";
     }
 
     /**
@@ -342,7 +342,7 @@ public class RMSFastCache extends FlashCache {
      * @return the valueRMS name based on the cache priority
      */
     private String getValueRSName() {
-        return RECORD_HASH_PREFIX + priority + "val";
+        return "" + RECORD_HASH_PREFIX + priority + "val";
     }
 
     /**

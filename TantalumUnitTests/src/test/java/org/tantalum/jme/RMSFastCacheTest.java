@@ -8,6 +8,9 @@ package org.tantalum.jme;
 
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
+import javax.microedition.rms.RecordComparator;
+import javax.microedition.rms.RecordEnumeration;
+import javax.microedition.rms.RecordFilter;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreNotOpenException;
@@ -27,13 +30,13 @@ import org.tantalum.storage.FlashDatabaseException;
 @PrepareForTest({RMSUtils.class, RMSFastCache.class, FlashCache.class})
 public class RMSFastCacheTest extends MockedStaticInitializers {
     // Mock objects
+
     RMSUtils mockedRmsUtils;
     RecordStore mockedKeyRS;
     RecordStore mockedValueRS;
-    
     // To test
-    RMSFastCache rmsFastCache;
-    
+    static RMSFastCache rmsFastCache;
+
     @Before
     public final void httpGetterTestFixture() throws Exception {
         createMocks();
@@ -43,15 +46,19 @@ public class RMSFastCacheTest extends MockedStaticInitializers {
     }
 
     private void createMocks() throws FlashDatabaseException, FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException {
-        mockedRmsUtils = PowerMockito.mock(RMSUtils.class);
         PowerMockito.mockStatic(RMSUtils.class);
-        when(RMSUtils.getInstance()).thenReturn(mockedRmsUtils);
-        
+        mockedRmsUtils = PowerMockito.mock(RMSUtils.class);
+
+        Mockito.when(RMSUtils.getInstance()).thenReturn(mockedRmsUtils);
+
         mockedKeyRS = Mockito.mock(RecordStore.class);
         mockedValueRS = Mockito.mock(RecordStore.class);
-        
-        when(mockedRmsUtils.getRecordStore("_0key", true)).thenReturn(mockedKeyRS);
-        when(mockedRmsUtils.getRecordStore("_0value", true)).thenReturn(mockedValueRS);
+
+        Mockito.when(mockedRmsUtils.getRecordStore("_0key", true)).thenReturn(mockedKeyRS);
+        Mockito.when(mockedRmsUtils.getRecordStore("_0val", true)).thenReturn(mockedValueRS);
+
+        when(mockedKeyRS.enumerateRecords(any(RecordFilter.class), any(RecordComparator.class), anyBoolean())).thenReturn(mock(RecordEnumeration.class));
+        when(mockedValueRS.enumerateRecords(any(RecordFilter.class), any(RecordComparator.class), anyBoolean())).thenReturn(mock(RecordEnumeration.class));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -88,6 +95,7 @@ public class RMSFastCacheTest extends MockedStaticInitializers {
     public void illegalArgumentExceptionThrownWhenGetNullDigest() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
         rmsFastCache.get((byte[]) null);
     }
+
     @Test(expected = IllegalArgumentException.class)
     public void illegalArgumentExceptionThrownWhenGetNullString() throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
         rmsFastCache.get((String) null);
