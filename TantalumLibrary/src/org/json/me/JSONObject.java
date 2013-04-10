@@ -102,7 +102,7 @@ public class JSONObject {
          * so the clone method returns itself.
          * @return     NULL.
          */
-        protected final Object clone() {
+        protected Object clone() {
             return this;
         }
 
@@ -1009,7 +1009,9 @@ public class JSONObject {
             default:
                 if (c < ' ') {
                     t = "000" + Integer.toHexString(c);
-                    sb.append("\\u" + t.substring(t.length() - 4));
+                    sb.append("\\u");
+                    
+                sb.append(t.substring(t.length() - 4));
                 } else {
                     sb.append(c);
                 }
@@ -1042,11 +1044,9 @@ public class JSONObject {
                     throw new JSONException(
                         "JSON does not allow non-finite numbers");
                 }
-            } else if (o instanceof Float) {
-                if (((Float)o).isInfinite() || ((Float)o).isNaN()) {
+            } else if (o instanceof Float && ((Float)o).isInfinite() || ((Float)o).isNaN()) {
                     throw new JSONException(
                         "JSON does not allow non-finite numbers.");
-                }
             }
 //#endif
         }
@@ -1196,7 +1196,7 @@ public class JSONObject {
      * @throws JSONException If the value is or contains an invalid number.
      */
     static String valueToString(Object value) throws JSONException {
-        if (value == null || value.equals(null)) {
+        if (value == null) {
             return "null";
         }
         if (value instanceof JSONString) {
@@ -1244,19 +1244,19 @@ public class JSONObject {
      */
      static String valueToString(Object value, int indentFactor, int indent)
             throws JSONException {
-        if (value == null || value.equals(null)) {
+        if (value == null) {
             return "null";
         }
-        try {
+//        try {
 	        if (value instanceof JSONString) {
 		        Object o = ((JSONString)value).toJSONString();
 		        if (o instanceof String) {
 		        	return (String)o;
 		        }
 	        }
-        } catch (Exception e) {
-        	/* forget about it */
-        }
+//        } catch (Exception e) {
+//        	/* forget about it */
+//        }
 //#if CLDC!="1.0"
         if (value instanceof Float || value instanceof Double ||
 //#else

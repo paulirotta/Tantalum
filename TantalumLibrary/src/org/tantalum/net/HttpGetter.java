@@ -747,9 +747,12 @@ public class HttpGetter extends Task {
             try {
                 if (bos != null) {
                     bos.close();
-                    bos = null;
                 }
             } catch (Exception e) {
+                //#debug
+                L.e("HttpGetter byteArrayOutputStream close error", url, e);
+            } finally {
+                bos = null;
             }
 
             if (tryAgain) {

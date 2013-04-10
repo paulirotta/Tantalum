@@ -250,7 +250,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
                 }
                 final String value = httpConnection.getHeaderField(i);
                 headers.put(key, value);
-            };
+            }
         }
 
         /**
@@ -283,7 +283,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          *
          * @throws IOException
          */
-        public final void close() throws IOException {
+        public void close() throws IOException {
             if (is != null) {
                 is.close();
             }

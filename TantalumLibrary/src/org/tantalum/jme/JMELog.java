@@ -219,14 +219,17 @@ public class JMELog extends L {
                     os.flush();
                 }
             } catch (Exception e) {
+                e.printStackTrace();
             } finally {
                 try {
                     os.close();
                 } catch (IOException ex) {
+                    ex.printStackTrace();
                 }
                 try {
                     conn.close();
                 } catch (IOException ex) {
+                    ex.printStackTrace();
                 }
                 synchronized (this) {
                     shutdownComplete = true;
