@@ -46,7 +46,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
     * least-recently-used local data. If that data is requested again, it will
     * be requested from the web server.
     */
-    private final StaticWebCache locationsCache = StaticWebCache.getWebCache('0', new DataTypeHandler() {
+    private final StaticWebCache locationsCache = StaticWebCache.getWebCache('0', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
         /**
          * This method converts the JSON byte[] received from the web service,
          * or stored in local flash memory, into an object we can use in the
@@ -71,7 +71,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
             return out;
         }
     });
-    //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
+//<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
     private Command exitCommand;
     private Command okCommand;
     private Form form;
@@ -82,7 +82,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
 //</editor-fold>//GEN-END:|methods|0|
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: initialize ">//GEN-BEGIN:|0-initialize|0|0-preInitialize
-
     /**
      * Initializes the application. It is called only once when the MIDlet is
      * started. The method is called before the
@@ -97,7 +96,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|0-initialize|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: startMIDlet ">//GEN-BEGIN:|3-startMIDlet|0|3-preAction
-
     /**
      * Performs an action assigned to the Mobile Device - MIDlet Started point.
      */
@@ -109,7 +107,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|3-startMIDlet|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: resumeMIDlet ">//GEN-BEGIN:|4-resumeMIDlet|0|4-preAction
-
     /**
      * Performs an action assigned to the Mobile Device - MIDlet Resumed point.
      */
@@ -121,16 +118,15 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|4-resumeMIDlet|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: switchDisplayable ">//GEN-BEGIN:|5-switchDisplayable|0|5-preSwitch
-
     /**
      * Switches a current displayable in a display. The
      * <code>display</code> instance is taken from
      * <code>getDisplay</code> method. This method is used by all actions in the
      * design for switching displayable.
      *
-     * @param alert           the Alert which is temporarily set to the display;
-     *                        if <code>null</code>, then <code>nextDisplayable</code> is set
-     *                        immediately
+     * @param alert the Alert which is temporarily set to the display;
+     * if <code>null</code>, then <code>nextDisplayable</code> is set
+     * immediately
      * @param nextDisplayable the Displayable to be set
      */
     public void switchDisplayable(Alert alert, Displayable nextDisplayable) {//GEN-END:|5-switchDisplayable|0|5-preSwitch
@@ -146,12 +142,11 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|5-switchDisplayable|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: commandAction for Displayables ">//GEN-BEGIN:|7-commandAction|0|7-preCommandAction
-
     /**
      * Called by a system to indicated that a command has been invoked on a
      * particular displayable.
      *
-     * @param command     the Command that was invoked
+     * @param command the Command that was invoked
      * @param displayable the Displayable where the command was invoked
      */
     public void commandAction(Command command, Displayable displayable) {//GEN-END:|7-commandAction|0|7-preCommandAction
@@ -195,7 +190,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|7-commandAction|6|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: exitCommand ">//GEN-BEGIN:|18-getter|0|18-preInit
-
     /**
      * Returns an initialized instance of exitCommand component.
      *
@@ -212,7 +206,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|18-getter|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: form ">//GEN-BEGIN:|14-getter|0|14-preInit
-
     /**
      * Returns an initialized instance of form component.
      *
@@ -232,7 +225,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|14-getter|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: locationStringItem ">//GEN-BEGIN:|16-getter|0|16-preInit
-
     /**
      * Returns an initialized instance of locationStringItem component.
      *
@@ -249,7 +241,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|16-getter|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: okCommand ">//GEN-BEGIN:|22-getter|0|22-preInit
-
     /**
      * Returns an initialized instance of okCommand component.
      *
@@ -266,7 +257,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|22-getter|2|
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Getter: addressTextField ">//GEN-BEGIN:|24-getter|0|24-preInit
-
     /**
      * Returns an initialized instance of addressTextField component.
      *
