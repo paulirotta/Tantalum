@@ -1,5 +1,7 @@
 package org.json.me;
 
+import org.tantalum.util.L;
+
 /*
 Copyright (c) 2002 JSON.org
 
@@ -381,13 +383,13 @@ public class JSONTokener {
                         return new Integer(Integer.parseInt(s.substring(2),
                             16));
                     } catch (Exception e) {
-                        /* Ignore the error */
+                        e.printStackTrace();
                     }
                 } else {
                     try {
                         return new Integer(Integer.parseInt(s, 8));
                     } catch (Exception e) {
-                        /* Ignore the error */
+                        e.printStackTrace();
                     }
                 }
             }
