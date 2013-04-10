@@ -63,9 +63,10 @@ public class HttpGetterTest extends MockedStaticInitializers {
      * already before casting a random object to String, or converting it using
      * toString()
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void illegalArgumentExceptionThrownWhenNonStringKey() {
         getter.exec(new Object());
+        assertTrue("Getter was not correctly cancelled for non-String url", cancelCalled);
     }
 
     @Test
@@ -89,7 +90,7 @@ public class HttpGetterTest extends MockedStaticInitializers {
          * Assert
          */
         verify(httpConn).close();
-        assertEquals(url, returnValue);
+        assertEquals("Return null when get is unsuccessful", null, returnValue);
         assertEquals(HttpGetter.HTTP_401_UNAUTHORIZED, getter.getResponseCode());
         assertTrue("Task was not correctly cancelled after error", cancelCalled);
     }

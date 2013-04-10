@@ -115,6 +115,7 @@ final class Worker extends Thread {
         if (task.getStatus() != Task.PENDING) {
             throw new IllegalStateException("Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time: " + task);
         }
+        
         synchronized (q) {
             switch (priority) {
                 case Task.FASTLANE_PRIORITY:
@@ -180,7 +181,7 @@ final class Worker extends Thread {
     }
 
     /**
-     * Stop the specified task if it is currently running
+     * Stop the specified task if it is currently running on any Worker
      *
      * @param task
      * @return
@@ -189,6 +190,7 @@ final class Worker extends Thread {
         if (task == null) {
             throw new IllegalArgumentException("interruptTask(null) not allowed");
         }
+        
         synchronized (q) {
             final Thread currentThread = Thread.currentThread();
 

@@ -53,12 +53,12 @@ public final class VerticalListView extends RSSListView {
     public VerticalListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        try {
-            updateCommand = (Command) Class.forName("org.tantalum.s40rssreader.UpdateIconCommand").newInstance();        
-        } catch (Throwable t) {
-            //#debug
-            L.e("IconCommand not supported", "Update", t);
-        }
+//        try {
+//            updateCommand = (Command) Class.forName("org.tantalum.s40rssreader.UpdateIconCommand").newInstance();        
+//        } catch (Throwable t) {
+//            //#debug
+//            L.e("IconCommand not supported", "Update", t);
+//        }
     }
 
     public Command[] getCommands() {

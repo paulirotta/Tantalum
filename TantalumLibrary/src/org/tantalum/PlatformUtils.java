@@ -453,6 +453,16 @@ public final class PlatformUtils {
          * @return
          */
         public long getLength();
+        
+        /**
+         * If the routine will read the entire HTTP contents into memory in one
+         * operation, what is the maximum Content-Length header we should accept
+         * before automatically canceling the operation to prevent a likely
+         * OutOfMemoryError
+         * 
+         * @return 
+         */
+        public long getMaxLengthSupportedAsBlockOperation();
 
         /**
          * Close the network connection. The underlying platform HTTP

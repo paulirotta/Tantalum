@@ -8,27 +8,23 @@ package org.tantalum.jme;
 
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
-import java.security.NoSuchAlgorithmException;
-import javax.microedition.lcdui.Font;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.*;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.tantalum.MockedStaticInitializers;
-import org.tantalum.PlatformUtils;
+import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
-import org.tantalum.util.L;
 
 /**
  * @author phou
  */
-@PrepareForTest({RMSUtils.class})
+@PrepareForTest({RMSUtils.class, RMSFastCache.class, FlashCache.class})
 public class RMSFastCacheTest extends MockedStaticInitializers {
     // Mock objects
     RMSUtils mockedRmsUtils;

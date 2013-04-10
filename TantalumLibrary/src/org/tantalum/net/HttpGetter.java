@@ -43,8 +43,20 @@ import org.tantalum.util.StringUtils;
 /**
  * GET something from a URL on the Worker thread
  *
- * Implement Runnable if you want to automatically update the UI on the EDT
- * after the GET completes
+ * This Task will, when fork()ed, get the byte[] from a specified web service
+ * URL.
+ *
+ * Be default, the client will automatically retry 3 times if the web service
+ * does not respond on the first attempt (happens frequently with the mobile
+ * web...). You can disable this by calling setRetriesRemaining(0).
+ *
+ * The input "key" is a url with optional additional lines of text which are
+ * ignored from the URL but may be useful for distinguishing multiple HTTP
+ * operations to the same URL (HttpPoster). You can optionally attach additional
+ * information to the key after \n (newline) to create a unique hashcode for
+ * cache management purposes. This is sometimes needed for example with HTTP
+ * POST where the url does not alone indicate a unique cachable entity- the post
+ * parameters do.
  *
  * @author pahought
  */
@@ -552,36 +564,16 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Create a Task which which will, when fork()ed, get the byte[] from a
-     * specified web service URL.
-     *
-     * Be default, the client will automatically retry 3 times if the web
-     * service does not respond on the first attempt (happens frequently with
-     * the mobile web...). You can disable this by calling
-     * setRetriesRemaining(0).
-     *
-     * The "key" is a url. You can optionally attach additional information to
-     * the key after \n (newline) to create a unique hashcode for cache
-     * management purposes. This is sometimes needed for example with HTTP POST
-     * where the url does not alone indicate a unique cachable entity- the post
-     * parameters do.
+     * Create a Task for the specified URL.
      *
      * @param key
      */
     public HttpGetter(final String key) {
         super(key);
-    }
 
-    /**
-     * HTTP POST the associated message
-     *
-     * @param key
-     * @param postMessage
-     */
-    protected HttpGetter(final String key, final byte[] postMessage) {
-        this(key);
-
-        this.postMessage = postMessage;
+        if (key == null) {
+            throw new IllegalArgumentException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
+        }
     }
 
     /**
@@ -646,16 +638,18 @@ public class HttpGetter extends Task {
      *
      * @return - a JSONModel of the data provided by the HTTP server
      */
-    public Object exec(final Object in) {
-        if (in == null) {
-            throw new IllegalArgumentException("HTTP operation was passed a null URL. Check calling method or previous chained task.");
-        }
+    public Object exec(Object in) {
         Object out = null;
-        final String url = keyIncludingPostDataHashtoUrl((String) in);
 
-        if (!(url instanceof String) || ((String) url).indexOf(':') <= 0) {
-            throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
+        if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
+            final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
+            //#debug
+            L.e("HttpGetter with non-String input", s, new IllegalArgumentException());
+            cancel(false, s);
+            return out;
         }
+
+        final String url = keyIncludingPostDataHashtoUrl((String) in);
 
         //#debug
         L.i(this.getClass().getName() + " start", url);
@@ -680,18 +674,16 @@ public class HttpGetter extends Task {
                 if (writer != null) {
                     writer.writeReady(outputStream);
                     success = true;
-                    out = null;
                 }
                 addUpstreamDataCount(postMessage.length);
             } else {
                 httpConn = PlatformUtils.getInstance().getHttpGetConn(url, requestPropertyKeys, requestPropertyValues);
-                inputStream = httpConn.getInputStream();
-                final StreamReader reader = streamReader;
-                if (reader != null) {
-                    reader.readReady(inputStream);
-                    success = true;
-                    out = null;
-                }
+            }
+            inputStream = httpConn.getInputStream();
+            final StreamReader reader = streamReader;
+            if (reader != null) {
+                reader.readReady(inputStream);
+                success = true;
             }
 
             // Estimate data length of the sent headers
@@ -707,10 +699,12 @@ public class HttpGetter extends Task {
             // Response headers length estimation
             addDownstreamDataCount(responseHeaders.toString().length());
 
-            if (length == 0 || inputStream == null) {
+            if (length == 0) {
                 //#debug
                 L.i(this.getClass().getName() + " exec", "No response. Stream is null, or length is 0");
-            } else if (length > 0 && length < 1000000) {
+            } else if (length > httpConn.getMaxLengthSupportedAsBlockOperation()) {
+                cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
+            } else if (length > 0) {
                 final byte[] bytes = new byte[(int) length];
                 readBytesFixedLength(url, inputStream, bytes);
                 out = bytes;
@@ -720,8 +714,9 @@ public class HttpGetter extends Task {
                 out = bos.toByteArray();
             }
 
-            addDownstreamDataCount(
-                    ((byte[]) out).length);
+            if (out != null) {
+                addDownstreamDataCount(((byte[]) out).length);
+            }
 
             success = checkResponseCode(responseCode, responseHeaders);
         } catch (IllegalArgumentException e) {
@@ -771,9 +766,9 @@ public class HttpGetter extends Task {
             }
             //#debug
             L.i("End " + this.getClass().getName(), url + " status=" + getStatus());
-
-            return out;
         }
+
+        return out;
     }
 
     private void readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
@@ -810,7 +805,7 @@ public class HttpGetter extends Task {
         L.i(s, url + ", content_length=" + length + " bytes_read=" + bytesRead);
         throw new IOException(s);
     }
-    
+
     private void readBytesVariableLength(final InputStream inputStream, final OutputStream bos) throws IOException {
         //#debug
         L.i(this.getClass().getName() + " start variable length read", "" + this);
@@ -884,14 +879,14 @@ public class HttpGetter extends Task {
 
         return key.substring(0, i);
     }
-    
+
     protected String urlToKeyIncludingPostDataHash(final String url) throws DigestException, UnsupportedEncodingException {
         if (this.postMessage == null) {
             throw new IllegalStateException("Attempt to get post-style crypto digest, but postData==null");
         }
         final byte[] digest = CryptoUtils.getInstance().toDigest(this.postMessage);
         final String digestAsHex = StringUtils.toHex(digest);
-        
+
         return url + '\n' + digestAsHex;
     }
 

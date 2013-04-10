@@ -66,6 +66,10 @@ public class WeakHashCache {
      * been garbage collected by the virtual machine.
      */
     public Object get(final Object key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Attempt to get(null) from WeakHashCache");
+        }
+        
         Object o = null;
         final WeakReference reference = (WeakReference) hash.get(key);
 

@@ -61,12 +61,12 @@ public final class IconListView extends RSSListView {
     public IconListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        try {
-            updateCommand = (Command) Class.forName("org.tantalum.canvasrssreader.UpdateIconCommand").newInstance();
-            iconSupport = true;
-        } catch (Throwable t) {
-            L.e("IconCommand not supported", "Update", t);
-        }
+//        try {
+//            updateCommand = (Command) Class.forName("org.tantalum.canvasrssreader.UpdateIconCommand").newInstance();
+//            iconSupport = true;
+//        } catch (Throwable t) {
+//            L.e("IconCommand not supported", "Update", t);
+//        }
     }
 
     public Command[] getCommands() {
@@ -100,17 +100,17 @@ public final class IconListView extends RSSListView {
             numberOfColumns = canvas.isPortrait() ? 3 : 4;
             modelCopy = rssModel.copy(modelCopy);
             if (modelCopy.length == 0) {
-                if (iconSupport && !animationRunning) {
-                    ((UpdateIconCommand) updateCommand).startAnimation();
-                }
+//                if (iconSupport && !animationRunning) {
+//                    ((UpdateIconCommand) updateCommand).startAnimation();
+//                }
                 g.setColor(RSSReader.COLOR_BACKGROUND);
                 g.fillRect(0, 0, width, height);
                 g.setColor(RSSReader.COLOR_FOREGROUND);
                 g.drawString("Loading...", canvas.getWidth() >> 1, canvas.getHeight() >> 1, Graphics.BASELINE | Graphics.HCENTER);
                 return;
-            } else if (iconSupport) {
-                ((UpdateIconCommand) updateCommand).stopAnimation();
-                animationRunning = false;
+//            } else if (iconSupport) {
+//                ((UpdateIconCommand) updateCommand).stopAnimation();
+//                animationRunning = false;
             }
 
             final int totalHeight = modelCopy.length * ROW_HEIGHT / numberOfColumns;

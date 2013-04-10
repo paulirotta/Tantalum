@@ -465,21 +465,20 @@ public final class StaticWebCache extends StaticCache {
          * then that will trigger the StaticWebCache async get Task and any
          * chained operations to cancel.
          *
-         * @param key
+         * @param url
          * @param postMessage
          * @return
          */
-        public HttpGetter getHttpTask(final String key, final byte[] postMessage) {
-            if (key == null) {
+        public HttpGetter getHttpTask(final String url, final byte[] postMessage) {
+            if (url == null) {
                 throw new IllegalArgumentException("HttpTaskFactory was asked to make an HttpGetter for a null url");
             }
             if (postMessage == null) {
                 //#debug
-                L.i("StaticWebCache.HttpTaskFactory is generating a new HttpGetter", key);
-                return new HttpGetter(key);
+                L.i("StaticWebCache.HttpTaskFactory is generating a new HttpGetter", url);
+                return new HttpGetter(url);
             } else {
-                final HttpPoster poster = new HttpPoster(key);
-                poster.setPostData(postMessage);
+                final HttpPoster poster = new HttpPoster(url, postMessage);
 
                 return poster;
             }

@@ -292,5 +292,14 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
             }
             httpConnection.disconnect();
         }
+
+        /**
+         * 10MB or you should do a streaming operation instead
+         * 
+         * @return 
+         */
+        public long getMaxLengthSupportedAsBlockOperation() {
+            return 10000000;
+        }
     }
 }

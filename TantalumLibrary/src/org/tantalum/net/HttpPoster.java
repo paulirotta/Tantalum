@@ -30,35 +30,41 @@ package org.tantalum.net;
  * @author phou
  */
 public class HttpPoster extends HttpGetter {
+    private String url;
+    private volatile boolean isChainInputPostData = false;
 
     /**
      * HTTP POST a message to a given URL
      *
-     * Make sure you call setPostData(byte[]) to specify what you want to POST or
-     * you will get an IllegalArgumentException
+     * Make sure you call setPostData(byte[]) to specify what you want to POST
+     * or you will get an IllegalArgumentException
      *
-     * @param key - The url we will HTTP POST to, plus optional lines of text to
+     * @param url - The url we will HTTP POST to, plus optional lines of text to
      * create a unique hashcode for caching this value locally.
      */
-    public HttpPoster(final String key) {
-        super(key);
+    public HttpPoster(final String url) {
+        super(url);
+        
+        this.url = url;
     }
 
     /**
      * Create an HTTP POST operation
-     * 
+     *
      * @param url
-     * @param message 
+     * @param postData
      */
-    public HttpPoster(final String url, final byte[] message) {
-        super(url, message);
+    public HttpPoster(final String url, final byte[] postData) {
+        this(url);
+
+        setPostData(postData);
     }
 
     /**
      * Set the message to be HTTP POSTed to the server
-     * 
+     *
      * @param postData
-     * @return 
+     * @return
      */
     public HttpPoster setPostData(final byte[] postData) {
         if (postData == null) {
@@ -68,5 +74,32 @@ public class HttpPoster extends HttpGetter {
         System.arraycopy(postData, 0, this.postMessage, 0, postData.length);
 
         return this;
+    }
+
+    /**
+     * The default when an HttpPoster is not the first Task in a chain is for
+     * the previous Task output to be passed as the URL, not post data, to this
+     * task.
+     *
+     * You can override this to have the previous Task in the chain set the post
+     * data instead of the URL. The previous Task should then output a byte[]
+     *
+     * @param isPostData
+     * @return
+     */
+    public HttpPoster setChainInputIsPostData(final boolean isPostData) {
+        this.isChainInputPostData = isPostData;
+
+        return this;
+    }
+
+    public Object exec(final Object in) {
+        if (isChainInputPostData) {
+            setPostData((byte[]) in);
+            
+            return super.exec(url);
+        } else {
+            return super.exec(in);
+        }
     }
 }

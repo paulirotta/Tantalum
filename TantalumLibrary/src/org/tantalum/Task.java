@@ -548,7 +548,6 @@ public abstract class Task implements Runnable {
             L.i("WARNING- slow Task.join() on UI Thread", "timeout=" + timeout + " " + this);
         }
         //#enddebug
-        Object out = null;
 
         if (getStatus() == PENDING && Worker.tryUnfork(this)) {
             return executeOutOfOrderAfterSuccessfulUnfork();
@@ -777,6 +776,10 @@ public abstract class Task implements Runnable {
      * @return nextTask
      */
     public final Task chain(final Task nextTask) {
+        if (nextTask == this) {
+            throw new IllegalArgumentException("Can not chain a task to itself");
+        }
+        
         if (nextTask != null) {
             final Task previouslyChainedTask;
             synchronized (MUTEX) {
@@ -917,7 +920,7 @@ public abstract class Task implements Runnable {
      */
     public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
         synchronized (MUTEX) {
-            if (reason == null || reason.length() == 0) {
+            if (reason == null) {
                 throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
             }
 
@@ -1019,7 +1022,9 @@ public abstract class Task implements Runnable {
         synchronized (MUTEX) {
             StringBuffer sb = new StringBuffer(300);
 
-            sb.append("{TASK: status=");
+            sb.append("{TASK");
+            sb.append(Class.class.getName());
+            sb.append(" status=");
             sb.append(getStatusString());
             sb.append(" value=");
             sb.append(value);

@@ -278,5 +278,14 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
             }
             httpConnection.close();
         }
+        
+        /**
+         * 500kB or you should do a streaming operation instead
+         * 
+         * @return 
+         */
+        public long getMaxLengthSupportedAsBlockOperation() {
+            return 500000;
+        }
     }
 }

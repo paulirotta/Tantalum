@@ -44,7 +44,7 @@ public abstract class L {
      */
     public static final void i(final String tag, final String message) {
 //#mdebug
-        final StringBuffer sb = getMessage(tag, message);
+        final StringBuffer sb = getMessage(false, tag, message);
         
         synchronized (L.class) {
             PlatformUtils.getInstance().getLog().printMessage(sb, null);
@@ -61,14 +61,16 @@ public abstract class L {
      */
     public static final void e(final String tag, final String message, final Throwable t) {
 //#mdebug
-        final StringBuffer sb = getMessage(tag, message);
+        final StringBuffer sb = getMessage(true, tag, message);
         sb.append(", EXCEPTION: ");
         sb.append(t);
+        sb.append('\n');
 
         synchronized (L.class) {
             PlatformUtils.getInstance().getLog().printMessage(sb, t);
             if (t != null) {
                 t.printStackTrace();
+                System.err.flush();
             }
         }
 //#enddebug
@@ -90,7 +92,7 @@ public abstract class L {
      * @return message string
      * @return
      */
-    private static StringBuffer getMessage(String tag, String message) {
+    private static StringBuffer getMessage(final boolean prependNewline, String tag, String message) {
         if (tag == null) {
             tag = "<null>";
         }
@@ -101,6 +103,9 @@ public abstract class L {
         final StringBuffer sb = new StringBuffer(20 + tag.length() + message.length());
         final String millis = Long.toString(t % 1000);
 
+        if (prependNewline) {
+            sb.append('\n');
+        }
         sb.append(t / 1000);
         sb.append('.');
         for (int i = millis.length(); i < 3; i++) {
