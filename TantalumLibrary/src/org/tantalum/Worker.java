@@ -435,7 +435,7 @@ final class Worker extends Thread {
                     }
 
                     if (currentTask != null) {
-                        currentTask.executeTask(in);
+                        currentTask.executeTask(null, in);
                     }
                 } catch (InterruptedException e) {
                     //#mdebug

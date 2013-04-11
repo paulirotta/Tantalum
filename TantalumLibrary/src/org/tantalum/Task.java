@@ -605,7 +605,15 @@ public abstract class Task implements Runnable {
 
         switch (getStatus()) {
             case PENDING:
-                return executeTask(getValue());
+                /*
+                 * Production builds allow earlier Tasks in the chain to be
+                 * garbage collected more quickly by passing a null. The
+                 * previousTaskInChain is used only for debug display purposes.
+                 */
+                Task previousTaskInChain = null;
+                //#debug
+                previousTaskInChain = this;
+                return executeTask(previousTaskInChain, getValue());
 
             case FINISHED:
                 return value;
@@ -779,7 +787,7 @@ public abstract class Task implements Runnable {
         if (nextTask == this) {
             throw new IllegalArgumentException("Can not chain a task to itself");
         }
-        
+
         if (nextTask != null) {
             final Task previouslyChainedTask;
             synchronized (MUTEX) {
@@ -841,6 +849,25 @@ public abstract class Task implements Runnable {
             return forkPriority;
         }
     }
+    
+    //#mdebug
+    // Always access in a synchronized(MUTEX) block
+    private Task previousTaskInChain = null;
+    private void setPreviousTaskInChain(final Task previousTaskInChain) {
+        if (previousTaskInChain == null) {
+            return;
+        }
+        
+        this.previousTaskInChain = previousTaskInChain;
+        /*
+         * We want to eliminate long chains of previous values can not be
+         * garbage collected, even in the debug build. This might cause
+         * artificial memory problems in the debug build which do not apply to
+         * the production build.
+         */
+        previousTaskInChain.setPreviousTaskInChain(null);
+    }
+    //#enddebug
 
     /**
      * You can call this as the return statement of your overriding method once
@@ -848,11 +875,13 @@ public abstract class Task implements Runnable {
      *
      * @return
      */
-    final Object executeTask(final Object in) {
+    final Object executeTask(final Task previousTaskInChain, final Object in) {
         Object out = null;
 
         try {
             synchronized (MUTEX) {
+                //#debug
+                setPreviousTaskInChain(previousTaskInChain);
                 if (status == Task.CANCELED) {
                     throw new IllegalStateException(this.getStatusString() + " state can not be executed: " + this);
                 }
@@ -1031,12 +1060,18 @@ public abstract class Task implements Runnable {
             sb.append(getStatusString());
             sb.append(" value=");
             sb.append(value);
+            if (previousTaskInChain != null) {
+                sb.append(L.CRLF);
+                sb.append("chainedExecAfterTask=");
+                sb.append(previousTaskInChain);
+            }
             if (chainedTask != null) {
-                sb.append("\n   chainedTask=");
+                sb.append(L.CRLF);
+                sb.append("   chainedTask=");
                 sb.append(chainedTask.toString());
             }
             sb.append("}");
-            
+
             return sb.toString();
         }
     }

@@ -35,7 +35,7 @@ public abstract class L {
 
 //#mdebug
     private static final long startTime = System.currentTimeMillis();
-    protected static final String CRLF = "\r\n";
+    public static final String CRLF = "\r\n";
 //#enddebug
 
     /**
