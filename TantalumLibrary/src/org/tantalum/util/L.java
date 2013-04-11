@@ -33,8 +33,10 @@ import org.tantalum.PlatformUtils;
  */
 public abstract class L {
 
-//#debug
+//#mdebug
+    public static final String CRLF = "\r\n";
     private static final long startTime = System.currentTimeMillis();
+//#enddebug    
 
     /**
      * Logs an "information" message.
