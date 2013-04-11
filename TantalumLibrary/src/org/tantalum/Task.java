@@ -1025,7 +1025,7 @@ public abstract class Task implements Runnable {
             StringBuffer sb = new StringBuffer(300);
 
             sb.append("{TASK");
-            sb.append(Class.class.getName());
+            sb.append(this.getClass().getName());
             sb.append(" status=");
             sb.append(getStatusString());
             sb.append(" value=");

@@ -717,8 +717,11 @@ public class HttpGetter extends Task {
             if (out != null) {
                 addDownstreamDataCount(((byte[]) out).length);
             }
-
+            //#debug
+            L.i(this.getClass().getName() + " unvalidated end read", "bytes=" + ((byte[]) out).length);
             success = checkResponseCode(responseCode, responseHeaders);
+            //#debug
+            L.i(this.getClass().getName() + " response", "HTTP response code indicates success=" + success);
         } catch (IllegalArgumentException e) {
             //#debug
             L.e(this.getClass().getName() + " HttpGetter has illegal argument", url, e);
@@ -816,16 +819,16 @@ public class HttpGetter extends Task {
             final byte[] readBuffer = new byte[16384];
             while (true) {
                 final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
-                if (b >= 0) {
-                    bos.write(b);
-                    synchronized (NET_MUTEX) {
-                        final int bytesRead = inputStream.read(readBuffer);
-                        if (bytesRead >= 0) {
-                            bos.write(readBuffer, 0, bytesRead);
-                        } else {
-                            break;
-                        }
+                if (b < 0) {
+                    break;
+                }
+                bos.write(b);
+                synchronized (NET_MUTEX) {
+                    final int bytesRead = inputStream.read(readBuffer);
+                    if (bytesRead < 0) {
+                        break;
                     }
+                    bos.write(readBuffer, 0, bytesRead);
                 }
             }
         } finally {

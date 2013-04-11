@@ -365,7 +365,7 @@ public class StaticCache {
      * @param key
      * @param bytes
      * @return the byte[] converted to use form by the ramCache's Handler
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public Object putAsync(final String key, final byte[] bytes) throws FlashDatabaseException {
         if (key == null || key.length() == 0) {
@@ -788,10 +788,9 @@ public class StaticCache {
             }
             try {
                 return synchronousGet((String) in);
-            } catch (Exception e) {
+            } catch (FlashDatabaseException e) {
                 //#debug
                 L.e("Can not async StaticCache get", in.toString(), e);
-                cancel(false, "Exception during StatiCache.GetLocalTask synchronousGet(): " + e);
             }
 
             return in;
