@@ -33,8 +33,10 @@ import org.tantalum.PlatformUtils;
  */
 public abstract class L {
 
-//#debug
+//#mdebug
     private static final long startTime = System.currentTimeMillis();
+    protected static final String CRLF = "\r\n";
+//#enddebug
 
     /**
      * Logs an "information" message.
@@ -45,7 +47,7 @@ public abstract class L {
     public static final void i(final String tag, final String message) {
 //#mdebug
         final StringBuffer sb = getMessage(false, tag, message);
-        
+
         synchronized (L.class) {
             PlatformUtils.getInstance().getLog().printMessage(sb, null);
         }
@@ -64,7 +66,7 @@ public abstract class L {
         final StringBuffer sb = getMessage(true, tag, message);
         sb.append(", EXCEPTION: ");
         sb.append(t);
-        sb.append('\n');
+        sb.append(CRLF);
 
         synchronized (L.class) {
             PlatformUtils.getInstance().getLog().printMessage(sb, t);
@@ -92,7 +94,7 @@ public abstract class L {
      * @return message string
      * @return
      */
-    private static StringBuffer getMessage(final boolean prependNewline, String tag, String message) {
+    private static StringBuffer getMessage(final boolean prependLineOfStars, String tag, String message) {
         if (tag == null) {
             tag = "<null>";
         }
@@ -103,9 +105,11 @@ public abstract class L {
         final StringBuffer sb = new StringBuffer(20 + tag.length() + message.length());
         final String millis = Long.toString(t % 1000);
 
-        if (prependNewline) {
-            sb.append('\n');
+        if (prependLineOfStars) {
+            sb.append(CRLF);
+            sb.append("******");
         }
+        sb.append(CRLF);
         sb.append(t / 1000);
         sb.append('.');
         for (int i = millis.length(); i < 3; i++) {

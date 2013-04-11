@@ -357,7 +357,7 @@ public abstract class Task implements Runnable {
     public final Task setShutdownBehaviour(final int shutdownBehaviour) {
         synchronized (MUTEX) {
             if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
-                throw new IllegalArgumentException("Invalid shutdownBehaviour value: " + shutdownBehaviour);
+                throw new IllegalArgumentException(this.getClass().getName() + " invalid shutdownBehaviour value: " + shutdownBehaviour);
             }
 
             this.shutdownBehaviour = shutdownBehaviour;
@@ -428,7 +428,7 @@ public abstract class Task implements Runnable {
     public final Object set(final Object value) {
         synchronized (MUTEX) {
             if (this.status >= Task.FINISHED) {
-                throw new IllegalStateException("Can not setValue(), Task value is final after execution: " + this);
+                throw new IllegalStateException(this.getClass().getName() + " can not setValue(), Task value is final after execution: " + this);
             }
 
             return this.value = value;
@@ -545,7 +545,7 @@ public abstract class Task implements Runnable {
         }
         //#mdebug
         if (PlatformUtils.getInstance().isUIThread() && timeout > 200) {
-            L.i("WARNING- slow Task.join() on UI Thread", "timeout=" + timeout + " " + this);
+            L.i(this.getClass().getName() + " WARNING- slow join() on UI Thread", "timeout=" + timeout + " " + this);
         }
         //#enddebug
 
@@ -555,7 +555,7 @@ public abstract class Task implements Runnable {
 
         synchronized (MUTEX) {
             //#debug
-            L.i("Start join", "timeout=" + timeout + " " + this);
+            L.i(this.getClass().getName() + " start join(" + timeout + ")", "" + this);
             switch (status) {
                 case FINISHED:
                     return value;
@@ -564,24 +564,24 @@ public abstract class Task implements Runnable {
                     final long t = System.currentTimeMillis();
                     try {
                         //#debug
-                        L.i("Can not unfork, must be an executing or chained task. Start join() wait", "timeout=" + timeout + " - " + this.toString());
+                        L.i(this.getClass().getName() + " can not unfork(), must be an executing or chained task. Start join(" + timeout + ")", "" + this);
 
                         try {
                             MUTEX.wait(timeout);
                         } catch (InterruptedException e) {
                             //#debug
-                            L.e("InterruptedException during join() wait", "Task will canel: " + this, e);
+                            L.e(this.getClass().getName() + " InterruptedException during join(" + timeout + ") wait", "Task will cancel: " + this, e);
                         }
                         if (status == FINISHED) {
                             return value;
                         }
                         if (System.currentTimeMillis() > t) {
-                            throw new TimeoutException("join(" + timeout + ") was to a Task which did not complete within the specified timeout: " + this);
+                            throw new TimeoutException(this.getClass().getName() + "join(" + timeout + ") was to a Task which did not complete within the specified timeout: " + this);
                         }
-                        throw new CancellationException("join(" + timeout + ") was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
+                        throw new CancellationException(this.getClass().getName() + "join(" + timeout + ") was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
                     } finally {
                         //#debug
-                        L.i("End join(" + timeout + ") wait", "join wait time=" + (System.currentTimeMillis() - t) + " - " + this.toString());
+                        L.i(this.getClass().getName() + " end join(" + timeout + ") wait", "join wait timeElapsed=" + (System.currentTimeMillis() - t) + " - " + this.toString());
                     }
 
                 default:
@@ -601,7 +601,7 @@ public abstract class Task implements Runnable {
      */
     private Object executeOutOfOrderAfterSuccessfulUnfork() throws CancellationException {
         //#debug
-        L.i("Successful unfork of start join of PENDING task", "out of order execution starting on this thread: " + this.toString());
+        L.i(this.getClass().getName() + " successful unfork of start join of PENDING task", this.getClass().getName() + " out of order execution starting on this thread: " + this.toString());
 
         switch (getStatus()) {
             case PENDING:
@@ -612,7 +612,7 @@ public abstract class Task implements Runnable {
 
             default:
             case CANCELED:
-                throw new CancellationException("join() was to a Task which was canceled: " + this);
+                throw new CancellationException(this.getClass().getName() + " join() was to a Task which was canceled: " + this);
         }
     }
 
@@ -649,7 +649,7 @@ public abstract class Task implements Runnable {
         }
         //#mdebug
         if (PlatformUtils.getInstance().isUIThread() && timeout > 100) {
-            L.i("WARNING- slow Task.joinAll() on UI Thread", "timeout=" + timeout);
+            L.i("WARNING- slow", "Task.joinAll(" + timeout + ") on UI Thread");
         }
         //#enddebug
 
@@ -708,7 +708,7 @@ public abstract class Task implements Runnable {
      */
     final void setStatus(final int status) {
         if (status == CANCELED) {
-            throw new IllegalArgumentException("Do not setStatus(Task.CANCELED). Call Task.cancel(false, \"Reason for cancel\") instead to keep your code debuggable");
+            throw new IllegalArgumentException(this.getClass().getName() + " do not setStatus(Task.CANCELED). Call Task.cancel(false, \"Reason for cancel\") instead to keep your code debuggable");
         }
 
         doSetStatus(status);
@@ -719,11 +719,11 @@ public abstract class Task implements Runnable {
         synchronized (MUTEX) {
             if (this.status == status) {
                 //#debug
-                L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
+                L.i(this.getClass().getName() + " state change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
                 return;
             }
             if (status > FINISHED) {
-                throw new IllegalArgumentException("setStatus(" + Task.STATUS_STRINGS[status] + ") not allowed, already FINISHED or CANCELED: " + this);
+                throw new IllegalArgumentException(this.getClass().getName() + " setStatus(" + Task.STATUS_STRINGS[status] + ") not allowed, already FINISHED or CANCELED: " + this);
             }
             this.status = status;
             MUTEX.notifyAll();
@@ -741,13 +741,13 @@ public abstract class Task implements Runnable {
             PlatformUtils.getInstance().runOnUiThread(new Runnable() {
                 public void run() {
                     //#debug
-                    L.i("Task onCanceled()", Task.this.toString());
+                    L.i(this.getClass().getName() + " onCanceled()", Task.this.toString());
                     onCanceled();
                 }
             });
             // Also cancel any chained Tasks expecting the output of this Task
             if (t != null) {
-                t.cancel(false, "Previous task in chain was canceled");
+                t.cancel(false, this.getClass().getName() + " previous task in chain was canceled");
             }
         }
     }
@@ -883,7 +883,7 @@ public abstract class Task implements Runnable {
             }
             if (t != null) {
                 //#debug
-                L.i("Begin fork chained task", t.toString() + " INPUT: " + in);
+                L.i(this.getClass().getName() + " begin fork chained task", t.toString() + " outputBecomesNextTaskInput=" + out);
                 if (out != null) {
                     t.set(out);
                 }
@@ -891,9 +891,10 @@ public abstract class Task implements Runnable {
                 t.fork();
             }
         } catch (final Throwable t) {
+            final String s = this.getClass().getName() + " exception during Task exec(): " + this;
             //#debug
-            L.e("Exception during Task exec()", this.toString(), t);
-            cancel(false, "Unhandled task exception: " + this.toString() + " : " + t);
+            L.e(s, this.toString(), t);
+            cancel(false, s + " : " + t);
             out = null;
         }
 
@@ -930,14 +931,14 @@ public abstract class Task implements Runnable {
 
             if (canceled) {
                 //#debug
-                L.i("Ignore cancel() - " + reason, "already CANCELED: " + this);
+                L.i(this.getClass().getName() + " ignore cancel() - " + reason, "already CANCELED: " + this);
             } else {
                 //#debug
-                L.i("Begin cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
+                L.i(this.getClass().getName() + " begin cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
                 switch (status) {
                     case FINISHED:
                         //#debug
-                        L.i("Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
+                        L.i(this.getClass().getName() + " ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
                         break;
 
                     case PENDING:
@@ -959,7 +960,7 @@ public abstract class Task implements Runnable {
                         doSetStatus(CANCELED);
                 }
                 //#debug
-                L.i("End cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
+                L.i(this.getClass().getName() + " end cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
             }
 
             return canceled;
@@ -978,7 +979,7 @@ public abstract class Task implements Runnable {
      */
     protected void onCanceled() {
         //#debug
-        L.i("Task canceled", this.toString());
+        L.i(this.getClass().getName() + " (Task.onCanceled() was not overridden)", this.toString());
     }
 
     /**
@@ -1024,14 +1025,14 @@ public abstract class Task implements Runnable {
         synchronized (MUTEX) {
             StringBuffer sb = new StringBuffer(300);
 
-            sb.append("{TASK");
+            sb.append("{task=");
             sb.append(this.getClass().getName());
             sb.append(" status=");
             sb.append(getStatusString());
             sb.append(" value=");
             sb.append(value);
             if (chainedTask != null) {
-                sb.append("\nCHAINED TASK: ");
+                sb.append("\n   chainedTask=");
                 sb.append(chainedTask.toString());
             }
             sb.append("}");

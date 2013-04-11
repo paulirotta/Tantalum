@@ -422,7 +422,7 @@ public final class StaticWebCache extends StaticCache {
         //#debug
         L.i("StaticWebCache.HttpTaskFactory returned", httpGetter.toString());
 
-        final Task validationTask = new Task() {
+        final class ValidationTask extends Task {
             protected Object exec(final Object in) {
                 Object out = null;
 
@@ -443,7 +443,7 @@ public final class StaticWebCache extends StaticCache {
                 return out;
             }
         };
-        httpGetter.chain(validationTask);
+        httpGetter.chain(new ValidationTask());
 
         return httpGetter.fork(priority);
     }

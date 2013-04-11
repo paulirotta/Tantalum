@@ -50,9 +50,10 @@ import org.tantalum.util.L;
 public class JMELog extends L {
     private final OutputStream os;
 //#mdebug
-    private final byte[] CRLF = "\r\n".getBytes();
     private final Vector byteArrayQueue = new Vector();
     private final JMELog.LogWriter usbWriter;
+    private static final byte[] CRLF_BYTES = CRLF.getBytes();
+
 //#enddebug    
 
     /**
@@ -214,7 +215,7 @@ public class JMELog extends L {
                     while (!byteArrayQueue.isEmpty()) {
                         os.write((byte[]) byteArrayQueue.firstElement());
                         byteArrayQueue.removeElementAt(0);
-                        os.write(CRLF);
+                        os.write(CRLF_BYTES);
                     }
                     os.flush();
                 }

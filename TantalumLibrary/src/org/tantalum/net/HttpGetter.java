@@ -771,7 +771,7 @@ public class HttpGetter extends Task {
                 cancel(false, "HttpGetter failed response code and header check: " + this.toString());
             }
             //#debug
-            L.i("End " + this.getClass().getName(), url + " status=" + getStatus());
+            L.i(this.getClass().getName() + " end", url + " status=" + getStatus() + " out=" + out);
         }
 
         return out;
@@ -908,22 +908,8 @@ public class HttpGetter extends Task {
             sb.append(postMessage.length);
         }
 
-        sb.append(" responseCode=");
-        sb.append(responseCode);
-
-        sb.append("\nHTTP RESPONSE HEADERS");
-        final Enumeration enu = responseHeaders.keys();
-        while (enu.hasMoreElements()) {
-            final String k = (String) enu.nextElement();
-            sb.append("\n   ");
-            sb.append(k);
-            sb.append(": ");
-            final String value = (String) responseHeaders.get(k);
-            sb.append(value);
-        }
-
         if (requestPropertyKeys.isEmpty()) {
-            sb.append("\n(no HTTP request customer header)");
+            sb.append("\n(default HTTP request, no customer header params)");
         } else {
             sb.append("\nHTTP REQUEST CUSTOM HEADERS");
             for (int i = 0; i < requestPropertyKeys.size(); i++) {
@@ -936,6 +922,23 @@ public class HttpGetter extends Task {
             }
         }
 
+        if (responseCode == HTTP_OPERATION_PENDING) {
+            sb.append("\n(http operation pending, no server response yet)");
+        } else {
+            sb.append("\nserverHTTPResponseCode=");
+            sb.append(responseCode);
+
+            sb.append("\nHTTP RESPONSE HEADERS");
+            final Enumeration enu = responseHeaders.keys();
+            while (enu.hasMoreElements()) {
+                final String k = (String) enu.nextElement();
+                sb.append("\n   ");
+                sb.append(k);
+                sb.append(": ");
+                final String value = (String) responseHeaders.get(k);
+                sb.append(value);
+            }
+        }
         sb.append('\n');
 
         return sb.toString();
