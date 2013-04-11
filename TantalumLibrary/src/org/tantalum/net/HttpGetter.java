@@ -717,8 +717,13 @@ public class HttpGetter extends Task {
             if (out != null) {
                 addDownstreamDataCount(((byte[]) out).length);
             }
-            //#debug
-            L.i(this.getClass().getName() + " unvalidated end read", "bytes=" + ((byte[]) out).length);
+            //#mdebug
+            int outLength = -1;
+            if (out instanceof byte[]) {
+                outLength = ((byte[]) out).length;
+            }
+            L.i(this.getClass().getName() + " unvalidated end read", "bytes=" + outLength);
+            //#enddebug
             success = checkResponseCode(responseCode, responseHeaders);
             //#debug
             L.i(this.getClass().getName() + " response", "HTTP response code indicates success=" + success);
@@ -848,7 +853,7 @@ public class HttpGetter extends Task {
     protected boolean checkResponseCode(final int responseCode, final Hashtable headers) {
         boolean ok = true;
 
-        if (responseCode < 400) {
+        if (responseCode < 300) {
             ok = true;
         } else if (responseCode < 500) {
             // We might be able to extract some useful information in case of a 400+ error code

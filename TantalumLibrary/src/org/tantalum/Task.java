@@ -605,15 +605,7 @@ public abstract class Task implements Runnable {
 
         switch (getStatus()) {
             case PENDING:
-                /*
-                 * Production builds allow earlier Tasks in the chain to be
-                 * garbage collected more quickly by passing a null. The
-                 * previousTaskInChain is used only for debug display purposes.
-                 */
-                Task previousTaskInChain = null;
-                //#debug
-                previousTaskInChain = this;
-                return executeTask(previousTaskInChain, getValue());
+                return executeTask(getValue());
 
             case FINISHED:
                 return value;
@@ -793,6 +785,8 @@ public abstract class Task implements Runnable {
             synchronized (MUTEX) {
                 previouslyChainedTask = chainedTask;
                 chainedTask = nextTask;
+                //#debug
+                nextTask.setPreviousTaskInChain(this);
             }
             if (previouslyChainedTask != null) {
                 /*
@@ -804,6 +798,30 @@ public abstract class Task implements Runnable {
 
         return nextTask;
     }
+    //#mdebug
+    // Always access in a synchronized(MUTEX) block
+    private Task previousTaskInChain = null;
+
+    private void setPreviousTaskInChain(final Task previousTaskInChain) {
+        if (previousTaskInChain == null) {
+            throw new IllegalArgumentException("setPreiouvTaskInChain(null) not allowed");
+        }
+
+        this.previousTaskInChain = previousTaskInChain;
+        /*
+         * We want to eliminate long chains of used-up previous chain step which
+         * can not be garbage collected. This is occurs naturally in a production
+         * build since there are not backward references in the chain. But for
+         * debug clarity, knowing where a Task receives it's value is useful. Thus
+         * in the debug build we keep the previous step for debug display. This
+         * referese reference might however cause artificial memory problems in
+         * the debug build which do not apply to the production build, so to minimize
+         * the issue we only keep one step back in the chain, not the entire previous
+         * chain.
+         */
+        previousTaskInChain.previousTaskInChain = null;
+    }
+    //#enddebug
 
     /**
      * Update the priority parameter which will be applied to this Task when it
@@ -849,25 +867,6 @@ public abstract class Task implements Runnable {
             return forkPriority;
         }
     }
-    
-    //#mdebug
-    // Always access in a synchronized(MUTEX) block
-    private Task previousTaskInChain = null;
-    private void setPreviousTaskInChain(final Task previousTaskInChain) {
-        if (previousTaskInChain == null) {
-            return;
-        }
-        
-        this.previousTaskInChain = previousTaskInChain;
-        /*
-         * We want to eliminate long chains of previous values can not be
-         * garbage collected, even in the debug build. This might cause
-         * artificial memory problems in the debug build which do not apply to
-         * the production build.
-         */
-        previousTaskInChain.setPreviousTaskInChain(null);
-    }
-    //#enddebug
 
     /**
      * You can call this as the return statement of your overriding method once
@@ -875,13 +874,11 @@ public abstract class Task implements Runnable {
      *
      * @return
      */
-    final Object executeTask(final Task previousTaskInChain, final Object in) {
+    final Object executeTask(final Object in) {
         Object out = null;
 
         try {
             synchronized (MUTEX) {
-                //#debug
-                setPreviousTaskInChain(previousTaskInChain);
                 if (status == Task.CANCELED) {
                     throw new IllegalStateException(this.getStatusString() + " state can not be executed: " + this);
                 }
@@ -920,10 +917,10 @@ public abstract class Task implements Runnable {
                 t.fork();
             }
         } catch (final Throwable t) {
-            final String s = this.getClass().getName() + " exception during Task exec(): " + this;
+            final String s = "Exception during Task exec(): ";
             //#debug
-            L.e(s, this.toString(), t);
-            cancel(false, s + " : " + t);
+            L.e(s, "" + this, t);
+            cancel(false, s + " : " + this + " : " + t);
             out = null;
         }
 
@@ -1051,6 +1048,10 @@ public abstract class Task implements Runnable {
      * @return
      */
     public String toString() {
+        return toString(true);
+    }
+
+    public String toString(final boolean showChain) {
         synchronized (MUTEX) {
             StringBuffer sb = new StringBuffer(300);
 
@@ -1060,17 +1061,23 @@ public abstract class Task implements Runnable {
             sb.append(getStatusString());
             sb.append(" value=");
             sb.append(value);
-            if (previousTaskInChain != null) {
+            if (showChain) {
                 sb.append(L.CRLF);
-                sb.append("chainedExecAfterTask=");
-                sb.append(previousTaskInChain);
+                if (previousTaskInChain == null) {
+                    sb.append("   (no previous task in chain)");
+                    sb.append(L.CRLF);
+                } else {
+                    sb.append("   previousTaskInChain=");
+                    sb.append(previousTaskInChain.toString(false));
+                }
+                if (chainedTask == null) {
+                    sb.append("   (no next task in chain)");
+                } else {
+                    sb.append("   nextTaskInChain=");
+                    sb.append(chainedTask.getClass().getName());
+                }
             }
-            if (chainedTask != null) {
-                sb.append(L.CRLF);
-                sb.append("   chainedTask=");
-                sb.append(chainedTask.toString());
-            }
-            sb.append("}");
+            sb.append("}" + L.CRLF);
 
             return sb.toString();
         }

@@ -77,7 +77,7 @@ public final class StaticWebCache extends StaticCache {
      * rather gives an unexpected response body that you need to watch for
      * before deciding to cache the response.
      *
-     * @param priority
+     * @param cachePriorityChar
      * @param cacheType
      * @param handler
      * @return
@@ -95,7 +95,7 @@ public final class StaticWebCache extends StaticCache {
     /**
      * Get existing or create a new local cache of a web service.
      *
-     * @param priority - must be unique in your application. Lower numbers or
+     * @param cachePriorityChar - must be unique in your application. Lower numbers or
      * letters are garbage collected first when flash storage runs out.
      * @param handler - an object for converting from the byte[] format returned
      * by the web server or stored in local flash memory into Object form. The
@@ -108,7 +108,7 @@ public final class StaticWebCache extends StaticCache {
      * rather gives an unexpected response body that you need to watch for
      * before deciding to cache the response.
      *
-     * @param priority
+     * @param cachePriorityChar
      * @param handler
      * @param httpTaskFactory
      * @return
@@ -130,7 +130,7 @@ public final class StaticWebCache extends StaticCache {
      * creating the HttpGetter or HttpPoster that will be used to getAsync
      * cache-miss items from the web.
      *
-     * @param priority
+     * @param cachePriorityChar
      * @param cacheType
      * @param handler
      * @param httpTaskFactory
@@ -139,7 +139,7 @@ public final class StaticWebCache extends StaticCache {
      */
     /**
      *
-     * @param priority
+     * @param cachePriorityChar
      * @param cacheType
      * @param handler
      * @param httpTaskFactory
@@ -155,7 +155,7 @@ public final class StaticWebCache extends StaticCache {
      * HTTP GET from the URL specified by key
      *
      * @param key
-     * @param priority
+     * @param cachePriorityChar
      * @param getType
      * @param chainedTask
      * @return
@@ -178,7 +178,7 @@ public final class StaticWebCache extends StaticCache {
      *
      * 2. Local flash storage (RMS or database depending on the platform) if
      * available: may take several milliseconds, or longer if the Worker task
-     * queue is long and you do not specify high priority.
+     * queue is long and you do not specify high cachePriorityChar.
      *
      * 3. web: may take several seconds for a HTTP response which is then cached
      * locally automatically.
@@ -191,7 +191,7 @@ public final class StaticWebCache extends StaticCache {
      * @param key - The web service location to HTTP_GET the cacheable data
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
-     * @param priority - note that HIGH_PRIORITY requests will be automatically
+     * @param cachePriorityChar - note that HIGH_PRIORITY requests will be automatically
      * bumped into FASTLINE_PRIORITY unless it is a GET_WEB operation.
      * @param getType * * * * *      * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
@@ -213,21 +213,21 @@ public final class StaticWebCache extends StaticCache {
         switch (getType) {
             case GET_LOCAL:
                 //#debug
-                L.i("GET_LOCAL", key);
+                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_LOCAL)", key);
                 getTask = new StaticCache.GetLocalTask(key, priority);
                 getterTaskPriority = allowLocalCacheReadToUseTheFastlane(priority);
                 break;
 
             case GET_ANYWHERE:
                 //#debug
-                L.i("GET_ANYWHERE", key);
+                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_ANYWHERE)", key);
                 getTask = new StaticWebCache.GetAnywhereTask(key, priority, postMessage);
                 getterTaskPriority = allowLocalCacheReadToUseTheFastlane(priority);
                 break;
 
             case GET_WEB:
                 //#debug
-                L.i("GET_WEB", key);
+                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_WEB)", key);
                 getTask = getWebAsync(key, priority, postMessage);
                 getterTaskPriority = preventWebTasksFromUsingTheFastLane(priority);
                 break;
@@ -285,7 +285,7 @@ public final class StaticWebCache extends StaticCache {
      * thread in the background.
      *
      * For convenience, you normally call StaticWebCache.getAsync(String url,
-     * int priority, int getType, Task task) where getType is
+     * int cachePriorityChar, int getType, Task task) where getType is
      * StaticWebCache.GET_ANYWHERE and task is some operation you supply which
      * you would like to act on the result of the getAsync(). You can, if you
      * prefer, invoke this class directly to tailor how it operates or set
@@ -328,7 +328,7 @@ public final class StaticWebCache extends StaticCache {
          * Create a chainable task where key will be provided as the output from
          * the previous step in the chain.
          *
-         * @param priority
+         * @param cachePriorityChar
          * @param postMessage
          */
         public GetAnywhereTask(final int priority, final byte[] postMessage) {
@@ -358,7 +358,7 @@ public final class StaticWebCache extends StaticCache {
          * the web.
          *
          * @param key
-         * @param priority
+         * @param cachePriorityChar
          * @param postMessage
          */
         public GetAnywhereTask(final String key, final int priority, final byte[] postMessage) {
@@ -412,7 +412,7 @@ public final class StaticWebCache extends StaticCache {
      * Fetch from the url and validate the response.
      *
      * @param url
-     * @param priority
+     * @param cachePriorityChar
      * @param postMessage
      * @return the HttpGetter task
      */
@@ -504,8 +504,12 @@ public final class StaticWebCache extends StaticCache {
             } else if (responseCode >= HttpGetter.HTTP_400_BAD_REQUEST) {
                 return false;
             } else if (responseCode >= HttpGetter.HTTP_300_MULTIPLE_CHOICES) {
-                // Redirect. Still valid?
-                return true;
+                /*
+                 * Redirect. Not valid since we don't support this at the
+                 * Tantalum level. If you replace this validator or fix this in
+                 * Tantalum to follow the redirect then change this.
+                 */
+                return false;
             }
 
             return true;
@@ -516,12 +520,12 @@ public final class StaticWebCache extends StaticCache {
      * Analyze if this cache is the same one that would be returned by a call to
      * StaticWebCache.getCache() with the same parameters
      *
-     * @param priority
+     * @param cachePriorityChar
      * @param handler
      * @param taskFactory
      * @return
      */
     protected boolean equals(final char priority, final DataTypeHandler handler, final Object taskFactory) {
-        return this.priority == priority && this.handler.equals(handler) && this.httpTaskFactory.equals(taskFactory);
+        return this.cachePriorityChar == priority && this.handler.equals(handler) && this.httpTaskFactory.equals(taskFactory);
     }
 }

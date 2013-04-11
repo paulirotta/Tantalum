@@ -51,11 +51,11 @@ import org.tantalum.util.WeakHashCache;
 public class StaticCache {
 
     /**
-     * A list of all caches, sorted by priority order (lowest char first)
+     * A list of all caches, sorted by cachePriorityChar order (lowest char first)
      */
     protected static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
         public boolean before(final Object o1, final Object o2) {
-            return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
+            return ((StaticCache) o1).cachePriorityChar < ((StaticCache) o2).cachePriorityChar;
         }
     });
     /*
@@ -80,11 +80,11 @@ public class StaticCache {
      * This character serves as a market tag to distinguish the contents of this
      * ramCache from other caches which may also be stored in flash memory in a
      * flat name space. This must be unique like '0'..'9' or 'a'..'z'. Larger
-     * character values indicate lower priority caches which will be garage
+     * character values indicate lower cachePriorityChar caches which will be garage
      * collected first when flash memory is low, so use larger characters for
      * more transient or less-important-to-persist data.
      */
-    protected final char priority;
+    protected final char cachePriorityChar;
     /**
      * This interface gives one method you must provide to convert from the raw
      * byte[] format received from a web server or similar source into an Object
@@ -118,7 +118,7 @@ public class StaticCache {
     /**
      * Get the previously-created cache with the same parameters
      *
-     * @param priority
+     * @param cachePriorityChar
      * @param handler
      * @param taskFactory
      * @param clas
@@ -129,7 +129,7 @@ public class StaticCache {
             for (int i = 0; i < caches.size(); i++) {
                 final StaticCache c = (StaticCache) caches.elementAt(i);
 
-                if (c.priority == priority) {
+                if (c.cachePriorityChar == priority) {
                     if (c.getClass() != clas) {
                         throw new IllegalArgumentException("You can not create a StaticCache and a StaticWebCache with the same priority: " + priority);
                     }
@@ -148,14 +148,14 @@ public class StaticCache {
     /**
      * Get a named Cache
      *
-     * Caches with higher priority are more likely to keep their data when space
+     * Caches with higher cachePriorityChar are more likely to keep their data when space
      * is limited.
      *
      * You will getDigests IllegalArgumentException if you call this multiple
-     * times for the same cache priority but with a different (not .equals())
+     * times for the same cache cachePriorityChar but with a different (not .equals())
      * DataTypeHandler.
      *
-     * @param priority - a character from '0' to '9', higher numbers getDigests
+     * @param cachePriorityChar - a character from '0' to '9', higher numbers getDigests
      * a preference for space. Letters are also allowed.
      * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
      * @param handler - a routine to convert from byte[] to Object form when
@@ -178,7 +178,7 @@ public class StaticCache {
     /**
      * Create a named Cache
      *
-     * @param priority
+     * @param cachePriorityChar
      * @param cacheType
      * @param handler
      * @throws DigestException
@@ -188,7 +188,7 @@ public class StaticCache {
         if (priority < '0') {
             throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
-        this.priority = priority;
+        this.cachePriorityChar = priority;
         this.handler = handler;
         flashCache = PlatformUtils.getInstance().getFlashCache(priority, cacheType);
         init();
@@ -208,8 +208,8 @@ public class StaticCache {
             }
         } catch (Exception ex) {
             //#debug
-            L.e("Can not load keys to RAM during init() cache", "cache priority=" + priority, ex);
-            throw new FlashDatabaseException("Can not load cache keys during init for cache '" + priority + "' : " + ex);
+            L.e("Can not load keys to RAM during init() cache", "cache priority=" + cachePriorityChar, ex);
+            throw new FlashDatabaseException("Can not load cache keys during init for cache '" + cachePriorityChar + "' : " + ex);
         }
     }
 
@@ -282,7 +282,7 @@ public class StaticCache {
      * Retrieve an object from RAM or RMS storage.
      *
      * @param key
-     * @param priority - set to Work.FASTLANE_PRIORITY if you want the results
+     * @param cachePriorityChar - set to Work.FASTLANE_PRIORITY if you want the results
      * quickly to update the UI.
      * @param chainedTask
      * @return
@@ -313,7 +313,7 @@ public class StaticCache {
         Object o = synchronousRAMCacheGet(key);
 
         //#debug
-        L.i("StaticCache RAM get result", "(" + priority + ") " + key + " : " + o);
+        L.i("StaticCache RAM get result", "(" + cachePriorityChar + ") " + key + " : " + o);
         if (o == null) {
             try {
                 // Load from flash memory
@@ -327,13 +327,13 @@ public class StaticCache {
                 }
 
                 //#debug
-                L.i("StaticCache flash intermediate result", "(" + priority + ") " + key + " : " + bytes);
+                L.i("StaticCache flash intermediate result", "(" + cachePriorityChar + ") " + key + " : " + bytes);
                 if (bytes != null) {
                     //#debug
-                    L.i("StaticCache flash hit", "(" + priority + ") " + key);
+                    L.i("StaticCache flash hit", "(" + cachePriorityChar + ") " + key);
                     o = convertAndPutToHeapCache(key, bytes);
                     //#debug
-                    L.i("StaticCache flash hit result", "(" + priority + ") " + key + " : " + o);
+                    L.i("StaticCache flash hit result", "(" + cachePriorityChar + ") " + key + " : " + o);
                 }
             } catch (DigestException e) {
                 //#debug
@@ -484,7 +484,7 @@ public class StaticCache {
         //#debug
         L.i("End phase 1: clearing RMS space", spaceCleared + " bytes recovered");
 
-        // Second: remove currently cached items, first from low priority caches
+        // Second: remove currently cached items, first from low cachePriorityChar caches
         while (spaceCleared < minSpaceToClear && rsv.length > 0) {
             for (int i = 0; i < caches.size(); i++) {
                 final StaticCache sc = (StaticCache) caches.elementAt(i);
@@ -560,13 +560,13 @@ public class StaticCache {
         final Task task = new Task() {
             protected Object exec(final Object in) {
                 //#debug
-                L.i("Start Cache Clear", "ID=" + priority);
+                L.i("Start Cache Clear", "ID=" + cachePriorityChar);
                 synchronized (MUTEX) {
                     flashCache.clear();
                     accessOrder.removeAllElements();
                 }
                 //#debug
-                L.i("Cache cleared", "ID=" + priority);
+                L.i("Cache cleared", "ID=" + cachePriorityChar);
 
                 return in;
             }
@@ -600,10 +600,10 @@ public class StaticCache {
             protected Object exec(final Object in) {
                 synchronized (MUTEX) {
                     //#debug
-                    L.i("Heap cached clear start", "" + priority);
+                    L.i("Heap cached clear start", "" + cachePriorityChar);
                     ramCache.clearValues();
                     //#debug
-                    L.i("Heap cached cleared", "" + priority);
+                    L.i("Heap cached cleared", "" + cachePriorityChar);
                 }
 
                 return in;
@@ -646,14 +646,14 @@ public class StaticCache {
     }
 
     /**
-     * The relative priority used for allocating RMS space between multiple
-     * caches. Higher priority caches synchronousRAMCacheGet more space.
+     * The relative cachePriorityChar used for allocating RMS space between multiple
+     * caches. Higher cachePriorityChar caches synchronousRAMCacheGet more space.
      *
      * @return
      */
     public int getPriority() {
         synchronized (MUTEX) {
-            return priority;
+            return cachePriorityChar;
         }
     }
 
@@ -706,7 +706,7 @@ public class StaticCache {
             StringBuffer str = new StringBuffer();
 
             str.append("StaticCache --- priority: ");
-            str.append(priority);
+            str.append(cachePriorityChar);
             str.append(" size: ");
             str.append(getSize());
             str.append(" size (bytes): ");
@@ -742,7 +742,7 @@ public class StaticCache {
          * input to this chained Task (the output of the previous Task in the
          * chain).
          *
-         * @param priority
+         * @param cachePriorityChar
          */
         public GetLocalTask(final int priority) {
             super();
@@ -754,7 +754,7 @@ public class StaticCache {
          * Create a new getDigests operation, specifying the url in advance.
          *
          * @param key
-         * @param priority
+         * @param cachePriorityChar
          */
         public GetLocalTask(final String key, final int priority) {
             super(key);
@@ -801,7 +801,7 @@ public class StaticCache {
      * Analyze if this cache is the same one that would be returned by a call to
      * StaticCache.getCache() with the same parameters
      *
-     * @param priority
+     * @param cachePriorityChar
      * @param handler
      * @param taskFactory - always null. The parameter exists for polymorphic
      * equivalency with the overriding StaticWebCache implementation.
@@ -809,6 +809,6 @@ public class StaticCache {
      * @return
      */
     protected boolean equals(final char priority, final DataTypeHandler handler, final Object taskFactory) {
-        return this.priority == priority && this.handler.equals(handler);
+        return this.cachePriorityChar == priority && this.handler.equals(handler);
     }
 }

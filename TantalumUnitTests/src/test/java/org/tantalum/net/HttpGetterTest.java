@@ -95,6 +95,32 @@ public class HttpGetterTest extends MockedStaticInitializers {
         assertTrue("Task was not correctly cancelled after error", cancelCalled);
     }
 
+    @Test
+    public void responseCodesIn300RangeAreConsideredBad() throws IOException {
+        final String url = "http://github.com/TantalumMobile";
+
+        /*
+         * Setup test 
+         */
+        // Return a unauthorized response code, no response body
+        when(platformUtils.getHttpGetConn(eq(url), any(Vector.class), any(Vector.class))).thenReturn(httpConn);
+        when(httpConn.getResponseCode()).thenReturn(HttpGetter.HTTP_307_TEMPORARY_REDIRECT);
+        when(httpConn.getLength()).thenReturn(0L);
+
+        /*
+         * Execute
+         */
+        final Object returnValue = getter.exec(url);
+
+        /*
+         * Assert
+         */
+        verify(httpConn).close();
+        assertEquals("Return null when get is unsuccessful", null, returnValue);
+        assertEquals(HttpGetter.HTTP_307_TEMPORARY_REDIRECT, getter.getResponseCode());
+        assertTrue("Task was not correctly cancelled after error", cancelCalled);
+    }
+
     private void createMocks() {
         PowerMockito.mockStatic(L.class);
         httpConn = Mockito.mock(PlatformUtils.HttpConn.class);

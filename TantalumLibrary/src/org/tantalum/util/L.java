@@ -55,7 +55,7 @@ public abstract class L {
     }
 
     /**
-     * Logs an error message and throwable
+     * Logs an error message and <code>Throwable</code>
      *
      * @param tag message category
      * @param message explanation
