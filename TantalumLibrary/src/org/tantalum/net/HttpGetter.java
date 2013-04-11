@@ -826,9 +826,6 @@ public class HttpGetter extends Task {
                             break;
                         }
                     }
-                } else {
-                    //#debug
-                    L.i("Suspicious zero length result from a web service that does not set the Content-Length header: " + this.getClass().getName(), "" + this);
                 }
             }
         } finally {

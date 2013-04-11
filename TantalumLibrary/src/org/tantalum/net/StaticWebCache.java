@@ -379,11 +379,12 @@ public final class StaticWebCache extends StaticCache {
                 //#debug
                 L.i("Async StaticCache.GET_ANYWHERE get", (String) in);
                 try {
-                    out = synchronousGet((String) in);
+                    final String url = (String) in;
+                    out = synchronousGet(url);
                     if (out == null) {
                         //#debug
                         L.i("StaticWebCache: not found locally, get from the web", (String) in);
-                        chain(getWebAsync((String) in, Task.HIGH_PRIORITY, postMessage));
+                        chain(getWebAsync(url, priority, postMessage));
                     }
                 } catch (FlashDatabaseException e) {
                     //#debug

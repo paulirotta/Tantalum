@@ -884,7 +884,9 @@ public abstract class Task implements Runnable {
             if (t != null) {
                 //#debug
                 L.i("Begin fork chained task", t.toString() + " INPUT: " + in);
-                t.set(out);
+                if (out != null) {
+                    t.set(out);
+                }
                 t.assertForkPriority(forkPriority);
                 t.fork();
             }
