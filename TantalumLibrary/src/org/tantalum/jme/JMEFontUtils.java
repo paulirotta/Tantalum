@@ -45,7 +45,7 @@ public final class JMEFontUtils {
             throw new IllegalArgumentException("JMEFontUtils was passed a null font");
         }
         if (elipsis == null) {
-            throw new IllegalArgumentException("JMEFontUtils was passed a null ellipsis");
+            throw new IllegalArgumentException("JMEFontUtils was passed a null elipsis");
         }
         final int key = font.hashCode() ^ elipsis.hashCode();
         JMEFontUtils instance = (JMEFontUtils) instances.get(new Integer(key));
@@ -190,7 +190,7 @@ public final class JMEFontUtils {
      * Split a string in to several lines of text which will display within a
      * maximum width. Single lines of text are expected and only the common
      * whitespace character
-     * <code>' '</code> is considered as a line break position.
+     * <code>' '</code> and <code>-</code> are considered as a line break position.
      *
      * @param vector     - The existing vector to which the lines should be appended
      * @param text
@@ -200,9 +200,10 @@ public final class JMEFontUtils {
      */
     public Vector splitToLines(final Vector vector, final String text, final int maxWidth, final boolean useKerning) {
         int lastSpace = 0;
-
+        char character;
         for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == ' ') {
+            character = text.charAt(i);
+            if (character == ' ' || character == '-') {
                 lastSpace = i;
             }
             final int width;
