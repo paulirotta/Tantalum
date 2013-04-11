@@ -276,7 +276,7 @@ public final class StaticWebCache extends StaticCache {
 
                     return in;
                 }
-            }).fork(Task.IDLE_PRIORITY);
+            }.setClassName("Prefetch")).fork(Task.IDLE_PRIORITY);
         }
     }
 

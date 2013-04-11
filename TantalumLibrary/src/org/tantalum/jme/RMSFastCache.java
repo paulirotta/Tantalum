@@ -73,7 +73,7 @@ public class RMSFastCache extends FlashCache {
                     return in;
                 }
             }
-        }).fork(Task.SHUTDOWN);
+        }.setClassName("CloseOnShutdown")).fork(Task.SHUTDOWN);
         initIndex(hashTableSize);
     }
 

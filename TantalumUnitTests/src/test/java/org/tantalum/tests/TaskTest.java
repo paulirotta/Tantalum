@@ -39,6 +39,16 @@ import static org.junit.Assert.*;
  * @author phou
  */
 public class TaskTest extends MockedStaticInitializers {
+    @Test
+    public void testAnonInnerClassNameOverride() {
+        Task instance = new Task() {
+            protected Object exec(Object in) {
+                return "run";
+            }
+        }.setClassName("TestInnerClassName");
+        
+        assertEquals("Inner class name override is correct: " + instance.getClassName(), "org.tantalum.tests.TaskTest$1TestInnerClassName", instance.getClassName());
+    }
 
     /**
      * Test of testFork method, of class Task.

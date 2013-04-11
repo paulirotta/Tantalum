@@ -109,7 +109,7 @@ public final class AndroidCache extends FlashCache {
 
                 return in2;
             }
-        }).fork(Task.SHUTDOWN);
+        }.setClassName("CloseOnShutdown")).fork(Task.SHUTDOWN);
     }
 
     /**

@@ -168,7 +168,10 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                  * user wants to see the result of their latest action as soon as possible
                  * without the UI ever locking up.
                  */
-                this.locationsCache.getAsync(getGeocodeUrl(this.getAddressTextField().getString().trim().toLowerCase()), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.FASTLANE_PRIORITY) {
+                this.locationsCache.getAsync(getGeocodeUrl(
+                        this.getAddressTextField().getString().trim().toLowerCase()),
+                        Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE,
+                        new Task(Task.FASTLANE_PRIORITY) {
                     protected Object exec(Object o) {
                         return o;
                     }
@@ -182,7 +185,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         // UI Thread callback if not already cached and the HTTP GET fails
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
-                });
+                }.setClassName("UITextSetter"));
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction
         }//GEN-END:|7-commandAction|5|7-postCommandAction
         // write post-action user code here

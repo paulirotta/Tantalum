@@ -1030,6 +1030,38 @@ public abstract class Task implements Runnable {
      */
     public void run() {
     }
+    
+    //#mdebug
+    private String anonInnerClassName = null;
+
+    public String getClassName() {
+        String s = this.getClass().getName();
+        synchronized (MUTEX) {
+            if (anonInnerClassName != null) {
+                s += anonInnerClassName;
+            }
+        }
+
+        return s;
+    }
+    //#enddebug
+
+    /**
+     * You can call this to make your debug output more clear if needed since
+     * by default anonymous inner classes don't have very useful names.
+     * 
+     * This code will be automatically removed without a performance impact when
+     * you obfuscate your final build using the production Tantalum.JAR
+     * 
+     * @param name
+     * @return
+     */
+    public Task setClassName(final String name) {
+        //#debug
+        this.anonInnerClassName = name;
+
+        return this;
+    }
 
     //#mdebug
     /**
@@ -1056,7 +1088,7 @@ public abstract class Task implements Runnable {
             StringBuffer sb = new StringBuffer(300);
 
             sb.append("{task=");
-            sb.append(this.getClass().getName());
+            sb.append(this.getClassName());
             sb.append(" status=");
             sb.append(getStatusString());
             sb.append(" value=");
@@ -1074,7 +1106,7 @@ public abstract class Task implements Runnable {
                     sb.append("   (no next task in chain)");
                 } else {
                     sb.append("   nextTaskInChain=");
-                    sb.append(chainedTask.getClass().getName());
+                    sb.append(chainedTask.getClassName());
                 }
             }
             sb.append("}" + L.CRLF);

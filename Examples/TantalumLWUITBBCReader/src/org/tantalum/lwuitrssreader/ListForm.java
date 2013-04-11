@@ -104,7 +104,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 protected void onCanceled() {
                     isReloading = false;
                 }
-            };
+            }.setClassName("ReloadingStateUpdater");
 
             if (fromNet) {
                 feedCache.getAsync(midlet.getUrl(), Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, task);

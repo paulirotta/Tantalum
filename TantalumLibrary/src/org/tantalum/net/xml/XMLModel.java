@@ -91,11 +91,13 @@ public abstract class XMLModel extends DefaultHandler {
             currentDepth = 0;
 
             try {
-                //#debug
-                L.i("Start parse", "length=" + xml.length);
+                //#mdebug
+                L.i(this.getClass().getName() + " start XML parse", "length=" + xml.length);
+                final long t = System.currentTimeMillis();
+                //#enddebug
                 SAXParserFactory.newInstance().newSAXParser().parse(in, this);
                 //#debug
-                L.i("End parse", "length=" + xml.length);
+                L.i(this.getClass().getName() + " end XML parse", "elapsedTime=" + (System.currentTimeMillis() - t) + "ms");
             } catch (SAXException t) {
                 //#debug
                 L.e("SAX Parse error", new String(xml), t);

@@ -76,7 +76,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                 }
                 stopSpinner();
             }
-        };
+        }.setClassName("LoadFeed");
 
         //#debug
         L.i("loadFeed", search);

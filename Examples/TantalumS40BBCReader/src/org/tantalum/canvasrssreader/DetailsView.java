@@ -171,7 +171,7 @@ public final class DetailsView extends View {
 
                         return false;
                     }
-                });
+                }.setClassName("RefereshCanvas"));
             }
         }
 
@@ -220,7 +220,7 @@ public final class DetailsView extends View {
 
                     return image;
                 }
-            });
+            }.setClassName("LeftIcon"));
         }
         if (rightItem != null) {
             imageCache.getAsync(rightItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
@@ -231,7 +231,7 @@ public final class DetailsView extends View {
 
                     return image;
                 }
-            });
+            }.setClassName("RightIcon"));
         }
     }
 

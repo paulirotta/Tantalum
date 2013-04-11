@@ -116,6 +116,7 @@ public final class DetailsForm extends Form implements CommandListener {
                 selectedItem.setLoadingImage(true);
                 imageCache.getAsync(selectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.HIGH_PRIORITY) {
                     protected Object exec(final Object in) {
+                        //#debug
                         L.i("IMAGE DEBUG", selectedItem.getThumbnail());
                         selectedItem.setLoadingImage(false);
 
@@ -125,7 +126,7 @@ public final class DetailsForm extends Form implements CommandListener {
                     public void run(final Object result) {
                         DetailsForm.this.appendImageItem();
                     }
-                }.setRunOnUIThreadWhenFinished(true));
+                }.setClassName("IconAppender").setRunOnUIThreadWhenFinished(true));
             }
         }
     }

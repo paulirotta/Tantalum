@@ -68,7 +68,7 @@ public abstract class RSSListView extends View {
 
                 return in;
             }
-        });
+        }.setClassName("ClearCache"));
         DetailsView.imageCache.clearAsync(null);
     }
 
@@ -79,19 +79,21 @@ public abstract class RSSListView extends View {
         this.renderY = 0;
         rssModel.removeAllElements();
         final Task rssResult = new Task() {
-            public Object exec(final Object params) {
+            public Object exec(final Object in) {
                 canvas.refresh();
 
-                return null;
+                return in;
             }
-        };
+        }.setClassName("RSSResult");
 
         String feedUrl = RSSReader.INITIAL_FEED_URL;
         if (forceNetLoad) {
-            return feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, rssResult);
+            feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, rssResult);
         } else {
-            return feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, rssResult);
+            feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, rssResult);
         }
+        
+        return rssResult;
     }
 
     /**

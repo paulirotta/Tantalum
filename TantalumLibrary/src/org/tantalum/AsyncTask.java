@@ -90,7 +90,7 @@ public abstract class AsyncTask extends Task {
 
                 return in;
             }
-        }).fork(Task.SERIAL_PRIORITY);
+        }.setClassName("SerialExecutor")).fork(Task.SERIAL_PRIORITY);
     }
 
     /**

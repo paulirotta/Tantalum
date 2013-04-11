@@ -111,7 +111,7 @@ public final class ListForm extends Form implements CommandListener {
 
                     return in;
                 }
-            }).fork();
+            }.setClassName("Alert")).fork();
             rssReader.switchDisplayable(alert, this);
         } else if (command == settingsCommand) {
             String feedUrl = FormRSSReader.INITIAL_FEED_URL;
@@ -177,7 +177,7 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
             };
-            uiTask.setRunOnUIThreadWhenFinished(true);
+            uiTask.setClassName("ForceLoadPainter").setRunOnUIThreadWhenFinished(true);;
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
             uiTask = new Task(Task.HIGH_PRIORITY) {
@@ -202,7 +202,7 @@ public final class ListForm extends Form implements CommandListener {
                     return false;
                 }
             };
-            uiTask.setRunOnUIThreadWhenFinished(true);
+            uiTask.setClassName("LoadPainter").setRunOnUIThreadWhenFinished(true);
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
         }
 

@@ -148,7 +148,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         // Update on the UI thread if there is a problem
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
-                });
+                }.setClassName("JSONParserAndUITextSetter"));
 
                 getter.fork(); // Start task on a background Worker thread
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction

@@ -94,7 +94,7 @@ public final class DetailCanvas extends GestureCanvas {
                             }
                             return in;
                         }
-                    }).fork().join(100);
+                    }.setClassName("DisplayCachedOnStartupOrSpinner")).fork().join(100);
                 } catch (TimeoutException ex) {
                     // Normal for slow load
                 } catch (Exception ex) {

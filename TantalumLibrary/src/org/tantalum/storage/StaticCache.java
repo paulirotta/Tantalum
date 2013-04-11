@@ -399,7 +399,9 @@ public class StaticCache {
 
                     return in;
                 }
-            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN)).fork(Task.SERIAL_PRIORITY);
+            }.setClassName("SynchronousPutter")
+                    .setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN))
+                    .fork(Task.SERIAL_PRIORITY);
         }
 
         return useForm;
@@ -570,7 +572,7 @@ public class StaticCache {
 
                 return in;
             }
-        };
+        }.setClassName("ClearAsync");
         task.chain(chainedTask);
         task.fork(Task.SERIAL_PRIORITY);
 
@@ -608,7 +610,7 @@ public class StaticCache {
 
                 return in;
             }
-        };
+        }.setClassName("ClearHeapAsync");
         task.chain(chainedTask);
         task.fork();
 
@@ -667,34 +669,6 @@ public class StaticCache {
         return handler;
     }
 
-    /**
-     * Get a Vector of all keys for key-value pairs currently in the local
-     * ramCache at the flash memory level. The value may or may not be in heap
-     * memory at the current time.
-     *
-     * @param chainedTask
-     * @return
-     */
-//    public Task getKeysAsync(final Task chainedTask) {
-//        final Task task = new Task() {
-//            protected Object exec(Object in) {
-//                try {
-//                    return flashCache.getKeys();
-//                } catch (Exception e) {
-//                    //#debug
-//                    L.e("Can not complete", "getKeysTask", e);
-//                    cancel(false, "Exception during async keys getDigests");
-//                    flashCache.clear();
-//
-//                    return new Vector();
-//                }
-//            }
-//        };
-//        task.chain(chainedTask);
-//        task.fork();
-//
-//        return task;
-//    }
 //#mdebug
     /**
      * For debugging use
