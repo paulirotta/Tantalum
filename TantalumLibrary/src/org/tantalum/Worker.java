@@ -469,6 +469,13 @@ final class Worker extends Thread {
             final int n = Worker.getNumberOfWorkers();
             final Vector lines = new Vector(n + 1);
 
+            for (int i = 0; i < n; i++) {
+                final Worker w = Worker.workers[i];
+                if (w != null) {
+                    final Task task = w.currentTask;
+                    sb.append(task != null ? 'o' : ' ');
+                }
+            }
             if (!fastlaneQ.isEmpty()) {
                 sb.append('F');
                 sb.append(fastlaneQ.size());
@@ -477,20 +484,16 @@ final class Worker extends Thread {
             if (!workers[0].serialQ.isEmpty()) {
                 sb.append('S');
                 sb.append(workers[0].serialQ.size());
-                sb.append('-');
+                sb.append(' ');
             }
             if (!q.isEmpty()) {
                 sb.append('Q');
                 sb.append(Worker.q.size());
-                sb.append('-');
             }
             for (int i = 0; i < n; i++) {
                 final Worker w = Worker.workers[i];
                 if (w != null) {
                     final Task task = w.currentTask;
-                    sb.append(task != null ? "T" : "t");
-                    sb.append(i);
-                    sb.append(':');
                     if (task != null) {
                         lines.addElement(trimmedNameNoPackage(task.getClass().getName()));
                     }
