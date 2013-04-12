@@ -420,7 +420,7 @@ public final class StaticWebCache extends StaticCache {
         final HttpGetter httpGetter = httpTaskFactory.getHttpTask(url, postMessage);
 
         //#debug
-        L.i("StaticWebCache.HttpTaskFactory returned", httpGetter.toString());
+        L.i("StaticWebCache.HttpTaskFactory returned", L.CRLF + httpGetter);
 
         final class ValidationTask extends Task {
             protected Object exec(final Object in) {

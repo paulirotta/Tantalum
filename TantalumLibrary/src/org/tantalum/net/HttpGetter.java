@@ -952,9 +952,10 @@ public class HttpGetter extends Task {
 
     //#mdebug
     public String toString() {
-        super.toString();
         final StringBuffer sb = new StringBuffer();
-
+        
+        sb.append(super.toString());
+        
         sb.append(" url=");
         sb.append(super.toString());
         sb.append(" retriesRemaining=");

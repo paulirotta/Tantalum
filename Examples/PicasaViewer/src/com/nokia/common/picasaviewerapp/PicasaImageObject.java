@@ -28,6 +28,7 @@ public final class PicasaImageObject {
         this.imageUrl = imgUrl;
     }
 
+    //#mdebug
     /**
      * For debug
      *
@@ -36,4 +37,5 @@ public final class PicasaImageObject {
     public String toString() {
         return "PicasaImageObject title:" + title + " author:" + author + " thumbUrl:" + thumbUrl + " imageUrl:" + imageUrl;
     }
+    //#enddebug
 }

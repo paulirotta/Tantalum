@@ -1110,6 +1110,16 @@ public abstract class Task implements Runnable {
             sb.append(this.getClassName());
             sb.append(" status=");
             sb.append(getStatusString());
+            if (showChain) {
+                sb.append(L.CRLF);
+                if (previousTaskInChain == null) {
+                    sb.append("   (no previous task in chain)");
+                    sb.append(L.CRLF);
+                } else {
+                    sb.append("   previousTaskInChain=");
+                    sb.append(previousTaskInChain.getClassName());
+                }
+            }
             sb.append(" value=");
             if (value instanceof byte[]) {
                 sb.append("byte[");
@@ -1120,13 +1130,6 @@ public abstract class Task implements Runnable {
             }
             if (showChain) {
                 sb.append(L.CRLF);
-                if (previousTaskInChain == null) {
-                    sb.append("   (no previous task in chain)");
-                    sb.append(L.CRLF);
-                } else {
-                    sb.append("   previousTaskInChain=");
-                    sb.append(previousTaskInChain.toString(false));
-                }
                 if (chainedTask == null) {
                     sb.append("   (no next task in chain)");
                 } else {
