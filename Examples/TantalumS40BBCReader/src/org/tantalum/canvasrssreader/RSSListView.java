@@ -80,6 +80,8 @@ public abstract class RSSListView extends View {
         rssModel.removeAllElements();
         final Task rssResult = new Task() {
             public Object exec(final Object in) {
+                //#debug
+                L.i("RSSReault", "canvas.refresh(), rssModelLength=" + rssModel.size());
                 canvas.refresh();
 
                 return in;

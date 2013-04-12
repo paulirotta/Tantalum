@@ -25,6 +25,7 @@
 package org.tantalum.util;
 
 import org.tantalum.PlatformUtils;
+import org.tantalum.Task;
 
 /**
  * Utility class for logging.
@@ -39,31 +40,43 @@ public abstract class L {
 //#enddebug    
 
     /**
+     * Add information to the log, including the class name of the callingObject
+     * 
+     * @param callingObject
+     * @param tag
+     * @param message 
+     */
+    public static final void i(final Object callingObject, final String tag, final String message) {
+//#mdebug
+        final StringBuffer sb = getMessage(callingObject, false, tag, message);
+
+        synchronized (L.class) {
+            PlatformUtils.getInstance().getLog().printMessage(sb, null);
+        }
+//#enddebug        
+    }
+
+    /**
      * Logs an "information" message.
      *
      * @param tag name of the class logging this message
      * @param message message to i
      */
     public static final void i(final String tag, final String message) {
-//#mdebug
-        final StringBuffer sb = getMessage(false, tag, message);
-
-        synchronized (L.class) {
-            PlatformUtils.getInstance().getLog().printMessage(sb, null);
-        }
-//#enddebug
+        i(null, tag, message);
     }
 
     /**
-     * Logs an error message and <code>Throwable</code>
-     *
-     * @param tag message category
-     * @param message explanation
-     * @param t exception
+     * Add an error to the log, including the class name of the callingObject
+     * 
+     * @param callingObject
+     * @param tag
+     * @param message
+     * @param t 
      */
-    public static final void e(final String tag, final String message, final Throwable t) {
+    public static final void e(final Object callingObject, final String tag, final String message, final Throwable t) {
 //#mdebug
-        final StringBuffer sb = getMessage(true, tag, message);
+        final StringBuffer sb = getMessage(callingObject, true, tag, message);
         sb.append(", EXCEPTION: ");
         sb.append(t);
         sb.append(CRLF);
@@ -76,6 +89,18 @@ public abstract class L {
             }
         }
 //#enddebug
+    }
+
+    /**
+     * Logs an error message and
+     * <code>Throwable</code>
+     *
+     * @param tag message category
+     * @param message explanation
+     * @param t exception
+     */
+    public static final void e(final String tag, final String message, final Throwable t) {
+        e(null, tag, message, t);
     }
 
 //#mdebug
@@ -94,7 +119,7 @@ public abstract class L {
      * @return message string
      * @return
      */
-    private static StringBuffer getMessage(final boolean prependLineOfStars, String tag, String message) {
+    private static StringBuffer getMessage(final Object callingObject, final boolean prependLineOfStars, String tag, String message) {
         if (tag == null) {
             tag = "<null>";
         }
@@ -119,6 +144,10 @@ public abstract class L {
         sb.append(" (");
         String threadName = PlatformUtils.getInstance().isUIThread() ? "UI" : Thread.currentThread().getName();
         sb.append(threadName);
+        if (callingObject != null) {
+            sb.append(' ');
+            sb.append(Task.getClassName(callingObject));
+        }
         sb.append("): ");
         sb.append(tag);
         sb.append(": ");

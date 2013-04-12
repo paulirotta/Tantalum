@@ -236,8 +236,10 @@ public class StaticCache {
      * @return
      */
     protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
-        //#debug
+        //#mdebug
         L.i("Start to convert", key + " bytes length=" + bytes.length);
+        final long startTime = System.currentTimeMillis();
+        //#enddebug
         final Object o = handler.convertToUseForm(key, bytes);
 
         synchronized (MUTEX) {
@@ -246,7 +248,7 @@ public class StaticCache {
             ramCache.put(digest, o);
         }
         //#debug
-        L.i("End convert", key);
+        L.i("End convert, elapsedTime=" + (System.currentTimeMillis() - startTime) + "ms", key);
 
         return o;
     }

@@ -24,6 +24,8 @@
  */
 package org.tantalum.net;
 
+import org.tantalum.Task;
+
 /**
  * HTTP POST a message to a given URL
  *
@@ -68,7 +70,7 @@ public class HttpPoster extends HttpGetter {
      */
     public HttpPoster setPostData(final byte[] postData) {
         if (postData == null) {
-            throw new IllegalArgumentException(this.getClass().getName() + " was passed null message- meaningless POST or PUT operation");
+            throw new IllegalArgumentException(getClassName() + " was passed null message- meaningless POST or PUT operation");
         }
         this.postMessage = new byte[postData.length];
         System.arraycopy(postData, 0, this.postMessage, 0, postData.length);

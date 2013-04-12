@@ -230,7 +230,7 @@ public abstract class AsyncTask extends Task {
      * @return
      */
     public String toString() {
-        return this.getClass().getName() + ", AsyncTask params: " + params.toString();
+        return super.toString() + " - AsyncTask params: " + params.toString();
     }
     //#enddebug
 }

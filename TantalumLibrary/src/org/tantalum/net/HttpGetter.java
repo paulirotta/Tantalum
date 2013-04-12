@@ -652,7 +652,7 @@ public class HttpGetter extends Task {
         final String url = keyIncludingPostDataHashtoUrl((String) in);
 
         //#debug
-        L.i(this.getClass().getName() + " start", url);
+        L.i(this, "Start", url);
         ByteArrayOutputStream bos = null;
         PlatformUtils.HttpConn httpConn = null;
         boolean tryAgain = false;
@@ -701,7 +701,7 @@ public class HttpGetter extends Task {
 
             if (length == 0) {
                 //#debug
-                L.i(this.getClass().getName() + " exec", "No response. Stream is null, or length is 0");
+                L.i(this, "Exec", "No response. Stream is null, or length is 0");
             } else if (length > httpConn.getMaxLengthSupportedAsBlockOperation()) {
                 cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
             } else if (length > 0) {
@@ -722,24 +722,25 @@ public class HttpGetter extends Task {
             if (out instanceof byte[]) {
                 outLength = ((byte[]) out).length;
             }
-            L.i(this.getClass().getName() + " unvalidated end read", "bytes=" + outLength);
+            L.i(this, "Unvalidated end read", "bytes=" + outLength);
             //#enddebug
             success = checkResponseCode(responseCode, responseHeaders);
             //#debug
-            L.i(this.getClass().getName() + " response", "HTTP response code indicates success=" + success);
+            L.i(this, "Response", "HTTP response code indicates success=" + success);
         } catch (IllegalArgumentException e) {
             //#debug
-            L.e(this.getClass().getName() + " HttpGetter has illegal argument", url, e);
+            L.e(this, "HttpGetter has illegal argument", url, e);
             throw e;
         } catch (IOException e) {
             //#debug
-            L.e(this.getClass().getName() + " retries remaining", url + ", retries=" + retriesRemaining, e);
+            L.e(this, "Retries remaining", url + ", retries=" + retriesRemaining, e);
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
             } else {
                 //#debug
-                L.i(this.getClass().getName() + " no more retries", url);
+                L.i(this, "No more retries", url);
+                cancel(false, "No more retries");
             }
         } finally {
             if (httpConn != null) {
@@ -747,7 +748,7 @@ public class HttpGetter extends Task {
                     httpConn.close();
                 } catch (Exception e) {
                     //#debug
-                    L.e("Closing Http InputStream error", url, e);
+                    L.e(this, "Closing Http InputStream error", url, e);
                 } finally {
                     httpConn = null;
                 }
@@ -758,7 +759,7 @@ public class HttpGetter extends Task {
                 }
             } catch (Exception e) {
                 //#debug
-                L.e("HttpGetter byteArrayOutputStream close error", url, e);
+                L.e(this, "HttpGetter byteArrayOutputStream close error", url, e);
             } finally {
                 bos = null;
             }
@@ -776,7 +777,7 @@ public class HttpGetter extends Task {
                 cancel(false, "HttpGetter failed response code and header check: " + this.toString());
             }
             //#debug
-            L.i(this.getClass().getName() + " end", url + " status=" + getStatus() + " out=" + out);
+            L.i(this, "End", url + " status=" + getStatus() + " out=" + out);
         }
 
         return out;
@@ -786,7 +787,7 @@ public class HttpGetter extends Task {
         int totalBytesRead = 0;
 
         //#debug
-        L.i(this.getClass().getName() + " start Content-Length=" + bytes.length + " read", "" + this);
+        L.i(this, "Start Content-Length=" + bytes.length + " read", "" + this);
         try {
             while (totalBytesRead < bytes.length) {
                 final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
@@ -806,20 +807,19 @@ public class HttpGetter extends Task {
             }
         } finally {
             //#debug
-            L.i(this.getClass().getName() + " end Content-Length=" + bytes.length + " read", "" + this);
+            L.i(this, "End Content-Length=" + bytes.length + " read", "" + this);
         }
     }
 
     private void prematureEOF(final String url, final int bytesRead, final int length) throws IOException {
-        final String s = this.getClass().getName() + " recieved EOF before content_length exceeded";
         //#debug
-        L.i(s, url + ", content_length=" + length + " bytes_read=" + bytesRead);
-        throw new IOException(s);
+        L.i(this, "EOF before Content-Length sent by server", url + ", Content-Length=" + length + " bytesRead=" + bytesRead);
+        throw new IOException(getClassName() + " recieved EOF before content_length exceeded");
     }
 
     private void readBytesVariableLength(final InputStream inputStream, final OutputStream bos) throws IOException {
         //#debug
-        L.i(this.getClass().getName() + " start variable length read", "" + this);
+        L.i(this, "Start variable length read", "" + this);
         try {
             final byte[] readBuffer = new byte[16384];
             while (true) {
@@ -838,7 +838,7 @@ public class HttpGetter extends Task {
             }
         } finally {
             //#debug
-            L.i(this.getClass().getName() + " end variable length read", "" + this);
+            L.i(this, "End variable length read", "" + this);
         }
     }
 
@@ -898,58 +898,6 @@ public class HttpGetter extends Task {
         return url + '\n' + digestAsHex;
     }
 
-    //#mdebug
-    public String toString() {
-        final StringBuffer sb = new StringBuffer();
-
-        sb.append("HttpGetter: url=");
-        sb.append(super.toString());
-        sb.append(" retriesRemaining=");
-        sb.append(retriesRemaining);
-        sb.append(" postMessageLength=");
-        if (postMessage == null) {
-            sb.append("<null>");
-        } else {
-            sb.append(postMessage.length);
-        }
-
-        if (requestPropertyKeys.isEmpty()) {
-            sb.append("\n(default HTTP request, no customer header params)");
-        } else {
-            sb.append("\nHTTP REQUEST CUSTOM HEADERS");
-            for (int i = 0; i < requestPropertyKeys.size(); i++) {
-                final String key = (String) requestPropertyKeys.elementAt(i);
-                sb.append("\n   ");
-                sb.append(key);
-                sb.append(": ");
-                final String value = (String) requestPropertyValues.elementAt(i);
-                sb.append(value);
-            }
-        }
-
-        if (responseCode == HTTP_OPERATION_PENDING) {
-            sb.append("\n(http operation pending, no server response yet)");
-        } else {
-            sb.append("\nserverHTTPResponseCode=");
-            sb.append(responseCode);
-
-            sb.append("\nHTTP RESPONSE HEADERS");
-            final Enumeration enu = responseHeaders.keys();
-            while (enu.hasMoreElements()) {
-                final String k = (String) enu.nextElement();
-                sb.append("\n   ");
-                sb.append(k);
-                sb.append(": ");
-                final String value = (String) responseHeaders.get(k);
-                sb.append(value);
-            }
-        }
-        sb.append('\n');
-
-        return sb.toString();
-    }
-    //#enddebug
-
     /**
      * Retrieves an estimated count of transfered bytes downstream. The counter
      * is valid during the application run.
@@ -1001,4 +949,57 @@ public class HttpGetter extends Task {
     protected synchronized static void addUpstreamDataCount(final int byteCount) {
         upstreamDataCount += byteCount;
     }
+
+    //#mdebug
+    public String toString() {
+        super.toString();
+        final StringBuffer sb = new StringBuffer();
+
+        sb.append(" url=");
+        sb.append(super.toString());
+        sb.append(" retriesRemaining=");
+        sb.append(retriesRemaining);
+        sb.append(" postMessageLength=");
+        if (postMessage == null) {
+            sb.append("<null>");
+        } else {
+            sb.append(postMessage.length);
+        }
+
+        if (requestPropertyKeys.isEmpty()) {
+            sb.append("\n(default HTTP request, no customer header params)");
+        } else {
+            sb.append("\nHTTP REQUEST CUSTOM HEADERS");
+            for (int i = 0; i < requestPropertyKeys.size(); i++) {
+                final String key = (String) requestPropertyKeys.elementAt(i);
+                sb.append("\n   ");
+                sb.append(key);
+                sb.append(": ");
+                final String value = (String) requestPropertyValues.elementAt(i);
+                sb.append(value);
+            }
+        }
+
+        if (responseCode == HTTP_OPERATION_PENDING) {
+            sb.append("\n(http operation pending, no server response yet)");
+        } else {
+            sb.append("\nserverHTTPResponseCode=");
+            sb.append(responseCode);
+
+            sb.append("\nHTTP RESPONSE HEADERS");
+            final Enumeration enu = responseHeaders.keys();
+            while (enu.hasMoreElements()) {
+                final String k = (String) enu.nextElement();
+                sb.append("\n   ");
+                sb.append(k);
+                sb.append(": ");
+                final String value = (String) responseHeaders.get(k);
+                sb.append(value);
+            }
+        }
+        sb.append('\n');
+
+        return sb.toString();
+    }
+    //#enddebug
 }

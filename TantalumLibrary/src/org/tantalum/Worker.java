@@ -499,7 +499,7 @@ final class Worker extends Thread {
                 if (w != null) {
                     final Task task = w.currentTask;
                     if (task != null) {
-                        lines.addElement(trimmedNameNoPackage(task.getClass().getName()));
+                        lines.addElement(trimmedNameNoPackage(Task.getClassName(task)));
                     }
                 }
             }

@@ -499,7 +499,7 @@ public final class StaticWebCache extends StaticCache {
         public boolean validateHttpResponse(final int responseCode, final Hashtable headers, final byte[] bytesReceived) {
             if (responseCode >= HttpGetter.HTTP_500_INTERNAL_SERVER_ERROR) {
                 //#debug
-                L.i(this.getClass().getName(), "Invalid response code " + responseCode + " received");
+                L.i(this, "Invalid response code", responseCode + " received");
                 return false; // TODO: Should we throw an exception?
             } else if (responseCode >= HttpGetter.HTTP_400_BAD_REQUEST) {
                 return false;
