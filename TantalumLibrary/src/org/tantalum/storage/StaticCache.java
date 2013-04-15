@@ -329,7 +329,7 @@ public class StaticCache {
                 }
 
                 //#debug
-                L.i("StaticCache flash intermediate result", "(" + cachePriorityChar + ") " + key + " : " + bytes);
+                L.i("StaticCache flash intermediate result", "(" + cachePriorityChar + ") key=" + key + " byteLength=" + (bytes != null ? ("" + bytes.length) : "<null>"));
                 if (bytes != null) {
                     //#debug
                     L.i("StaticCache flash hit", "(" + cachePriorityChar + ") " + key);

@@ -38,6 +38,16 @@ apply plugin: 'findbugs'
 project.findbugs.ignoreFailures = true
 project.pmd.ignoreFailures = true
 
+// Enable HTML report generation
+tasks.withType(FindBugs) {
+    reports.xml.enabled = false
+    reports.html.enabled = true
+}	
+tasks.withType(Pmd) {
+    reports.xml.enabled = false
+    reports.html.enabled = true
+}	
+
 // Use this as the name for the generated jars
 
 project.ext.releaseArchivesName = 'Tantalum'

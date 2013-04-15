@@ -6,7 +6,6 @@ package org.tantalum.jme;
 
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -22,6 +21,7 @@ import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.StringUtils;
 
 /**
  *
@@ -419,7 +419,7 @@ public class RMSFastCache extends FlashCache {
                     final int valueIndex = toValueIndex(hashValue);
                     return valueRS.getRecord(valueIndex);
                 } catch (Exception ex) {
-                    throw new FlashDatabaseException("Can not getData from RMS: " + digest + " - " + ex);
+                    throw new FlashDatabaseException("Can not getData from RMS: " + StringUtils.toHex(digest) + " - " + ex);
                 }
             }
 
@@ -491,7 +491,7 @@ public class RMSFastCache extends FlashCache {
                     keyRS.deleteRecord(keyRecordId);
                 }
             } catch (RecordStoreException e) {
-                throw new FlashDatabaseException("Can not removeData from RMS: " + digest + " - " + e);
+                throw new FlashDatabaseException("Can not removeData from RMS: " + StringUtils.toHex(digest) + " - " + e);
             }
         }
     }

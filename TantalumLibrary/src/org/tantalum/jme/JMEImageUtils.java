@@ -245,8 +245,8 @@ public final class JMEImageUtils {
                     srcW >>= 1;
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-                    JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
-                            srcH >>= 1);
+                    JMEImageUtils.half(inputImageARGB, outputImageARGB, maxW,
+                            maxH);
                     break;
                 }
                 JMEImageUtils.fivePointSampleDownscale(inputImageARGB,
@@ -302,7 +302,7 @@ public final class JMEImageUtils {
             srcW >>= 1;
         }
         if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-            JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW, srcH >>= 1);
+            JMEImageUtils.half(inputImageARGB, outputImageARGB, maxW, maxH);
         } else {
             maxW = Math.min(srcW, maxW);
             maxH = Math.min(srcH, maxH);

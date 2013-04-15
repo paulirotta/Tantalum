@@ -177,7 +177,7 @@ public final class AndroidCache extends FlashCache {
                 return null;
             } catch (Exception e) {
                 //#debug
-                L.e("db can not be initialized", "getData, key=" + digest, e);
+                L.e("db can not be initialized", "getData, key=" + StringUtils.toHex(digest), e);
                 throw new FlashDatabaseException("db init error on getData, key=" + StringUtils.toHex(digest) + " : " + e);
             } finally {
                 //#debug
@@ -197,7 +197,7 @@ public final class AndroidCache extends FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public synchronized void put(final String url, final byte[] data) throws FlashFullException, FlashDatabaseException, UnsupportedEncodingException {
+    public void put(final String url, final byte[] data) throws FlashFullException, FlashDatabaseException, UnsupportedEncodingException {
         if (url == null) {
             throw new IllegalArgumentException("You attempted to put a null key to the cache");
         }
@@ -238,7 +238,7 @@ public final class AndroidCache extends FlashCache {
      * @param key
      * @throws FlashDatabaseException
      */
-    public synchronized void removeData(final byte[] digest) throws UnsupportedEncodingException, FlashDatabaseException {
+    public void removeData(final byte[] digest) throws UnsupportedEncodingException, FlashDatabaseException {
         if (digest == null) {
             throw new IllegalArgumentException("You attempted to remove a null digest from the cache");
         }
@@ -266,7 +266,7 @@ public final class AndroidCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public synchronized byte[][] getDigests() throws FlashDatabaseException {
+    public byte[][] getDigests() throws FlashDatabaseException {
         synchronized (MUTEX) {
             byte[][] digests = null;
             Cursor cursor = null;
@@ -284,7 +284,7 @@ public final class AndroidCache extends FlashCache {
                         if (i != 0) {
                             cursor.moveToNext();
                         }
-                        final String s = new String(cursor.getBlob(0));
+                        final String s = new String(cursor.getBlob(0), "UTF-8");
                         digests[i] = toDigest(s);
                     }
                 }

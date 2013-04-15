@@ -287,7 +287,7 @@ public class JSONArray {
      *  be converted to a number.
      */
     public long getLong(int index) throws JSONException {
-        Object o = get(index);
+        get(index);
         return (long)getDouble(index);
     }
 //#endif

@@ -427,7 +427,7 @@ public abstract class Task implements Runnable {
      */
     public final Object set(final Object value) {
         synchronized (MUTEX) {
-            if (this.status >= Task.FINISHED) {
+            if (this.status != Task.PENDING) {
                 throw new IllegalStateException(getClassName() + " can not setValue(), Task value is final after execution: " + this);
             }
 
@@ -776,33 +776,34 @@ public abstract class Task implements Runnable {
      * @return nextTask
      */
     public final Task chain(final Task nextTask) {
-        if (nextTask == this) {
-            throw new IllegalArgumentException("Can not chain a task to itself");
-        }
-
-        if (nextTask != null) {
-            //#mdebug
-            if (previousTaskInChain == nextTask) {
-                throw new IllegalArgumentException("Can not chain a task to the task before it in a chain()");
+        synchronized (MUTEX) {
+            if (nextTask == this) {
+                throw new IllegalArgumentException("Can not chain a task to itself");
             }
-            //#enddebug
+            if (getStatus() > Task.PENDING) {
+                throw new IllegalStateException("Can not chain() to a Task unless it is still PENDING: " + this);
+            }
 
-            final Task previouslyChainedTask;
-            synchronized (MUTEX) {
-                previouslyChainedTask = chainedTask;
-                chainedTask = nextTask;
+            if (nextTask != null) {
+                //#mdebug
+                if (previousTaskInChain == nextTask) {
+                    throw new IllegalArgumentException("Can not chain a task to the task before it in a chain()");
+                }
+                //#enddebug
+
+                if (chainedTask == null) {
+                    chainedTask = nextTask;
+                } else if (chainedTask instanceof ChainSplitter) {
+                    ((ChainSplitter) chainedTask).addSplit(nextTask);
+                } else {
+                    chainedTask = new ChainSplitter(chainedTask, nextTask);
+                }
                 //#debug
                 nextTask.setPreviousTaskInChain(this);
             }
-            if (previouslyChainedTask != null) {
-                /*
-                 * nextTask is inserted as the next node in the chain
-                 */
-                nextTask.chain(previouslyChainedTask);
-            }
-        }
 
-        return nextTask;
+            return nextTask;
+        }
     }
     //#mdebug
     // Always access in a synchronized(MUTEX) block
@@ -1149,4 +1150,39 @@ public abstract class Task implements Runnable {
         }
     }
     //#enddebug
+
+    private static final class ChainSplitter extends Task {
+
+        final Vector tasksToFork = new Vector();
+
+        ChainSplitter(final Task t1, final Task t2) {
+            super(Task.FASTLANE_PRIORITY);
+
+            addSplit(t1);
+            addSplit(t2);
+        }
+
+        void addSplit(final Task t) {
+            tasksToFork.addElement(t);
+        }
+
+        protected Object exec(final Object in) {
+            for (int i = 0; i < tasksToFork.size(); i++) {
+                final Task t = (Task) tasksToFork.elementAt(i);
+
+                if (in != null) {
+                    t.set(in);
+                }
+                t.fork();
+            }
+
+            return in;
+        }
+
+        protected void onCanceled() {
+            for (int i = 0; i < tasksToFork.size(); i++) {
+                ((Task) tasksToFork.elementAt(i)).cancel(false, "Previous task in chain was canceled, then the chain split");
+            }
+        }
+    }
 }

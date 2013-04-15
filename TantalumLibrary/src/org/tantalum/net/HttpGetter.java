@@ -716,14 +716,9 @@ public class HttpGetter extends Task {
 
             if (out != null) {
                 addDownstreamDataCount(((byte[]) out).length);
+                //#debug
+                L.i(this, "Unvalidated end read", "bytes=" + ((byte[]) out).length);
             }
-            //#mdebug
-            int outLength = -1;
-            if (out instanceof byte[]) {
-                outLength = ((byte[]) out).length;
-            }
-            L.i(this, "Unvalidated end read", "bytes=" + outLength);
-            //#enddebug
             success = checkResponseCode(responseCode, responseHeaders);
             //#debug
             L.i(this, "Response", "HTTP response code indicates success=" + success);
@@ -953,9 +948,9 @@ public class HttpGetter extends Task {
     //#mdebug
     public String toString() {
         final StringBuffer sb = new StringBuffer();
-        
+
         sb.append(super.toString());
-        
+
         sb.append(" url=");
         sb.append(super.toString());
         sb.append(" retriesRemaining=");

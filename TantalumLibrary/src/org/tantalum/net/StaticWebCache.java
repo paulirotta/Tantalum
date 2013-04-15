@@ -95,8 +95,9 @@ public final class StaticWebCache extends StaticCache {
     /**
      * Get existing or create a new local cache of a web service.
      *
-     * @param cachePriorityChar - must be unique in your application. Lower numbers or
-     * letters are garbage collected first when flash storage runs out.
+     * @param cachePriorityChar - must be unique in your application. Lower
+     * numbers or letters are garbage collected first when flash storage runs
+     * out.
      * @param handler - an object for converting from the byte[] format returned
      * by the web server or stored in local flash memory into Object form. The
      * most common handlers use cases return something like a String, JSONModel,
@@ -152,16 +153,29 @@ public final class StaticWebCache extends StaticCache {
     }
 
     /**
+     * The simplest and most common way to get is for something that updates the
+     * UI, so default Task.FASTLANE_PRIORITY and StaticWebCache.GET_ANYWHERE are
+     * used.
+     *
+     * @param url
+     * @param chainedTask
+     * @return
+     */
+    public Task getAsync(final String url, final Task chainedTask) {
+        return getAsync(url, null, Task.FASTLANE_PRIORITY, GET_ANYWHERE, chainedTask);
+    }
+
+    /**
      * HTTP GET from the URL specified by key
      *
-     * @param key
+     * @param url
      * @param cachePriorityChar
      * @param getType
      * @param chainedTask
      * @return
      */
-    public Task getAsync(final String key, final int priority, final int getType, final Task chainedTask) {
-        return getAsync(key, null, priority, getType, chainedTask);
+    public Task getAsync(final String url, final int priority, final int getType, final Task chainedTask) {
+        return getAsync(url, null, priority, getType, chainedTask);
     }
 
     /**
@@ -188,20 +202,22 @@ public final class StaticWebCache extends StaticCache {
      * Worker and optionally also the UI thread if UITask after the getAsync
      * operation completes.
      *
-     * @param key - The web service location to HTTP_GET the cacheable data
+     * @param url - The web service location to HTTP_GET the cacheable data
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
-     * @param cachePriorityChar - note that HIGH_PRIORITY requests will be automatically
-     * bumped into FASTLINE_PRIORITY unless it is a GET_WEB operation.
-     * @param getType * * * * *      * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
+     * @param cachePriorityChar - note that HIGH_PRIORITY requests will be
+     * automatically bumped into FASTLINE_PRIORITY unless it is a GET_WEB
+     * operation.
+     * @param getType * * * * * *
+     * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param chainedTask - your <code>Task</code> which is given the data
      * returned and executed after the getAsync operation.
      *
      * @return a new Task containing the result
      */
-    public Task getAsync(final String key, final byte[] postMessage, final int priority, final int getType, final Task chainedTask) {
-        if (key == null) {
+    public Task getAsync(final String url, final byte[] postMessage, final int priority, final int getType, final Task chainedTask) {
+        if (url == null) {
             throw new IllegalArgumentException("Can not getAsync() with null key");
         }
 
@@ -209,26 +225,26 @@ public final class StaticWebCache extends StaticCache {
         final int getterTaskPriority;
 
         //#debug
-        L.i("StaticWebCache getType=" + getType + " : " + chainedTask, "key=" + key);
+        L.i("StaticWebCache getType=" + getType + " : " + chainedTask, "key=" + url);
         switch (getType) {
             case GET_LOCAL:
                 //#debug
-                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_LOCAL)", key);
-                getTask = new StaticCache.GetLocalTask(key, priority);
+                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_LOCAL)", url);
+                getTask = new StaticCache.GetLocalTask(url, priority);
                 getterTaskPriority = allowLocalCacheReadToUseTheFastlane(priority);
                 break;
 
             case GET_ANYWHERE:
                 //#debug
-                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_ANYWHERE)", key);
-                getTask = new StaticWebCache.GetAnywhereTask(key, priority, postMessage);
+                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_ANYWHERE)", url);
+                getTask = new StaticWebCache.GetAnywhereTask(url, priority, postMessage);
                 getterTaskPriority = allowLocalCacheReadToUseTheFastlane(priority);
                 break;
 
             case GET_WEB:
                 //#debug
-                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_WEB)", key);
-                getTask = getWebAsync(key, priority, postMessage);
+                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_WEB)", url);
+                getTask = getWebAsync(url, priority, postMessage);
                 getterTaskPriority = preventWebTasksFromUsingTheFastLane(priority);
                 break;
 
@@ -423,6 +439,7 @@ public final class StaticWebCache extends StaticCache {
         L.i("StaticWebCache.HttpTaskFactory returned", L.CRLF + httpGetter);
 
         final class ValidationTask extends Task {
+
             protected Object exec(final Object in) {
                 Object out = null;
 

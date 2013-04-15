@@ -119,10 +119,6 @@ public final class PlatformUtils {
      * after application startup.
      */
     protected volatile Thread uiThread = null;
-    /**
-     * The platform-specific persistent memory handler
-     */
-    protected FlashCache flashCache;
     private static final Object MUTEX = new Object();
 
     /*

@@ -195,7 +195,5 @@ subprojects {
             ant.fileSet(dir: sourceSets.main.output.classesDir.toString())
             ant.fileSet(dir: sourceSets.main.output.resourcesDir.toString())
         }
-
     }
-
 }

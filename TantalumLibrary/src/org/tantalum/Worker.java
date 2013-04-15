@@ -289,6 +289,7 @@ final class Worker extends Thread {
             final Task t = (Task) queue.elementAt(i);
 
             switch (t.getShutdownBehaviour()) {
+                default:
                 case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
                     break;
 

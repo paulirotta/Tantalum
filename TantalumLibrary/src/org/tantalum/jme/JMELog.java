@@ -53,7 +53,6 @@ public class JMELog extends L {
     private final Vector byteArrayQueue = new Vector();
     private final JMELog.LogWriter usbWriter;
     private static final byte[] CRLF_BYTES = CRLF.getBytes();
-
 //#enddebug    
 
     /**
