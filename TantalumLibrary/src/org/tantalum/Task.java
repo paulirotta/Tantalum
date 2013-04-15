@@ -781,6 +781,12 @@ public abstract class Task implements Runnable {
         }
 
         if (nextTask != null) {
+            //#mdebug
+            if (previousTaskInChain == nextTask) {
+                throw new IllegalArgumentException("Can not chain a task to the task before it in a chain()");
+            }
+            //#enddebug
+
             final Task previouslyChainedTask;
             synchronized (MUTEX) {
                 previouslyChainedTask = chainedTask;
