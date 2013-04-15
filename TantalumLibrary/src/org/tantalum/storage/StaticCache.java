@@ -51,7 +51,8 @@ import org.tantalum.util.WeakHashCache;
 public class StaticCache {
 
     /**
-     * A list of all caches, sorted by cachePriorityChar order (lowest char first)
+     * A list of all caches, sorted by cachePriorityChar order (lowest char
+     * first)
      */
     protected static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
         public boolean before(final Object o1, final Object o2) {
@@ -80,9 +81,9 @@ public class StaticCache {
      * This character serves as a market tag to distinguish the contents of this
      * ramCache from other caches which may also be stored in flash memory in a
      * flat name space. This must be unique like '0'..'9' or 'a'..'z'. Larger
-     * character values indicate lower cachePriorityChar caches which will be garage
-     * collected first when flash memory is low, so use larger characters for
-     * more transient or less-important-to-persist data.
+     * character values indicate lower cachePriorityChar caches which will be
+     * garage collected first when flash memory is low, so use larger characters
+     * for more transient or less-important-to-persist data.
      */
     protected final char cachePriorityChar;
     /**
@@ -148,15 +149,15 @@ public class StaticCache {
     /**
      * Get a named Cache
      *
-     * Caches with higher cachePriorityChar are more likely to keep their data when space
-     * is limited.
+     * Caches with higher cachePriorityChar are more likely to keep their data
+     * when space is limited.
      *
      * You will getDigests IllegalArgumentException if you call this multiple
-     * times for the same cache cachePriorityChar but with a different (not .equals())
-     * DataTypeHandler.
+     * times for the same cache cachePriorityChar but with a different (not
+     * .equals()) DataTypeHandler.
      *
-     * @param cachePriorityChar - a character from '0' to '9', higher numbers getDigests
-     * a preference for space. Letters are also allowed.
+     * @param cachePriorityChar - a character from '0' to '9', higher numbers
+     * getDigests a preference for space. Letters are also allowed.
      * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
      * @param handler - a routine to convert from byte[] to Object form when
      * loading into the RAM ramCache.
@@ -284,8 +285,8 @@ public class StaticCache {
      * Retrieve an object from RAM or RMS storage.
      *
      * @param key
-     * @param cachePriorityChar - set to Work.FASTLANE_PRIORITY if you want the results
-     * quickly to update the UI.
+     * @param cachePriorityChar - set to Work.FASTLANE_PRIORITY if you want the
+     * results quickly to update the UI.
      * @param chainedTask
      * @return
      */
@@ -354,19 +355,22 @@ public class StaticCache {
     /**
      * Store a value to heap and flash memory.
      *
-     * Note that the storage to RMS is done asynchronously in the background
-     * which may lead to large binary objects being queued up on the Worker
-     * thread. If you do this many times, you could run short on memory, and
-     * should re-factor with use of synchronousPutToRMS() instead.
+     * Conversion to from byte[] to use form (POJO, Plain Old Java Object)
+     * happens synchronously on the calling thread before before this method
+     * returns. If data type conversion may take a long time (XML or JSON
+     * parsing, etc) then avoid calling this method from the UI thread.
      *
-     * Note that conversion to use form happens immediately and synchronously on
-     * the calling thread before before this method returns. If conversion may
-     * take a long time (XML parsing, etc) then consider not calling this from
-     * the user event dispatch thread.
+     * Actual storage to persistent flash storage is done asynchronously on a
+     * background worker thread. This is done at high priority to prevent the
+     * queue of to-be-written objects from taking up precious heap memory. Items
+     * are written in the order in which calls to this method complete. You may
+     * prefer to explicitly manage this processes yourself by use of
+     * synchronousPutToRMS().
      *
      * @param key
      * @param bytes
-     * @return the byte[] converted to use form by the ramCache's Handler
+     * @return the byte[] converted to the parsed Object "use form" returned by
+     * this cache's DataTypeHandler
      * @throws FlashDatabaseException
      */
     public Object put(final String key, final byte[] bytes) throws FlashDatabaseException {
@@ -643,8 +647,9 @@ public class StaticCache {
     }
 
     /**
-     * The relative cachePriorityChar used for allocating RMS space between multiple
-     * caches. Higher cachePriorityChar caches synchronousRAMCacheGet more space.
+     * The relative cachePriorityChar used for allocating RMS space between
+     * multiple caches. Higher cachePriorityChar caches synchronousRAMCacheGet
+     * more space.
      *
      * @return
      */

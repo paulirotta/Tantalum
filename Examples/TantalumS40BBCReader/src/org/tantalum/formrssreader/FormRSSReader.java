@@ -27,7 +27,6 @@ package org.tantalum.formrssreader;
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
-import org.tantalum.PlatformAdapter;
 import org.tantalum.PlatformUtils;
 
 /**

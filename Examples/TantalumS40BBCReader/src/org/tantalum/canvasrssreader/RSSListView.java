@@ -92,12 +92,10 @@ public abstract class RSSListView extends View {
         //#debug
         L.i(this, "getAsync()", "forceNetLoad=" + forceNetLoad);
         if (forceNetLoad) {
-            feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, rssResult);
+            return feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, rssResult);
         } else {
-            feedCache.getAsync(feedUrl, Task.FASTLANE_PRIORITY, StaticWebCache.GET_ANYWHERE, rssResult);
+            return feedCache.getAsync(feedUrl, Task.FASTLANE_PRIORITY, StaticWebCache.GET_ANYWHERE, rssResult);
         }
-
-        return rssResult;
     }
 
     /**

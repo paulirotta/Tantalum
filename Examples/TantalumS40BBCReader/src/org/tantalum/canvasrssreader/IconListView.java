@@ -162,13 +162,12 @@ public final class IconListView extends RSSListView {
                             L.i("Trivial thumbnail link in RSS feed", item.getTitle());
                         } else {
                             DetailsView.imageCache.getAsync(item.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
-                                public Object exec(Object o) {
+                                public Object exec(final Object o) {
                                     try {
                                         //#debug
                                         L.i("getIcon result", "" + o);
                                         item.setLoadingImage(false);
                                         Image icon = (Image) o;
-                                        o = null;
                                         final int w = icon.getWidth();
                                         final int h = icon.getHeight();
                                         synchronized (Task.LARGE_MEMORY_MUTEX) {

@@ -24,7 +24,6 @@
  */
 package org.tantalum.net;
 
-import java.util.Hashtable;
 import org.tantalum.Task;
 import org.tantalum.storage.DataTypeHandler;
 import org.tantalum.storage.FlashDatabaseException;
@@ -157,6 +156,31 @@ public final class StaticWebCache extends StaticCache {
      * UI, so default Task.FASTLANE_PRIORITY and StaticWebCache.GET_ANYWHERE are
      * used.
      *
+     * Note, do not get() a value from the Task returned from GET_ANYWHERE
+     * operations. This method may need to fall back to an HTTP GET the value
+     * returned by get() may be null. The value passed to the chainedTask will
+     * always be non-null as it is provided after the HTTP GET in case of a
+     * cache miss. You can use this "GET_ANYWHERE returns quickly, before any
+     * optional HTTP operations" to your advantage as in the following example:
+     *
+     * <code>
+     * // In painter loop, do a synchronous get from cache
+     * Image img = imageCache.getAsync(url, new Task() {
+     *     protected Object exec(Object in) {
+     *         repaint(); //
+     *     }
+     * }).get();
+     * if (img != null) // paint it if you got it from cache
+     * </code>
+     *
+     * Note that the above example will paint more smoothly if you do not
+     * <code>get()</code> and thus wait for the local cache read which may be
+     * slow if there is an ongoing cache write operation already in progress.
+     * For smoothest fast paint, omit the
+     * <code>get()</code> and
+     * <code>if (img != null) </code> and re-render when the cache results are
+     * available.
+     *
      * @param url
      * @param chainedTask
      * @return
@@ -166,10 +190,14 @@ public final class StaticWebCache extends StaticCache {
     }
 
     /**
-     * HTTP GET from the URL specified by key
+     * Return the byte[] results of an HTTP GET from the URL specified by key.
+     *
+     * Depending on the getType, the result may actually come from the local
+     * cache in which case the service is much faster and works offline with any
+     * previously requested results when no data connection is available.
      *
      * @param url
-     * @param cachePriorityChar
+     * @param priority
      * @param getType
      * @param chainedTask
      * @return
@@ -208,8 +236,8 @@ public final class StaticWebCache extends StaticCache {
      * @param cachePriorityChar - note that HIGH_PRIORITY requests will be
      * automatically bumped into FASTLINE_PRIORITY unless it is a GET_WEB
      * operation.
-     * @param getType * * * * * *
-     * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
+     * @param getType * * * * * * * * *
+     *      * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param chainedTask - your <code>Task</code> which is given the data
      * returned and executed after the getAsync operation.
@@ -238,7 +266,7 @@ public final class StaticWebCache extends StaticCache {
                 //#debug
                 L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_ANYWHERE)", url);
                 getterPriority = allowLocalCacheReadToUseFastlane(priority);
-                getTask = new StaticWebCache.GetAnywhereTask(url, getterPriority, postMessage);
+                getTask = new StaticWebCache.GetAnywhereTask(url, postMessage, getterPriority);
                 break;
 
             case GET_WEB:
@@ -260,9 +288,9 @@ public final class StaticWebCache extends StaticCache {
     /**
      * Local flash read should be fast- allow it into the FASTLANE so it can
      * bump past a (possible large number of blocking) HTTP operations.
-     * 
+     *
      * @param priority
-     * @return 
+     * @return
      */
     private int allowLocalCacheReadToUseFastlane(final int priority) {
         if (priority == Task.HIGH_PRIORITY) {
@@ -273,12 +301,12 @@ public final class StaticWebCache extends StaticCache {
     }
 
     /**
-     * HTTP operations are relatively slow and not allowed into the FASTLANE
-     * to give local operations a way to keep the UI responsive even when there
-     * are many pending HTTP operations.
-     * 
+     * HTTP operations are relatively slow and not allowed into the FASTLANE to
+     * give local operations a way to keep the UI responsive even when there are
+     * many pending HTTP operations.
+     *
      * @param priority
-     * @return 
+     * @return
      */
     private int preventWebTaskFromUsingFastLane(final int priority) {
         if (priority == Task.FASTLANE_PRIORITY) {
@@ -392,7 +420,7 @@ public final class StaticWebCache extends StaticCache {
          * @param cachePriorityChar
          * @param postMessage
          */
-        public GetAnywhereTask(final String key, final int priority, final byte[] postMessage) {
+        public GetAnywhereTask(final String key, final byte[] postMessage, final int priority) {
             super(key);
 
             this.postMessage = postMessage;
@@ -415,7 +443,8 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i(this, "Not found locally, get from the web", (String) in);
-                        out = chain(getWebAsync(url, postMessage, preventWebTaskFromUsingFastLane(priority)), true);
+                        chain(getWebAsync(url, postMessage, preventWebTaskFromUsingFastLane(priority)), true);
+                        out = null;
                     }
                 } catch (FlashDatabaseException e) {
                     //#debug
@@ -531,7 +560,7 @@ public final class StaticWebCache extends StaticCache {
          */
         public boolean validateHttpResponse(final HttpGetter httpGetter, final byte[] bytesReceived) {
             final int responseCode = httpGetter.getResponseCode();
-            
+
             if (responseCode >= HttpGetter.HTTP_500_INTERNAL_SERVER_ERROR) {
                 //#debug
                 L.i(this, "Invalid response code", responseCode + " received");
