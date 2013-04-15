@@ -400,7 +400,7 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i(this, "Not found locally, get from the web", (String) in);
-                        chain(getWebAsync(url, priority, postMessage));
+                        out = chain(getWebAsync(url, priority, postMessage), true);
                     }
                 } catch (FlashDatabaseException e) {
                     //#debug
@@ -437,7 +437,7 @@ public final class StaticWebCache extends StaticCache {
         final HttpGetter httpGetter = httpTaskFactory.getHttpTask(url, postMessage);
 
         //#debug
-        L.i("StaticWebCache.HttpTaskFactory returned", L.CRLF + httpGetter);
+        L.i(this, "Returned", L.CRLF + httpGetter);
 
         final class ValidationTask extends Task {
 
@@ -446,7 +446,7 @@ public final class StaticWebCache extends StaticCache {
 
                 if (!httpTaskFactory.validateHttpResponse(httpGetter.getResponseCode(), httpGetter.getResponseHeaders(), (byte[]) in)) {
                     //#debug
-                    L.i("staticwebcache task factory rejected server response", httpGetter.toString());
+                    L.i(this, "Rejected server response", httpGetter.toString());
                     cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
                 } else {
                     try {
@@ -461,7 +461,7 @@ public final class StaticWebCache extends StaticCache {
                 return out;
             }
         };
-        httpGetter.chain(new ValidationTask());
+        httpGetter.chain(new ValidationTask(), true);
 
         return httpGetter.fork(priority);
     }
@@ -494,7 +494,7 @@ public final class StaticWebCache extends StaticCache {
             }
             if (postMessage == null) {
                 //#debug
-                L.i("StaticWebCache.HttpTaskFactory is generating a new HttpGetter", url);
+                L.i(this, "Generating a new HttpGetter", url);
                 return new HttpGetter(url);
             } else {
                 final HttpPoster poster = new HttpPoster(url, postMessage);

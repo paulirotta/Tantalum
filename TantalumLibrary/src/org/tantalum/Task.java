@@ -533,19 +533,20 @@ public abstract class Task implements Runnable {
      * priority.
      *
      * @param timeout in milliseconds
-     * @return final evaluation result of the Task
+     * @return final evaluation result of the Task, or if the Task returns a
+     * Task t2, then the value of t2.join()
      * @throws CancellationException - task was explicitly canceled by another
      * thread
      * @throws TimeoutException - UITask failed to complete within timeout
      * milliseconds
      */
-    public final Object join(final long timeout) throws CancellationException, TimeoutException {
+    public final Object join(long timeout) throws CancellationException, TimeoutException {
         if (timeout < 0) {
-            throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
+            throw new TimeoutException("Can not join(" + timeout + ") " + this);
         }
         //#mdebug
         if (PlatformUtils.getInstance().isUIThread() && timeout > 200) {
-            L.i(this, "WARNING- slow join() on UI Thread", "timeout=" + timeout + " " + this);
+            L.i(this, "WARNING- slow join(" + timeout + ")", "UI Thread may become unresponsive " + this);
         }
         //#enddebug
 
@@ -558,7 +559,7 @@ public abstract class Task implements Runnable {
             L.i(this, "start join(" + timeout + ")", "" + this);
             switch (status) {
                 case FINISHED:
-                    return value;
+                    break;
 
                 case PENDING:
                     final long t = System.currentTimeMillis();
@@ -573,9 +574,10 @@ public abstract class Task implements Runnable {
                             L.e(this, "InterruptedException during join(" + timeout + ") wait", "Task will cancel: " + this, e);
                         }
                         if (status == FINISHED) {
-                            return value;
+                            timeout -= System.currentTimeMillis() - t;
+                            break;
                         }
-                        if (System.currentTimeMillis() > t) {
+                        if (System.currentTimeMillis() > t && !(value instanceof Task)) {
                             throw new TimeoutException(getClassName() + " join(" + timeout + ") was to a Task which did not complete within the specified timeout: " + this);
                         }
                         throw new CancellationException(getClassName() + " join(" + timeout + ") was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
@@ -589,6 +591,29 @@ public abstract class Task implements Runnable {
                     throw new CancellationException(getClassName() + " join(" + timeout + ") was to a Task which was canceled: " + this);
             }
         }
+
+        return getChainedJoin(timeout);
+    }
+
+    /**
+     * A Task must return a real value, not another Task. Some Tasks may
+     * dynamically chain to other Tasks. When we synchronoutsly get() the
+     * result, it must be the final result of the entire Task-returns-Task
+     * chain. The dynamically generated Task is swallowed in the process.
+     *
+     * @return
+     */
+    private Object getChainedJoin(final long timeout) throws CancellationException, TimeoutException {
+        final Task chainedJoinTask;
+
+        synchronized (MUTEX) {
+            if (!(value instanceof Task)) {
+                return value;
+            }
+            chainedJoinTask = (Task) value;
+        }
+
+        return chainedJoinTask.join(timeout);
     }
 
     /**
@@ -753,6 +778,24 @@ public abstract class Task implements Runnable {
     }
 
     /**
+     * Execute the chained
+     * <code>Task</code> after this
+     * <code>Task</code>, using this
+     * <code>Task</code>'s output as the nextTask input.
+     *
+     * <code>nextTask</code> will be
+     * <code>fork()</code>ed at the same time as any previously
+     * <code>chain()</code>ed
+     * <code>Task</code>s for concurrent execution.
+     *
+     * @param nextTask
+     * @return
+     */
+    public final Task chain(final Task nextTask) {
+        return chain(nextTask, false);
+    }
+
+    /**
      * Set or insert a
      * <code>Task</code> as the next node which will
      * <code>fork()</code>ed after the current
@@ -772,10 +815,27 @@ public abstract class Task implements Runnable {
      * <code>Task</code> will be inserted into the chain immediately after the
      * current task.
      *
+     * <code>insertAsNextLink</code> - The default value is
+     * <code>false</code>, meaning multiple
+     * <code>Task</code>s chained after this
+     * <code>Task</code> will be
+     * <code>fork()</code>ed in parallel for concurrent execution. Set
+     * <code>insertAsNextLink = true</code> if you prefer to have
+     * <code>nextTask</code> run serially before any previously
+     * <code>chain()</code>ed
+     * <code>Task</code>s. This is unusual but useful for example if you insert
+     * a validator or change tactics to add a new approach when the first
+     * <code>Task</code> results are not satisfactory. In such cases, be sure
+     * the
+     * <code>nextTask</code> passes on the input it receives unmodified to
+     * following
+     * <code>Task</code> in the chain.
+     *
      * @param nextTask
+     * @param insertAsNextLink
      * @return nextTask
      */
-    public final Task chain(final Task nextTask) {
+    public final Task chain(final Task nextTask, final boolean insertAsNextLink) {
         synchronized (MUTEX) {
             if (nextTask == this) {
                 throw new IllegalArgumentException("Can not chain a task to itself");
@@ -1102,6 +1162,58 @@ public abstract class Task implements Runnable {
         return this;
     }
 
+    private static final class ChainSplitter extends Task {
+
+        final Vector tasksToFork = new Vector();
+
+        ChainSplitter(final Task t1, final Task t2) {
+            super(Task.FASTLANE_PRIORITY);
+
+            addSplit(t1);
+            addSplit(t2);
+        }
+
+        void addSplit(final Task t) {
+            tasksToFork.addElement(t);
+        }
+
+        protected Object exec(final Object in) {
+            for (int i = 0; i < tasksToFork.size(); i++) {
+                final Task t = (Task) tasksToFork.elementAt(i);
+
+                if (in != null) {
+                    t.set(in);
+                }
+                t.fork();
+            }
+
+            return in;
+        }
+
+        protected void onCanceled() {
+            for (int i = 0; i < tasksToFork.size(); i++) {
+                ((Task) tasksToFork.elementAt(i)).cancel(false, "Previous task in chain was canceled, then the chain split");
+            }
+        }
+
+        //#mdebug
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+
+            sb.append("ChainedSplitter: ");
+            synchronized (tasksToFork) {
+                for (int i = 0; i < tasksToFork.size(); i++) {
+                    final Task t = (Task) tasksToFork.elementAt(i);
+                    sb.append(t.getClassName());
+                    sb.append(" ");
+                }
+            }
+
+            return sb.toString();
+        }
+        //#enddebug
+    }
+
     //#mdebug
     /**
      * When debugging, show what each Worker is doing and the queue length
@@ -1162,58 +1274,5 @@ public abstract class Task implements Runnable {
             return sb.toString();
         }
     }
-    //#enddebug
-
-    private static final class ChainSplitter extends Task {
-
-        final Vector tasksToFork = new Vector();
-
-        ChainSplitter(final Task t1, final Task t2) {
-            super(Task.FASTLANE_PRIORITY);
-
-            addSplit(t1);
-            addSplit(t2);
-        }
-
-        void addSplit(final Task t) {
-            tasksToFork.addElement(t);
-        }
-
-        protected Object exec(final Object in) {
-            for (int i = 0; i < tasksToFork.size(); i++) {
-                final Task t = (Task) tasksToFork.elementAt(i);
-
-                if (in != null) {
-                    t.set(in);
-                }
-                t.fork();
-            }
-
-            return in;
-        }
-
-        protected void onCanceled() {
-            for (int i = 0; i < tasksToFork.size(); i++) {
-                ((Task) tasksToFork.elementAt(i)).cancel(false, "Previous task in chain was canceled, then the chain split");
-            }
-        }
-
-//#mdebug        
-        public String toString() {
-            final StringBuffer sb = new StringBuffer();
-
-            sb.append(super.toString());
-            sb.append("splitChainedTasks:" + L.CRLF);
-            synchronized (tasksToFork) {
-                for (int i = 0; i < tasksToFork.size(); i++) {
-                    final Task t = (Task) tasksToFork.elementAt(i);
-                    sb.append(t.getClassName());
-                    sb.append(" ");
-                }
-            }
-
-            return sb.toString();
-        }
 //#enddebug    
-    }
 }
