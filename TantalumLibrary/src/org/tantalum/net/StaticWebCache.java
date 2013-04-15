@@ -162,7 +162,7 @@ public final class StaticWebCache extends StaticCache {
      * @return
      */
     public Task getAsync(final String url, final Task chainedTask) {
-        return getAsync(url, null, Task.FASTLANE_PRIORITY, GET_ANYWHERE, chainedTask);
+        return getAsync(url, Task.FASTLANE_PRIORITY, GET_ANYWHERE, chainedTask);
     }
 
     /**
@@ -222,7 +222,7 @@ public final class StaticWebCache extends StaticCache {
         }
 
         final Task getTask;
-        final int getterTaskPriority;
+        final int getterPriority;
 
         //#debug
         L.i("StaticWebCache getType=" + getType + " : " + chainedTask, "key=" + url);
@@ -230,34 +230,41 @@ public final class StaticWebCache extends StaticCache {
             case GET_LOCAL:
                 //#debug
                 L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_LOCAL)", url);
-                getTask = new StaticCache.GetLocalTask(url, priority);
-                getterTaskPriority = allowLocalCacheReadToUseTheFastlane(priority);
+                getterPriority = allowLocalCacheReadToUseFastlane(priority);
+                getTask = new StaticCache.GetLocalTask(url, getterPriority);
                 break;
 
             case GET_ANYWHERE:
                 //#debug
                 L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_ANYWHERE)", url);
-                getTask = new StaticWebCache.GetAnywhereTask(url, priority, postMessage);
-                getterTaskPriority = allowLocalCacheReadToUseTheFastlane(priority);
+                getterPriority = allowLocalCacheReadToUseFastlane(priority);
+                getTask = new StaticWebCache.GetAnywhereTask(url, getterPriority, postMessage);
                 break;
 
             case GET_WEB:
                 //#debug
                 L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_WEB)", url);
-                getTask = getWebAsync(url, priority, postMessage);
-                getterTaskPriority = preventWebTasksFromUsingTheFastLane(priority);
+                getterPriority = preventWebTaskFromUsingFastLane(priority);
+                getTask = getWebAsync(url, postMessage, getterPriority);
                 break;
 
             default:
                 throw new IllegalArgumentException("StaticWebCache get type not supported: " + getType);
         }
         getTask.chain(chainedTask);
-        getTask.fork(getterTaskPriority);
+        getTask.fork();
 
         return getTask;
     }
 
-    private int allowLocalCacheReadToUseTheFastlane(final int priority) {
+    /**
+     * Local flash read should be fast- allow it into the FASTLANE so it can
+     * bump past a (possible large number of blocking) HTTP operations.
+     * 
+     * @param priority
+     * @return 
+     */
+    private int allowLocalCacheReadToUseFastlane(final int priority) {
         if (priority == Task.HIGH_PRIORITY) {
             return Task.FASTLANE_PRIORITY;
         }
@@ -265,7 +272,15 @@ public final class StaticWebCache extends StaticCache {
         return priority;
     }
 
-    private int preventWebTasksFromUsingTheFastLane(final int priority) {
+    /**
+     * HTTP operations are relatively slow and not allowed into the FASTLANE
+     * to give local operations a way to keep the UI responsive even when there
+     * are many pending HTTP operations.
+     * 
+     * @param priority
+     * @return 
+     */
+    private int preventWebTaskFromUsingFastLane(final int priority) {
         if (priority == Task.FASTLANE_PRIORITY) {
             return Task.HIGH_PRIORITY;
         }
@@ -400,7 +415,7 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i(this, "Not found locally, get from the web", (String) in);
-                        out = chain(getWebAsync(url, priority, postMessage), true);
+                        out = chain(getWebAsync(url, postMessage, preventWebTaskFromUsingFastLane(priority)), true);
                     }
                 } catch (FlashDatabaseException e) {
                     //#debug
@@ -433,8 +448,8 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage
      * @return the HttpGetter task
      */
-    private Task getWebAsync(final String url, final int priority, final byte[] postMessage) {
-        final HttpGetter httpGetter = httpTaskFactory.getHttpTask(url, postMessage);
+    private Task getWebAsync(final String url, final byte[] postMessage, final int priority) {
+        final HttpGetter httpGetter = httpTaskFactory.getHttpTask(url, postMessage, priority);
 
         //#debug
         L.i(this, "Returned", L.CRLF + httpGetter);
@@ -444,13 +459,13 @@ public final class StaticWebCache extends StaticCache {
             protected Object exec(final Object in) {
                 Object out = null;
 
-                if (!httpTaskFactory.validateHttpResponse(httpGetter.getResponseCode(), httpGetter.getResponseHeaders(), (byte[]) in)) {
+                if (!httpTaskFactory.validateHttpResponse(httpGetter, (byte[]) in)) {
                     //#debug
                     L.i(this, "Rejected server response", httpGetter.toString());
                     cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
                 } else {
                     try {
-                        out = putAsync(url, (byte[]) in); // Convert to use form
+                        out = put(url, (byte[]) in); // Convert to use form
                     } catch (FlashDatabaseException e) {
                         //#debug
                         L.e("Can not set result after staticwebcache http get", httpGetter.toString(), e);
@@ -463,7 +478,7 @@ public final class StaticWebCache extends StaticCache {
         };
         httpGetter.chain(new ValidationTask(), true);
 
-        return httpGetter.fork(priority);
+        return httpGetter;
     }
 
     /**
@@ -488,18 +503,18 @@ public final class StaticWebCache extends StaticCache {
          * @param postMessage
          * @return
          */
-        public HttpGetter getHttpTask(final String url, final byte[] postMessage) {
+        public HttpGetter getHttpTask(final String url, final byte[] postMessage, final int priority) {
             if (url == null) {
                 throw new IllegalArgumentException("HttpTaskFactory was asked to make an HttpGetter for a null url");
             }
             if (postMessage == null) {
                 //#debug
                 L.i(this, "Generating a new HttpGetter", url);
-                return new HttpGetter(url);
+                return new HttpGetter(url, priority);
             } else {
-                final HttpPoster poster = new HttpPoster(url, postMessage);
-
-                return poster;
+                //#debug
+                L.i(this, "Generating a new HttpPoster", url + " postDataLength=" + postMessage.length + " priority=" + priority);
+                return new HttpPoster(url, postMessage, priority);
             }
         }
 
@@ -514,7 +529,9 @@ public final class StaticWebCache extends StaticCache {
          * @param bytesReceived
          * @return false to cancel() the HTTP operation
          */
-        public boolean validateHttpResponse(final int responseCode, final Hashtable headers, final byte[] bytesReceived) {
+        public boolean validateHttpResponse(final HttpGetter httpGetter, final byte[] bytesReceived) {
+            final int responseCode = httpGetter.getResponseCode();
+            
             if (responseCode >= HttpGetter.HTTP_500_INTERNAL_SERVER_ERROR) {
                 //#debug
                 L.i(this, "Invalid response code", responseCode + " received");

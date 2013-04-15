@@ -175,7 +175,7 @@ final class Worker extends Thread {
             }
         }
         //#debug
-        L.i("Unfork", task + " success=" + success);
+        L.i("Unfork", "success=" + success + " task=" + task);
 
         return success;
     }

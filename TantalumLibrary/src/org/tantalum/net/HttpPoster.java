@@ -24,14 +24,13 @@
  */
 package org.tantalum.net;
 
-import org.tantalum.Task;
-
 /**
  * HTTP POST a message to a given URL
  *
  * @author phou
  */
 public class HttpPoster extends HttpGetter {
+
     private String url;
     private volatile boolean isChainInputPostData = false;
 
@@ -41,12 +40,19 @@ public class HttpPoster extends HttpGetter {
      * Make sure you call setPostData(byte[]) to specify what you want to POST
      * or you will get an IllegalArgumentException
      *
-     * @param url - The url we will HTTP POST to, plus optional lines of text to
-     * create a unique hashcode for caching this value locally.
+     * If you wish to locally cache multiple responses from the server in which
+     * the URL is the same but the POST data is different, you should append to
+     * the url field additional line(s) of text. This will be used create a
+     * unique String hash in your StaticWebCache. You can control which POST
+     * responses are "unique" from the point of caching the most recent unique
+     * response by appending all or just some of the POST data fields.
+     *
+     * @param url - The url we will HTTP POST to
+     * @param priority
      */
-    public HttpPoster(final String url) {
-        super(url);
-        
+    public HttpPoster(final String url, final int priority) {
+        super(url, priority);
+
         this.url = url;
     }
 
@@ -55,9 +61,10 @@ public class HttpPoster extends HttpGetter {
      *
      * @param url
      * @param postData
+     * @param priority
      */
-    public HttpPoster(final String url, final byte[] postData) {
-        this(url);
+    public HttpPoster(final String url, final byte[] postData, final int priority) {
+        this(url, priority);
 
         setPostData(postData);
     }
@@ -68,7 +75,7 @@ public class HttpPoster extends HttpGetter {
      * @param postData
      * @return
      */
-    public HttpPoster setPostData(final byte[] postData) {
+    public final HttpPoster setPostData(final byte[] postData) {
         if (postData == null) {
             throw new IllegalArgumentException(getClassName() + " was passed null message- meaningless POST or PUT operation");
         }
@@ -98,7 +105,7 @@ public class HttpPoster extends HttpGetter {
     public Object exec(final Object in) {
         if (isChainInputPostData) {
             setPostData((byte[]) in);
-            
+
             return super.exec(url);
         } else {
             return super.exec(in);

@@ -81,7 +81,7 @@ public abstract class RSSListView extends View {
         final Task rssResult = new Task() {
             public Object exec(final Object in) {
                 //#debug
-                L.i("RSSReault", "canvas.refresh(), rssModelLength=" + rssModel.size());
+                L.i(this, "canvas.refresh()", "rssModelLength=" + rssModel.size());
                 canvas.refresh();
 
                 return in;
@@ -89,12 +89,14 @@ public abstract class RSSListView extends View {
         }.setClassName("RSSResult");
 
         String feedUrl = RSSReader.INITIAL_FEED_URL;
+        //#debug
+        L.i(this, "getAsync()", "forceNetLoad=" + forceNetLoad);
         if (forceNetLoad) {
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, rssResult);
         } else {
-            feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, rssResult);
+            feedCache.getAsync(feedUrl, Task.FASTLANE_PRIORITY, StaticWebCache.GET_ANYWHERE, rssResult);
         }
-        
+
         return rssResult;
     }
 

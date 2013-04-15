@@ -38,6 +38,7 @@ import java.util.Vector;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
+import org.tantalum.Task;
 
 /**
  * Unit tests for the default implementation of
@@ -127,6 +128,9 @@ public class HttpGetterTest extends MockedStaticInitializers {
     }
 
     private class MyTestHttpGetter extends HttpGetter {
+        MyTestHttpGetter() {
+            super(Task.HIGH_PRIORITY);
+        }
 
         @Override
         public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {

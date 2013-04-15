@@ -825,17 +825,15 @@ public abstract class Task implements Runnable {
      * <code>chain()</code>ed
      * <code>Task</code>s. This is unusual but useful for example if you insert
      * a validator or change tactics to add a new approach when the first
-     * <code>Task</code> results are not satisfactory. In such cases, be sure
-     * the
-     * <code>nextTask</code> passes on the input it receives unmodified to
-     * following
-     * <code>Task</code> in the chain.
+     * <code>Task</code> results are not satisfactory.
      *
      * @param nextTask
      * @param insertAsNextLink
      * @return nextTask
      */
     public final Task chain(final Task nextTask, final boolean insertAsNextLink) {
+        Task taskAfterNext = null;
+
         synchronized (MUTEX) {
             if (nextTask == this) {
                 throw new IllegalArgumentException("Can not chain a task to itself");
@@ -853,6 +851,9 @@ public abstract class Task implements Runnable {
 
                 if (chainedTask == null) {
                     chainedTask = nextTask;
+                } else if (insertAsNextLink) {
+                    taskAfterNext = chainedTask;
+                    chainedTask = nextTask;
                 } else if (chainedTask instanceof ChainSplitter) {
                     ((ChainSplitter) chainedTask).addSplit(nextTask);
                 } else {
@@ -861,9 +862,12 @@ public abstract class Task implements Runnable {
                 //#debug
                 nextTask.setPreviousTaskInChain(this);
             }
-
-            return nextTask;
         }
+        if (taskAfterNext != null) {
+            nextTask.chain(taskAfterNext, insertAsNextLink);
+        }
+
+        return nextTask;
     }
     //#mdebug
     // Always access in a synchronized(MUTEX) block
@@ -1174,10 +1178,25 @@ public abstract class Task implements Runnable {
         }
 
         void addSplit(final Task t) {
+            if (t == this) {
+                throw new IllegalArgumentException("Can not add split chain linking to itself: " + this + " - " + t);
+            }
+            if (tasksToFork.contains(t)) {
+                //#debug
+                L.i(this, "Duplicate chain warning", "You already chain()ed the same task to the same place: " + this + " - " + t);
+                return;
+            }
             tasksToFork.addElement(t);
+            //#mdebug
+            if (tasksToFork.size() > 1) {
+                L.i(this, "Splitting the Task chain, tasks will be fork()ed for concurrentl execution", "" + this);
+            }
+            //#enddebug
         }
 
         protected Object exec(final Object in) {
+            //#debug
+            L.i(this, "Start chain split", "" + this);
             for (int i = 0; i < tasksToFork.size(); i++) {
                 final Task t = (Task) tasksToFork.elementAt(i);
 
@@ -1191,6 +1210,8 @@ public abstract class Task implements Runnable {
         }
 
         protected void onCanceled() {
+            //#debug
+            L.i(this, "onCanceled()", "" + this);
             for (int i = 0; i < tasksToFork.size(); i++) {
                 ((Task) tasksToFork.elementAt(i)).cancel(false, "Previous task in chain was canceled, then the chain split");
             }
@@ -1200,7 +1221,7 @@ public abstract class Task implements Runnable {
         public String toString() {
             final StringBuffer sb = new StringBuffer();
 
-            sb.append("ChainedSplitter: ");
+            sb.append("ChainSplitter concurrent fork() tasks: ");
             synchronized (tasksToFork) {
                 for (int i = 0; i < tasksToFork.size(); i++) {
                     final Task t = (Task) tasksToFork.elementAt(i);
@@ -1257,6 +1278,8 @@ public abstract class Task implements Runnable {
                 sb.append("byte[");
                 sb.append(((byte[]) value).length);
                 sb.append(']');
+            } else if (value instanceof Task) {
+                sb.append(((Task) value).getClassName());
             } else {
                 sb.append(value);
             }

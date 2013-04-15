@@ -369,7 +369,7 @@ public class StaticCache {
      * @return the byte[] converted to use form by the ramCache's Handler
      * @throws FlashDatabaseException
      */
-    public Object putAsync(final String key, final byte[] bytes) throws FlashDatabaseException {
+    public Object put(final String key, final byte[] bytes) throws FlashDatabaseException {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }
@@ -582,13 +582,6 @@ public class StaticCache {
     }
 
     /**
-     * Remove all elements from this ramCache
-     *
-     */
-    private void clear() {
-    }
-
-    /**
      * Note that if the conversion in the DataTypeHandler changes due to
      * application logic requirements, you can at any time use this to force
      * as-needed re-conversion. This affects queued conversions but does not
@@ -599,7 +592,7 @@ public class StaticCache {
      * @param chainedTask
      * @return
      */
-    public Task clearHeapCacheAsync(final Task chainedTask) {
+    public Task clearHeapAsync(final Task chainedTask) {
         final Task task = new Task() {
             protected Object exec(final Object in) {
                 synchronized (MUTEX) {

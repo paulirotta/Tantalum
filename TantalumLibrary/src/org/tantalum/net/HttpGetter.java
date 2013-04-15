@@ -505,6 +505,31 @@ public class HttpGetter extends Task {
     private volatile StreamReader streamReader = null;
 
     /**
+     * Get the byte[] from the URL specified by the input argument when
+     * exec(url) is called. This may be chained from a previous chain()ed
+     * asynchronous task.
+     * 
+     * @param priority 
+     */
+    public HttpGetter(final int priority) {
+        super(priority);
+    }
+
+    /**
+     * Create a Task for the specified URL.
+     *
+     * @param url
+     * @param priority 
+     */
+    public HttpGetter(final String url, final int priority) {
+        super(priority, url);
+
+        if (url == null) {
+            throw new IllegalArgumentException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
+        }
+    }
+
+    /**
      * Set the StreamWriter which will provide data in the optional streaming
      * upload mode. Most HTTP activities are block-oriented in which case a
      * stream does not need to be set up.
@@ -552,28 +577,6 @@ public class HttpGetter extends Task {
      */
     public void setReader(StreamReader reader) {
         this.streamReader = reader;
-    }
-
-    /**
-     * Get the byte[] from the URL specified by the input argument when
-     * exec(url) is called. This may be chained from a previous chain()ed
-     * asynchronous task.
-     */
-    public HttpGetter() {
-        super();
-    }
-
-    /**
-     * Create a Task for the specified URL.
-     *
-     * @param key
-     */
-    public HttpGetter(final String key) {
-        super(key);
-
-        if (key == null) {
-            throw new IllegalArgumentException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
-        }
     }
 
     /**
@@ -638,7 +641,7 @@ public class HttpGetter extends Task {
      *
      * @return - a JSONModel of the data provided by the HTTP server
      */
-    public Object exec(Object in) {
+    public Object exec(final Object in) {
         Object out = null;
 
         if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
@@ -936,7 +939,6 @@ public class HttpGetter extends Task {
         final StringBuffer sb = new StringBuffer();
 
         sb.append(super.toString());
-
         sb.append("   retriesRemaining=");
         sb.append(retriesRemaining);
         sb.append("   postMessageLength=");
