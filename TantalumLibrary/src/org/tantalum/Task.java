@@ -711,10 +711,10 @@ public abstract class Task implements Runnable {
             throw new IllegalArgumentException(getClassName() + ": do not setStatus(Task.CANCELED). Call Task.cancel(false, \"Reason for cancel\") instead to keep your code debuggable");
         }
 
-        doSetStatus(status);
+        doSetStatus(status, "");
     }
 
-    private void doSetStatus(final int status) {
+    private void doSetStatus(final int status, final String reason) {
         final Task t;
         synchronized (MUTEX) {
             if (this.status == status) {
@@ -742,7 +742,7 @@ public abstract class Task implements Runnable {
                 public void run() {
                     //#debug
                     L.i(this, "onCanceled()", Task.this.toString());
-                    onCanceled();
+                    onCanceled(reason);
                 }
             });
             // Also cancel any chained Tasks expecting the output of this Task
@@ -927,7 +927,7 @@ public abstract class Task implements Runnable {
             final String s = "Exception during Task exec(): ";
             //#debug
             L.e(s, "" + this, t);
-            cancel(false, s + " : " + this + " : " + t);
+            cancel(false, s + " : " + this, t);
             out = null;
         }
 
@@ -943,7 +943,18 @@ public abstract class Task implements Runnable {
     protected abstract Object exec(Object in);
 
     /**
-     * Cancel execution if possible. This is called on the Worker thread
+     * Cancel execution of this Task
+     *
+     * @param mayInterruptIfRunning
+     * @param reason
+     * @return
+     */
+    public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
+        return cancel(mayInterruptIfRunning, reason, null);
+    }
+
+    /**
+     * Cancel execution of this Task. This is called on the Worker thread
      *
      * Do not override this unless you also call super.cancel(boolean).
      *
@@ -952,9 +963,10 @@ public abstract class Task implements Runnable {
      *
      * @param mayInterruptIfRunning
      * @param reason
+     * @param t
      * @return
      */
-    public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
+    public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
         synchronized (MUTEX) {
             if (reason == null) {
                 throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
@@ -964,14 +976,14 @@ public abstract class Task implements Runnable {
 
             if (canceled) {
                 //#debug
-                L.i(this, "Ignoring cancel(\"" + reason + "\")", "Already CANCELED: " + this);
+                L.i(this, "Ignoring cancel(\"" + reason + " - " + t + "\")", "Already CANCELED: " + this);
             } else {
                 //#debug
-                L.i(this, "Begin cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " " + this);
+                L.e(this, "Begin cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " " + this, t);
                 switch (status) {
                     case FINISHED:
                         //#debug
-                        L.i(this, "Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
+                        L.i(this, "Ignored attempt to interrupt an EXEC_FINISHED Task:" + reason + " - " + t, this.toString());
                         break;
 
                     case PENDING:
@@ -990,7 +1002,7 @@ public abstract class Task implements Runnable {
 
                     default:
                         canceled = true;
-                        doSetStatus(CANCELED);
+                        doSetStatus(CANCELED, reason);
                 }
                 //#debug
                 L.i(this, "End cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
@@ -1009,10 +1021,11 @@ public abstract class Task implements Runnable {
      * Use getStatus() to distinguish between CANCELED and EXCEPTION states if
      * necessary.
      *
+     * @param reason
      */
-    protected void onCanceled() {
+    protected void onCanceled(final String reason) {
         //#debug
-        L.i(this, "default Task.onCanceled() - this method was not overridden", this.toString());
+        L.i(this, "default Task.onCanceled() - this method was not overridden: cancellationReason=" + reason, this.toString());
     }
 
     /**
@@ -1127,7 +1140,7 @@ public abstract class Task implements Runnable {
                     sb.append(previousTaskInChain.getClassName());
                 }
             }
-            sb.append(" value=");
+            sb.append("   value=");
             if (value instanceof byte[]) {
                 sb.append("byte[");
                 sb.append(((byte[]) value).length);
@@ -1184,5 +1197,23 @@ public abstract class Task implements Runnable {
                 ((Task) tasksToFork.elementAt(i)).cancel(false, "Previous task in chain was canceled, then the chain split");
             }
         }
+
+//#mdebug        
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+
+            sb.append(super.toString());
+            sb.append("splitChainedTasks:" + L.CRLF);
+            synchronized (tasksToFork) {
+                for (int i = 0; i < tasksToFork.size(); i++) {
+                    final Task t = (Task) tasksToFork.elementAt(i);
+                    sb.append(t.getClassName());
+                    sb.append(" ");
+                }
+            }
+
+            return sb.toString();
+        }
+//#enddebug    
     }
 }

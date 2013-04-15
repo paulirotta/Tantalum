@@ -833,7 +833,7 @@ public class TaskTest extends MockedStaticInitializers {
             }
 
             @Override
-            protected void onCanceled() {
+            protected void onCanceled(final String reason) {
                 assertEquals("onCanceled() blue must run on UI thread", true, PlatformUtils.getInstance().isUIThread());
                 try {
                     set("blue");

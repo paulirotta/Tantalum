@@ -188,7 +188,7 @@ public final class IconListView extends RSSListView {
                                     } catch (Exception e) {
                                         //#debug
                                         L.e("Problem with getIcon setValue", item.getThumbnail(), e);
-                                        cancel(false, "Problem with getIcon: " + item);
+                                        cancel(false, "Problem with getIcon: " + item, e);
                                     }
 
                                     return null;

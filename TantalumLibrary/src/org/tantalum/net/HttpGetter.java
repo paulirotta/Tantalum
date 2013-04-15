@@ -717,9 +717,9 @@ public class HttpGetter extends Task {
             if (out != null) {
                 addDownstreamDataCount(((byte[]) out).length);
                 //#debug
-                L.i(this, "Unvalidated end read", "bytes=" + ((byte[]) out).length);
+                L.i(this, "End read", "url=" + url + " bytes=" + ((byte[]) out).length);
             }
-            success = checkResponseCode(responseCode, responseHeaders);
+            success = checkResponseCode(url, responseCode, responseHeaders);
             //#debug
             L.i(this, "Response", "HTTP response code indicates success=" + success);
         } catch (IllegalArgumentException e) {
@@ -781,28 +781,21 @@ public class HttpGetter extends Task {
     private void readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
         int totalBytesRead = 0;
 
-        //#debug
-        L.i(this, "Start Content-Length=" + bytes.length + " read", "" + this);
-        try {
-            while (totalBytesRead < bytes.length) {
-                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
-                if (b >= 0) {
-                    bytes[totalBytesRead++] = (byte) b;
-                    synchronized (NET_MUTEX) {
-                        final int br = inputStream.read(bytes, totalBytesRead, bytes.length - totalBytesRead);
-                        if (br >= 0) {
-                            totalBytesRead += br;
-                        } else {
-                            prematureEOF(url, totalBytesRead, bytes.length);
-                        }
+        while (totalBytesRead < bytes.length) {
+            final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
+            if (b >= 0) {
+                bytes[totalBytesRead++] = (byte) b;
+                synchronized (NET_MUTEX) {
+                    final int br = inputStream.read(bytes, totalBytesRead, bytes.length - totalBytesRead);
+                    if (br >= 0) {
+                        totalBytesRead += br;
+                    } else {
+                        prematureEOF(url, totalBytesRead, bytes.length);
                     }
-                } else {
-                    prematureEOF(url, totalBytesRead, bytes.length);
                 }
+            } else {
+                prematureEOF(url, totalBytesRead, bytes.length);
             }
-        } finally {
-            //#debug
-            L.i(this, "End Content-Length=" + bytes.length + " read", "" + this);
         }
     }
 
@@ -813,27 +806,20 @@ public class HttpGetter extends Task {
     }
 
     private void readBytesVariableLength(final InputStream inputStream, final OutputStream bos) throws IOException {
-        //#debug
-        L.i(this, "Start variable length read", "" + this);
-        try {
-            final byte[] readBuffer = new byte[16384];
-            while (true) {
-                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
-                if (b < 0) {
+        final byte[] readBuffer = new byte[16384];
+        while (true) {
+            final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
+            if (b < 0) {
+                break;
+            }
+            bos.write(b);
+            synchronized (NET_MUTEX) {
+                final int bytesRead = inputStream.read(readBuffer);
+                if (bytesRead < 0) {
                     break;
                 }
-                bos.write(b);
-                synchronized (NET_MUTEX) {
-                    final int bytesRead = inputStream.read(readBuffer);
-                    if (bytesRead < 0) {
-                        break;
-                    }
-                    bos.write(readBuffer, 0, bytesRead);
-                }
+                bos.write(readBuffer, 0, bytesRead);
             }
-        } finally {
-            //#debug
-            L.i(this, "End variable length read", "" + this);
         }
     }
 
@@ -845,7 +831,7 @@ public class HttpGetter extends Task {
      * @param headers
      * @return
      */
-    protected boolean checkResponseCode(final int responseCode, final Hashtable headers) {
+    protected boolean checkResponseCode(final String url, final int responseCode, final Hashtable headers) {
         boolean ok = true;
 
         if (responseCode < 300) {
@@ -853,13 +839,13 @@ public class HttpGetter extends Task {
         } else if (responseCode < 500) {
             // We might be able to extract some useful information in case of a 400+ error code
             //#debug
-            L.i("Bad response code (" + responseCode + ")", "");
+            L.i("Bad response code (" + responseCode + ")", "url=" + url);
             ok = false;
         } else {
             // 500+ error codes, which means that something went wrong on server side. 
             // Probably not recoverable, so should we throw an exception instead?
             //#debug
-            L.i("Server side error. Bad response code (" + responseCode + ")", "");
+            L.i("Server side error. Bad response code (" + responseCode + ")", "url=" + url);
             ok = false;
         }
 
@@ -951,11 +937,9 @@ public class HttpGetter extends Task {
 
         sb.append(super.toString());
 
-        sb.append(" url=");
-        sb.append(super.toString());
-        sb.append(" retriesRemaining=");
+        sb.append("   retriesRemaining=");
         sb.append(retriesRemaining);
-        sb.append(" postMessageLength=");
+        sb.append("   postMessageLength=");
         if (postMessage == null) {
             sb.append("<null>");
         } else {
@@ -963,12 +947,12 @@ public class HttpGetter extends Task {
         }
 
         if (requestPropertyKeys.isEmpty()) {
-            sb.append("\n(default HTTP request, no customer header params)");
+            sb.append(L.CRLF + "(default HTTP request, no customer header params)");
         } else {
-            sb.append("\nHTTP REQUEST CUSTOM HEADERS");
+            sb.append(L.CRLF + "HTTP REQUEST CUSTOM HEADERS");
             for (int i = 0; i < requestPropertyKeys.size(); i++) {
                 final String key = (String) requestPropertyKeys.elementAt(i);
-                sb.append("\n   ");
+                sb.append(L.CRLF + "   ");
                 sb.append(key);
                 sb.append(": ");
                 final String value = (String) requestPropertyValues.elementAt(i);
@@ -977,23 +961,23 @@ public class HttpGetter extends Task {
         }
 
         if (responseCode == HTTP_OPERATION_PENDING) {
-            sb.append("\n(http operation pending, no server response yet)");
+            sb.append(L.CRLF + "(http operation pending, no server response yet)");
         } else {
-            sb.append("\nserverHTTPResponseCode=");
+            sb.append(L.CRLF + "serverHTTPResponseCode=");
             sb.append(responseCode);
 
-            sb.append("\nHTTP RESPONSE HEADERS");
+            sb.append(L.CRLF + "HTTP RESPONSE HEADERS");
             final Enumeration enu = responseHeaders.keys();
             while (enu.hasMoreElements()) {
                 final String k = (String) enu.nextElement();
-                sb.append("\n   ");
+                sb.append(L.CRLF + "   ");
                 sb.append(k);
                 sb.append(": ");
                 final String value = (String) responseHeaders.get(k);
                 sb.append(value);
             }
         }
-        sb.append('\n');
+        sb.append(L.CRLF);
 
         return sb.toString();
     }

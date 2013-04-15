@@ -237,7 +237,7 @@ public class StaticCache {
      */
     protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
         //#mdebug
-        L.i("Start to convert", key + " bytes length=" + bytes.length);
+        L.i(this, "Start to convert", key + " bytes length=" + bytes.length);
         final long startTime = System.currentTimeMillis();
         //#enddebug
         final Object o = handler.convertToUseForm(key, bytes);
@@ -248,7 +248,7 @@ public class StaticCache {
             ramCache.put(digest, o);
         }
         //#debug
-        L.i("End convert, elapsedTime=" + (System.currentTimeMillis() - startTime) + "ms", key);
+        L.i(this, "End convert, elapsedTime=" + (System.currentTimeMillis() - startTime) + "ms", key);
 
         return o;
     }
@@ -396,7 +396,7 @@ public class StaticCache {
                     } catch (FlashDatabaseException e) {
                         //#debug
                         L.e("Can not synch write to flash", key, e);
-                        cancel(false, "Can not sync write to flash: " + key + " - " + e);
+                        cancel(false, "Can not sync write to flash: " + key, e);
                     }
 
                     return in;

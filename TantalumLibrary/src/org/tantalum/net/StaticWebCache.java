@@ -389,22 +389,23 @@ public final class StaticWebCache extends StaticCache {
 
             if (in == null || !(in instanceof String)) {
                 //#debug
-                L.i("ERROR", "StaticWebCache.GetAnywhereTask must receive a String url, but got " + (in == null ? "null" : in.toString()));
+                L.i(this, "ERROR", "Must receive a String url, but got " + (in == null ? "null" : in.toString()));
                 cancel(false, "StaticWebCache.getAnywhereTask got bad input: " + in);
             } else {
                 //#debug
-                L.i("Async StaticCache.GET_ANYWHERE get", (String) in);
+                L.i(this, "get", (String) in);
                 try {
                     final String url = (String) in;
                     out = synchronousGet(url);
                     if (out == null) {
                         //#debug
-                        L.i("StaticWebCache: not found locally, get from the web", (String) in);
+                        L.i(this, "Not found locally, get from the web", (String) in);
                         chain(getWebAsync(url, priority, postMessage));
                     }
                 } catch (FlashDatabaseException e) {
                     //#debug
-                    L.e("Can not get from StaticWebCache", (String) in, e);
+                    L.e(this, "Can not get", (String) in, e);
+                    cancel(false, "Can not GET_ANYWHERE, in=" + (String) in, e);
                 }
             }
             //#mdebug
@@ -417,7 +418,7 @@ public final class StaticWebCache extends StaticCache {
             if (out != null) {
                 outDebug = out.toString();
             }
-            L.i("End GetAnywhereTask " + inDebug, outDebug);
+            L.i(this, "End", "in=" + inDebug + " out=" + outDebug);
             //#enddebug
 
             return out;
@@ -453,7 +454,7 @@ public final class StaticWebCache extends StaticCache {
                     } catch (FlashDatabaseException e) {
                         //#debug
                         L.e("Can not set result after staticwebcache http get", httpGetter.toString(), e);
-                        cancel(false, "Can not set result after staticwebcache http get: " + httpGetter.toString() + " : " + e);
+                        cancel(false, "Can not set result after staticwebcache http get: " + httpGetter.toString(), e);
                     }
                 }
 
