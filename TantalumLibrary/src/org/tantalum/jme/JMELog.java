@@ -48,6 +48,7 @@ import org.tantalum.util.L;
  * @author phou
  */
 public class JMELog extends L {
+
     private final OutputStream os;
 //#mdebug
     private final Vector byteArrayQueue = new Vector();
@@ -129,13 +130,11 @@ public class JMELog extends L {
             sb.append("Exception: ");
             sb.append(t.toString());
         }
-        if (os != null) {
-            byteArrayQueue.addElement(sb.toString().getBytes());
-            synchronized (L.class) {
-                L.class.notifyAll();
-            }
-        } else {
-            synchronized (L.class) {
+        synchronized (byteArrayQueue) {
+            if (os != null) {
+                byteArrayQueue.addElement(sb.toString().getBytes());
+                byteArrayQueue.notifyAll();
+            } else {
                 System.out.println(sb.toString());
             }
         }
@@ -150,12 +149,10 @@ public class JMELog extends L {
 //#mdebug
         final JMELog.LogWriter writer = usbWriter;
 
-
-
         if (writer != null) {
-            synchronized (L.class) {
+            synchronized (byteArrayQueue) {
                 writer.shutdownStarted = true;
-                L.class.notifyAll();
+                byteArrayQueue.notifyAll();
             }
 
             // Give the queue time to flush final messages
@@ -206,9 +203,9 @@ public class JMELog extends L {
         public void run() {
             try {
                 while (!shutdownStarted || !byteArrayQueue.isEmpty()) {
-                    synchronized (L.class) {
+                    synchronized (byteArrayQueue) {
                         if (byteArrayQueue.isEmpty()) {
-                            L.class.wait(1000);
+                            byteArrayQueue.wait(1000);
                         }
                     }
                     while (!byteArrayQueue.isEmpty()) {

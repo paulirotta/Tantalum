@@ -386,7 +386,8 @@ public class RMSFastCache extends FlashCache {
      * extracted
      */
     private int toValueIndex(final byte[] indexBytes) {
-        int i = indexBytes[0] << 8;
+        int i = indexBytes[0];
+        i <<= 8;
         i |= indexBytes[1];
         i <<= 8;
         i |= indexBytes[2];

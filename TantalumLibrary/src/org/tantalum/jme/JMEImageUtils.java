@@ -223,6 +223,7 @@ public final class JMEImageUtils {
             maxH = srcH;
         }
         switch (scalingAlgorithm) {
+            default:
             case ONE_POINT_PICK:
                 while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
                     JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
@@ -231,7 +232,7 @@ public final class JMEImageUtils {
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
                     JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
-                            srcH >>= 1);
+                            srcH >> 1);
                     break;
                 }
             case BASIC_ONE_POINT_PICK:

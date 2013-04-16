@@ -847,26 +847,24 @@ public abstract class Task implements Runnable {
                 throw new IllegalStateException("Can not chain() to a Task unless it is still PENDING: " + this);
             }
 
-            if (nextTask != null) {
-                //#mdebug
-                if (previousTaskInChain == nextTask) {
-                    throw new IllegalArgumentException("Can not chain a task to the task before it in a chain()");
-                }
-                //#enddebug
-
-                if (chainedTask == null) {
-                    chainedTask = nextTask;
-                } else if (insertAsNextLink) {
-                    taskAfterNext = chainedTask;
-                    chainedTask = nextTask;
-                } else if (chainedTask instanceof ChainSplitter) {
-                    ((ChainSplitter) chainedTask).addSplit(nextTask);
-                } else {
-                    chainedTask = new ChainSplitter(chainedTask, nextTask);
-                }
-                //#debug
-                nextTask.setPreviousTaskInChain(this);
+            //#mdebug
+            if (previousTaskInChain == nextTask) {
+                throw new IllegalArgumentException("Can not chain a task to the task before it in a chain()");
             }
+            //#enddebug
+
+            if (chainedTask == null) {
+                chainedTask = nextTask;
+            } else if (insertAsNextLink) {
+                taskAfterNext = chainedTask;
+                chainedTask = nextTask;
+            } else if (chainedTask instanceof ChainSplitter) {
+                ((ChainSplitter) chainedTask).addSplit(nextTask);
+            } else {
+                chainedTask = new ChainSplitter(chainedTask, nextTask);
+            }
+            //#debug
+            nextTask.setPreviousTaskInChain(this);
         }
         if (taskAfterNext != null) {
             nextTask.chain(taskAfterNext, true);
