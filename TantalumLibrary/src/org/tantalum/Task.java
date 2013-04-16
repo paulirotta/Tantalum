@@ -788,19 +788,6 @@ public abstract class Task implements Runnable {
      * <code>chain()</code>ed
      * <code>Task</code>s for concurrent execution.
      *
-     * @param nextTask
-     * @return
-     */
-    public final Task chain(final Task nextTask) {
-        return chain(nextTask, false);
-    }
-
-    /**
-     * Set or insert a
-     * <code>Task</code> as the next node which will
-     * <code>fork()</code>ed after the current
-     * <code>Task</code> completes successfully.
-     *
      * nextTask == null is legal and has no effect.
      *
      * Each
@@ -831,9 +818,7 @@ public abstract class Task implements Runnable {
      * @param insertAsNextLink
      * @return this
      */
-    public final Task chain(final Task nextTask, final boolean insertAsNextLink) {
-        Task taskAfterNext = null;
-
+    public final Task chain(final Task nextTask) {
         if (nextTask == null) {
             //#debug
             L.i(this, "Ignoring chain(null)", "" + this);
@@ -847,33 +832,25 @@ public abstract class Task implements Runnable {
                 throw new IllegalStateException("Can not chain() to a Task unless it is still PENDING: " + this);
             }
 
-            //#mdebug
-            if (previousTaskInChain == nextTask) {
-                throw new IllegalArgumentException("Can not chain a task to the task before it in a chain()");
-            }
-            //#enddebug
-
             if (chainedTask == null) {
-                chainedTask = nextTask;
-            } else if (insertAsNextLink) {
-                taskAfterNext = chainedTask;
                 chainedTask = nextTask;
             } else if (chainedTask instanceof ChainSplitter) {
                 ((ChainSplitter) chainedTask).addSplit(nextTask);
             } else {
                 chainedTask = new ChainSplitter(chainedTask, nextTask);
             }
-            //#debug
+            //#mdebug
+            if (previousTaskInChain == nextTask) {
+                L.i(this, "ERROR", "Do not chain a task to the task before it in a chain()" + showChain());
+            }
             nextTask.setPreviousTaskInChain(this);
-        }
-        if (taskAfterNext != null) {
-            nextTask.chain(taskAfterNext, true);
-        }
-        //#debug
-        L.i(this, "Chain added", Task.getClassName(this) + " -> " + Task.getClassName(nextTask));
+            L.i(this, "Chain added", showChain());
+            //#enddebug
 
-        return this;
+            return this;
+        }
     }
+    
     //#mdebug
     // Always access in a synchronized(MUTEX) block
     private Task previousTaskInChain = null;
@@ -1263,6 +1240,27 @@ public abstract class Task implements Runnable {
         return toString(true);
     }
 
+    public String showChain() {
+        final StringBuffer sb = new StringBuffer();
+
+        sb.append(L.CRLF);
+        sb.append("   chain: ");
+        if (previousTaskInChain == null) {
+            sb.append("<null>");
+        } else {
+            sb.append(previousTaskInChain.getClassName());
+        }
+        sb.append(" -> this -> ");
+        if (chainedTask == null) {
+            sb.append("<null>");
+        } else {
+            sb.append(chainedTask.getClassName());
+        }
+        sb.append(L.CRLF);
+
+        return sb.toString();
+    }
+
     public String toString(final boolean showChain) {
         synchronized (MUTEX) {
             StringBuffer sb = new StringBuffer(300);
@@ -1272,20 +1270,7 @@ public abstract class Task implements Runnable {
             sb.append(" status=");
             sb.append(getStatusString());
             if (showChain) {
-                sb.append(L.CRLF);
-                sb.append("   chain: ");
-                if (previousTaskInChain == null) {
-                    sb.append("<null>");
-                } else {
-                    sb.append(previousTaskInChain.getClassName());
-                }
-                sb.append(" -> this -> ");
-                if (chainedTask == null) {
-                    sb.append("<null>");
-                } else {
-                    sb.append(chainedTask.getClassName());
-                }
-                sb.append(L.CRLF);
+                sb.append(showChain());
             }
             sb.append("   value=");
             if (value instanceof byte[]) {

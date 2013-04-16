@@ -266,7 +266,7 @@ public final class StaticWebCache extends StaticCache {
                 //#debug
                 L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_ANYWHERE)", url);
                 getterPriority = allowLocalCacheReadToUseFastlane(priority);
-                getTask = (new StaticWebCache.GetAnywhereTask(url, postMessage, getterPriority)).chain(nextTask);
+                getTask = (new StaticWebCache.GetAnywhereTask(url, postMessage, getterPriority, nextTask));
                 break;
 
             case GET_WEB:
@@ -380,20 +380,7 @@ public final class StaticWebCache extends StaticCache {
 
         final int priority;
         final byte[] postMessage;
-
-        /**
-         * Create a chainable task where key will be provided as the output from
-         * the previous step in the chain.
-         *
-         * @param cachePriorityChar
-         * @param postMessage
-         */
-        public GetAnywhereTask(final int priority, final byte[] postMessage) {
-            super();
-
-            this.postMessage = postMessage;
-            this.priority = priority;
-        }
+        final Task nextTask;
 
         /**
          * Create a
@@ -418,11 +405,12 @@ public final class StaticWebCache extends StaticCache {
          * @param cachePriorityChar
          * @param postMessage
          */
-        public GetAnywhereTask(final String key, final byte[] postMessage, final int priority) {
+        public GetAnywhereTask(final String key, final byte[] postMessage, final int priority, final Task nextTask) {
             super(key);
 
             this.postMessage = postMessage;
             this.priority = priority;
+            this.nextTask = nextTask;
         }
 
         protected Object exec(final Object in) {
@@ -441,7 +429,7 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i(this, "Not found locally, get from the web", (String) in);
-                        getHttpGetter(url, postMessage, preventWebTaskFromUsingFastLane(priority), null);
+                        getHttpGetter(url, postMessage, preventWebTaskFromUsingFastLane(priority), nextTask);
                         out = null;
                     }
                 } catch (FlashDatabaseException e) {
@@ -505,8 +493,12 @@ public final class StaticWebCache extends StaticCache {
                 return out;
             }
         };
-
-        return httpGetter.chain((new ValidationTask()).chain(nextTask));
+        
+        final ValidationTask validationTask = new ValidationTask();
+        httpGetter.chain(validationTask);
+        validationTask.chain(nextTask);
+        
+        return httpGetter;
     }
 
     /**
