@@ -101,7 +101,7 @@ public class StringUtils {
      * @param s Text that is to be encoded.
      * @return The encoded string.
      */
-    public static String encodeURL(final String s) throws IOException {
+    public static String urlEncode(final String s) throws IOException {
         final ByteArrayInputStream bIn;
         final StringBuffer ret = new StringBuffer((s.length() * 5) / 4); //return value
         {

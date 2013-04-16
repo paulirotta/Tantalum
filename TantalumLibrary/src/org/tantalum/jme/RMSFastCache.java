@@ -355,7 +355,7 @@ public class RMSFastCache extends FlashCache {
      * @throws UnsupportedEncodingException
      */
     private byte[] toIndexBytes(final String key, final int valueIndex) throws UnsupportedEncodingException {
-        final byte[] bytes = key.getBytes("UTF-8");
+        final byte[] bytes = key.getBytes();
         final byte[] bytesWithValue = new byte[bytes.length + 4];
 
         bytesWithValue[0] = (byte) ((valueIndex & 0xF000) >>> 24);
@@ -386,13 +386,13 @@ public class RMSFastCache extends FlashCache {
      * extracted
      */
     private int toValueIndex(final byte[] indexBytes) {
-        int i = indexBytes[0];
+        int i = indexBytes[0] & 0xFF;
         i <<= 8;
-        i |= indexBytes[1];
+        i |= indexBytes[1] & 0xFF;
         i <<= 8;
-        i |= indexBytes[2];
+        i |= indexBytes[2] & 0xFF;
         i <<= 8;
-        i |= indexBytes[3];
+        i |= indexBytes[3] & 0xFF;
 
         return i;
     }
