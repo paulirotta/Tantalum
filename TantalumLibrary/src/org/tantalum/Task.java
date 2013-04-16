@@ -829,15 +829,20 @@ public abstract class Task implements Runnable {
      *
      * @param nextTask
      * @param insertAsNextLink
-     * @return nextTask
+     * @return this
      */
     public final Task chain(final Task nextTask, final boolean insertAsNextLink) {
         Task taskAfterNext = null;
 
+        if (nextTask == null) {
+            //#debug
+            L.i(this, "Ignoring chain(null)", "" + this);
+            return this;
+        }
+        if (nextTask == this) {
+            throw new IllegalArgumentException("Can not chain a task to itself");
+        }
         synchronized (MUTEX) {
-            if (nextTask == this) {
-                throw new IllegalArgumentException("Can not chain a task to itself");
-            }
             if (getStatus() > Task.PENDING) {
                 throw new IllegalStateException("Can not chain() to a Task unless it is still PENDING: " + this);
             }
@@ -864,10 +869,12 @@ public abstract class Task implements Runnable {
             }
         }
         if (taskAfterNext != null) {
-            nextTask.chain(taskAfterNext, insertAsNextLink);
+            nextTask.chain(taskAfterNext, true);
         }
+        //#debug
+        L.i(this, "Chain added", Task.getClassName(this) + " -> " + Task.getClassName(nextTask));
 
-        return nextTask;
+        return this;
     }
     //#mdebug
     // Always access in a synchronized(MUTEX) block
@@ -1121,6 +1128,9 @@ public abstract class Task implements Runnable {
         if (o instanceof Task) {
             return ((Task) o).getClassName();
         }
+        if (o == null) {
+            return "<null>";
+        }
 
         return o.getClass().getName();
     }
@@ -1265,13 +1275,19 @@ public abstract class Task implements Runnable {
             sb.append(getStatusString());
             if (showChain) {
                 sb.append(L.CRLF);
+                sb.append("   chain: ");
                 if (previousTaskInChain == null) {
-                    sb.append("   (no previous task in chain)");
-                    sb.append(L.CRLF);
+                    sb.append("<null>");
                 } else {
-                    sb.append("   previousTaskInChain=");
                     sb.append(previousTaskInChain.getClassName());
                 }
+                sb.append(" -> this -> ");
+                if (chainedTask == null) {
+                    sb.append("<null>");
+                } else {
+                    sb.append(chainedTask.getClassName());
+                }
+                sb.append(L.CRLF);
             }
             sb.append("   value=");
             if (value instanceof byte[]) {
@@ -1282,15 +1298,6 @@ public abstract class Task implements Runnable {
                 sb.append(((Task) value).getClassName());
             } else {
                 sb.append(value);
-            }
-            if (showChain) {
-                sb.append(L.CRLF);
-                if (chainedTask == null) {
-                    sb.append("   (no next task in chain)");
-                } else {
-                    sb.append("   nextTaskInChain=");
-                    sb.append(chainedTask.getClassName());
-                }
             }
             sb.append("}" + L.CRLF);
 

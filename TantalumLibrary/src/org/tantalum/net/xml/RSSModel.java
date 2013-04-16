@@ -193,4 +193,21 @@ public class RSSModel extends XMLModel {
 
         return adjacentItem;
     }
+
+    //#mdebug
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+        
+        sb.append("RSSModel:" + L.CRLF);
+        RSSItem[] model = copy(null);
+        for (int i = 0; i < model.length; i++) {
+            sb.append(i);
+            sb.append(" : ");
+            sb.append(model[i].toString());
+            sb.append(L.CRLF);
+        }
+        
+        return sb.toString();
+    }
+    //#enddebug
 }

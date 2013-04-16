@@ -275,4 +275,8 @@ public final class DetailsView extends View {
         this.rightIcon = null;
         this.currentIcon = null;
     }
+    
+    public String toString() {
+        return "Details" + super.toString() + " currentIcon=" + currentIcon + " currentItem=" + currentItem;
+    }
 }

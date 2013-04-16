@@ -50,6 +50,8 @@ public abstract class RSSListView extends View {
             public Object convertToUseForm(final Object key, byte[] bytes) {
                 try {
                     rssModel.setXML(bytes);
+                    //#debug
+                    L.i(this, "convertToUseForm", "" + rssModel);
 
                     return rssModel;
                 } catch (Exception e) {

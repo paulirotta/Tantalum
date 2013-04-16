@@ -175,7 +175,7 @@ final class Worker extends Thread {
             }
         }
         //#debug
-        L.i("Unfork", "success=" + success + " task=" + task);
+        L.i(task, "Unfork", "success=" + success + " task=" + task);
 
         return success;
     }
@@ -198,11 +198,11 @@ final class Worker extends Thread {
                 if (task.equals(workers[i].currentTask)) {
                     if (currentThread == workers[i]) {
                         //#debug
-                        L.i("Task attempted hard interrupt, usually cancel(true, ..), in itself", "The task is canceled, but will execute to the end. It if faster and more clear execution if you cancel(false, ..)");
+                        L.i(task, "Task attempted hard interrupt, usually cancel(true, ..), in itself", "The task is canceled, but will execute to the end. It if faster and more clear execution if you cancel(false, ..)");
                         break;
                     }
                     //#debug
-                    L.i("Sending interrupt signal", "thread=" + workers[i].getName() + " task=" + task);
+                    L.i(task, "Sending interrupt signal", "thread=" + workers[i].getName() + " task=" + task);
                     if (task == workers[i].currentTask) {
                         /*
                          * Note that there is no race condition here (risk the
@@ -314,40 +314,6 @@ final class Worker extends Thread {
     public static int getNumberOfWorkers() {
         return workers.length;
     }
-
-    //#mdebug
-    private static String toStringWorkers() {
-        final StringBuffer sb = new StringBuffer();
-
-        sb.append("WORKERS: currentlyIdleCount=");
-        sb.append(Worker.currentlyIdleCount);
-        sb.append(" q.size()=");
-        sb.append(Worker.q.size());
-        sb.append(" shutdownQ.size()=");
-        sb.append(Worker.shutdownQ.size());
-        sb.append(" lowPriorityQ.size()=");
-        sb.append(Worker.backgroundQ.size());
-
-        for (int i = 0; i < workers.length; i++) {
-            final Worker w = workers[i];
-            if (w != null) {
-                sb.append(" [");
-                sb.append(w.getName());
-                if (w.serialQ == null) {
-                    sb.append(" (no serialQ)");
-                } else {
-                    sb.append(" serialQsize=");
-                    sb.append(w.serialQ.size());
-                }
-                sb.append(" currentTask=");
-                sb.append(w.currentTask);
-                sb.append("] ");
-            }
-        }
-
-        return sb.toString();
-    }
-    //#enddebug
 
     /**
      * Main worker loop. Each Worker thread pulls tasks from the common
@@ -468,6 +434,38 @@ final class Worker extends Thread {
     }
 
     //#mdebug
+    private static String toStringWorkers() {
+        final StringBuffer sb = new StringBuffer();
+
+        sb.append("WORKERS: currentlyIdleCount=");
+        sb.append(Worker.currentlyIdleCount);
+        sb.append(" q.size()=");
+        sb.append(Worker.q.size());
+        sb.append(" shutdownQ.size()=");
+        sb.append(Worker.shutdownQ.size());
+        sb.append(" lowPriorityQ.size()=");
+        sb.append(Worker.backgroundQ.size());
+
+        for (int i = 0; i < workers.length; i++) {
+            final Worker w = workers[i];
+            if (w != null) {
+                sb.append(" [");
+                sb.append(w.getName());
+                if (w.serialQ == null) {
+                    sb.append(" (no serialQ)");
+                } else {
+                    sb.append(" serialQsize=");
+                    sb.append(w.serialQ.size());
+                }
+                sb.append(" currentTask=");
+                sb.append(w.currentTask);
+                sb.append("] ");
+            }
+        }
+
+        return sb.toString();
+    }
+
     static Vector getCurrentState() {
         synchronized (q) {
             final StringBuffer sb = new StringBuffer();

@@ -209,7 +209,7 @@ public class StaticCache {
             }
         } catch (Exception ex) {
             //#debug
-            L.e("Can not load keys to RAM during init() cache", "cache priority=" + cachePriorityChar, ex);
+            L.e(this, "Can not load keys to RAM during init() cache", "cache priority=" + cachePriorityChar, ex);
             throw new FlashDatabaseException("Can not load cache keys during init for cache '" + cachePriorityChar + "' : " + ex);
         }
     }
@@ -268,14 +268,14 @@ public class StaticCache {
 
                 if (o != null) {
                     //#debug            
-                    L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
+                    L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
                     this.accessOrder.addElement(key);
                 }
 
                 return o;
             } catch (Exception e) {
                 //#debug
-                L.e("Can not synchronousRAMCacheGet", key, e);
+                L.e(this, "Can not synchronousRAMCacheGet", key, e);
                 throw new FlashDatabaseException("Can not get from heap cache: " + key + " - " + e);
             }
         }
@@ -287,21 +287,18 @@ public class StaticCache {
      * @param key
      * @param cachePriorityChar - set to Work.FASTLANE_PRIORITY if you want the
      * results quickly to update the UI.
-     * @param chainedTask
+     * @param nextTask
      * @return
      */
-    public Task getAsync(final String key, int priority, final Task chainedTask) {
+    public Task getAsync(final String key, int priority, final Task nextTask) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
         if (priority == Task.HIGH_PRIORITY) {
             priority = Task.FASTLANE_PRIORITY;
         }
-        final Task task = new GetLocalTask(key, priority);
-        task.chain(chainedTask);
-        task.fork();
-
-        return task;
+        
+        return (new GetLocalTask(key, priority)).chain(nextTask).fork();
     }
 
     /**
@@ -316,7 +313,7 @@ public class StaticCache {
         Object o = synchronousRAMCacheGet(key);
 
         //#debug
-        L.i("StaticCache RAM get result", "(" + cachePriorityChar + ") " + key + " : " + o);
+        L.i(this, "Heap get result", "(" + cachePriorityChar + ") " + key + " : " + o);
         if (o == null) {
             try {
                 // Load from flash memory
@@ -330,21 +327,19 @@ public class StaticCache {
                 }
 
                 //#debug
-                L.i("StaticCache flash intermediate result", "(" + cachePriorityChar + ") key=" + key + " byteLength=" + (bytes != null ? ("" + bytes.length) : "<null>"));
+                L.i(this, "Flash get result", "(" + cachePriorityChar + ") key=" + key + " byteLength=" + (bytes != null ? ("" + bytes.length) : "<null>"));
                 if (bytes != null) {
-                    //#debug
-                    L.i("StaticCache flash hit", "(" + cachePriorityChar + ") " + key);
                     o = convertAndPutToHeapCache(key, bytes);
                     //#debug
-                    L.i("StaticCache flash hit result", "(" + cachePriorityChar + ") " + key + " : " + o);
+                    L.i(this, "Flash get converted result", "(" + cachePriorityChar + ") " + key + " : " + o);
                 }
             } catch (DigestException e) {
                 //#debug
-                L.e("Can not synchronousGet", key, e);
+                L.e(this, "Can not synchronousGet", key, e);
                 throw new FlashDatabaseException("Can not synchronousGet: " + key + " - " + e);
             } catch (UnsupportedEncodingException e) {
                 //#debug
-                L.e("Can not synchronousGet", key, e);
+                L.e(this, "Can not synchronousGet", key, e);
                 throw new FlashDatabaseException("Can not synchronousGet: " + key + " - " + e);
             }
         }
@@ -381,6 +376,8 @@ public class StaticCache {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
         final Object useForm;
+        //#debug
+        L.i(this, "put", "key=" + key + " byteLength=" + bytes.length);
         try {
             useForm = convertAndPutToHeapCache(key, bytes);
         } catch (DigestException ex) {
@@ -393,7 +390,7 @@ public class StaticCache {
             throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
         }
         if (flashCacheEnabled) {
-            (new Task() {
+            (new Task(Task.SERIAL_PRIORITY) {
                 public Object exec(final Object in) {
                     try {
                         synchronousFlashPut(key, bytes);
@@ -407,7 +404,7 @@ public class StaticCache {
                 }
             }.setClassName("SynchronousPutter")
                     .setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN))
-                    .fork(Task.SERIAL_PRIORITY);
+                    .fork();
         }
 
         return useForm;
@@ -561,11 +558,11 @@ public class StaticCache {
     /**
      * Remove all elements from this ramCache
      *
-     * @param chainedTask
+     * @param nextTask
      * @return
      */
-    public Task clearAsync(final Task chainedTask) {
-        final Task task = new Task() {
+    public Task clearAsync(final Task nextTask) {
+        final Task task = new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
                 //#debug
                 L.i("Start Cache Clear", "ID=" + cachePriorityChar);
@@ -579,10 +576,8 @@ public class StaticCache {
                 return in;
             }
         }.setClassName("ClearAsync");
-        task.chain(chainedTask);
-        task.fork(Task.SERIAL_PRIORITY);
-
-        return task;
+        
+        return task.chain(nextTask).fork();
     }
 
     /**
@@ -597,7 +592,7 @@ public class StaticCache {
      * @return
      */
     public Task clearHeapAsync(final Task chainedTask) {
-        final Task task = new Task() {
+        final Task task = new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
                 synchronized (MUTEX) {
                     //#debug
@@ -610,10 +605,8 @@ public class StaticCache {
                 return in;
             }
         }.setClassName("ClearHeapAsync");
-        task.chain(chainedTask);
-        task.fork();
 
-        return task;
+        return task.chain(chainedTask).fork();
     }
 
     /**
@@ -752,10 +745,10 @@ public class StaticCache {
          */
         protected Object exec(final Object in) {
             //#debug
-            L.i("Async StaticCache get", (String) in);
+            L.i(this, "Async StaticCache get", (String) in);
             if (in == null || !(in instanceof String)) {
                 //#debug
-                L.i("ERROR", "StaticCache.GetLocalTask must receive a String url, but got " + in);
+                L.i(this, "ERROR", "Must receive a String url, but got " + in);
                 cancel(false, "StaticCache.GetLocalTask got bad input to exec(): " + in);
 
                 return in;
@@ -764,7 +757,7 @@ public class StaticCache {
                 return synchronousGet((String) in);
             } catch (FlashDatabaseException e) {
                 //#debug
-                L.e("Can not async StaticCache get", in.toString(), e);
+                L.e(this, "Can not exec async get", in.toString(), e);
             }
 
             return in;

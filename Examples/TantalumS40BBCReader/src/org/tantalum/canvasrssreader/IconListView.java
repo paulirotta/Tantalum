@@ -99,6 +99,8 @@ public final class IconListView extends RSSListView {
         try {
             numberOfColumns = canvas.isPortrait() ? 3 : 4;
             modelCopy = rssModel.copy(modelCopy);
+            //#debug
+            L.i(this, "render", "modelLength=" + modelCopy.length);
             if (modelCopy.length == 0) {
 //                if (iconSupport && !animationRunning) {
 //                    ((UpdateIconCommand) updateCommand).startAnimation();
@@ -165,7 +167,7 @@ public final class IconListView extends RSSListView {
                                 public Object exec(final Object o) {
                                     try {
                                         //#debug
-                                        L.i("getIcon result", "" + o);
+                                        L.i(this, "getIcon result received", "" + this);
                                         item.setLoadingImage(false);
                                         Image icon = (Image) o;
                                         final int w = icon.getWidth();
@@ -186,7 +188,7 @@ public final class IconListView extends RSSListView {
                                         canvas.refresh();
                                     } catch (Exception e) {
                                         //#debug
-                                        L.e("Problem with getIcon setValue", item.getThumbnail(), e);
+                                        L.e(this, "Problem with getIcon setValue", item.getThumbnail(), e);
                                         cancel(false, "Problem with getIcon: " + item, e);
                                     }
 
@@ -255,5 +257,9 @@ public final class IconListView extends RSSListView {
                 canvas.refresh();
             }
         }
+    }
+    
+    public String toString() {
+        return "IconList" + super.toString() + " iconsSize=" + icons.size();
     }
 }

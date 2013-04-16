@@ -174,7 +174,6 @@ public class RSSItem {
     }
 
 //#mdebug
-    
     /**
      * Debug use
      * 
