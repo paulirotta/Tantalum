@@ -29,6 +29,8 @@ import java.security.DigestException;
 import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.Task;
+import org.tantalum.util.L;
+import org.tantalum.util.StringUtils;
 
 /**
  * A Hashtable-style interface for persistent data.
@@ -123,6 +125,9 @@ public abstract class FlashCache {
         }
 
         final byte[] digest = toDigest(key);
+
+        //#debug
+        L.i(this, "get(" + key + ")", "digest=" + StringUtils.toHex(digest));
 
         return get(digest);
     }

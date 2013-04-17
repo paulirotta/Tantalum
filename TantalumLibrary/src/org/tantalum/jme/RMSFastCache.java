@@ -198,7 +198,7 @@ public class RMSFastCache extends FlashCache {
                     final String key = toStringKey(keyIndexBytes); // Check integrity by decoding the key String from bytes
 
                     //#debug
-                    L.i(this, "keyRecordId", keyIndex + " " + key + " -> " + valueRecordId);
+                    L.i(this, "keyRecord", "key(" + keyIndex + ")=" + key + " (" + StringUtils.toHex(CryptoUtils.getInstance().toDigest(key)) + ") -> value(" + valueRecordId + ")");
 
                     if (!unreferencedValueIds.contains(vri)) {
                         //#debug
@@ -504,12 +504,12 @@ public class RMSFastCache extends FlashCache {
                     keyRecordId = keyRS.addRecord(byteKey, 0, byteKey.length);
                     indexHashPut(digest, keyRecordId, valueRecordId);
                     //#debug
-                    L.i(this, "Value added to RMS=" + valueRS.getName(), "key=" + key + " index=" + valueRecordId + " bytes=" + value.length + " keyIndex=" + keyRecordId);
+                    L.i(this, "put(" + key + ") digest=" + StringUtils.toHex(digest), "Value added to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length + " keyIndex=" + keyRecordId);
                 } else {
                     valueRecordId = toValueIndex(indexEntry);
                     valueRS.setRecord(valueRecordId, value, 0, value.length);
                     //#debug
-                    L.i(this, "Value overwrite to RMS=" + valueRS.getName(), "key=" + key + " index=" + valueRecordId + " bytes=" + value.length);
+                    L.i(this, "put(" + key + ") digest=" + StringUtils.toHex(digest), "Value overwrite to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length);
                 }
             } catch (RecordStoreFullException e) {
                 throw new FlashFullException("Flash full when adding key: " + key);

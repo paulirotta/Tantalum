@@ -120,7 +120,7 @@ public class StringUtils {
                     || c == '*' || c == '_') {
                 ret.append((char) c);
             } else if (c == ' ') {
-                ret.append("%20");
+                ret.append('+');
             } else {
                 if (c < 128) {
                     appendTaggedHex(c, ret);
@@ -149,11 +149,11 @@ public class StringUtils {
      */
     private static void appendTaggedHex(final int i, final StringBuffer sb) {
         sb.append('%');
-        appendHex(i, sb);
+        appendHex((byte) (i & 0xFF), sb);
     }
 
     private static void appendHex(final int i, final StringBuffer sb) {
-        sb.append(HEX_CHARS[(i & 0xF0) >>> 8]);
+        sb.append(HEX_CHARS[(i & 0xF0) >>> 4]);
         sb.append(HEX_CHARS[i & 0x0F]);
     }
 

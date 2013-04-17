@@ -631,7 +631,7 @@ public abstract class Task implements Runnable {
      */
     private Object executeOutOfOrderAfterSuccessfulUnfork() throws CancellationException {
         //#debug
-        L.i(this, "Successful unfork of start join of PENDING task", "Out of order execution starting: " + this);
+        L.i(this, "Successful unfork join() PENDING task", "Out of order exec: " + this);
 
         switch (getStatus()) {
             case PENDING:
