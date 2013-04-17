@@ -65,19 +65,28 @@ public abstract class FlashCache {
     }
 
     /**
-     * Add a Task which will be run before the cache closes.
+     * Add a
+     * <code>Task</code> which will be run before the cache closes.
      *
      * This is normally useful to save in-memory data during shutdown.
      *
+     * The minimum run priority for a cache shutdown
+     * <code>Task</code> is
+     * <code>Task.NORMAL_PRIORITY</code>
+     *
      * Note that there is a limited amount of time between when the phone tells
      * the application to close, and when it must close. This varies by phone,
-     * but about 3 seconds is typical. Thus like Task.SHUTDOWN_PRIORITY tasks,
-     * this Task should not take long to complete or it may block other Tasks
-     * from completing.
+     * but about 3 seconds is typical. Thus like
+     * <code>Task.SHUTDOWN_PRIORITY</code>, a cache shutdown
+     * <code>Task</code> should not take long to complete or it may block other
+     * Tasks from completing.
      *
      * @param shutdownTask
      */
     public final void addShutdownTask(final Task shutdownTask) {
+        if (shutdownTask.getForkPriority() < Task.NORMAL_PRIORITY) {
+            throw new IllegalArgumentException("FlashCache shutdown Tasks must have a minimum priority of Task.NORMAL_PRIORITY");
+        }
         shutdownTasks.addElement(shutdownTask);
     }
 

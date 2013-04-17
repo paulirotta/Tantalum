@@ -74,29 +74,35 @@ public class RMSFastCache extends FlashCache {
                     //#debug
                     L.e(this, "Timeout", "Cache shutdown tasks not completed", ex);
                 }
-                synchronized (MUTEX) {
-                    //#debug
-                    L.i("Closing Cache", "" + priority);
-                    try {
-                        valueRS.closeRecordStore();
-                    } catch (Exception ex) {
-                        //#debug
-                        L.e("Problem closing valueRS", getValueRSName(), ex);
-                    }
-                    try {
-                        keyRS.closeRecordStore();
-                    } catch (Exception ex) {
-                        //#debug
-                        L.e("Problem closing keyRS", getKeyRSName(), ex);
-                    }
+                (new Task(Task.SHUTDOWN) {
+                    protected Object exec(Object in) {
+                        synchronized (MUTEX) {
+                            //#debug
+                            L.i("Closing Cache", "" + priority);
+                            try {
+                                valueRS.closeRecordStore();
+                            } catch (Exception ex) {
+                                //#debug
+                                L.e("Problem closing valueRS", getValueRSName(), ex);
+                            }
+                            try {
+                                keyRS.closeRecordStore();
+                            } catch (Exception ex) {
+                                //#debug
+                                L.e("Problem closing keyRS", getKeyRSName(), ex);
+                            }
 
-                    return in;
-                }
+                            return in;
+                        }
+                    }
+                }).setClassName("CloseAfterShutdownTasksComplete").fork();
+
+                return in;
             }
-        }.setClassName("CloseOnShutdown")).fork(Task.SHUTDOWN);
+        }.setClassName("LaunchShutdownTasksOnShutdown")).fork(Task.SHUTDOWN);
         initIndex(hashTableSize);
     }
-    
+
     /**
      * Read the index into Hashtable for rapid "contains" and read operations.
      *
@@ -550,7 +556,7 @@ public class RMSFastCache extends FlashCache {
 
         //#debug
         L.i(this, "forEachRecord", "recordStore=" + recordStore.getName() + " recordStoreSize=" + recordStore.getSize());
-        
+
         try {
             synchronized (MUTEX) {
                 recordEnum = recordStore.enumerateRecords(null, null, false);
