@@ -429,7 +429,7 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i(this, "Not found locally, get from the web", (String) in);
-                        getHttpGetter(url, postMessage, preventWebTaskFromUsingFastLane(priority), nextTask);
+                        getHttpGetter(url, postMessage, preventWebTaskFromUsingFastLane(priority), nextTask).fork();
                         out = null;
                     }
                 } catch (FlashDatabaseException e) {
