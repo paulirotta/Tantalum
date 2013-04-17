@@ -686,8 +686,8 @@ public abstract class Task implements Runnable {
         //#debug
         L.i("Start joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length);
         long timeLeft = Long.MAX_VALUE;
+        final long startTime = System.currentTimeMillis();
         try {
-            final long startTime = System.currentTimeMillis();
             for (int i = 0; i < tasks.length; i++) {
                 final Task task = tasks[i];
                 timeLeft = startTime + timeout - System.currentTimeMillis();
@@ -699,7 +699,7 @@ public abstract class Task implements Runnable {
             }
         } finally {
             //#debug
-            L.i("End joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length + " timeElapsed=" + (timeout - timeLeft));
+            L.i("End joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length + " timeElapsed=" + (System.currentTimeMillis() - startTime));
         }
     }
 

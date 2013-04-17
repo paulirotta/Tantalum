@@ -119,17 +119,17 @@ public class RMSFastCache extends FlashCache {
      */
     private void initIndex(final int hashTableSize) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException, DigestException, UnsupportedEncodingException {
         /*
-         * All value records not pointed to by a an entry in the keyRS
+         * All value records not pointed to by an entry in the keyRS
          */
-        final Hashtable unreferencedValueRecordIdHash = new Hashtable(hashTableSize);
+        final Hashtable unreferencedValueIds = new Hashtable(hashTableSize);
         /*
-         * All value records which are already pointed to one time in the keyRS
+         * All value records pointed to one time in the keyRS
          */
-        final Hashtable referencedValueRecordIdHash = new Hashtable(hashTableSize);
+        final Hashtable referencedValueIds = new Hashtable(hashTableSize);
 
-        readAllValueRecordIds(unreferencedValueRecordIdHash);
-        readAllIndexRecords(unreferencedValueRecordIdHash, referencedValueRecordIdHash);
-        deleteAllUnusedValueRecords(unreferencedValueRecordIdHash);
+        readValueRecords(unreferencedValueIds);
+        readIndexRecords(unreferencedValueIds, referencedValueIds);
+        deleteUnreferencedValueRecords(unreferencedValueIds);
     }
 
     /**
@@ -141,11 +141,13 @@ public class RMSFastCache extends FlashCache {
      * @throws RecordStoreNotOpenException
      * @throws InvalidRecordIDException
      */
-    private void readAllValueRecordIds(final Hashtable unreferencedValueRecordIdHash) throws RecordStoreNotOpenException, InvalidRecordIDException {
+    private void readValueRecords(final Hashtable unreferencedValueIds) throws RecordStoreNotOpenException, InvalidRecordIDException {
         forEachRecord(valueRS, new RecordTask() {
             void exec() {
-                final Integer v = new Integer(recordIndex);
-                unreferencedValueRecordIdHash.put(v, v);
+                final Integer valueIndex = new Integer(keyIndex);
+                unreferencedValueIds.put(valueIndex, valueIndex);
+                //#debug
+                L.i(this, "valueRecordId", "" + keyIndex);
             }
         });
     }
@@ -158,18 +160,18 @@ public class RMSFastCache extends FlashCache {
      * order. We always write to or delete from the value RMS first, then write
      * to or delete from the key RMS.
      *
-     * @param h
+     * @param referencedValueIds
      * @param valueRecordId
      * @param keyRecordId
      * @return
      */
-    private boolean isValueRecordIdAlreadyInUse(final Hashtable h, final int valueRecordId, final int keyRecordId) {
+    private boolean isValueRecordIdAlreadyInUse(final Hashtable referencedValueIds, final int valueRecordId, final int keyRecordId) {
         final Integer v = new Integer(valueRecordId);
         final Integer k = new Integer(keyRecordId);
-        final boolean in = h.containsKey(v);
+        final boolean in = referencedValueIds.containsKey(v);
 
         if (!in) {
-            h.put(v, k);
+            referencedValueIds.put(v, k);
         }
 
         return in;
@@ -179,40 +181,57 @@ public class RMSFastCache extends FlashCache {
      * During startup, read into in-memory accelerator Hashtable and check
      * integrity of each key record.
      *
-     * @param unreferencedValueRecordIdHash
+     * @param unreferencedValueIds
      * @param referencedValueRecordIdHash
      * @throws RecordStoreNotOpenException
      * @throws InvalidRecordIDException
      */
-    private void readAllIndexRecords(final Hashtable unreferencedValueRecordIdHash, final Hashtable referencedValueRecordIdHash) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException, DigestException, UnsupportedEncodingException {
+    private void readIndexRecords(final Hashtable unreferencedValueIds, final Hashtable referencedValueIds) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException, DigestException, UnsupportedEncodingException {
+        final Hashtable validEntries = new Hashtable(); // In use value -> key
+
         forEachRecord(keyRS, new RecordTask() {
             void exec() {
                 try {
-                    final byte[] keyIndexBytes = keyRS.getRecord(recordIndex);
+                    final byte[] keyIndexBytes = keyRS.getRecord(keyIndex);
                     final int valueRecordId = toValueIndex(keyIndexBytes);
+                    final Integer vri = new Integer(valueRecordId);
                     final String key = toStringKey(keyIndexBytes); // Check integrity by decoding the key String from bytes
 
-                    if (isValueRecordIdAlreadyInUse(referencedValueRecordIdHash, valueRecordId, recordIndex)) {
-                        final int duplicateKeyIndex = ((Integer) referencedValueRecordIdHash.get(new Integer(valueRecordId))).intValue();
+                    //#debug
+                    L.i(this, "keyRecordId", keyIndex + " " + key + " -> " + valueRecordId);
+
+                    if (!unreferencedValueIds.contains(vri)) {
                         //#debug
-                        L.i("Found multiple keys pointing to the same value record", "deleting key " + key + " index=" + recordIndex + " and duplicate keyindex=" + duplicateKeyIndex + " value index=" + valueRecordId);
-                        keyRS.deleteRecord(recordIndex);
-                        keyRS.deleteRecord(duplicateKeyIndex);
+                        L.i("Found keys pointing to non-existant value record", "deleting key " + key + " index=" + keyIndex + " key=" + key);
+                        keyRS.deleteRecord(keyIndex);
+                    } else if (isValueRecordIdAlreadyInUse(referencedValueIds, valueRecordId, keyIndex)) {
+                        final Integer duplicateKeyIndex = ((Integer) validEntries.get(vri));
+
+                        validEntries.remove(vri);
+                        referencedValueIds.remove(vri);
+                        unreferencedValueIds.remove(vri);
+                        //#debug
+                        L.i("Found multiple keys pointing to the same value record", "deleting key " + key + " index=" + keyIndex + " and duplicate keyindex=" + duplicateKeyIndex + " value index=" + valueRecordId);
                         valueRS.deleteRecord(valueRecordId);
+                        keyRS.deleteRecord(keyIndex);
+                        if (duplicateKeyIndex != null) {
+                            keyRS.deleteRecord(duplicateKeyIndex.intValue());
+                        }
                     } else {
                         final Integer referencedValueId = new Integer(valueRecordId);
-                        if (unreferencedValueRecordIdHash.contains(referencedValueId)) {
-                            unreferencedValueRecordIdHash.remove(referencedValueId);
-                            indexHashPut(key, recordIndex, valueRecordId);
+                        if (unreferencedValueIds.contains(referencedValueId)) {
+                            unreferencedValueIds.remove(referencedValueId);
+                            validEntries.put(referencedValueId, new Integer(keyIndex));
+                            indexHashPut(key, keyIndex, valueRecordId);
                         } else {
                             //#debug
-                            L.i("Key points to non-existant value, deleting", "key=" + key + " keyRecordId=" + recordIndex);
-                            keyRS.deleteRecord(recordIndex);
+                            L.i("Key points to non-existant value, deleting", "key=" + key + " keyRecordId=" + keyIndex);
+                            keyRS.deleteRecord(keyIndex);
                         }
                     }
                 } catch (Exception e) {
                     //#debug
-                    L.e("Can not readAllIndexRecords", "" + recordIndex, e);
+                    L.e("Can not readAllIndexRecords", "" + keyIndex, e);
                 }
             }
         });
@@ -224,20 +243,20 @@ public class RMSFastCache extends FlashCache {
      * the debug. This can happen during sudden shutdown if the value but not
      * the key was written before the application closed.
      *
-     * @param unreferencedValueRecordIdHash
+     * @param unreferencedValueIds
      * @throws RecordStoreNotOpenException
      * @throws InvalidRecordIDException
      * @throws RecordStoreException
      */
-    private void deleteAllUnusedValueRecords(final Hashtable unreferencedValueRecordIdHash) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException {
+    private void deleteUnreferencedValueRecords(final Hashtable unreferencedValueIds) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException {
         synchronized (MUTEX) {
-            final Enumeration ids = unreferencedValueRecordIdHash.elements();
+            final Enumeration ids = unreferencedValueIds.elements();
 
             while (ids.hasMoreElements()) {
                 final int unreferencedValueIndex = ((Integer) ids.nextElement()).intValue();
 
                 //#debug
-                L.i("Found un-indexed value- deleting", "index=" + unreferencedValueIndex);
+                L.i(this, "Unreferenced value entry- deleting", "" + unreferencedValueIndex);
                 valueRS.deleteRecord(unreferencedValueIndex);
             }
         }
@@ -563,7 +582,7 @@ public class RMSFastCache extends FlashCache {
 
         try {
             synchronized (MUTEX) {
-                recordEnum = recordStore.enumerateRecords(null, null, false);
+                recordEnum = recordStore.enumerateRecords(null, null, true);
                 //#debug
                 int i = 0;
                 while (recordEnum.hasNextElement()) {
@@ -597,10 +616,10 @@ public class RMSFastCache extends FlashCache {
         forEachRecord(recordStore, new RecordTask() {
             void exec() {
                 try {
-                    recordStore.deleteRecord(recordIndex);
+                    recordStore.deleteRecord(keyIndex);
                 } catch (Exception e) {
                     //#debug
-                    L.e("Can not clear rms", "" + recordIndex, e);
+                    L.e("Can not clear rms", "" + keyIndex, e);
                 }
             }
         });
@@ -641,10 +660,10 @@ public class RMSFastCache extends FlashCache {
      */
     private static abstract class RecordTask {
 
-        public int recordIndex;
+        public int keyIndex;
 
         final void exec(final int recordIndex) {
-            this.recordIndex = recordIndex;
+            this.keyIndex = recordIndex;
             exec();
         }
 
