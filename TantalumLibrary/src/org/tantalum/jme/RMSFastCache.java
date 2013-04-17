@@ -202,7 +202,7 @@ public class RMSFastCache extends FlashCache {
 
                     if (!unreferencedValueIds.contains(vri)) {
                         //#debug
-                        L.i("Found keys pointing to non-existant value record", "deleting key " + key + " index=" + keyIndex + " key=" + key);
+                        L.i("Found key pointing to non-existant value record", "deleting key " + key + " index=" + keyIndex + " key=" + key);
                         keyRS.deleteRecord(keyIndex);
                     } else if (isValueRecordIdAlreadyInUse(referencedValueIds, valueRecordId, keyIndex)) {
                         final Integer duplicateKeyIndex = ((Integer) validEntries.get(vri));
@@ -403,10 +403,10 @@ public class RMSFastCache extends FlashCache {
         final byte[] bytes = key.getBytes();
         final byte[] bytesWithValue = new byte[bytes.length + 4];
 
-        bytesWithValue[0] = (byte) ((valueIndex & 0xF000) >>> 24);
-        bytesWithValue[1] = (byte) ((valueIndex & 0x0F00) >>> 16);
-        bytesWithValue[2] = (byte) ((valueIndex & 0x00F0) >>> 8);
-        bytesWithValue[3] = (byte) (valueIndex & 0x000F);
+        bytesWithValue[0] = (byte) ((valueIndex & 0xFF000000) >>> 24);
+        bytesWithValue[1] = (byte) ((valueIndex & 0xFF0000) >>> 16);
+        bytesWithValue[2] = (byte) ((valueIndex & 0x0FF00) >>> 8);
+        bytesWithValue[3] = (byte) (valueIndex & 0xFF);
 
         System.arraycopy(bytes, 0, bytesWithValue, 4, bytes.length);
 
