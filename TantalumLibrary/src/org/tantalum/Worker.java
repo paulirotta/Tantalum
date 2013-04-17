@@ -116,7 +116,7 @@ final class Worker extends Thread {
             throw new IllegalStateException("Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time: " + task);
         }
         //#debug
-        L.i(task, "Fork", "priority=" + priority);        
+        L.i(task, "Fork", "priority=" + task.getPriorityString());        
         synchronized (q) {
             switch (priority) {
                 case Task.FASTLANE_PRIORITY:

@@ -100,39 +100,6 @@ public abstract class Task implements Runnable {
      */
     public static final int FASTLANE_PRIORITY = 6;
     /**
-     * LIFO with no guaranteed sequence (multi-thread concurrent execution)
-     * start the task as soon as possible. The
-     * <code>fork()</code> operation will place this as the next Task to be
-     * completed unless subsequent
-     * <code>HIGH_PRIORITY</code> fork operations occur before a Worker start
-     * execution.
-     *
-     * This is the priority to use if your UI-related task must execute soon
-     * even under heavy load AND it never takes very long to to execute. A good
-     * example example reading from the local file system. A good example of
-     * what not to put in the fastlane is reading from or writing to the network
-     * as this can block for a long time and then the fastlane is not so fast
-     * anymore.
-     */
-    public static final int HIGH_PRIORITY = 5;
-    /**
-     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
-     * Start execution after any previously
-     * <code>fork()</code>ed work, first in is usually first out, however
-     * multiple Workers in parallel means that execution start and completion
-     * order is not guaranteed.
-     */
-    public static final int NORMAL_PRIORITY = 4;
-    /**
-     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
-     * Start execution if there is nothing else for the Workers to do. At least
-     * one Worker will always be left idle for immediate activation if only
-     * <code>IDLE_PRIORITY</code> work is queued for execution. This is intended
-     * for background tasks such as pre-fetch and pre-processing of data that
-     * doe not affect the current user view.
-     */
-    public static final int IDLE_PRIORITY = 3;
-    /**
      * FIFO with guaranteed sequence (single-thread concurrent execution, this
      * one thread also does
      * <code>FASTLANE</code> work first, but then
@@ -153,7 +120,40 @@ public abstract class Task implements Runnable {
      * <code>Task</code> chains to or forks other
      * <code>Task</code>s.
      */
-    public static final int SERIAL_PRIORITY = 2;
+    public static final int SERIAL_PRIORITY = 5;
+    /**
+     * LIFO with no guaranteed sequence (multi-thread concurrent execution)
+     * start the task as soon as possible. The
+     * <code>fork()</code> operation will place this as the next Task to be
+     * completed unless subsequent
+     * <code>HIGH_PRIORITY</code> fork operations occur before a Worker start
+     * execution.
+     *
+     * This is the priority to use if your UI-related task must execute soon
+     * even under heavy load AND it never takes very long to to execute. A good
+     * example example reading from the local file system. A good example of
+     * what not to put in the fastlane is reading from or writing to the network
+     * as this can block for a long time and then the fastlane is not so fast
+     * anymore.
+     */
+    public static final int HIGH_PRIORITY = 4;
+    /**
+     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
+     * Start execution after any previously
+     * <code>fork()</code>ed work, first in is usually first out, however
+     * multiple Workers in parallel means that execution start and completion
+     * order is not guaranteed.
+     */
+    public static final int NORMAL_PRIORITY = 3;
+    /**
+     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
+     * Start execution if there is nothing else for the Workers to do. At least
+     * one Worker will always be left idle for immediate activation if only
+     * <code>IDLE_PRIORITY</code> work is queued for execution. This is intended
+     * for background tasks such as pre-fetch and pre-processing of data that
+     * doe not affect the current user view.
+     */
+    public static final int IDLE_PRIORITY = 2;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      *
@@ -170,7 +170,7 @@ public abstract class Task implements Runnable {
      * shutdown sequence, you must design for quick shutdown.
      */
     public static final int SHUTDOWN = 1;
-    private static final int PRIORITY_NOT_SET = Integer.MIN_VALUE;
+    private static final int PRIORITY_NOT_SET = 0;
     /**
      * While holding no other locks, synchronize on the following during
      * critical code sections if your processing routine will temporarily need a
@@ -850,7 +850,6 @@ public abstract class Task implements Runnable {
             return this;
         }
     }
-    
     //#mdebug
     // Always access in a synchronized(MUTEX) block
     private Task previousTaskInChain = null;
@@ -889,11 +888,27 @@ public abstract class Task implements Runnable {
                 throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
             }
             if (forkPriority != Task.PRIORITY_NOT_SET) {
-                throw new IllegalStateException("Task priority has alrady been set: " + this);
+                throw new IllegalStateException("Task priority has already been set: " + this);
             }
             forkPriority = priority;
 
             return this;
+        }
+    }
+
+    /**
+     * Set the priority, but only if it has not already been set elsewhere
+     *
+     * @param priorityIfPriorityNotSet
+     * @return
+     */
+    private int assertForkPriority(final int priorityIfPriorityNotSet) {
+        synchronized (MUTEX) {
+            if (forkPriority == Task.PRIORITY_NOT_SET) {
+                forkPriority = priorityIfPriorityNotSet;
+            }
+
+            return forkPriority;
         }
     }
 
@@ -907,16 +922,6 @@ public abstract class Task implements Runnable {
      */
     public final int getForkPriority() {
         synchronized (MUTEX) {
-            return forkPriority;
-        }
-    }
-
-    private int assertForkPriority(final int priorityIfPriorityNotSet) {
-        synchronized (MUTEX) {
-            if (forkPriority == Task.PRIORITY_NOT_SET) {
-                forkPriority = priorityIfPriorityNotSet;
-            }
-
             return forkPriority;
         }
     }
@@ -1219,8 +1224,13 @@ public abstract class Task implements Runnable {
         }
         //#enddebug
     }
-
     //#mdebug
+    private static String[] PRIORITY_STRINGS = {"PRIORITY_NOT_SET", "SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "FASTLANE_PRIORITY"};
+
+    String getPriorityString() {
+        return PRIORITY_STRINGS[forkPriority];
+    }
+
     /**
      * When debugging, show what each Worker is doing and the queue length
      *
@@ -1269,6 +1279,8 @@ public abstract class Task implements Runnable {
             sb.append(this.getClassName());
             sb.append(" status=");
             sb.append(getStatusString());
+            sb.append(" priority=");
+            sb.append(getPriorityString());
             if (showChain) {
                 sb.append(showChain());
             }

@@ -707,11 +707,11 @@ public class HttpGetter extends Task {
                 L.i(this, "Exec", "No response. Stream is null, or length is 0");
             } else if (length > httpConn.getMaxLengthSupportedAsBlockOperation()) {
                 cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
-            } else if (length > 0) {
-                final byte[] bytes = new byte[(int) length];
-                readBytesFixedLength(url, inputStream, bytes);
-                out = bytes;
-            } else {
+//            } else if (length > 0) {
+//                final byte[] bytes = new byte[(int) length];
+//                readBytesFixedLength(url, inputStream, bytes);
+//                out = bytes;
+//            } else {
                 bos = new ByteArrayOutputStream(16384);
                 readBytesVariableLength(inputStream, bos);
                 out = bos.toByteArray();

@@ -555,15 +555,26 @@ public final class StaticWebCache extends StaticCache {
             if (responseCode >= HttpGetter.HTTP_500_INTERNAL_SERVER_ERROR) {
                 //#debug
                 L.i(this, "Invalid response code", responseCode + " received");
-                return false; // TODO: Should we throw an exception?
-            } else if (responseCode >= HttpGetter.HTTP_400_BAD_REQUEST) {
                 return false;
-            } else if (responseCode >= HttpGetter.HTTP_300_MULTIPLE_CHOICES) {
+            }
+            if (responseCode >= HttpGetter.HTTP_400_BAD_REQUEST) {
+                //#debug
+                L.i(this, "Invalid response code", responseCode + " received");
+                return false;
+            }
+            if (responseCode >= HttpGetter.HTTP_300_MULTIPLE_CHOICES) {
                 /*
                  * Redirect. Not valid since we don't support this at the
                  * Tantalum level. If you replace this validator or fix this in
                  * Tantalum to follow the redirect then change this.
                  */
+                //#debug
+                L.i(this, "Redirect not supported", responseCode + " received");
+                return false;
+            }
+            if (bytesReceived == null || bytesReceived.length == 0) {
+                //#debug
+                L.i(this, "Trivial response", "0 bytes received");
                 return false;
             }
 
