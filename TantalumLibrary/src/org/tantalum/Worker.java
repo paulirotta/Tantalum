@@ -39,6 +39,17 @@ final class Worker extends Thread {
     private static final int RUNNING = 0;
     private static final int WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
     private static final int RUNNING_SHUTDOWN_TASKS = 2;
+    /**
+     * Serial priority is bumped above HIGH_PRIORITY when the serialQ backlog
+     * gets above this number.
+     *
+     * Usually the seriaQ is used for writing to the file system. We mostly want
+     * such writes to be in idle time when there is no other activity in the
+     * thread pool. But in a phone where the user activity gives zero idle time
+     * for such writes, we need to start doing them before there is a risk of
+     * OutOfMemory from serialQ length growth.
+     */
+    private static final int MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST = 20;
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
@@ -344,10 +355,7 @@ final class Worker extends Thread {
 
                             if (!fastlaneQ.isEmpty()) {
                                 getFastlaneTask();
-                            } else if (isDedicatedFastlaneWorker) {
-                            } else if (serialQ != null && !serialQ.isEmpty()) {
-                                getSerialTask();
-                            } else {
+                            } else if (!isDedicatedFastlaneWorker) {
                                 switch (runState) {
                                     case WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS:
                                         if (currentlyIdleCount == workers.length - 1) {
@@ -433,7 +441,8 @@ final class Worker extends Thread {
     }
 
     private void getNormalRunTask() {
-        if (!q.isEmpty()) {
+        if ((serialQ == null || ( serialQ != null && serialQ.size() < MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST))
+                && !q.isEmpty()) {
             // Normal compute, hardened against async interrupt
             try {
                 currentTask = (Task) q.firstElement();
@@ -441,13 +450,18 @@ final class Worker extends Thread {
                 // Ensure we don't re-run in case of interrupt
                 q.removeElementAt(0);
             }
-        } else if (isBackgroundPriorityWorker && backgroundQ.size() > 0 && currentlyIdleCount >= workers.length) {
-            // Idle tasks- nothing else to do and other threads have finished their ongoing tasks
-            try {
-                currentTask = (Task) backgroundQ.firstElement();
-            } finally {
-                backgroundQ.removeElementAt(0);
-            }
+        } else if (serialQ != null && !serialQ.isEmpty()) {
+            getSerialTask();
+        } else if (isBackgroundPriorityWorker && backgroundQ.size() > 0 && currentlyIdleCount == workers.length - 1) {
+            getBackgroundTask();
+        }
+    }
+
+    private void getBackgroundTask() {
+        try {
+            currentTask = (Task) backgroundQ.firstElement();
+        } finally {
+            backgroundQ.removeElementAt(0);
         }
     }
 
@@ -522,6 +536,10 @@ final class Worker extends Thread {
             if (!q.isEmpty()) {
                 sb.append('Q');
                 sb.append(Worker.q.size());
+            }
+            if (!backgroundQ.isEmpty()) {
+                sb.append('B');
+                sb.append(Worker.backgroundQ.size());
             }
             for (int i = 0; i < n; i++) {
                 final Worker w = Worker.workers[i];

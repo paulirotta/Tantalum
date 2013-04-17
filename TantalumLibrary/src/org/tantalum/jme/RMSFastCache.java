@@ -458,17 +458,17 @@ public class RMSFastCache extends FlashCache {
      * Put new or replacement data associated with a key into the cache
      *
      * @param key
-     * @param bytes
+     * @param value
      * @throws DigestException
      * @throws UnsupportedEncodingException
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public void put(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException {
+    public void put(final String key, final byte[] value) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("You attempted to put a null key to the cache");
         }
-        if (bytes == null) {
+        if (value == null) {
             throw new IllegalArgumentException("You attempted to put null data to the cache");
         }
 
@@ -480,13 +480,17 @@ public class RMSFastCache extends FlashCache {
                 final int keyRecordId;
 
                 if (indexEntry == null) {
-                    valueRecordId = valueRS.addRecord(bytes, 0, bytes.length);
+                    valueRecordId = valueRS.addRecord(value, 0, value.length);
                     final byte[] byteKey = toIndexBytes(key, valueRecordId);
                     keyRecordId = keyRS.addRecord(byteKey, 0, byteKey.length);
                     indexHashPut(digest, keyRecordId, valueRecordId);
+                    //#debug
+                    L.i(this, "Value added to RMS=" + valueRS.getName(), "key=" + key + " index=" + valueRecordId + " bytes=" + value.length + " keyIndex=" + keyRecordId);
                 } else {
                     valueRecordId = toValueIndex(indexEntry);
-                    valueRS.setRecord(valueRecordId, bytes, 0, bytes.length);
+                    valueRS.setRecord(valueRecordId, value, 0, value.length);
+                    //#debug
+                    L.i(this, "Value overwrite to RMS=" + valueRS.getName(), "key=" + key + " index=" + valueRecordId + " bytes=" + value.length);
                 }
             } catch (RecordStoreFullException e) {
                 throw new FlashFullException("Flash full when adding key: " + key);
@@ -560,11 +564,15 @@ public class RMSFastCache extends FlashCache {
         try {
             synchronized (MUTEX) {
                 recordEnum = recordStore.enumerateRecords(null, null, false);
+                //#debug
+                int i = 0;
                 while (recordEnum.hasNextElement()) {
                     int recordId = 0;
 
                     try {
                         recordId = recordEnum.nextRecordId();
+                        //#debug
+                        L.i(this, "forEachRecord(" + i++ + ")", "nextRecordId=" + recordId);
                         task.exec(recordId);
                     } catch (InvalidRecordIDException ex) {
                         //#debug
