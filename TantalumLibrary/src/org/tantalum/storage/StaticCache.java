@@ -224,7 +224,24 @@ public class StaticCache {
      * @param enabled
      */
     public void setFlashCacheEnabled(final boolean enabled) {
-        this.flashCacheEnabled = enabled;
+        flashCacheEnabled = enabled;
+    }
+
+    /**
+     * Add a Task which will be run before the cache closes.
+     *
+     * This is normally useful to save in-memory data during shutdown.
+     *
+     * Note that there is a limited amount of time between when the phone tells
+     * the application to close, and when it must close. This varies by phone,
+     * but about 3 seconds is typical. Thus like Task.SHUTDOWN_PRIORITY tasks,
+     * this Task should not take long to complete or it may block other Tasks
+     * from completing.
+     *
+     * @param shutdownTask
+     */
+    public void addShutdownTask(final Task shutdownTask) {
+        flashCache.addShutdownTask(shutdownTask);
     }
 
     /**

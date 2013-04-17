@@ -9,13 +9,16 @@ import java.security.DigestException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Vector;
 import javax.microedition.rms.InvalidRecordIDException;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotOpenException;
+import org.tantalum.CancellationException;
 import org.tantalum.Task;
+import org.tantalum.TimeoutException;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
@@ -54,6 +57,23 @@ public class RMSFastCache extends FlashCache {
         indexHash = new Hashtable(hashTableSize);
         (new Task() {
             protected Object exec(final Object in) {
+                final Task[] t;
+                synchronized (shutdownTasks) {
+                    t = new Task[shutdownTasks.size()];
+                    for (int i = 0; i < t.length; i++) {
+                        t[i] = (Task) shutdownTasks.elementAt(i);
+                        t[i].fork();
+                    }
+                }
+                try {
+                    Task.joinAll(t);
+                } catch (CancellationException ex) {
+                    //#debug
+                    L.e(this, "Canceled", "Cache shutdown tasks not completed", ex);
+                } catch (TimeoutException ex) {
+                    //#debug
+                    L.e(this, "Timeout", "Cache shutdown tasks not completed", ex);
+                }
                 synchronized (MUTEX) {
                     //#debug
                     L.i("Closing Cache", "" + priority);
@@ -76,7 +96,7 @@ public class RMSFastCache extends FlashCache {
         }.setClassName("CloseOnShutdown")).fork(Task.SHUTDOWN);
         initIndex(hashTableSize);
     }
-
+    
     /**
      * Read the index into Hashtable for rapid "contains" and read operations.
      *
@@ -528,6 +548,9 @@ public class RMSFastCache extends FlashCache {
     private void forEachRecord(final RecordStore recordStore, final RecordTask task) throws RecordStoreNotOpenException {
         RecordEnumeration recordEnum = null;
 
+        //#debug
+        L.i(this, "forEachRecord", "recordStore=" + recordStore.getName() + " recordStoreSize=" + recordStore.getSize());
+        
         try {
             synchronized (MUTEX) {
                 recordEnum = recordStore.enumerateRecords(null, null, false);

@@ -27,6 +27,8 @@ package org.tantalum.storage;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
 import java.util.Hashtable;
+import java.util.Vector;
+import org.tantalum.Task;
 
 /**
  * A Hashtable-style interface for persistent data.
@@ -42,6 +44,7 @@ public abstract class FlashCache {
      * A unique local identifier for the cache.
      */
     public final char priority;
+    protected final Vector shutdownTasks = new Vector();
 
     /**
      * The priority must be unique in the application.
@@ -59,6 +62,23 @@ public abstract class FlashCache {
         priorities.put(c, c);
 
         this.priority = priority;
+    }
+
+    /**
+     * Add a Task which will be run before the cache closes.
+     *
+     * This is normally useful to save in-memory data during shutdown.
+     *
+     * Note that there is a limited amount of time between when the phone tells
+     * the application to close, and when it must close. This varies by phone,
+     * but about 3 seconds is typical. Thus like Task.SHUTDOWN_PRIORITY tasks,
+     * this Task should not take long to complete or it may block other Tasks
+     * from completing.
+     *
+     * @param shutdownTask
+     */
+    public final void addShutdownTask(final Task shutdownTask) {
+        shutdownTasks.addElement(shutdownTask);
     }
 
     /**

@@ -36,6 +36,9 @@ import org.tantalum.util.L;
  */
 final class Worker extends Thread {
 
+    private static final int RUNNING = 0;
+    private static final int WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
+    private static final int RUNNING_SHUTDOWN_TASKS = 2;
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
@@ -51,7 +54,7 @@ final class Worker extends Thread {
     private static final Vector backgroundQ = new Vector();
     private static final Vector shutdownQ = new Vector();
     private static int currentlyIdleCount = 0;
-    private static boolean shuttingDown = false;
+    private static int runState = RUNNING;
     private Task currentTask = null; // Access only within synchronized(q)
     private final boolean isBackgroundPriorityWorker;
     private final boolean isDedicatedFastlaneWorker;
@@ -116,7 +119,7 @@ final class Worker extends Thread {
             throw new IllegalStateException("Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time: " + task);
         }
         //#debug
-        L.i(task, "Fork", "priority=" + task.getPriorityString());        
+        L.i(task, "Fork", "priority=" + task.getPriorityString());
         synchronized (q) {
             switch (priority) {
                 case Task.FASTLANE_PRIORITY:
@@ -191,7 +194,7 @@ final class Worker extends Thread {
         if (task == null) {
             throw new IllegalArgumentException("interruptTask(null) not allowed");
         }
-        
+
         synchronized (q) {
             final Thread currentThread = Thread.currentThread();
 
@@ -235,7 +238,7 @@ final class Worker extends Thread {
              * Removed queued tasks which can be removed
              */
             synchronized (q) {
-                shuttingDown = true;
+                runState = WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS;
                 dequeueOrCancelOnShutdown(fastlaneQ);
                 Worker.dequeueOrCancelOnShutdown(workers[0].serialQ);
                 dequeueOrCancelOnShutdown(q);
@@ -340,49 +343,28 @@ final class Worker extends Thread {
                             currentTask = null;
 
                             if (!fastlaneQ.isEmpty()) {
-                                try {
-                                    currentTask = (Task) fastlaneQ.firstElement();
-                                } finally {
-                                    fastlaneQ.removeElementAt(0);
-                                }
+                                getFastlaneTask();
                             } else if (isDedicatedFastlaneWorker) {
                             } else if (serialQ != null && !serialQ.isEmpty()) {
-                                try {
-                                    currentTask = (Task) serialQ.firstElement();
-                                } finally {
-                                    serialQ.removeElementAt(0);
-                                }
+                                getSerialTask();
                             } else {
-                                if (!q.isEmpty()) {
-                                    // Normal compute, hardened against async interrupt
-                                    try {
-                                        currentTask = (Task) q.firstElement();
-                                    } finally {
-                                        // Ensure we don't re-run in case of interrupt
-                                        q.removeElementAt(0);
-                                    }
-                                } else if (shuttingDown) {
-                                    if (!shutdownQ.isEmpty()) {
-                                        // PHASE 1: Execute shutdown actions
-                                        currentTask = (Task) shutdownQ.firstElement();
-                                        shutdownQ.removeElementAt(0);
-                                    } else {
+                                switch (runState) {
+                                    case WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS:
                                         if (currentlyIdleCount == workers.length - 1) {
-                                            // PHASE 2: Shutdown actions are all complete
-                                            PlatformUtils.getInstance().shutdownComplete("currentlyIdleCount=" + currentlyIdleCount);
-                                            //#mdebug
-                                            L.i("Log notifyDestroyed", "");
-                                            L.shutdown();
-                                            //#enddebug
+                                            runState = RUNNING_SHUTDOWN_TASKS;
+                                            q.notifyAll();
+                                            getShutdownTask();
+                                            break;
                                         }
-                                    }
-                                } else if (isBackgroundPriorityWorker && backgroundQ.size() > 0 && currentlyIdleCount >= workers.length) {
-                                    // Idle tasks- nothing else to do and other threads have finished their ongoing tasks
-                                    try {
-                                        currentTask = (Task) backgroundQ.firstElement();
-                                    } finally {
-                                        backgroundQ.removeElementAt(0);
-                                    }
+
+                                    default:
+                                    case RUNNING:
+                                        getNormalRunTask();
+                                        break;
+
+                                    case RUNNING_SHUTDOWN_TASKS:
+                                        getShutdownTask();
+                                        break;
                                 }
                             }
                         } finally {
@@ -432,6 +414,53 @@ final class Worker extends Thread {
         }
         //#debug
         L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);
+    }
+
+    private void getFastlaneTask() {
+        try {
+            currentTask = (Task) fastlaneQ.firstElement();
+        } finally {
+            fastlaneQ.removeElementAt(0);
+        }
+    }
+
+    private void getSerialTask() {
+        try {
+            currentTask = (Task) serialQ.firstElement();
+        } finally {
+            serialQ.removeElementAt(0);
+        }
+    }
+
+    private void getNormalRunTask() {
+        if (!q.isEmpty()) {
+            // Normal compute, hardened against async interrupt
+            try {
+                currentTask = (Task) q.firstElement();
+            } finally {
+                // Ensure we don't re-run in case of interrupt
+                q.removeElementAt(0);
+            }
+        } else if (isBackgroundPriorityWorker && backgroundQ.size() > 0 && currentlyIdleCount >= workers.length) {
+            // Idle tasks- nothing else to do and other threads have finished their ongoing tasks
+            try {
+                currentTask = (Task) backgroundQ.firstElement();
+            } finally {
+                backgroundQ.removeElementAt(0);
+            }
+        }
+    }
+
+    private void getShutdownTask() {
+        if (!shutdownQ.isEmpty()) {
+            try {
+                currentTask = (Task) shutdownQ.firstElement();
+            } finally {
+                shutdownQ.removeElementAt(0);
+            }
+        } else if (currentlyIdleCount == workers.length - 1) {
+            PlatformUtils.getInstance().shutdownComplete("currentlyIdleCount=" + currentlyIdleCount);
+        }
     }
 
     //#mdebug

@@ -519,6 +519,19 @@ public class HttpGetter extends Task {
      * Create a Task for the specified URL.
      *
      * @param url
+     */
+    public HttpGetter(final String url) {
+        super(url);
+
+        if (url == null) {
+            throw new IllegalArgumentException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
+        }
+    }
+
+    /**
+     * Create a Task for the specified URL.
+     *
+     * @param url
      * @param priority 
      */
     public HttpGetter(final String url, final int priority) {

@@ -161,6 +161,10 @@ public abstract class Task implements Runnable {
      * <code>PlatformUtils.getInstance().shutdown()</code> is called, and do not
      * exit the program until all such shutdown tasks are completed.
      *
+     * Shutdown Tasks are run concurrently in no specified order. If you want
+     * your Task to execute before a given cache closes, you should call
+     * StaticCache.addShutdownTask() instead.
+     *
      * Note that if shutdown takes too long and the phone is telling the
      * application to exit, then the phone may give the application a limited
      * time window (typically around 3 seconds) to complete all shutdown
@@ -168,6 +172,7 @@ public abstract class Task implements Runnable {
      * if the application initiates the exit as by clicking an "Exit" button in
      * the application, but since this can never be guaranteed to be the only
      * shutdown sequence, you must design for quick shutdown.
+     *
      */
     public static final int SHUTDOWN = 1;
     private static final int PRIORITY_NOT_SET = 0;
