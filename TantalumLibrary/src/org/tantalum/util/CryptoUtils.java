@@ -83,9 +83,8 @@ public class CryptoUtils {
         messageDigest.digest(hashKey, 0, DIGEST_LENGTH);
         
         final byte[] l = new byte[8];
-        int j = 0;
         for (int i = 0; i < l.length; i++) {
-            l[i] = (byte)(bytes[j++] ^ bytes[j++]);
+            l[i] = (byte)(hashKey[2*i] ^ hashKey[1 + (2*i)]);
         }
 
         return bytesToLong(l, 0);
