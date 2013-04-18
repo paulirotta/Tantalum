@@ -21,7 +21,7 @@ public class CryptoUtils {
      *
      * A digest is a byte[] of this length
      */
-    public static final int DIGEST_LENGTH = 8;
+    public static final int DIGEST_LENGTH = 16;
     private MessageDigest messageDigest;
 
     private static class CryptoUtilsHolder {
@@ -81,8 +81,14 @@ public class CryptoUtils {
 
         messageDigest.update(bytes, 0, bytes.length);
         messageDigest.digest(hashKey, 0, DIGEST_LENGTH);
+        
+        final byte[] l = new byte[8];
+        int j = 0;
+        for (int i = 0; i < l.length; i++) {
+            l[i] = (byte)(bytes[j++] ^ bytes[j++]);
+        }
 
-        return bytesToLong(hashKey, 0);
+        return bytesToLong(l, 0);
     }
 
     /**
