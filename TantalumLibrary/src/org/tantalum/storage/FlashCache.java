@@ -29,6 +29,7 @@ import java.security.DigestException;
 import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.Task;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.StringUtils;
 
@@ -92,18 +93,7 @@ public abstract class FlashCache {
         shutdownTasks.addElement(shutdownTask);
     }
 
-    /**
-     * Convert the String key into a shorter byte[] digest to save memory in the
-     * hashtable
-     *
-     * @param key
-     * @return
-     * @throws DigestException
-     * @throws UnsupportedEncodingException
-     */
-    public abstract byte[] toDigest(final String key) throws DigestException, UnsupportedEncodingException;
-
-    public abstract String toString(final byte[] digest) throws FlashDatabaseException, UnsupportedEncodingException;
+    public abstract String getKey(final long digest) throws FlashDatabaseException;
 
     /**
      * Calculate a shorter, byte[] key for use in the hashtable. This reduces
@@ -119,15 +109,22 @@ public abstract class FlashCache {
      * @throws DigestException
      * @throws FlashDatabaseException
      */
-    public final byte[] get(final String key) throws UnsupportedEncodingException, DigestException, FlashDatabaseException {
+    public final byte[] get(final String key) throws DigestException, FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("You attempted to get a null digest from the cache");
         }
 
-        final byte[] digest = toDigest(key);
+        final long digest;
+        try {
+            digest = CryptoUtils.getInstance().toDigest(key);
+        } catch (UnsupportedEncodingException ex) {
+            //#debug
+            L.e(this, "get() can not decode", "key = " + key, ex);
+            throw new FlashDatabaseException("get() can not decode key: " + key + " - " + ex);
+        }
 
         //#debug
-        L.i(this, "get(" + key + ")", "digest=" + StringUtils.toHex(digest));
+        L.i(this, "get(" + key + ")", "digest=" + StringUtils.toHex(CryptoUtils.getInstance().longToBytes(digest)));
 
         return get(digest);
     }
@@ -139,7 +136,7 @@ public abstract class FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public abstract byte[] get(byte[] digest) throws DigestException, FlashDatabaseException;
+    public abstract byte[] get(long digest) throws DigestException, FlashDatabaseException;
 
     /**
      * Store the data object to persistent memory
@@ -151,7 +148,7 @@ public abstract class FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public abstract void put(String key, byte[] bytes) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException;
+    public abstract void put(String key, byte[] bytes) throws DigestException, FlashFullException, FlashDatabaseException;
 
     /**
      * Remove the data object from persistent memory
@@ -161,17 +158,20 @@ public abstract class FlashCache {
      * @throws UnsupportedEncodingException
      * @throws FlashDatabaseException
      */
-    public final void removeData(final String key) throws DigestException, UnsupportedEncodingException, FlashDatabaseException {
+    public final void removeData(final String key) throws DigestException, FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("You attempted to remove a null string key from the cache");
         }
-
-        final byte[] digest = toDigest(key);
-
-        removeData(digest);
+        try {
+            removeData(CryptoUtils.getInstance().toDigest(key));
+        } catch (UnsupportedEncodingException ex) {
+            //#debug
+            L.e(this, "removeData() can not decode", "key = " + key, ex);
+            throw new FlashDatabaseException("removeData() can not decode key: " + key + " - " + ex);
+        }
     }
 
-    public abstract void removeData(byte[] digest) throws UnsupportedEncodingException, FlashDatabaseException;
+    public abstract void removeData(long digest) throws FlashDatabaseException;
 
     /**
      * Return a list of all keys for objects stored in persistent memory
@@ -181,7 +181,7 @@ public abstract class FlashCache {
      * @throws UnsupportedEncodingException
      * @throws FlashDatabaseException
      */
-    public abstract byte[][] getDigests() throws DigestException, UnsupportedEncodingException, FlashDatabaseException;
+    public abstract long[] getDigests() throws DigestException, FlashDatabaseException;
 
     /**
      * Remove all items from this flash cache

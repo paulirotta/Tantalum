@@ -28,10 +28,10 @@ import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
-import org.tantalum.util.StringUtils;
 import org.tantalum.util.WeakHashCache;
 
 /**
@@ -203,9 +203,9 @@ public class StaticCache {
      */
     private void init() throws FlashDatabaseException {
         try {
-            final byte[][] digests = flashCache.getDigests();
+            final long[] digests = flashCache.getDigests();
             for (int i = 0; i < digests.length; i++) {
-                ramCache.markContains(digests[i]);
+                ramCache.markContains(new Long(digests[i]));
             }
         } catch (Exception ex) {
             //#debug
@@ -260,8 +260,8 @@ public class StaticCache {
         //#enddebug
         final Object o = handler.convertToUseForm(key, bytes);
 
+        final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
         synchronized (MUTEX) {
-            final byte[] digest = flashCache.toDigest(key);
             accessOrder.addElement(digest);
             ramCache.put(digest, o);
         }
@@ -280,8 +280,8 @@ public class StaticCache {
     public Object synchronousRAMCacheGet(final String key) throws FlashDatabaseException {
         synchronized (MUTEX) {
             try {
-                final byte[] digest = flashCache.toDigest(key);
-                Object o = ramCache.get(digest);
+                final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
+                final Object o = ramCache.get(digest);
 
                 if (o != null) {
                     //#debug            
@@ -314,7 +314,7 @@ public class StaticCache {
         if (priority == Task.HIGH_PRIORITY) {
             priority = Task.FASTLANE_PRIORITY;
         }
-        
+
         return (new GetLocalTask(key, priority)).chain(nextTask).fork();
     }
 
@@ -488,14 +488,14 @@ public class StaticCache {
     private boolean clearSpace(final int minSpaceToClear) throws FlashDatabaseException, UnsupportedEncodingException, DigestException {
         int spaceCleared = 0;
 
-        final byte[][] rsv = flashCache.getDigests();
+        final long[] rsv = flashCache.getDigests();
 
         //#debug
         L.i("Clearing RMS space", minSpaceToClear + " bytes");
 
         // First: clear cached objects not currently appearing in any open ramCache
         for (int i = rsv.length - 1; i >= 0; i--) {
-            final byte[] digest = rsv[i];
+            final long digest = rsv[i];
             final StaticCache sc = getCacheContainingDigest(digest);
 
             if (sc != null) {
@@ -512,9 +512,12 @@ public class StaticCache {
                 final StaticCache sc = (StaticCache) caches.elementAt(i);
 
                 while (!sc.accessOrder.isEmpty() && spaceCleared < minSpaceToClear) {
-                    final byte[] digest = (byte[]) sc.accessOrder.removeLeastRecentlyUsed();
-                    spaceCleared += getByteSizeByDigest(digest);
-                    sc.remove(digest);
+                    final Long digest = (Long) sc.accessOrder.removeLeastRecentlyUsed();
+                    if (digest != null) {
+                        final long d = digest.longValue();
+                        spaceCleared += getByteSizeByDigest(d);
+                        sc.remove(d);
+                    }
                 }
             }
         }
@@ -524,13 +527,13 @@ public class StaticCache {
         return spaceCleared >= minSpaceToClear;
     }
 
-    private int getByteSizeByDigest(final byte[] digest) throws FlashDatabaseException, DigestException {
+    private int getByteSizeByDigest(final long digest) throws FlashDatabaseException, DigestException {
         final byte[] bytes = flashCache.get(digest);
 
         return bytes.length;
     }
 
-    private static StaticCache getCacheContainingDigest(final byte[] digest) {
+    private static StaticCache getCacheContainingDigest(final long digest) {
         StaticCache cache = null;
 
         synchronized (caches) {
@@ -555,20 +558,21 @@ public class StaticCache {
      *
      * @param digest
      */
-    protected void remove(final byte[] digest) {
+    protected void remove(final long digest) {
         try {
             if (containsDigest(digest)) {
+                final Long l = new Long(digest);
                 synchronized (MUTEX) {
-                    accessOrder.removeElement(digest);
-                    ramCache.remove(digest);
+                    accessOrder.removeElement(l);
+                    ramCache.remove(l);
                     flashCache.removeData(digest);
                 }
                 //#debug
-                L.i("Cache remove (from RAM and RMS)", StringUtils.toHex(digest));
+                L.i("Cache remove (from RAM and RMS)", Long.toString(digest, 16));
             }
         } catch (Exception e) {
             //#debug
-            L.e("Couldn't remove object from cache", StringUtils.toHex(digest), e);
+            L.e("Couldn't remove object from cache", Long.toString(digest, 16), e);
         }
     }
 
@@ -593,7 +597,7 @@ public class StaticCache {
                 return in;
             }
         }.setClassName("ClearAsync");
-        
+
         return task.chain(nextTask).fork();
     }
 
@@ -632,14 +636,10 @@ public class StaticCache {
      * @param key
      * @return
      */
-    public boolean containsDigest(final byte[] digest) {
-        if (digest == null) {
-            throw new IllegalArgumentException("containsDigest was passed null");
-        }
-
+    public boolean containsDigest(final long digest) {
         boolean contained;
         synchronized (MUTEX) {
-            contained = ramCache.containsKey(digest);
+            contained = ramCache.containsKey(new Long(digest));
         }
 
         return contained;

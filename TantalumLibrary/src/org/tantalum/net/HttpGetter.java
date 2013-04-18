@@ -38,7 +38,6 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
-import org.tantalum.util.StringUtils;
 
 /**
  * GET something from a URL on the Worker thread
@@ -889,8 +888,8 @@ public class HttpGetter extends Task {
         if (this.postMessage == null) {
             throw new IllegalStateException("Attempt to get post-style crypto digest, but postData==null");
         }
-        final byte[] digest = CryptoUtils.getInstance().toDigest(this.postMessage);
-        final String digestAsHex = StringUtils.toHex(digest);
+        final long digest = CryptoUtils.getInstance().toDigest(this.postMessage);
+        final String digestAsHex = Long.toString(digest, 16);
 
         return url + '\n' + digestAsHex;
     }

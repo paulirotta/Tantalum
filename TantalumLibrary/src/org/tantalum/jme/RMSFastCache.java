@@ -9,7 +9,6 @@ import java.security.DigestException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 import javax.microedition.rms.InvalidRecordIDException;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
@@ -24,7 +23,6 @@ import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
-import org.tantalum.util.StringUtils;
 
 /**
  *
@@ -198,7 +196,7 @@ public class RMSFastCache extends FlashCache {
                     final String key = toStringKey(keyIndexBytes); // Check integrity by decoding the key String from bytes
 
                     //#debug
-                    L.i(this, "keyRecord", "key(" + keyIndex + ")=" + key + " (" + StringUtils.toHex(CryptoUtils.getInstance().toDigest(key)) + ") -> value(" + valueRecordId + ")");
+                    L.i(this, "keyRecord", "key(" + keyIndex + ")=" + key + " (" + CryptoUtils.getInstance().toDigest(key) + ") -> value(" + valueRecordId + ")");
 
                     if (!unreferencedValueIds.contains(vri)) {
                         //#debug
@@ -273,7 +271,7 @@ public class RMSFastCache extends FlashCache {
      * @throws UnsupportedEncodingException
      */
     private void indexHashPut(final String key, final int keyRecordId, final int valueRecordId) throws DigestException, UnsupportedEncodingException {
-        final byte[] digest = toDigest(key);
+        final long digest = CryptoUtils.getInstance().toDigest(key);
         indexHashPut(digest, keyRecordId, valueRecordId);
     }
 
@@ -286,11 +284,11 @@ public class RMSFastCache extends FlashCache {
      * @throws DigestException
      * @throws UnsupportedEncodingException
      */
-    private void indexHashPut(final byte[] digest, final int keyRecordId, final int valueRecordId) throws DigestException, UnsupportedEncodingException {
+    private void indexHashPut(final long digest, final int keyRecordId, final int valueRecordId) throws DigestException, UnsupportedEncodingException {
         final Long l = toIndexHash(keyRecordId, valueRecordId);
 
         synchronized (MUTEX) {
-            indexHash.put(digest, l);
+            indexHash.put(new Long(digest), l);
         }
     }
 
@@ -301,9 +299,9 @@ public class RMSFastCache extends FlashCache {
      * @param digest
      * @return
      */
-    private Long indexHashGet(final byte[] digest) {
+    private Long indexHashGet(final long digest) {
         synchronized (MUTEX) {
-            return (Long) indexHash.get(digest);
+            return (Long) indexHash.get(new Long(digest));
         }
     }
 
@@ -316,11 +314,7 @@ public class RMSFastCache extends FlashCache {
      * @throws FlashDatabaseException
      * @throws UnsupportedEncodingException
      */
-    public String toString(final byte[] digest) throws FlashDatabaseException, UnsupportedEncodingException {
-        if (digest == null) {
-            throw new IllegalArgumentException("You attempted to convert a null digest into a key");
-        }
-
+    public String getKey(final long digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             final Long keyAndValueIndexes = indexHashGet(digest);
 
@@ -449,23 +443,16 @@ public class RMSFastCache extends FlashCache {
      * @return the bytes of the value
      * @throws FlashDatabaseException
      */
-    public byte[] get(final byte[] digest) throws FlashDatabaseException {
-        if (digest == null) {
-            throw new IllegalArgumentException("You attempted to get a null digest from the cache");
-        }
-        if (digest.length != CryptoUtils.DIGEST_LENGTH) {
-            throw new IllegalArgumentException("You attempted to get from the cache with a digest that is " + digest.length + " bytes, but should be " + CryptoUtils.DIGEST_LENGTH + " bytes");
-        }
-
+    public byte[] get(final long digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
-            final Long hashValue = ((Long) indexHash.get(digest));
+            final Long hashValue = ((Long) indexHash.get(new Long(digest)));
 
             if (hashValue != null) {
                 try {
                     final int valueIndex = toValueIndex(hashValue);
                     return valueRS.getRecord(valueIndex);
                 } catch (Exception ex) {
-                    throw new FlashDatabaseException("Can not getData from RMS: " + StringUtils.toHex(digest) + " - " + ex);
+                    throw new FlashDatabaseException("Can not getData from RMS: " + Long.toString(digest, 16) + " - " + ex);
                 }
             }
 
@@ -483,7 +470,7 @@ public class RMSFastCache extends FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public void put(final String key, final byte[] value) throws DigestException, UnsupportedEncodingException, FlashFullException, FlashDatabaseException {
+    public void put(final String key, final byte[] value) throws DigestException, FlashFullException, FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("You attempted to put a null key to the cache");
         }
@@ -493,7 +480,7 @@ public class RMSFastCache extends FlashCache {
 
         synchronized (MUTEX) {
             try {
-                final byte[] digest = toDigest(key);
+                final long digest = CryptoUtils.getInstance().toDigest(key);
                 final Long indexEntry = indexHashGet(digest);
                 final int valueRecordId;
                 final int keyRecordId;
@@ -504,17 +491,26 @@ public class RMSFastCache extends FlashCache {
                     keyRecordId = keyRS.addRecord(byteKey, 0, byteKey.length);
                     indexHashPut(digest, keyRecordId, valueRecordId);
                     //#debug
-                    L.i(this, "put(" + key + ") digest=" + StringUtils.toHex(digest), "Value added to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length + " keyIndex=" + keyRecordId);
+                    L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value added to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length + " keyIndex=" + keyRecordId);
                 } else {
                     valueRecordId = toValueIndex(indexEntry);
                     valueRS.setRecord(valueRecordId, value, 0, value.length);
                     //#debug
-                    L.i(this, "put(" + key + ") digest=" + StringUtils.toHex(digest), "Value overwrite to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length);
+                    L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value overwrite to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length);
                 }
             } catch (RecordStoreFullException e) {
+                //#debug
+                L.e(this, "Can not write", "key=" + key, e);
+                //FIXME Clear space instead of blowing up
                 throw new FlashFullException("Flash full when adding key: " + key);
             } catch (RecordStoreException e) {
+                //#debug
+                L.e(this, "Can not write", "key=" + key, e);
                 throw new FlashDatabaseException("Can not putData to RMS: " + key + " - " + e);
+            } catch (UnsupportedEncodingException ex) {
+                //#debug
+                L.e(this, "Can not write", "key=" + key, ex);
+                throw new FlashDatabaseException("Can not putData to RMS: " + key + " - " + ex);
             }
         }
     }
@@ -525,11 +521,7 @@ public class RMSFastCache extends FlashCache {
      * @param digest
      * @throws FlashDatabaseException
      */
-    public void removeData(final byte[] digest) throws FlashDatabaseException {
-        if (digest == null) {
-            throw new IllegalArgumentException("You attempted to remove a null digest from the cache");
-        }
-
+    public void removeData(final long digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             try {
                 final Long indexEntry = indexHashGet(digest);
@@ -541,7 +533,7 @@ public class RMSFastCache extends FlashCache {
                     keyRS.deleteRecord(keyRecordId);
                 }
             } catch (RecordStoreException e) {
-                throw new FlashDatabaseException("Can not removeData from RMS: " + StringUtils.toHex(digest) + " - " + e);
+                throw new FlashDatabaseException("Can not removeData from RMS: " + Long.toString(digest, 16) + " - " + e);
             }
         }
     }
@@ -552,13 +544,13 @@ public class RMSFastCache extends FlashCache {
      * @return an array of byte[] digest-of-key objects in the cache
      * @throws FlashDatabaseException
      */
-    public byte[][] getDigests() throws FlashDatabaseException {
+    public long[] getDigests() throws FlashDatabaseException {
         synchronized (MUTEX) {
-            final byte[][] digests = new byte[indexHash.size()][];
+            final long[] digests = new long[indexHash.size()];
             final Enumeration enu = indexHash.keys();
 
             for (int i = 0; i < digests.length; i++) {
-                digests[i] = (byte[]) enu.nextElement();
+                digests[i] = ((Long) enu.nextElement()).longValue();
             }
 
             return digests;
@@ -648,10 +640,6 @@ public class RMSFastCache extends FlashCache {
                 L.e("Can not clear RMS keys", "aborting", ex);
             }
         }
-    }
-
-    public byte[] toDigest(String key) throws DigestException, UnsupportedEncodingException {
-        return CryptoUtils.getInstance().toDigest(key);
     }
 
     /**

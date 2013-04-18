@@ -31,6 +31,7 @@ import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.tantalum.storage.FlashDatabaseException;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.StringUtils;
 
@@ -149,25 +150,13 @@ public final class RMSUtils {
 
     /**
      * The digest length must be evenly divisible by 8
-     * 
+     *
      * @param digest
-     * @param sb 
+     * @param sb
      */
     private void appendDigestAsShortString(final byte[] digest, final StringBuffer sb) {
-        for (int i = 0; i < digest.length; i+=8) {
-            final long l = bytesToLong(digest, i, 8);
-            sb.append(Long.toString(l, RADIX));
-        }
-    }
-    
-    private long bytesToLong(final byte[] bytes, int start, final int length) {
-        long l = 0;
-
-        for (int i = 0; i < length; i++) {
-            l |= (bytes[i + start] << (8*i));
-        }
-        
-        return l;
+        final long l = CryptoUtils.getInstance().bytesToLong(digest, 0);
+        sb.append(Long.toString(l, RADIX));
     }
 
 //    private String getRecordStoreCacheName(final String key) {
@@ -190,7 +179,6 @@ public final class RMSUtils {
 //
 //        return s;
 //    }
-
     /**
      * Write to the record store a cached value based on the hashcode of the key
      * to the data
@@ -338,7 +326,7 @@ public final class RMSUtils {
         try {
             rs = RecordStore.openRecordStore(recordStoreName, createIfNecessary);
             //            openRecordStores.addElement(rs);
-            
+
             success = true;
         } catch (RecordStoreNotFoundException e) {
             success = !createIfNecessary;
@@ -381,7 +369,8 @@ public final class RMSUtils {
      * Shorten the name to fit within the 32 character limit imposed by RMS.
      *
      * @param recordStoreName
-     * @return (possibly) shortened string suitable for use as an RMS (file system) name
+     * @return (possibly) shortened string suitable for use as an RMS (file
+     * system) name
      */
     private String truncateRecordStoreNameToLast32(String recordStoreName) {
         if (recordStoreName == null || recordStoreName.length() == 0) {

@@ -11,16 +11,17 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * Simplified cryptography routines
- * 
+ *
  * @author phou
  */
 public class CryptoUtils {
+
     /**
      * The length of each digest in bytes
-     * 
+     *
      * A digest is a byte[] of this length
      */
-    public static final int DIGEST_LENGTH = 16;
+    public static final int DIGEST_LENGTH = 8;
     private MessageDigest messageDigest;
 
     private static class CryptoUtilsHolder {
@@ -30,8 +31,8 @@ public class CryptoUtils {
 
     /**
      * Get the singleton
-     * 
-     * @return 
+     *
+     * @return
      */
     public static CryptoUtils getInstance() {
         return CryptoUtilsHolder.instance;
@@ -55,24 +56,24 @@ public class CryptoUtils {
      * @throws DigestException
      * @throws UnsupportedEncodingException
      */
-    public synchronized byte[] toDigest(final String key) throws DigestException, UnsupportedEncodingException {
+    public synchronized long toDigest(final String key) throws DigestException, UnsupportedEncodingException {
         if (key == null) {
             throw new IllegalArgumentException("You attempted to convert a null string into a hash digest");
         }
         final byte[] bytes = key.getBytes("UTF-8");
-        
+
         return toDigest(bytes);
     }
 
     /**
      * Generate a cryptographic MD5 digest from a byte array
-     * 
+     *
      * @param bytes
      * @return
      * @throws DigestException
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
-    public synchronized byte[] toDigest(final byte[] bytes) throws DigestException, UnsupportedEncodingException {
+    public synchronized long toDigest(final byte[] bytes) throws DigestException, UnsupportedEncodingException {
         if (bytes == null) {
             throw new IllegalArgumentException("You attempted to convert a null byte[] into a hash digest");
         }
@@ -81,6 +82,53 @@ public class CryptoUtils {
         messageDigest.update(bytes, 0, bytes.length);
         messageDigest.digest(hashKey, 0, DIGEST_LENGTH);
 
-        return hashKey;
+        return bytesToLong(hashKey, 0);
+    }
+
+    /**
+     * Encode 8 bytes into one Long
+     *
+     * @param bytes
+     * @param start
+     * @return
+     */
+    public long bytesToLong(final byte[] bytes, final int start) {
+        if (bytes == null || bytes.length != 8) {
+            throw new IllegalArgumentException("Bad byteLength != 8 or null: can not convert digest to Long");
+        }
+        long l = 0;
+
+        for (int i = 0; i < 8; i++) {
+            l |= ((long) (bytes[start + i] & 0xFF)) << (8 * i);
+        }
+
+        return l;
+    }
+
+    /**
+     * Encode one Long to 8 bytes
+     *
+     * @param l
+     * @return
+     */
+    public byte[] longToBytes(final long l) {
+        final byte[] bytes = new byte[8];
+
+        longToBytes(l, bytes, 0);
+        
+        return bytes;
+    }
+
+    /**
+     * Encode one Long to 8 bytes inserted into an existing array
+     *
+     * @param l
+     * @param bytes
+     * @param start
+     */
+    public void longToBytes(final long l, final byte[] bytes, final int start) {
+        for (int i = 0; i < 8; i++) {
+            bytes[start + i] = (byte)(((int)(l >>> (8*i))) & 0xFF);
+        }
     }
 }

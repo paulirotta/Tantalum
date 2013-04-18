@@ -30,13 +30,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import java.io.UnsupportedEncodingException;
-import java.security.DigestException;
 import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
-import org.tantalum.util.StringUtils;
 
 /**
  * Android implementation of cross-platform persistent storage using an SQLite
@@ -68,6 +67,10 @@ public final class AndroidCache extends FlashCache {
      */
     private static final String COL_ID = "id";
     /**
+     * Database data column tag
+     */
+    private static final String COL_DIGEST = "dig";
+    /**
      * Database key column tag
      */
     private static final String COL_KEY = "key";
@@ -83,7 +86,7 @@ public final class AndroidCache extends FlashCache {
      * SQL to create the database
      */
     private final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS "
-            + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_KEY
+            + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_DIGEST + " BIGINT NOT NULL" + COL_KEY
             + " TEXT NOT NULL, " + COL_DATA + " BLOB NOT NULL)";
     private final String CLEAR_TABLE = "DROP TABLE " + TABLE_NAME;
     private SQLiteDatabase db = null;
@@ -144,25 +147,19 @@ public final class AndroidCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public byte[] get(final byte[] digest) throws FlashDatabaseException {
+    public byte[] get(final long digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             Cursor cursor = null;
 
             final String[] fields = new String[]{COL_DATA};
             //#debug
-            L.i("db getData", "1");
+            L.i(this, "get()", "digest=" + Long.toString(digest, 16));
             try {
-                final String key = toString(digest);
-
                 if (db == null) {
                     db = helper.getWritableDatabase();
                 }
-                //#debug
-                L.i("db getData", "2");
-                cursor = db.query(TABLE_NAME, fields, COL_KEY + "=?",
-                        new String[]{key}, null, null, null, null);
-                //#debug
-                L.i("db getData", "3");
+                cursor = db.query(TABLE_NAME, fields, COL_DIGEST + "=?",
+                        new String[]{"" + digest}, null, null, null, null);
 
                 if (cursor == null || cursor.getCount() == 0) {
                     return null;
@@ -177,8 +174,54 @@ public final class AndroidCache extends FlashCache {
                 return null;
             } catch (Exception e) {
                 //#debug
-                L.e("db can not be initialized", "getData, key=" + StringUtils.toHex(digest), e);
-                throw new FlashDatabaseException("db init error on getData, key=" + StringUtils.toHex(digest) + " : " + e);
+                L.e("db can not be initialized", "getData, key=" + Long.toString(digest, 16), e);
+                throw new FlashDatabaseException("db init error on getData, key=" + Long.toString(digest, 16) + " : " + e);
+            } finally {
+                //#debug
+                L.i("db getData", "end");
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        }
+    }
+
+    /**
+     * Search the database for the String key associated with this Digest
+     *
+     * @param digest
+     * @return the string form of the digest
+     * @throws UnsupportedEncodingException
+     */
+    public String getKey(final long digest) throws FlashDatabaseException {
+        synchronized (MUTEX) {
+            Cursor cursor = null;
+
+            final String[] fields = new String[]{COL_KEY};
+            //#debug
+            L.i(this, "getKey()", "digest=" + Long.toString(digest, 16));
+            try {
+                if (db == null) {
+                    db = helper.getWritableDatabase();
+                }
+                cursor = db.query(TABLE_NAME, fields, COL_DIGEST + "=?",
+                        new String[]{"" + digest}, null, null, null, null);
+
+                if (cursor == null || cursor.getCount() == 0) {
+                    return null;
+                } else {
+                    cursor.moveToFirst();
+
+                    return cursor.getString(0);
+                }
+            } catch (NullPointerException e) {
+                //#debug
+                L.e("db not initialized, join() then try again", "getData", e);
+                return null;
+            } catch (Exception e) {
+                //#debug
+                L.e("db can not be initialized", "getData, key=" + Long.toString(digest, 16), e);
+                throw new FlashDatabaseException("db init error on getData, key=" + Long.toString(digest, 16) + " : " + e);
             } finally {
                 //#debug
                 L.i("db getData", "end");
@@ -197,7 +240,7 @@ public final class AndroidCache extends FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    public void put(final String url, final byte[] data) throws FlashFullException, FlashDatabaseException, UnsupportedEncodingException {
+    public void put(final String url, final byte[] data) throws FlashFullException, FlashDatabaseException {
         if (url == null) {
             throw new IllegalArgumentException("You attempted to put a null key to the cache");
         }
@@ -238,14 +281,10 @@ public final class AndroidCache extends FlashCache {
      * @param key
      * @throws FlashDatabaseException
      */
-    public void removeData(final byte[] digest) throws UnsupportedEncodingException, FlashDatabaseException {
-        if (digest == null) {
-            throw new IllegalArgumentException("You attempted to remove a null digest from the cache");
-        }
-
+    public void removeData(final long digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             final String where;
-            where = COL_KEY + "==\"" + toString(digest) + "\"";
+            where = COL_KEY + "==\"" + Long.toString(digest, 16) + "\"";
 
             try {
                 if (db == null) {
@@ -254,7 +293,7 @@ public final class AndroidCache extends FlashCache {
                 db.delete(TABLE_NAME, where, null);
             } catch (Exception e) {
                 //#debug
-                L.e("Can not access database on removeData()", toString(digest), e);
+                L.e("Can not access database on removeData()", Long.toString(digest, 16), e);
                 throw new FlashDatabaseException("Can not remove data from database: " + e);
             }
         }
@@ -266,9 +305,9 @@ public final class AndroidCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public byte[][] getDigests() throws FlashDatabaseException {
+    public long[] getDigests() throws FlashDatabaseException {
         synchronized (MUTEX) {
-            byte[][] digests = null;
+            long[] digests = null;
             Cursor cursor = null;
 
             try {
@@ -278,14 +317,14 @@ public final class AndroidCache extends FlashCache {
                 cursor = db.query(TABLE_NAME, new String[]{COL_KEY}, "*",
                         null, null, null, null, null);
                 if (cursor != null && cursor.getCount() > 0) {
-                    digests = new byte[cursor.getCount()][];
+                    digests = new long[cursor.getCount()];
                     cursor.moveToFirst();
                     for (int i = 0; i < digests.length; i++) {
                         if (i != 0) {
                             cursor.moveToNext();
                         }
                         final String s = new String(cursor.getBlob(0), "UTF-8");
-                        digests[i] = toDigest(s);
+                        digests[i] = CryptoUtils.getInstance().toDigest(s);
                     }
                 }
             } catch (Exception e) {
@@ -311,38 +350,5 @@ public final class AndroidCache extends FlashCache {
         synchronized (MUTEX) {
             db.execSQL(CLEAR_TABLE);
         }
-    }
-
-    /**
-     * The Android implementation uses the UTF-8 conversion between String and
-     * byte[] digest to easy database support
-     *
-     * @param key
-     * @return the digest
-     * @throws DigestException
-     * @throws UnsupportedEncodingException
-     */
-    public byte[] toDigest(String key) throws UnsupportedEncodingException {
-        if (key == null) {
-            throw new IllegalArgumentException("You attempted to convert a null string into a hash digest");
-        }
-
-        return key.getBytes("UTF-8");
-    }
-
-    /**
-     * The Android implementation uses the UTF-8 conversion between String and
-     * byte[] digest to easy database support
-     *
-     * @param digest
-     * @return the string form of the digest
-     * @throws UnsupportedEncodingException
-     */
-    public String toString(final byte[] digest) throws UnsupportedEncodingException {
-        if (digest == null) {
-            throw new IllegalArgumentException("You attempted to convert a null digest into a key");
-        }
-
-        return new String(digest, "UTF-8");
     }
 }
