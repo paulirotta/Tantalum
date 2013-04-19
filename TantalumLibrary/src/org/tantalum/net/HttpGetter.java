@@ -789,6 +789,10 @@ public class HttpGetter extends Task {
             //#debug
             L.i(this, "End", url + " status=" + getStatus() + " out=" + out);
         }
+        
+        if (!success) {
+            return null;
+        }
 
         return out;
     }

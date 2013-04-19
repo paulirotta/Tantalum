@@ -33,16 +33,30 @@ import org.tantalum.util.L;
  */
 public class JSONGetter extends HttpGetter {
 
-    private final JSONModel jsonModel;
+    protected final JSONModel jsonModel;
 
     /**
      * Request with HTTP GET a JSONModel object update
      * 
-     * @param key
-     * @param jsonModel 
+     * @param url
+     * @param jsonModel
+     * @param priority 
      */
-    public JSONGetter(final String key, final JSONModel jsonModel, final int priority) {
-        super(key, priority);
+    public JSONGetter(final String url, final JSONModel jsonModel, final int priority) {
+        super(url, priority);
+        
+        this.jsonModel = jsonModel;
+    }
+
+    /**
+     * Request with HTTP GET a JSONModel object update
+     * 
+     * @param jsonModel
+     * @param priority 
+     */
+    public JSONGetter(final JSONModel jsonModel, final int priority) {
+        super(priority);
+        
         this.jsonModel = jsonModel;
     }
 
@@ -54,6 +68,7 @@ public class JSONGetter extends HttpGetter {
      */
     public Object exec(final Object in) {
         String value = null;
+        
         try {
             value = new String((byte[]) super.exec(in), "UTF8").trim();
             if (value.startsWith("[")) {
@@ -61,12 +76,14 @@ public class JSONGetter extends HttpGetter {
                 value = "{\"base:\"" + value + "}";
             }
             jsonModel.setJSON(value);
+            
+            return jsonModel;
         } catch (Exception e) {
             //#debug
             L.e("JSONGetter HTTP response problem", "value=" + value, e);
             cancel(false, "JSONGetter exception - " + value, e);
         }
 
-        return jsonModel;
+        return null;
     }
 }

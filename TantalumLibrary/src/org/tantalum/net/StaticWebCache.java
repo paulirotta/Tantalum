@@ -24,6 +24,7 @@
  */
 package org.tantalum.net;
 
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.storage.DataTypeHandler;
 import org.tantalum.storage.FlashDatabaseException;
@@ -90,6 +91,18 @@ public final class StaticWebCache extends StaticCache {
             return null;
         }
     }
+    
+    /**
+     * Return a cache of default type PlatformUtils.PHONE_DATABASE_CACHE.
+     * 
+     * @param priority
+     * @param handler
+     * @return 
+     */
+    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler) {
+        return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, handler);
+    }
+    
 
     /**
      * Get existing or create a new local cache of a web service.

@@ -185,6 +185,7 @@ public final class PlatformUtils {
             if (Class.forName("android.app.Activity").isAssignableFrom(program.getClass())) {
                 platform = PLATFORM_ANDROID;
                 platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.android.AndroidPlatformAdapter").newInstance();
+                init(logMode);
                 return;
             }
         } catch (Throwable t) {
