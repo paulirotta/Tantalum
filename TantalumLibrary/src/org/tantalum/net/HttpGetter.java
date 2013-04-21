@@ -684,13 +684,13 @@ public class HttpGetter extends Task {
                 addUpstreamDataCount(postMessage.length);
             } else {
                 httpConn = PlatformUtils.getInstance().getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
-                inputStream = httpConn.getInputStream();
-                final StreamReader reader = streamReader;
-                if (reader != null) {
-                    reader.readReady(inputStream);
-                    success = true;
-                    out = null;
-                }
+            }
+            inputStream = httpConn.getInputStream();
+            final StreamReader reader = streamReader;
+            if (reader != null) {
+                reader.readReady(inputStream);
+                success = true;
+                out = null;
             }
 
             // Estimate data length of the sent headers
@@ -935,7 +935,6 @@ public class HttpGetter extends Task {
         return sb.toString();
     }
     //#enddebug
-
     /**
      * Retrieves an estimated count of transfered bytes downstream. The counter
      * is valid during the application run.
