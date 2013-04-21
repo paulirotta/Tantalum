@@ -26,6 +26,7 @@ SOFTWARE.
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -188,17 +189,17 @@ public class JSONArray {
     public boolean getBoolean(int index) throws JSONException {
         Object o = get(index);
 //#if CLDC!="1.0"
-        if (o.equals(Boolean.FALSE) ||
+//#         if (o.equals(Boolean.FALSE) ||
 //#else
-//#             if (o.equals(JSONObject.FALSE) ||
+            if (o.equals(JSONObject.FALSE) ||
 //#endif
                 (o instanceof String &&
                 ((String)o).toLowerCase().equals("false"))) {
             return false;
 //#if CLDC!="1.0"
-        } else if (o.equals(Boolean.TRUE) ||
+//#         } else if (o.equals(Boolean.TRUE) ||
 //#else
-//#         } else if (o.equals(JSONObject.TRUE) ||
+        } else if (o.equals(JSONObject.TRUE) ||
 //#endif
                 (o instanceof String &&
                 ((String)o).toLowerCase().equals("true"))) {
@@ -208,39 +209,39 @@ public class JSONArray {
     }
 
 //#if CLDC!="1.0"
-    /**
-     * Get the double value associated with an index.
-     *
-     * @param index The index must be between 0 and length() - 1.
-     * @return      The value.
-     * @throws   JSONException If the key is not found or if the value cannot
-     *  be converted to a number.
-     */
-    public double getDouble(int index) throws JSONException {
-        Object o = get(index);
-        try {
-            return Double.valueOf((String)o).doubleValue();
-        } catch (Exception e) {
-            throw new JSONException("JSONArray[" + index +
-                "] is not a number.");
-        }
-    }
+//#     /**
+//#      * Get the double value associated with an index.
+//#      *
+//#      * @param index The index must be between 0 and length() - 1.
+//#      * @return      The value.
+//#      * @throws   JSONException If the key is not found or if the value cannot
+//#      *  be converted to a number.
+//#      */
+//#     public double getDouble(int index) throws JSONException {
+//#         Object o = get(index);
+//#         try {
+//#             return Double.valueOf((String)o).doubleValue();
+//#         } catch (Exception e) {
+//#             throw new JSONException("JSONArray[" + index +
+//#                 "] is not a number.");
+//#         }
+//#     }
 //#endif
 
 //#if CLDC!="1.0"
-    /**
-     * Get the int value associated with an index.
-     *
-     * @param index The index must be between 0 and length() - 1.
-     * @return      The value.
-     * @throws   JSONException If the key is not found or if the value cannot
-     *  be converted to a number.
-     *  if the value cannot be converted to a number.
-     */
-    public int getInt(int index) throws JSONException {
-        Object o = get(index);
-        return (int)getDouble(index);
-    }
+//#     /**
+//#      * Get the int value associated with an index.
+//#      *
+//#      * @param index The index must be between 0 and length() - 1.
+//#      * @return      The value.
+//#      * @throws   JSONException If the key is not found or if the value cannot
+//#      *  be converted to a number.
+//#      *  if the value cannot be converted to a number.
+//#      */
+//#     public int getInt(int index) throws JSONException {
+//#         Object o = get(index);
+//#         return (int)getDouble(index);
+//#     }
 //#endif
 
     /**
@@ -278,18 +279,18 @@ public class JSONArray {
 
 
 //#if CLDC!="1.0"
-    /**
-     * Get the long value associated with an index.
-     *
-     * @param index The index must be between 0 and length() - 1.
-     * @return      The value.
-     * @throws   JSONException If the key is not found or if the value cannot
-     *  be converted to a number.
-     */
-    public long getLong(int index) throws JSONException {
-        Object o = get(index);
-        return (long)getDouble(index);
-    }
+//#     /**
+//#      * Get the long value associated with an index.
+//#      *
+//#      * @param index The index must be between 0 and length() - 1.
+//#      * @return      The value.
+//#      * @throws   JSONException If the key is not found or if the value cannot
+//#      *  be converted to a number.
+//#      */
+//#     public long getLong(int index) throws JSONException {
+//#         Object o = get(index);
+//#         return (long)getDouble(index);
+//#     }
 //#endif
 
     /**
@@ -367,7 +368,7 @@ public class JSONArray {
     public boolean optBoolean(int index)  {
         return optBoolean(index, false);
     }
-
+    
     /**
      * Get the optional boolean value associated with an index.
      * It returns the defaultValue if there is no value at that index or if
@@ -386,68 +387,68 @@ public class JSONArray {
     }
 
 //#if CLDC!="1.0"
-    /**
-     * Get the optional double value associated with an index.
-     * NaN is returned if there is no value for the index,
-     * or if the value is not a number and cannot be converted to a number.
-     *
-     * @param index The index must be between 0 and length() - 1.
-     * @return      The value.
-     */
-    public double optDouble(int index) {
-        return optDouble(index, Double.NaN);
-    }
+//#     /**
+//#      * Get the optional double value associated with an index.
+//#      * NaN is returned if there is no value for the index,
+//#      * or if the value is not a number and cannot be converted to a number.
+//#      *
+//#      * @param index The index must be between 0 and length() - 1.
+//#      * @return      The value.
+//#      */
+//#     public double optDouble(int index) {
+//#         return optDouble(index, Double.NaN);
+//#     }
 //#endif
 
 //#if CLDC!="1.0"
-    /**
-     * Get the optional double value associated with an index.
-     * The defaultValue is returned if there is no value for the index,
-     * or if the value is not a number and cannot be converted to a number.
-     *
-     * @param index subscript
-     * @param defaultValue     The default value.
-     * @return      The value.
-     */
-    public double optDouble(int index, double defaultValue) {
-        try {
-            return getDouble(index);
-        } catch (Exception e) {
-            return defaultValue;
-        }
-    }
+//#     /**
+//#      * Get the optional double value associated with an index.
+//#      * The defaultValue is returned if there is no value for the index,
+//#      * or if the value is not a number and cannot be converted to a number.
+//#      *
+//#      * @param index subscript
+//#      * @param defaultValue     The default value.
+//#      * @return      The value.
+//#      */
+//#     public double optDouble(int index, double defaultValue) {
+//#         try {
+//#             return getDouble(index);
+//#         } catch (Exception e) {
+//#             return defaultValue;
+//#         }
+//#     }
 //#endif
 
 //#if CLDC!="1.0"
-    /**
-     * Get the optional int value associated with an index.
-     * Zero is returned if there is no value for the index,
-     * or if the value is not a number and cannot be converted to a number.
-     *
-     * @param index The index must be between 0 and length() - 1.
-     * @return      The value.
-     */
-    public int optInt(int index) {
-        return optInt(index, 0);
-    }
+//#     /**
+//#      * Get the optional int value associated with an index.
+//#      * Zero is returned if there is no value for the index,
+//#      * or if the value is not a number and cannot be converted to a number.
+//#      *
+//#      * @param index The index must be between 0 and length() - 1.
+//#      * @return      The value.
+//#      */
+//#     public int optInt(int index) {
+//#         return optInt(index, 0);
+//#     }
 //#endif
 
 //#if CLDC!="1.0"
-    /**
-     * Get the optional int value associated with an index.
-     * The defaultValue is returned if there is no value for the index,
-     * or if the value is not a number and cannot be converted to a number.
-     * @param index The index must be between 0 and length() - 1.
-     * @param defaultValue     The default value.
-     * @return      The value.
-     */
-    public int optInt(int index, int defaultValue) {
-        try {
-            return getInt(index);
-        } catch (Exception e) {
-            return defaultValue;
-        }
-    }
+//#     /**
+//#      * Get the optional int value associated with an index.
+//#      * The defaultValue is returned if there is no value for the index,
+//#      * or if the value is not a number and cannot be converted to a number.
+//#      * @param index The index must be between 0 and length() - 1.
+//#      * @param defaultValue     The default value.
+//#      * @return      The value.
+//#      */
+//#     public int optInt(int index, int defaultValue) {
+//#         try {
+//#             return getInt(index);
+//#         } catch (Exception e) {
+//#             return defaultValue;
+//#         }
+//#     }
 //#endif
 
     /**
@@ -476,35 +477,35 @@ public class JSONArray {
     }
 
 //#if CLDC!="1.0"
-    /**
-     * Get the optional long value associated with an index.
-     * Zero is returned if there is no value for the index,
-     * or if the value is not a number and cannot be converted to a number.
-     *
-     * @param index The index must be between 0 and length() - 1.
-     * @return      The value.
-     */
-    public long optLong(int index) {
-        return optLong(index, 0);
-    }
+//#     /**
+//#      * Get the optional long value associated with an index.
+//#      * Zero is returned if there is no value for the index,
+//#      * or if the value is not a number and cannot be converted to a number.
+//#      *
+//#      * @param index The index must be between 0 and length() - 1.
+//#      * @return      The value.
+//#      */
+//#     public long optLong(int index) {
+//#         return optLong(index, 0);
+//#     }
 //#endif
 
 //#if CLDC!="1.0"
-    /**
-     * Get the optional long value associated with an index.
-     * The defaultValue is returned if there is no value for the index,
-     * or if the value is not a number and cannot be converted to a number.
-     * @param index The index must be between 0 and length() - 1.
-     * @param defaultValue     The default value.
-     * @return      The value.
-     */
-    public long optLong(int index, long defaultValue) {
-        try {
-            return getLong(index);
-        } catch (Exception e) {
-            return defaultValue;
-        }
-    }
+//#     /**
+//#      * Get the optional long value associated with an index.
+//#      * The defaultValue is returned if there is no value for the index,
+//#      * or if the value is not a number and cannot be converted to a number.
+//#      * @param index The index must be between 0 and length() - 1.
+//#      * @param defaultValue     The default value.
+//#      * @return      The value.
+//#      */
+//#     public long optLong(int index, long defaultValue) {
+//#         try {
+//#             return getLong(index);
+//#         } catch (Exception e) {
+//#             return defaultValue;
+//#         }
+//#     }
 //#endif
 
     /**
@@ -542,9 +543,9 @@ public class JSONArray {
      */
     public JSONArray put(boolean value) {
 //#if CLDC!="1.0"
-        put(value ? Boolean.TRUE : Boolean.FALSE);
+//#         put(value ? Boolean.TRUE : Boolean.FALSE);
 //#else
-//#         put(value ? JSONObject.TRUE : JSONObject.FALSE);
+        put(value ? JSONObject.TRUE : JSONObject.FALSE);
 //#endif
         return this;
     }
@@ -559,22 +560,22 @@ public class JSONArray {
         put(new JSONArray(value));
         return this;
     }
-
+    
 
 //#if CLDC!="1.0"
-    /**
-     * Append a double value. This increases the array's length by one.
-     *
-     * @param value A double value.
-     * @throws JSONException if the value is not finite.
-     * @return this.
-     */
-    public JSONArray put(double value) throws JSONException {
-        Double d = new Double(value);
-        JSONObject.testValidity(d);
-        put(d);
-        return this;
-    }
+//#     /**
+//#      * Append a double value. This increases the array's length by one.
+//#      *
+//#      * @param value A double value.
+//#      * @throws JSONException if the value is not finite.
+//#      * @return this.
+//#      */
+//#     public JSONArray put(double value) throws JSONException {
+//#         Double d = new Double(value);
+//#         JSONObject.testValidity(d);
+//#         put(d);
+//#         return this;
+//#     }
 //#endif
 
     /**
@@ -612,8 +613,8 @@ public class JSONArray {
 //#         put(new JSONObject(value));
 //#         return this;
 //#     }
-//#endif
-
+//#endif    
+    
     /**
      * Append an object value. This increases the array's length by one.
      * @param value An object value.  The value should be a
@@ -638,13 +639,13 @@ public class JSONArray {
      */
     public JSONArray put(int index, boolean value) throws JSONException {
 //#if CLDC!="1.0"
-        put(index, value ? Boolean.TRUE : Boolean.FALSE);
+//#         put(index, value ? Boolean.TRUE : Boolean.FALSE);
 //#else
-//#         put(index, value ? JSONObject.TRUE : JSONObject.FALSE);
+        put(index, value ? JSONObject.TRUE : JSONObject.FALSE);
 //#endif
         return this;
     }
-
+    
     /**
      * Put a value in the JSONArray, where the value will be a
      * JSONArray which is produced from a Collection.
@@ -659,22 +660,22 @@ public class JSONArray {
         return this;
     }
 
-
+    
 //#if CLDC!="1.0"
-    /**
-     * Put or replace a double value. If the index is greater than the length of
-     *  the JSONArray, then null elements will be added as necessary to pad
-     *  it out.
-     * @param index The subscript.
-     * @param value A double value.
-     * @return this.
-     * @throws JSONException If the index is negative or if the value is
-     * not finite.
-     */
-    public JSONArray put(int index, double value) throws JSONException {
-        put(index, new Double(value));
-        return this;
-    }
+//#     /**
+//#      * Put or replace a double value. If the index is greater than the length of
+//#      *  the JSONArray, then null elements will be added as necessary to pad
+//#      *  it out.
+//#      * @param index The subscript.
+//#      * @param value A double value.
+//#      * @return this.
+//#      * @throws JSONException If the index is negative or if the value is
+//#      * not finite.
+//#      */
+//#     public JSONArray put(int index, double value) throws JSONException {
+//#         put(index, new Double(value));
+//#         return this;
+//#     }
 //#endif
 
     /**
@@ -721,8 +722,8 @@ public class JSONArray {
 //#         put(index, new JSONObject(value));
 //#         return this;
 //#     }
-//#endif
-
+//#endif    
+    
     /**
      * Put or replace an object value in the JSONArray. If the index is greater
      *  than the length of the JSONArray, then null elements will be added as
@@ -858,9 +859,8 @@ public class JSONArray {
      * <p>
      * Warning: This method assumes that the data structure is acyclical.
      *
-     * @param writer
-     * @return
-     * @throws JSONException 
+     * @return The writer.
+     * @throws JSONException
      */
     public Writer write(Writer writer) throws JSONException {
         try {

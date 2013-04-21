@@ -92,8 +92,6 @@ public class JSONWriter {
 
     /**
      * Make a fresh JSONWriter. It can be used to build one JSON text.
-     * 
-     * @param w 
      */
     public JSONWriter(Writer w) {
         this.comma = false;
@@ -286,17 +284,17 @@ public class JSONWriter {
     }
 
 //#if CLDC!="1.0"
-    /**
-     * Append a double value.
-     * @param d A double.
-     * @return this
-     * @throws JSONException If the number is not finite.
-     */
-    public JSONWriter value(double d) throws JSONException {
-        return this.value(new Double(d));
-    }
+//#     /**
+//#      * Append a double value.
+//#      * @param d A double.
+//#      * @return this
+//#      * @throws JSONException If the number is not finite.
+//#      */
+//#     public JSONWriter value(double d) throws JSONException {
+//#         return this.value(new Double(d));
+//#     }
 //#endif
-
+    
     /**
      * Append a long value.
      * @param l A long.

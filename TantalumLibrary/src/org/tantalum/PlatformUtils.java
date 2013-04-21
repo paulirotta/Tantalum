@@ -59,6 +59,8 @@ public final class PlatformUtils {
      * Automatically detected that we are in an Android phone
      */
     public static final int PLATFORM_ANDROID = 2;
+    public static final int PLATFORM_BLACKBERRY = 3;
+    
     private int platform = PLATFORM_NOT_INITIALIZED;
     private PlatformAdapter platformAdapter = null;
     /**
@@ -149,6 +151,15 @@ public final class PlatformUtils {
             }
         } catch (Throwable t) {
             System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
+        }
+        try {
+            if (Class.forName("net.rim.device.api.ui.UiApplication").isAssignableFrom(program.getClass())){
+                platform = PLATFORM_BLACKBERRY;
+                platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.blackberry.BBPlatformAdapter").newInstance();
+                return;
+            }
+        } catch (Throwable t){
+            System.out.println("Can not init Blackberry in setProgram(" + program.getClass().getName() + ") : " + t);
         }
         try {
             if (Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(program.getClass())
