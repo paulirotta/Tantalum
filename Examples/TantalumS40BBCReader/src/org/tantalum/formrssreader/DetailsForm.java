@@ -123,10 +123,10 @@ public final class DetailsForm extends Form implements CommandListener {
                         return in;
                     }
 
-                    public void run(final Object result) {
+                    public void run() {
                         DetailsForm.this.appendImageItem();
                     }
-                }.setClassName("IconAppender").setRunOnUIThreadWhenFinished(true));
+                }.setRunOnUIThreadWhenFinished(true).setClassName("IconAppender").setRunOnUIThreadWhenFinished(true));
             }
         }
     }
