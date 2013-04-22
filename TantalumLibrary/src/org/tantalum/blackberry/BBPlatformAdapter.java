@@ -104,7 +104,7 @@ public class BBPlatformAdapter implements PlatformAdapter {
         public BBHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
             ConnectionDescriptor cd = new ConnectionFactory().getConnection(url);
             if (cd != null) {
-                httpConnection = cd.getConnection();
+                httpConnection = (HttpConnection) cd.getConnection();
                 for (int i = 0; i < requestPropertyKeys.size(); i++) {
                     httpConnection.setRequestProperty((String) requestPropertyKeys.elementAt(i), (String) requestPropertyValues.elementAt(i));
                 }

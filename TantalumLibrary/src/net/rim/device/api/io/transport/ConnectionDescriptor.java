@@ -4,14 +4,14 @@
  */
 package net.rim.device.api.io.transport;
 
-import javax.microedition.io.HttpConnection;
+import javax.microedition.io.Connection;
 
 /**
  *
  * @author ADIKSONLINE
  */
 public class ConnectionDescriptor {
-    public HttpConnection getConnection(){
+    public Connection getConnection(){
         return null;
     }
 }

@@ -44,7 +44,7 @@ import org.tantalum.util.L;
  */
 public final class PlatformUtils {
 
-    private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be JME MIDlet or Android Activity";
+    private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be JME MIDlet, Blackberry or Android Activity";
     /**
      * PlatformUtils.setProgram() has not yet been called. Usually this is done
      * by overriding a platform-specific base class such as TantalumMIDlet or
@@ -157,6 +157,8 @@ public final class PlatformUtils {
                 platform = PLATFORM_BLACKBERRY;
                 platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.blackberry.BBPlatformAdapter").newInstance();
                 return;
+            } else {
+                System.out.println("Unable to create the blackberry adapter. WTF!");
             }
         } catch (Throwable t){
             System.out.println("Can not init Blackberry in setProgram(" + program.getClass().getName() + ") : " + t);
