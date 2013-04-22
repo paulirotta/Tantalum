@@ -133,9 +133,15 @@ public class RMSFastCache extends FlashCache {
         final Hashtable index = new Hashtable(numberOfKeys * 5 / 4);
         final Hashtable valueIntegers = new Hashtable(numberOfKeys * 5 / 4);
         initReadValueIntegers(valueIntegers);
+
+        dumpHash(valueIntegers);
+
         final Vector referencedValueIntegers = new Vector(numberOfKeys);
 
         initReadIndexRecords(index, referencedValueIntegers);
+
+        dumpHash(index);
+        
         final boolean multiplyReferencedValuesFound = initDeleteValuesReferencedMultipleTimes(referencedValueIntegers, valueIntegers);
         if (multiplyReferencedValuesFound) {
             index.clear();
@@ -155,13 +161,13 @@ public class RMSFastCache extends FlashCache {
      * @throws RecordStoreNotOpenException
      * @throws InvalidRecordIDException
      */
-    private void initReadValueIntegers(final Hashtable unreferencedValueIds) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException {
+    private void initReadValueIntegers(final Hashtable valueIntegers) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException {
         forEachRecord(valueRS, new RecordTask() {
             void exec() {
                 //#debug
                 L.i(this, "initReadValueIntegers", "" + keyIndex);
                 final Integer valueIndex = new Integer(keyIndex);
-                unreferencedValueIds.put(valueIndex, valueIndex);
+                valueIntegers.put(valueIndex, valueIndex);
             }
         });
     }
@@ -178,6 +184,7 @@ public class RMSFastCache extends FlashCache {
                 if (valuesReferencedOneTime.containsKey(valueIndex)) {
                     //#debug
                     L.i(this, "Deleting value referenced multiple times in index", valueIndex.toString());
+                    valueIntegers.remove(valueIndex);
                     duplicateValueReferenceFound = true;
                     initDeleteRecord(valueRS, valueIndex);
                 } else {
@@ -190,20 +197,28 @@ public class RMSFastCache extends FlashCache {
     }
 
     private void initDeleteUnreferencedValues(final Vector referencedValueIds, final Hashtable valueIntegers) {
+        final Hashtable valueIntegersCopy = new Hashtable(valueIntegers.size() * 5 / 4);
         final int n = referencedValueIds.size();
 
+        final Enumeration vie = valueIntegers.elements();
+        while (vie.hasMoreElements()) {
+            final Integer i = (Integer) vie.nextElement();
+            valueIntegersCopy.put(i, i);
+        }
+        
         for (int i = 0; i < n; i++) {
             final Integer valueIndex = (Integer) referencedValueIds.elementAt(i);
 
-            valueIntegers.remove(valueIndex);
+            valueIntegersCopy.remove(valueIndex);
         }
 
-        final Enumeration unreferencedValueIntegers = valueIntegers.elements();
+        final Enumeration unreferencedValueIntegers = valueIntegersCopy.elements();
         while (unreferencedValueIntegers.hasMoreElements()) {
             final Integer unreferencedValueInteger = (Integer) unreferencedValueIntegers.nextElement();
 
             //#debug
             L.i(this, "Deleting unreferenced value", unreferencedValueInteger.toString());
+            valueIntegers.remove(unreferencedValueInteger);
             initDeleteRecord(valueRS, unreferencedValueInteger);
         }
     }
@@ -220,7 +235,7 @@ public class RMSFastCache extends FlashCache {
         }
     }
 
-    private void initDeleteIndexEntriesPointingToNonexistantValues(Hashtable index, Hashtable valueIntegers) {
+    private void initDeleteIndexEntriesPointingToNonexistantValues(final Hashtable index, final Hashtable valueIntegers) {
         final Enumeration indexEntries = index.keys();
 
         while (indexEntries.hasMoreElements()) {
@@ -243,9 +258,10 @@ public class RMSFastCache extends FlashCache {
                 L.e(this, "Problem decoding apparently valid index entry", keyRecordInteger.toString(), ex);
                 error = true;
             }
-            if (!valueIntegers.contains(valueRecordInteger)) {
+            dumpHash(valueIntegers);
+            if (!valueIntegers.containsKey(valueRecordInteger)) {
                 //#debug
-                L.i(this, "Deleting index entry pointing to non-existant value " + valueRecordId, "indexEntry=" + keyRecordInteger);
+                L.i(this, "Deleting index entry pointing to non-existant value " + valueRecordInteger, "indexEntry=" + keyRecordInteger);
                 initDeleteRecord(keyRS, keyRecordInteger);
             } else if (error) {
                 //#debug
@@ -258,6 +274,21 @@ public class RMSFastCache extends FlashCache {
                 indexHashPut(digest, keyRecordInteger.intValue(), valueRecordId);
             }
         }
+    }
+
+    private void dumpHash(Hashtable h) {
+        Enumeration enuKey = h.keys();
+        Enumeration enu = h.elements();
+        final StringBuffer sb = new StringBuffer();
+
+        while (enu.hasMoreElements()) {
+            sb.append(enuKey.nextElement().toString());
+            sb.append(" -> ");
+            sb.append(enu.nextElement().toString());
+            sb.append("\r\n");
+        }
+
+        L.i(this, "HASHTABLE", sb.toString());
     }
 
     /**
@@ -281,7 +312,7 @@ public class RMSFastCache extends FlashCache {
                     final Integer valueRecordInteger = new Integer(valueRecordId);
 
                     //#debug
-                    L.i(this, "initReadIndexRecords", "key(" + keyIndex + ")=" + key + " (" + CryptoUtils.getInstance().toDigest(key) + ") -> value(" + valueRecordId + ")");
+                    L.i(this, "initReadIndexRecords", "key(" + keyIndex + ")=" + key + " (" + Long.toString(CryptoUtils.getInstance().toDigest(key), 16) + ") -> value(" + valueRecordId + ")");
                     index.put(keyRecordInteger, keyIndexBytes);
                     referencedValueIntegers.addElement(valueRecordInteger);
                 } catch (Exception e) {
