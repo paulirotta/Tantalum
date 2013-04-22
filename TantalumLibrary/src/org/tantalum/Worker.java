@@ -67,13 +67,11 @@ final class Worker extends Thread {
     private static int currentlyIdleCount = 0;
     private static int runState = RUNNING;
     private Task currentTask = null; // Access only within synchronized(q)
-    private final boolean isBackgroundPriorityWorker;
     private final boolean isDedicatedFastlaneWorker;
 
-    private Worker(final String name, final boolean addSerialQueue, final boolean isBackgroundPriorityWorker, final boolean isDedicatedFastlaneWorker) {
+    private Worker(final String name, final boolean addSerialQueue, final boolean isDedicatedFastlaneWorker) {
         super(name);
 
-        this.isBackgroundPriorityWorker = isBackgroundPriorityWorker;
         this.isDedicatedFastlaneWorker = isDedicatedFastlaneWorker;
         if (addSerialQueue) {
             serialQ = new Vector();
@@ -94,7 +92,7 @@ final class Worker extends Thread {
     static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
         for (int i = 0; i < numberOfWorkers; i++) {
-            workers[i] = new Worker("Worker" + i, i == 0, i == 1, i == numberOfWorkers - 1);
+            workers[i] = new Worker("Worker" + i, i == 0, i == numberOfWorkers - 1);
             workers[i].start();
         }
     }
@@ -272,12 +270,14 @@ final class Worker extends Thread {
                     /*
                      * Block this thread up to 3 seconds while remaining tasks complete normally
                      */
-                    long timeRemaining;
-
-                    final int numWorkersToWaitFor = Thread.currentThread() instanceof Worker ? workers.length - 1 : workers.length;
                     synchronized (q) {
-                        while (currentlyIdleCount < numWorkersToWaitFor) {
-                            timeRemaining = shutdownTimeout + 3000 - System.currentTimeMillis();
+                        if (Thread.currentThread() instanceof Worker) {
+                            // A Worker is initialized shutdown. Adjust so this does not corrupt "idle" state transitions
+                            currentlyIdleCount++;
+                        }
+                        while (currentlyIdleCount < workers.length - 1 || !shutdownQ.isEmpty() || !q.isEmpty() || !fastlaneQ.isEmpty()) {
+                            final long timeRemaining = shutdownTimeout + 3000 - System.currentTimeMillis();
+
                             if (timeRemaining <= 0) {
                                 //#debug
                                 L.i("A worker blocked shutdown timeout", Worker.toStringWorkers());
@@ -349,31 +349,27 @@ final class Worker extends Thread {
                  */
                 try {
                     Object in = null;
+
                     synchronized (q) {
                         try {
                             currentTask = null;
-
-                            if (!fastlaneQ.isEmpty()) {
-                                getFastlaneTask();
-                            } else if (!isDedicatedFastlaneWorker) {
-                                switch (runState) {
-                                    case WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS:
-                                        if (currentlyIdleCount == workers.length - 1) {
-                                            runState = RUNNING_SHUTDOWN_TASKS;
-                                            q.notifyAll();
-                                            getShutdownTask();
-                                            break;
-                                        }
-
-                                    default:
-                                    case RUNNING:
-                                        getNormalRunTask();
+                            switch (runState) {
+                                case WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS:
+                                    if (allWorkersIdleExceptThisOne()) {
+                                        runState = RUNNING_SHUTDOWN_TASKS;
+                                        q.notifyAll();
                                         break;
+                                    }
 
-                                    case RUNNING_SHUTDOWN_TASKS:
-                                        getShutdownTask();
-                                        break;
-                                }
+                                // Continue from previous
+                                default:
+                                case RUNNING:
+                                    getNormalRunTask();
+                                    break;
+
+                                case RUNNING_SHUTDOWN_TASKS:
+                                    getShutdownTask();
+                                    break;
                             }
                         } finally {
                             if (currentTask == null) {
@@ -382,6 +378,12 @@ final class Worker extends Thread {
                                  */
                                 try {
                                     ++currentlyIdleCount;
+                                    //#debug
+                                    L.i(this, "Nothing to do", "currentlyIdleCount=" + currentlyIdleCount + "/" + Worker.workers.length);
+                                    if (runState == RUNNING_SHUTDOWN_TASKS && allWorkersIdleExceptThisOne()) {
+                                        q.notifyAll();
+                                        PlatformUtils.getInstance().shutdownComplete("currentlyIdleCount=" + currentlyIdleCount);
+                                    }
                                     q.wait();
                                 } finally {
                                     --currentlyIdleCount;
@@ -424,6 +426,10 @@ final class Worker extends Thread {
         L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);
     }
 
+    private boolean allWorkersIdleExceptThisOne() {
+        return currentlyIdleCount == workers.length - 2;
+    }
+
     private void getFastlaneTask() {
         try {
             currentTask = (Task) fastlaneQ.firstElement();
@@ -441,19 +447,23 @@ final class Worker extends Thread {
     }
 
     private void getNormalRunTask() {
-        if ((serialQ == null || ( serialQ != null && serialQ.size() < MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST))
-                && !q.isEmpty()) {
-            // Normal compute, hardened against async interrupt
-            try {
-                currentTask = (Task) q.firstElement();
-            } finally {
-                // Ensure we don't re-run in case of interrupt
-                q.removeElementAt(0);
+        if (!fastlaneQ.isEmpty()) {
+            getFastlaneTask();
+        } else if (!isDedicatedFastlaneWorker) {
+            if ((serialQ == null || (serialQ != null && serialQ.size() < MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST))
+                    && !q.isEmpty()) {
+                // Normal compute, hardened against async interrupt
+                try {
+                    currentTask = (Task) q.firstElement();
+                } finally {
+                    // Ensure we don't re-run in case of interrupt
+                    q.removeElementAt(0);
+                }
+            } else if (serialQ != null && !serialQ.isEmpty()) {
+                getSerialTask();
+            } else if (allWorkersIdleExceptThisOne() && backgroundQ.size() > 0) {
+                getBackgroundTask();
             }
-        } else if (serialQ != null && !serialQ.isEmpty()) {
-            getSerialTask();
-        } else if (isBackgroundPriorityWorker && backgroundQ.size() > 0 && currentlyIdleCount == workers.length - 1) {
-            getBackgroundTask();
         }
     }
 
@@ -472,8 +482,6 @@ final class Worker extends Thread {
             } finally {
                 shutdownQ.removeElementAt(0);
             }
-        } else if (currentlyIdleCount == workers.length - 1) {
-            PlatformUtils.getInstance().shutdownComplete("currentlyIdleCount=" + currentlyIdleCount);
         }
     }
 

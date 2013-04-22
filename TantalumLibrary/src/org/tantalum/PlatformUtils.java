@@ -120,6 +120,7 @@ public final class PlatformUtils {
      */
     protected volatile Thread uiThread = null;
     private static final Object MUTEX = new Object();
+    private boolean shutdownComplete = false;
 
     /*
      * When can we next fire the vibrate mode. This filter prevents too-frequence calls to vibrate
@@ -261,8 +262,16 @@ public final class PlatformUtils {
      * @param reasonDestroyed
      */
     public void shutdownComplete(final String reasonDestroyed) {
-        //#debug
-        L.i("Call to notifyDestroyed", reasonDestroyed);
+        synchronized(MUTEX) {
+            if (shutdownComplete) {
+                return;
+            }
+            shutdownComplete = true;
+        }
+        //#mdebug
+        L.i(this, "Call to notifyDestroyed", reasonDestroyed);
+        L.shutdown();
+        //#enddebug
         platformAdapter.shutdownComplete();
     }
 
@@ -298,7 +307,7 @@ public final class PlatformUtils {
         synchronized (MUTEX) {
             if (System.currentTimeMillis() > nextAvailableVibrationtime) {
                 //#debug
-                L.i("Call to vibrate", "duration=" + duration + " lockoutTime=" + lockoutTime);
+                L.i(this, "Call to vibrate", "duration=" + duration + " lockoutTime=" + lockoutTime);
                 if (timekeeperLambda != null) {
                     // We update the filter when actually running async on the UI thread
                     nextAvailableVibrationtime = Long.MAX_VALUE;
@@ -490,7 +499,8 @@ public final class PlatformUtils {
      * @param unconditional
      */
     public void shutdown(final boolean block) {
-        L.i("Shutdown", "block calling thread up to 3 seconds=" + block);
+        //#debug
+        L.i(this, "Shutdown", "block calling thread up to 3 seconds=" + block);
         Worker.shutdown(block);
     }
 }

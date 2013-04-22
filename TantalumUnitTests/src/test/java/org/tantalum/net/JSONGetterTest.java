@@ -5,17 +5,10 @@
 package org.tantalum.net;
 
 import java.io.IOException;
-import java.util.Vector;
 import org.json.me.JSONException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.powermock.api.mockito.PowerMockito;
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.PlatformUtils;

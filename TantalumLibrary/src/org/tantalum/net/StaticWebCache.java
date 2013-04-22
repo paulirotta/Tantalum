@@ -84,6 +84,8 @@ public final class StaticWebCache extends StaticCache {
      */
     public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final DataTypeHandler handler) {
         try {
+            
+            
             return (StaticWebCache) getWebCache(priority, cacheType, handler, DEFAULT_HTTP_GETTER_FACTORY);
         } catch (Exception e) {
             //#debug

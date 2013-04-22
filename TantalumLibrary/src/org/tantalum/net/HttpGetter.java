@@ -33,6 +33,7 @@ import java.util.Vector;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
+import javax.microedition.io.ConnectionNotFoundException;
 
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
@@ -507,8 +508,8 @@ public class HttpGetter extends Task {
      * Get the byte[] from the URL specified by the input argument when
      * exec(url) is called. This may be chained from a previous chain()ed
      * asynchronous task.
-     * 
-     * @param priority 
+     *
+     * @param priority
      */
     public HttpGetter(final int priority) {
         super(priority);
@@ -531,7 +532,7 @@ public class HttpGetter extends Task {
      * Create a Task for the specified URL.
      *
      * @param url
-     * @param priority 
+     * @param priority
      */
     public HttpGetter(final String url, final int priority) {
         super(priority, url);
@@ -741,6 +742,10 @@ public class HttpGetter extends Task {
             //#debug
             L.e(this, "HttpGetter has illegal argument", url, e);
             throw e;
+        } catch (ConnectionNotFoundException e) {
+            //#debug
+            L.e(this, "Connection not found", url + ", retries=" + retriesRemaining, e);
+            cancel(false, "No internet connection");
         } catch (IOException e) {
             //#debug
             L.e(this, "Retries remaining", url + ", retries=" + retriesRemaining, e);
@@ -789,7 +794,7 @@ public class HttpGetter extends Task {
             //#debug
             L.i(this, "End", url + " status=" + getStatus() + " out=" + out);
         }
-        
+
         if (!success) {
             return null;
         }
