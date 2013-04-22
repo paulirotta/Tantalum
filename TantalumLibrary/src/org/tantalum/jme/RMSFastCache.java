@@ -78,33 +78,33 @@ public class RMSFastCache extends FlashCache {
                 return in;
             }
         }.setClassName("LaunchShutdownTasksOnShutdown");
-        
-        final Task closeAfterShutdownTasksComplete = new Task(Task.SHUTDOWN) {
-                    protected Object exec(Object in) {
-                        synchronized (MUTEX) {
-                            //#debug
-                            L.i("Closing Cache", "" + priority);
-                            try {
-                                valueRS.closeRecordStore();
-                            } catch (Exception ex) {
-                                //#debug
-                                L.e("Problem closing valueRS", getValueRSName(), ex);
-                            }
-                            try {
-                                keyRS.closeRecordStore();
-                            } catch (Exception ex) {
-                                //#debug
-                                L.e("Problem closing keyRS", getKeyRSName(), ex);
-                            }
 
-                            return in;
-                        }
+        final Task closeAfterShutdownTasksComplete = new Task(Task.SHUTDOWN) {
+            protected Object exec(Object in) {
+                synchronized (MUTEX) {
+                    //#debug
+                    L.i("Closing Cache", "" + priority);
+                    try {
+                        valueRS.closeRecordStore();
+                    } catch (Exception ex) {
+                        //#debug
+                        L.e("Problem closing valueRS", getValueRSName(), ex);
                     }
-                    
-                    protected void onCanceled(final String reason) {
-                        exec(null);
+                    try {
+                        keyRS.closeRecordStore();
+                    } catch (Exception ex) {
+                        //#debug
+                        L.e("Problem closing keyRS", getKeyRSName(), ex);
                     }
-                }.setClassName("CloseAfterShutdownTasksComplete");
+
+                    return in;
+                }
+            }
+
+            protected void onCanceled(final String reason) {
+                exec(null);
+            }
+        }.setClassName("CloseAfterShutdownTasksComplete");
 
         launchShutdownTasksOnShutdown.chain(closeAfterShutdownTasksComplete);
         launchShutdownTasksOnShutdown.fork();
@@ -201,6 +201,9 @@ public class RMSFastCache extends FlashCache {
         final Enumeration unreferencedValueIntegers = valueIntegers.elements();
         while (unreferencedValueIntegers.hasMoreElements()) {
             final Integer unreferencedValueInteger = (Integer) unreferencedValueIntegers.nextElement();
+
+            //#debug
+            L.i(this, "Deleting unreferenced value", unreferencedValueInteger.toString());
             initDeleteRecord(valueRS, unreferencedValueInteger);
         }
     }
