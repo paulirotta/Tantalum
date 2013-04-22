@@ -158,10 +158,10 @@ public class RMSFastCache extends FlashCache {
     private void initReadValueIntegers(final Hashtable unreferencedValueIds) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException {
         forEachRecord(valueRS, new RecordTask() {
             void exec() {
+                //#debug
+                L.i(this, "initReadValueIntegers", "" + keyIndex);
                 final Integer valueIndex = new Integer(keyIndex);
                 unreferencedValueIds.put(valueIndex, valueIndex);
-                //#debug
-                L.i(this, "valueRecordId", "" + keyIndex);
             }
         });
     }
@@ -278,7 +278,7 @@ public class RMSFastCache extends FlashCache {
                     final Integer valueRecordInteger = new Integer(valueRecordId);
 
                     //#debug
-                    L.i(this, "keyRecord", "key(" + keyIndex + ")=" + key + " (" + CryptoUtils.getInstance().toDigest(key) + ") -> value(" + valueRecordId + ")");
+                    L.i(this, "initReadIndexRecords", "key(" + keyIndex + ")=" + key + " (" + CryptoUtils.getInstance().toDigest(key) + ") -> value(" + valueRecordId + ")");
                     index.put(keyRecordInteger, keyIndexBytes);
                     referencedValueIntegers.addElement(valueRecordInteger);
                 } catch (Exception e) {
@@ -608,7 +608,7 @@ public class RMSFastCache extends FlashCache {
                     try {
                         recordId = recordEnum.nextRecordId();
                         //#debug
-                        L.i(this, "forEachRecord(" + i++ + ")", "nextRecordId=" + recordId);
+                        L.i(this, "forEachRecord(" + i++ + ", " + recordStore.getName() + ")", "recordId=" + recordId);
                         task.exec(recordId);
                     } catch (InvalidRecordIDException ex) {
                         //#debug

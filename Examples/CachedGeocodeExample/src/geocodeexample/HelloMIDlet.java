@@ -15,6 +15,8 @@ import javax.microedition.midlet.MIDletStateChangeException;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import org.tantalum.CancellationException;
+import org.tantalum.TimeoutException;
 
 /**
  * Demonstration of a JSON service which returns locally cached values if the
@@ -176,16 +178,22 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         return o;
                     }
 
-                    public void run(Object result) {
-                        // UI Thread callback on success
-                        HelloMIDlet.this.getLocationStringItem().setText((String) result);
-                    }
+                    public void run() {
+                        try {
+                            // UI Thread callback on success
+                            HelloMIDlet.this.getLocationStringItem().setText((String) get());
+                       } catch (CancellationException ex) {
+                            L.e(this, "Canceled", "", ex);
+                        } catch (TimeoutException ex) {
+                            L.e(this, "Timeout", "", ex);
+                        }
+                     }
 
                     protected void onCanceled() {
                         // UI Thread callback if not already cached and the HTTP GET fails
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
-                }.setClassName("UITextSetter"));
+                }.setRunOnUIThreadWhenFinished(true).setClassName("UITextSetter"));
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction
         }//GEN-END:|7-commandAction|5|7-postCommandAction
         // write post-action user code here

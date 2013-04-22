@@ -10,8 +10,10 @@ import javax.microedition.midlet.MIDletStateChangeException;
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
+import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.TimeoutException;
 import org.tantalum.net.HttpGetter;
 import org.tantalum.util.L;
 
@@ -139,16 +141,22 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         return out;
                     }
 
-                    public void run(Object result) {
-                        // Update UI on the UI thread
-                        HelloMIDlet.this.getLocationStringItem().setText((String) result);
+                    public void run() {
+                        try {
+                            // Update UI on the UI thread
+                            HelloMIDlet.this.getLocationStringItem().setText((String) get());
+                        } catch (CancellationException ex) {
+                            L.e(this, "Canceled", "", ex);
+                        } catch (TimeoutException ex) {
+                            L.e(this, "Timeout", "", ex);
+                        }
                     }
 
                     protected void onCanceled() {
                         // Update on the UI thread if there is a problem
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
-                }.setClassName("JSONParserAndUITextSetter"));
+                }.setRunOnUIThreadWhenFinished(true).setClassName("JSONParserAndUITextSetter"));
 
                 getter.fork(); // Start task on a background Worker thread
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction

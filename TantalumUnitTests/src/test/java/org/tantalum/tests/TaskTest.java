@@ -750,15 +750,16 @@ public class TaskTest extends MockedStaticInitializers {
                 return (String) in + "2";
             }
 
-            public void run(Object result) {
+            @Override
+            public void run() {
                 try {
                     // TEST FOR LOGIC ERROR- you can not set() after background execution completes
-                    set(result + "UI");
+                    set("UI");
                     fail("set() after run should have been stopped");
                 } catch (Exception e) {
                 }
             }
-        };
+        }.setRunOnUIThreadWhenFinished(true);
         final Task task1b = new Task("3") {
             protected Object exec(Object in) {
                 return (String) in + "4";
@@ -797,8 +798,10 @@ public class TaskTest extends MockedStaticInitializers {
         };
 
         try {
-            task1a.fork(Task.FASTLANE_PRIORITY).join();
-            assertEquals("task1a was not EXEC_FINISHED", Task.FINISHED, task1a.getStatus());
+            task1a.fork(Task.FASTLANE_PRIORITY);
+            Thread.sleep(300);
+            assertEquals("task1a was FINISHED", Task.FINISHED, task1a.getStatus());
+            assertEquals("task1a result was 12", "12", task1a.get());
 
             task1b.fork(Task.NORMAL_PRIORITY | Task.FASTLANE_PRIORITY).join();
             assertEquals("task1b was not EXEC_FINISHED", Task.FINISHED, task1b.getStatus());

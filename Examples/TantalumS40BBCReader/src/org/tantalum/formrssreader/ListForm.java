@@ -176,7 +176,7 @@ public final class ListForm extends Form implements CommandListener {
                     loading = false;
                     paint();
                 }
-            };
+            }.setRunOnUIThreadWhenFinished(true);
             uiTask.setClassName("ForceLoadPainter").setRunOnUIThreadWhenFinished(true);;
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
@@ -201,7 +201,7 @@ public final class ListForm extends Form implements CommandListener {
 
                     return false;
                 }
-            };
+            }.setRunOnUIThreadWhenFinished(true);
             uiTask.setClassName("LoadPainter").setRunOnUIThreadWhenFinished(true);
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
         }
