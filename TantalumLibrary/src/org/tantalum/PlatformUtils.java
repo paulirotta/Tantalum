@@ -261,10 +261,10 @@ public final class PlatformUtils {
      *
      * @param reasonDestroyed
      */
-    public void shutdownComplete(final String reasonDestroyed) {
+    public boolean shutdownComplete(final String reasonDestroyed) {
         synchronized(MUTEX) {
             if (shutdownComplete) {
-                return;
+                return shutdownComplete;
             }
             shutdownComplete = true;
         }
@@ -273,6 +273,8 @@ public final class PlatformUtils {
         L.shutdown();
         //#enddebug
         platformAdapter.shutdownComplete();
+        
+        return true;
     }
 
     /**

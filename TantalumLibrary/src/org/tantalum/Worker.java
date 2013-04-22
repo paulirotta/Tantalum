@@ -378,11 +378,10 @@ final class Worker extends Thread {
                                  */
                                 try {
                                     ++currentlyIdleCount;
-                                    //#debug
-                                    L.i(this, "Nothing to do", "currentlyIdleCount=" + currentlyIdleCount + "/" + Worker.workers.length);
-                                    if (runState == RUNNING_SHUTDOWN_TASKS && allWorkersIdleExceptThisOne()) {
+                                    if (runState == RUNNING_SHUTDOWN_TASKS
+                                            && allWorkersIdleExceptThisOne()
+                                            && !PlatformUtils.getInstance().shutdownComplete("currentlyIdleCount=" + currentlyIdleCount)) {
                                         q.notifyAll();
-                                        PlatformUtils.getInstance().shutdownComplete("currentlyIdleCount=" + currentlyIdleCount);
                                     }
                                     q.wait();
                                 } finally {
