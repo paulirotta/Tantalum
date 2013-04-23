@@ -479,11 +479,13 @@ public class TaskTest extends MockedStaticInitializers {
     /**
      * Test of testOnCanceled method, of class Task.
      */
-//    @Test
-    public void testOnCanceled() {
+    //@Test
+    public void onCanceledTest() {
         System.out.println("onCanceled");
         final Vector v = new Vector();
+        v.addElement("Dummy");
         final Task instance = new Task() {
+            @Override
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -493,8 +495,9 @@ public class TaskTest extends MockedStaticInitializers {
                 return in;
             }
 
-            protected void onCanceled() {
-                v.addElement("canceled");
+            @Override
+            protected void onCanceled(String reason) {
+                v.insertElementAt("canceled-" + reason, 0);
             }
         };
         instance.fork();
@@ -509,14 +512,14 @@ public class TaskTest extends MockedStaticInitializers {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        assertEquals("canceled", (String) v.firstElement());
+        assertEquals("canceled-testing", (String) v.firstElement());
     }
 
     /**
      * Test of testDoInBackground method, of class Task.
      */
-//    @Test
-    public void testDoInBackground() {
+    @Test
+    public void doInBackgroundTest() {
         System.out.println("doInBackground");
         final Task instance = new Task("ca") {
             @Override
@@ -526,7 +529,7 @@ public class TaskTest extends MockedStaticInitializers {
         };
         instance.set("be");
         try {
-            assertEquals("betty", (String) instance.get());
+            assertEquals("betty", (String) instance.fork().get());
         } catch (Exception ex) {
             fail("Could not testDoInBackground: " + ex);
         }

@@ -152,9 +152,9 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         }
                     }
 
-                    protected void onCanceled() {
+                    protected void onCanceled(String reason) {
                         // Update on the UI thread if there is a problem
-                        HelloMIDlet.this.getLocationStringItem().setText("Service not available");
+                        HelloMIDlet.this.getLocationStringItem().setText("Service not available: " + reason);
                     }
                 }.setRunOnUIThreadWhenFinished(true).setClassName("JSONParserAndUITextSetter"));
 

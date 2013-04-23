@@ -195,7 +195,7 @@ public final class IconListView extends RSSListView {
                                     return null;
                                 }
 
-                                protected void onCanceled() {
+                                protected void onCanceled(String reason) {
                                     item.setLoadingImage(false);
                                 }
                             }.setClassName("GetIcon"));

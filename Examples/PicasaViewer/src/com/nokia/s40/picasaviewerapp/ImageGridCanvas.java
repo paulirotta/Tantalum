@@ -42,7 +42,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public Task loadFeed(final String search, final int getType) {
-        final Task task = new Task() {
+        final Task loadTask = new Task() {
 
             protected Object exec(Object in) {
                 try {
@@ -66,9 +66,9 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                 return in;
             }
             
-            public void onCanceled() {
+            public void onCanceled(String reason) {
                 //#debug
-                L.i("Load feed canceled, type=" + getType, search);
+                L.i("Load feed canceled, type=" + getType + " reason=" + reason, search);
                 if (getType == StaticWebCache.GET_LOCAL) {
                     imageObjectModel.removeAllElements();
                     images.clear();
@@ -80,12 +80,12 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
         //#debug
         L.i("loadFeed", search);
-        PicasaStorage.getImageObjects(search, Task.HIGH_PRIORITY, getType, task);
+        PicasaStorage.getImageObjects(search, Task.HIGH_PRIORITY, getType, loadTask);
         if (getType != StaticWebCache.GET_LOCAL) {
             startSpinner();
         }
 
-        return task;
+        return loadTask;
     }
 
     /**

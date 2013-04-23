@@ -189,7 +189,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         }
                      }
 
-                    protected void onCanceled() {
+                    protected void onCanceled(String reason) {
                         // UI Thread callback if not already cached and the HTTP GET fails
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }

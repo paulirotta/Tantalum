@@ -33,13 +33,15 @@ public final class PicasaViewer extends MIDlet {
 
     public void startApp() {
         PlatformUtils.getInstance().setProgram(this, 4);
+
         try {
             categoryBarHandler = (CategoryBarHandler) Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler").newInstance();
             categoryBarHandler.setMidlet(this);
         } catch (Throwable t) {
             //#debug
-            L.i("Can not set category bar handler", "normal before SDK 2.0");
+            L.i("Can not set category bar handler", "normal for some phones");
         }
+        
         try {
             featuredView = new FeaturedCanvas(this);
         } catch (Exception ex) {
@@ -47,6 +49,7 @@ public final class PicasaViewer extends MIDlet {
             L.e("Can not create FeaturedCanvas", null, ex);
             PlatformUtils.getInstance().shutdown(false);
         }
+        
         PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
         try {
             featuredView.loadFeed(null, StaticWebCache.GET_ANYWHERE).fork(); //.join(200);

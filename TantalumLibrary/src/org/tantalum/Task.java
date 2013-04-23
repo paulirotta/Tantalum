@@ -771,7 +771,7 @@ public abstract class Task implements Runnable {
             PlatformUtils.getInstance().runOnUiThread(new Runnable() {
                 public void run() {
                     //#debug
-                    L.i(this, "onCanceled()", Task.this.toString());
+                    L.i(this, "Firing onCanceled(" + reason + ")", Task.this.toString());
                     onCanceled(reason);
                 }
             });
@@ -1204,9 +1204,9 @@ public abstract class Task implements Runnable {
             return in;
         }
 
-        protected void onCanceled() {
+        protected void onCanceled(final String reason) {
             //#debug
-            L.i(this, "onCanceled()", "" + this);
+            L.i(this, "onCanceled(" + reason + ")", "" + this);
             for (int i = 0; i < tasksToFork.size(); i++) {
                 ((Task) tasksToFork.elementAt(i)).cancel(false, "Previous task in chain was canceled, then the chain split");
             }

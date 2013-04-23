@@ -170,7 +170,7 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
 
-                protected void onCanceled() {
+                protected void onCanceled(String reason) {
                     //#debug
                     L.i("force reload canceled", "model length=" + rssModel.size());
                     loading = false;

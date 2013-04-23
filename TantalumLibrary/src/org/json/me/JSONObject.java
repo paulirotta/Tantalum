@@ -1019,14 +1019,17 @@ public class JSONObject {
      * @throws JSONException If o is a non-finite number.
      */
     static void testValidity(Object o) throws JSONException {
-        if (o != null) {
-            if (o instanceof String) {
-            } else if (o instanceof Double) {
-                if (((Double) o).isInfinite() || ((Double) o).isNaN()) {
+        if (o != null && !(o instanceof String)) {
+            if (o instanceof Double) {
+                final Double d = (Double) o;
+                if (d.isInfinite() || d.isNaN()) {
                     throw new JSONException("JSON does not allow non-finite numbers");
                 }
-            } else if (o instanceof Float && ((Float) o).isInfinite() || ((Float) o).isNaN()) {
-                throw new JSONException("JSON does not allow non-finite numbers.");
+            } else if (o instanceof Float) {
+                final Float f = (Float) o;
+                if (f.isInfinite() || f.isNaN()) {
+                    throw new JSONException("JSON does not allow non-finite numbers.");
+                }
             }
         }
     }

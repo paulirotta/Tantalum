@@ -101,7 +101,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                     return in;
                 }
 
-                protected void onCanceled() {
+                protected void onCanceled(String reason) {
                     isReloading = false;
                 }
             }.setClassName("ReloadingStateUpdater");
