@@ -374,7 +374,7 @@ public abstract class Task implements Runnable {
      *
      * @return
      */
-    final Object getValue() {
+    public final Object getValue() {
         synchronized (MUTEX) {
             return value;
         }
