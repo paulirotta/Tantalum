@@ -315,7 +315,7 @@ public class StaticCache {
             priority = Task.FASTLANE_PRIORITY;
         }
 
-        return (new GetLocalTask(key, priority)).chain(nextTask).fork();
+        return (new GetLocalTask(priority, key)).chain(nextTask).fork();
     }
 
     /**
@@ -717,22 +717,7 @@ public class StaticCache {
      * chain() support. You can use this to build your own custom asynchronous
      * background processing Task chain.
      */
-    protected final class GetLocalTask extends Task {
-
-        final int priority;
-
-        /**
-         * Create a new getDigests operation. The url will be supplied as an
-         * input to this chained Task (the output of the previous Task in the
-         * chain).
-         *
-         * @param cachePriorityChar
-         */
-        public GetLocalTask(final int priority) {
-            super();
-
-            this.priority = priority;
-        }
+    final public class GetLocalTask extends Task {
 
         /**
          * Create a new getDigests operation, specifying the url in advance.
@@ -740,10 +725,9 @@ public class StaticCache {
          * @param key
          * @param cachePriorityChar
          */
-        public GetLocalTask(final String key, final int priority) {
-            super(key);
+        public GetLocalTask(final int priority, final String key) {
+            super(priority, key);
 
-            this.priority = priority;
             // Better not to interrupt RMS read operation, just in case
             setShutdownBehaviour(Task.DEQUEUE_ON_SHUTDOWN);
         }

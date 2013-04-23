@@ -84,8 +84,8 @@ public final class StaticWebCache extends StaticCache {
      */
     public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final DataTypeHandler handler) {
         try {
-            
-            
+
+
             return (StaticWebCache) getWebCache(priority, cacheType, handler, DEFAULT_HTTP_GETTER_FACTORY);
         } catch (Exception e) {
             //#debug
@@ -93,18 +93,17 @@ public final class StaticWebCache extends StaticCache {
             return null;
         }
     }
-    
+
     /**
      * Return a cache of default type PlatformUtils.PHONE_DATABASE_CACHE.
-     * 
+     *
      * @param priority
      * @param handler
-     * @return 
+     * @return
      */
     public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler) {
         return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, handler);
     }
-    
 
     /**
      * Get existing or create a new local cache of a web service.
@@ -251,7 +250,7 @@ public final class StaticWebCache extends StaticCache {
      * @param cachePriorityChar - note that HIGH_PRIORITY requests will be
      * automatically bumped into FASTLINE_PRIORITY unless it is a GET_WEB
      * operation.
-     * @param getType * * * * * * * * * *
+     * @param getType * * * * * * * * * * * *
      *      * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
@@ -274,14 +273,15 @@ public final class StaticWebCache extends StaticCache {
                 //#debug
                 L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_LOCAL)", url);
                 getterPriority = allowLocalCacheReadToUseFastlane(priority);
-                getTask = (new StaticCache.GetLocalTask(url, getterPriority)).chain(nextTask);
+                getTask = new StaticCache.GetLocalTask(getterPriority, url);
+                getTask.chain(nextTask);
                 break;
 
             case GET_ANYWHERE:
                 //#debug
                 L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_ANYWHERE)", url);
                 getterPriority = allowLocalCacheReadToUseFastlane(priority);
-                getTask = (new StaticWebCache.GetAnywhereTask(url, postMessage, getterPriority, nextTask));
+                getTask = new StaticWebCache.GetAnywhereTask(url, postMessage, getterPriority, nextTask);
                 break;
 
             case GET_WEB:
@@ -420,8 +420,8 @@ public final class StaticWebCache extends StaticCache {
          * @param cachePriorityChar
          * @param postMessage
          */
-        public GetAnywhereTask(final String key, final byte[] postMessage, final int priority, final Task nextTask) {
-            super(key);
+        private GetAnywhereTask(final String key, final byte[] postMessage, final int priority, final Task nextTask) {
+            super(priority, key);
 
             this.postMessage = postMessage;
             this.priority = priority;
@@ -445,11 +445,13 @@ public final class StaticWebCache extends StaticCache {
                         //#debug
                         L.i(this, "Not found locally, get from the web", (String) in);
                         getHttpGetter(url, postMessage, preventWebTaskFromUsingFastLane(priority), nextTask).fork();
-                        out = null;
+                    } else {
+                        chain(nextTask);
                     }
                 } catch (FlashDatabaseException e) {
                     //#debug
                     L.e(this, "Can not get", (String) in, e);
+                    chain(nextTask);
                     cancel(false, "Can not GET_ANYWHERE, in=" + (String) in, e);
                 }
             }
@@ -508,11 +510,11 @@ public final class StaticWebCache extends StaticCache {
                 return out;
             }
         };
-        
+
         final ValidationTask validationTask = new ValidationTask();
         httpGetter.chain(validationTask);
         validationTask.chain(nextTask);
-        
+
         return httpGetter;
     }
 
