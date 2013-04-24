@@ -859,6 +859,7 @@ public abstract class Task implements Runnable {
             return this;
         }
     }
+    
     //#mdebug
     // Always access in a synchronized(MUTEX) block
     private Task previousTaskInChain = null;

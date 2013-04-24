@@ -617,10 +617,10 @@ public class StaticCache {
             protected Object exec(final Object in) {
                 synchronized (MUTEX) {
                     //#debug
-                    L.i("Heap cached clear start", "" + cachePriorityChar);
+                    L.i(this, "Heap cached clear start", "" + cachePriorityChar);
                     ramCache.clearValues();
                     //#debug
-                    L.i("Heap cached cleared", "" + cachePriorityChar);
+                    L.i(this, "Heap cached cleared", "" + cachePriorityChar);
                 }
 
                 return in;

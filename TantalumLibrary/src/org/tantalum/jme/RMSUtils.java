@@ -228,13 +228,10 @@ public final class RMSUtils {
             L.i("RMS FULL when writing", key + " " + recordStoreName);
             throw e;
         } catch (Exception e) {
-            try {
-                //#debug
-                L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
-                delete(key);
-            } finally {
-                throw new FlashDatabaseException("RMS write problem, delete was attempted: " + key + " : " + e);
-            }
+            //#debug
+            L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
+            delete(key);
+            throw new FlashDatabaseException("RMS write problem, delete was attempted: " + key + " : " + e);
         } finally {
             close(key, rs);
         }

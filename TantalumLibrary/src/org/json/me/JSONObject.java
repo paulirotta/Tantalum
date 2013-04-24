@@ -137,6 +137,10 @@ public class JSONObject {
             return object == null || object == this;
         }
 
+        public int hashCode() {
+            return super.hashCode();
+        }
+
         /**
          * Get the "null" string value.
          *

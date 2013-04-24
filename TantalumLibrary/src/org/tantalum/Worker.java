@@ -60,7 +60,7 @@ final class Worker extends Thread {
      * exact order they appear in the serialQ. Other threads which don't have
      * such dedicated compute to do will drop back to the more general q
      */
-    private final Vector serialQ;
+    private final Vector serialQ = new Vector();
     private static final Vector fastlaneQ = new Vector();
     private static final Vector backgroundQ = new Vector();
     private static final Vector shutdownQ = new Vector();
@@ -69,15 +69,10 @@ final class Worker extends Thread {
     private Task currentTask = null; // Access only within synchronized(q)
     private final boolean isDedicatedFastlaneWorker;
 
-    private Worker(final String name, final boolean addSerialQueue, final boolean isDedicatedFastlaneWorker) {
+    private Worker(final String name, final boolean isDedicatedFastlaneWorker) {
         super(name);
 
         this.isDedicatedFastlaneWorker = isDedicatedFastlaneWorker;
-        if (addSerialQueue) {
-            serialQ = new Vector();
-        } else {
-            serialQ = null;
-        }
     }
 
     /**
@@ -92,7 +87,7 @@ final class Worker extends Thread {
     static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
         for (int i = 0; i < numberOfWorkers; i++) {
-            workers[i] = new Worker("Worker" + i, i == 0, i == numberOfWorkers - 1);
+            workers[i] = new Worker("Worker" + i, i == numberOfWorkers - 1);
             workers[i].start();
         }
     }
@@ -449,7 +444,7 @@ final class Worker extends Thread {
         if (!fastlaneQ.isEmpty()) {
             getFastlaneTask();
         } else if (!isDedicatedFastlaneWorker) {
-            if ((serialQ == null || (serialQ != null && serialQ.size() < MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST))
+            if (serialQ.size() < MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST
                     && !q.isEmpty()) {
                 // Normal compute, hardened against async interrupt
                 try {
@@ -458,7 +453,7 @@ final class Worker extends Thread {
                     // Ensure we don't re-run in case of interrupt
                     q.removeElementAt(0);
                 }
-            } else if (serialQ != null && !serialQ.isEmpty()) {
+            } else if (!serialQ.isEmpty()) {
                 getSerialTask();
             } else if (allWorkersIdleExceptThisOne() && backgroundQ.size() > 0) {
                 getBackgroundTask();
@@ -502,12 +497,8 @@ final class Worker extends Thread {
             if (w != null) {
                 sb.append(" [");
                 sb.append(w.getName());
-                if (w.serialQ == null) {
-                    sb.append(" (no serialQ)");
-                } else {
-                    sb.append(" serialQsize=");
-                    sb.append(w.serialQ.size());
-                }
+                sb.append(" serialQsize=");
+                sb.append(w.serialQ.size());
                 sb.append(" currentTask=");
                 sb.append(w.currentTask);
                 sb.append("] ");
