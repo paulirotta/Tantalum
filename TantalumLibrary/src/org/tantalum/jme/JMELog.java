@@ -184,7 +184,8 @@ public class JMELog extends L {
                 os = connection.openOutputStream();
                 conn = connection;
             } else {
-                final FileConnection connection = (FileConnection) Connector.open("file:///CFCard/newfile.txt", Connector.READ_WRITE);
+                System.out.println("Creating a file connection for:" + uri);
+                final FileConnection connection = (FileConnection) Connector.open(uri, Connector.READ_WRITE);
                 if (connection.exists()) {
                     System.out.println("Log file exists on the memory card, clearing old data... " + uri);
                     connection.truncate(0);
