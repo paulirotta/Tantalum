@@ -53,6 +53,8 @@ import java.util.Hashtable;
  */
 public class WeakHashCache {
 
+    final static WeakReference NULL_WEAK_REFERENCE = new WeakReference(null);
+    
     /**
      * A Hashtable of WeakReference objects.
      */
@@ -69,7 +71,7 @@ public class WeakHashCache {
         if (key == null) {
             throw new IllegalArgumentException("Attempt to get(null) from WeakHashCache");
         }
-        
+
         Object o = null;
         final WeakReference reference = (WeakReference) hash.get(key);
 
@@ -199,10 +201,9 @@ public class WeakHashCache {
     public void clearValues() {
         synchronized (hash) {
             final Enumeration keys = hash.keys();
-            final WeakReference nullWeakReference = new WeakReference(null);
 
             while (keys.hasMoreElements()) {
-                hash.put(keys, nullWeakReference);
+                hash.put(keys, NULL_WEAK_REFERENCE);
             }
         }
     }
