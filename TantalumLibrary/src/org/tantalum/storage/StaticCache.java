@@ -631,6 +631,20 @@ public class StaticCache {
     }
 
     /**
+     * Check if the key is contained in the database.
+     * 
+     * @param key
+     * @return
+     * @throws UnsupportedEncodingException
+     * @throws DigestException 
+     */
+    public boolean containsKey(final String key) throws UnsupportedEncodingException, DigestException {
+        final long digest = CryptoUtils.getInstance().toDigest(key);
+ 
+        return containsDigest(digest);
+    }
+
+    /**
      * Does this ramCache contain an object matching the key?
      *
      * @param key
