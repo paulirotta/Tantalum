@@ -29,7 +29,7 @@ import org.tantalum.util.StringUtils;
  *
  * @author ADIKSONLINE
  */
-public class BBPlatformAdapter implements PlatformAdapter {
+public final class BBPlatformAdapter implements PlatformAdapter {
 
     private L log;
     private final UiApplication application;

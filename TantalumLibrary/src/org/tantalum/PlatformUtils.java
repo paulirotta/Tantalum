@@ -60,7 +60,6 @@ public final class PlatformUtils {
      */
     public static final int PLATFORM_ANDROID = 2;
     public static final int PLATFORM_BLACKBERRY = 3;
-    
     private int platform = PLATFORM_NOT_INITIALIZED;
     private PlatformAdapter platformAdapter = null;
     /**
@@ -153,14 +152,13 @@ public final class PlatformUtils {
             System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
         }
         try {
-            if (Class.forName("net.rim.device.api.ui.UiApplication").isAssignableFrom(program.getClass())){
+            if (Class.forName("net.rim.device.api.ui.UiApplication").isAssignableFrom(program.getClass())) {
                 platform = PLATFORM_BLACKBERRY;
                 platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.blackberry.BBPlatformAdapter").newInstance();
+                init(logMode);
                 return;
-            } else {
-                System.out.println("Unable to create the blackberry adapter. WTF!");
             }
-        } catch (Throwable t){
+        } catch (Throwable t) {
             System.out.println("Can not init Blackberry in setProgram(" + program.getClass().getName() + ") : " + t);
         }
         try {
@@ -243,10 +241,12 @@ public final class PlatformUtils {
      *
      * You can specify a lockoutTime to filter out repeated vibrations in too
      * short an interval
-     * 
-     * @param duration in milliseconds. Zero is allowed, there will be no vibration
-     * @param lockoutTime if we vibrate, for how long after vibration stops should the phone ignore additional vibration requests
-     * prevent a new vibration from starting. Set zero to not set a timeout
+     *
+     * @param duration in milliseconds. Zero is allowed, there will be no
+     * vibration
+     * @param lockoutTime if we vibrate, for how long after vibration stops
+     * should the phone ignore additional vibration requests prevent a new
+     * vibration from starting. Set zero to not set a timeout
      */
     public void vibrateAsync(final int duration, final int lockoutTime) {
         if (duration < 0 || lockoutTime < 0) {
