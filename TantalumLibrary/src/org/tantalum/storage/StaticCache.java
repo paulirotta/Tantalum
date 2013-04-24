@@ -109,7 +109,8 @@ public class StaticCache {
      * 
      *  Always access within a synchronized block
      */
-    private boolean flashCacheEnabled = true;
+    //#debug
+    private volatile boolean flashCacheEnabled = true;
     /**
      * All synchronization is not on "this", but on the hidden MUTEX Object to
      * encapsulate synch and disallow the bad practice of externally
@@ -215,6 +216,7 @@ public class StaticCache {
         }
     }
 
+//#mdebug    
     /**
      * Turn off persistent local storage' use for read and write to see what
      * happens to the application performance. This is most useful for
@@ -227,6 +229,7 @@ public class StaticCache {
     public void setFlashCacheEnabled(final boolean enabled) {
         flashCacheEnabled = enabled;
     }
+//#enddebug
 
     /**
      * Add a Task which will be run before the cache closes.
@@ -336,13 +339,14 @@ public class StaticCache {
             try {
                 // Load from flash memory
                 final byte[] bytes;
-                synchronized (MUTEX) {
-                    if (flashCacheEnabled) {
-                        bytes = flashCache.get(key);
-                    } else {
-                        bytes = null;
-                    }
+//#debug                
+                if (flashCacheEnabled) {
+                    bytes = flashCache.get(key);
+//#mdebug
+                } else {
+                    bytes = null;
                 }
+//#enddebug
 
                 //#debug
                 L.i(this, "Flash get result", "(" + cachePriorityChar + ") key=" + key + " byteLength=" + (bytes != null ? ("" + bytes.length) : "<null>"));
@@ -407,23 +411,28 @@ public class StaticCache {
             L.e("Can not putAync", key, ex);
             throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
         }
-        if (flashCacheEnabled) {
-            (new Task(Task.SERIAL_PRIORITY) {
-                public Object exec(final Object in) {
-                    try {
-                        synchronousFlashPut(key, bytes, MAX_CONSECUTIVE_CLEAR_SPACE_CALLS);
-                    } catch (FlashDatabaseException e) {
-                        //#debug
-                        L.e("Can not synch write to flash", key, e);
-                        cancel(false, "Can not sync write to flash: " + key, e);
-                    }
 
-                    return in;
-                }
-            }.setClassName("SynchronousPutter")
-                    .setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN))
-                    .fork();
+//#mdebug        
+        if (!flashCacheEnabled) {
+            return useForm;
         }
+//#enddebug        
+
+        (new Task(Task.SERIAL_PRIORITY) {
+            public Object exec(final Object in) {
+                try {
+                    synchronousFlashPut(key, bytes, MAX_CONSECUTIVE_CLEAR_SPACE_CALLS);
+                } catch (FlashDatabaseException e) {
+                    //#debug
+                    L.e("Can not synch write to flash", key, e);
+                    cancel(false, "Can not sync write to flash: " + key, e);
+                }
+
+                return in;
+            }
+        }.setClassName("SynchronousPutter")
+                .setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN))
+                .fork();
 
         return useForm;
     }

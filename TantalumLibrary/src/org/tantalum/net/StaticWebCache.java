@@ -487,6 +487,9 @@ public final class StaticWebCache extends StaticCache {
         L.i(this, "getHttpGetter", L.CRLF + httpGetter);
 
         final class ValidationTask extends Task {
+            public ValidationTask(final int priority) {
+                super(priority);
+            }
 
             protected Object exec(final Object in) {
                 Object out = null;
@@ -511,7 +514,7 @@ public final class StaticWebCache extends StaticCache {
             }
         };
 
-        final ValidationTask validationTask = new ValidationTask();
+        final ValidationTask validationTask = new ValidationTask(Task.FASTLANE_PRIORITY);
         httpGetter.chain(validationTask);
         validationTask.chain(nextTask);
 
