@@ -99,11 +99,6 @@ public class StaticCache {
      * possibly multiple cores at the same time.
      */
     protected final DataTypeHandler handler;
-    /**
-     * Total size of the ramCache as it exists in flash memory. This is often
-     * larger than the current heap ramCache memory consumption.
-     */
-    protected int sizeAsBytes = 0;
     /*
      *  For testing and performance comparison
      * 
@@ -111,12 +106,6 @@ public class StaticCache {
      */
     //#debug
     private volatile boolean flashCacheEnabled = true;
-    /**
-     * All synchronization is not on "this", but on the hidden MUTEX Object to
-     * encapsulate synch and disallow the bad practice of externally
-     * synchronizing on the ramCache object itself.
-     */
-    protected final Object MUTEX = new Object();
 
     /**
      * Get the previously-created cache with the same parameters
@@ -265,10 +254,8 @@ public class StaticCache {
         final Object o = handler.convertToUseForm(key, bytes);
 
         final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
-        synchronized (MUTEX) {
-            accessOrder.addElement(digest);
-            ramCache.put(digest, o);
-        }
+        accessOrder.addElement(digest);
+        ramCache.put(digest, o);
         //#debug
         L.i(this, "End convert, elapsedTime=" + (System.currentTimeMillis() - startTime) + "ms", key);
 
@@ -282,23 +269,21 @@ public class StaticCache {
      * @return
      */
     public Object synchronousRAMCacheGet(final String key) throws FlashDatabaseException {
-        synchronized (MUTEX) {
-            try {
-                final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
-                final Object o = ramCache.get(digest);
+        try {
+            final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
+            final Object o = ramCache.get(digest);
 
-                if (o != null) {
-                    //#debug            
-                    L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
-                    this.accessOrder.addElement(key);
-                }
-
-                return o;
-            } catch (Exception e) {
-                //#debug
-                L.e(this, "Can not synchronousRAMCacheGet", key, e);
-                throw new FlashDatabaseException("Can not get from heap cache: " + key + " - " + e);
+            if (o != null) {
+                //#debug            
+                L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
+                this.accessOrder.addElement(key);
             }
+
+            return o;
+        } catch (Exception e) {
+            //#debug
+            L.e(this, "Can not synchronousRAMCacheGet", key, e);
+            throw new FlashDatabaseException("Can not get from heap cache: " + key + " - " + e);
         }
     }
 
@@ -430,7 +415,7 @@ public class StaticCache {
 
                 return in;
             }
-        }.setClassName("SynchronousPutter")
+        }.setClassName("FlashPut")
                 .setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN))
                 .fork();
 
@@ -574,11 +559,9 @@ public class StaticCache {
         try {
             if (containsDigest(digest)) {
                 final Long l = new Long(digest);
-                synchronized (MUTEX) {
-                    accessOrder.removeElement(l);
-                    ramCache.remove(l);
-                    flashCache.removeData(digest);
-                }
+                accessOrder.removeElement(l);
+                ramCache.remove(l);
+                flashCache.removeData(digest);
                 //#debug
                 L.i("Cache remove (from RAM and RMS)", Long.toString(digest, 16));
             }
@@ -599,10 +582,8 @@ public class StaticCache {
             protected Object exec(final Object in) {
                 //#debug
                 L.i("Start Cache Clear", "ID=" + cachePriorityChar);
-                synchronized (MUTEX) {
-                    flashCache.clear();
-                    accessOrder.removeAllElements();
-                }
+                accessOrder.removeAllElements();
+                flashCache.clear();
                 //#debug
                 L.i("Cache cleared", "ID=" + cachePriorityChar);
 
@@ -627,13 +608,12 @@ public class StaticCache {
     public Task clearHeapAsync(final Task chainedTask) {
         final Task task = new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
-                synchronized (MUTEX) {
-                    //#debug
-                    L.i(this, "Heap cached clear start", "" + cachePriorityChar);
-                    ramCache.clearValues();
-                    //#debug
-                    L.i(this, "Heap cached cleared", "" + cachePriorityChar);
-                }
+                //#debug
+                L.i(this, "Heap cached clear start", "" + cachePriorityChar);
+                accessOrder.removeAllElements();
+                ramCache.clearValues();
+                //#debug
+                L.i(this, "Heap cached cleared", "" + cachePriorityChar);
 
                 return in;
             }
@@ -663,12 +643,7 @@ public class StaticCache {
      * @return
      */
     public boolean containsDigest(final long digest) {
-        boolean contained;
-        synchronized (MUTEX) {
-            contained = ramCache.containsKey(new Long(digest));
-        }
-
-        return contained;
+        return ramCache.containsKey(new Long(digest));
     }
 
     /**
@@ -677,9 +652,7 @@ public class StaticCache {
      * @return
      */
     public int getSize() {
-        synchronized (MUTEX) {
-            return this.ramCache.size();
-        }
+        return this.ramCache.size();
     }
 
     /**
@@ -690,9 +663,7 @@ public class StaticCache {
      * @return
      */
     public int getPriority() {
-        synchronized (MUTEX) {
-            return cachePriorityChar;
-        }
+        return cachePriorityChar;
     }
 
     /**
@@ -712,24 +683,22 @@ public class StaticCache {
      * @return
      */
     public String toString() {
-        synchronized (MUTEX) {
-            StringBuffer str = new StringBuffer();
+        final StringBuffer str = new StringBuffer();
 
-            str.append("StaticCache --- priority: ");
-            str.append(cachePriorityChar);
-            str.append(" size: ");
-            str.append(getSize());
-            str.append(" size (bytes): ");
-            str.append(sizeAsBytes);
-            str.append("\n");
+        str.append("StaticCache --- priority: ");
+        str.append(cachePriorityChar);
+        str.append(" size: ");
+        str.append(getSize());
+        str.append("\n");
 
+        synchronized (accessOrder) {
             for (int i = 0; i < accessOrder.size(); i++) {
                 str.append(accessOrder.elementAt(i));
                 str.append("\n");
             }
-
-            return str.toString();
         }
+
+        return str.toString();
     }
 //#enddebug
 

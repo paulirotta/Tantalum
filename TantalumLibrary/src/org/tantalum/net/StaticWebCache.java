@@ -489,6 +489,8 @@ public final class StaticWebCache extends StaticCache {
         final class ValidationTask extends Task {
             public ValidationTask(final int priority) {
                 super(priority);
+                
+                setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN);
             }
 
             protected Object exec(final Object in) {
@@ -512,7 +514,7 @@ public final class StaticWebCache extends StaticCache {
 
                 return out;
             }
-        };
+        }
 
         final ValidationTask validationTask = new ValidationTask(Task.FASTLANE_PRIORITY);
         httpGetter.chain(validationTask);
