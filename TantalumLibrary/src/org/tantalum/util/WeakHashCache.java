@@ -199,9 +199,10 @@ public class WeakHashCache {
     public void clearValues() {
         synchronized (hash) {
             final Enumeration keys = hash.keys();
+            final WeakReference nullWeakReference = new WeakReference(null);
 
             while (keys.hasMoreElements()) {
-                hash.put(keys, new WeakReference(null));
+                hash.put(keys, nullWeakReference);
             }
         }
     }

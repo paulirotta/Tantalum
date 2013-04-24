@@ -628,9 +628,9 @@ public class StaticCache {
 
                 return in;
             }
-        }.setClassName("ClearHeapAsync");
+        }.setClassName("ClearHeapAsync").chain(chainedTask);
 
-        return task.chain(chainedTask).fork();
+        return task.fork();
     }
 
     /**
