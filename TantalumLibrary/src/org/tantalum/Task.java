@@ -570,7 +570,7 @@ public abstract class Task implements Runnable {
                     final long t = System.currentTimeMillis();
                     try {
                         //#debug
-                        L.i(this, "Can not unfork(), must be an executing or chained task. Start join(" + timeout + ")", "" + this);
+                        L.i(this, "Can not unfork, must be an executing or chained Task. Start join(" + timeout + ")", "" + this);
 
                         try {
                             MUTEX.wait(timeout);
@@ -578,6 +578,8 @@ public abstract class Task implements Runnable {
                             //#debug
                             L.e(this, "InterruptedException during join(" + timeout + ") wait", "Task will cancel: " + this, e);
                         }
+                        //#debug
+                        L.i(this, "End join(" + timeout + ") after can not unfork executing or chained Task", "" + this);
                         if (status == FINISHED) {
                             timeout -= System.currentTimeMillis() - t;
                             break;
@@ -595,9 +597,11 @@ public abstract class Task implements Runnable {
                 case CANCELED:
                     throw new CancellationException(getClassName() + " join(" + timeout + ") was to a Task which was canceled: " + this);
             }
+            
+            return value;
         }
 
-        return getChainedJoin(timeout);
+//        return getChainedJoin(timeout);
     }
 
     /**
@@ -608,18 +612,18 @@ public abstract class Task implements Runnable {
      *
      * @return
      */
-    private Object getChainedJoin(final long timeout) throws CancellationException, TimeoutException {
-        final Task chainedJoinTask;
-
-        synchronized (MUTEX) {
-            if (!(value instanceof Task)) {
-                return value;
-            }
-            chainedJoinTask = (Task) value;
-        }
-
-        return chainedJoinTask.join(timeout);
-    }
+//    private Object getChainedJoin(final long timeout) throws CancellationException, TimeoutException {
+//        final Task chainedJoinTask;
+//
+//        synchronized (MUTEX) {
+//            if (!(value instanceof Task)) {
+//                return value;
+//            }
+//            chainedJoinTask = (Task) value;
+//        }
+//
+//        return chainedJoinTask.join(timeout);
+//    }
 
     /**
      * Run the application on the current thread. In almost all cases the task

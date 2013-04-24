@@ -263,10 +263,6 @@ public class RMSFastCache extends FlashCache {
             if (!valueIntegers.containsKey(valueRecordInteger)) {
                 //#debug
                 L.i(this, "Deleting index entry pointing to non-existant value " + valueRecordInteger, "indexEntry=" + keyRecordInteger);
-                
-                dumpHash(keyRMSIndexHash);
-                dumpHash(valueIntegers);
-                
                 initDeleteRecord(keyRS, keyRecordInteger);
             } else if (error) {
                 //#debug
@@ -281,6 +277,7 @@ public class RMSFastCache extends FlashCache {
         }
     }
 
+//#mdebug    
     private void dumpHash(Hashtable h) {
         Enumeration enuKey = h.keys();
         Enumeration enu = h.elements();
@@ -309,7 +306,8 @@ public class RMSFastCache extends FlashCache {
 
         L.i(this, "HASHTABLE", sb.toString());
     }
-
+//#enddebug
+    
     /**
      * During startup, read into in-memory accelerator Hashtable and check
      * integrity of each key record.
