@@ -485,7 +485,6 @@ public class HttpGetter extends Task {
      * Data to be sent to the server as part of an HTTP POST operation
      */
     protected byte[] postMessage = null;
-    private int responseCode = HTTP_OPERATION_PENDING;
     private final Hashtable responseHeaders = new Hashtable();
     private Vector requestPropertyKeys = new Vector();
     private Vector requestPropertyValues = new Vector();
@@ -503,6 +502,7 @@ public class HttpGetter extends Task {
     private static int upstreamDataCount = 0;
     private volatile StreamWriter streamWriter = null;
     private volatile StreamReader streamReader = null;
+    private volatile int responseCode = HTTP_OPERATION_PENDING;
 
     /**
      * Get the byte[] from the URL specified by the input argument when
@@ -635,7 +635,7 @@ public class HttpGetter extends Task {
      * @param value
      */
     public void setRequestProperty(final String key, final String value) {
-        if (this.responseCode != HTTP_OPERATION_PENDING) {
+        if (responseCode != HTTP_OPERATION_PENDING) {
             throw new IllegalStateException("Can not set request property to HTTP operation already executed  (" + key + ": " + value + ")");
         }
 

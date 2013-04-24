@@ -50,6 +50,7 @@ import org.tantalum.util.WeakHashCache;
  */
 public class StaticCache {
 
+    private static final int MAX_CONSECUTIVE_CLEAR_SPACE_CALLS = 20;
     /**
      * A list of all caches, sorted by cachePriorityChar order (lowest char
      * first)
@@ -410,7 +411,7 @@ public class StaticCache {
             (new Task(Task.SERIAL_PRIORITY) {
                 public Object exec(final Object in) {
                     try {
-                        synchronousFlashPut(key, bytes);
+                        synchronousFlashPut(key, bytes, MAX_CONSECUTIVE_CLEAR_SPACE_CALLS);
                     } catch (FlashDatabaseException e) {
                         //#debug
                         L.e("Can not synch write to flash", key, e);
@@ -443,30 +444,32 @@ public class StaticCache {
      * already done this
      * @return
      */
-    private void synchronousFlashPut(final String key, final byte[] bytes) throws FlashDatabaseException {
+    private void synchronousFlashPut(final String key, final byte[] bytes, int maxClearSpaceCalls) throws FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("Null key put to cache");
         }
         try {
-            do {
-                synchronized (MUTEX) {
-                    try {
+            try {
+                //#debug
+                L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
+                flashCache.put(key, bytes);
+                //#debug
+                L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
+            } catch (FlashFullException ex) {
+                //#debug
+                L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
+                if (!clearSpace(bytes.length)) {
+                    if (--maxClearSpaceCalls < 0) {
                         //#debug
-                        L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
-                        flashCache.put(key, bytes);
+                        L.i("Can not clear enough space for data, ABORTING", key);
+                        throw new FlashDatabaseException("Can not clear space");
+                    } else {
                         //#debug
-                        L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
-                        break;
-                    } catch (FlashFullException ex) {
-                        //#debug
-                        L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
-                        if (!clearSpace(bytes.length)) {
-                            //#debug
-                            L.i("Can not clear enough space for data, ABORTING", key);
-                        }
+                        L.i("Can not clear enough space for data, trying again", key);
+                        synchronousFlashPut(key, bytes, maxClearSpaceCalls);
                     }
                 }
-            } while (true);
+            }
         } catch (DigestException e) {
             //#debug
             L.e("Couldn't store object to flash", key, e);
@@ -632,15 +635,15 @@ public class StaticCache {
 
     /**
      * Check if the key is contained in the database.
-     * 
+     *
      * @param key
      * @return
      * @throws UnsupportedEncodingException
-     * @throws DigestException 
+     * @throws DigestException
      */
     public boolean containsKey(final String key) throws UnsupportedEncodingException, DigestException {
         final long digest = CryptoUtils.getInstance().toDigest(key);
- 
+
         return containsDigest(digest);
     }
 
