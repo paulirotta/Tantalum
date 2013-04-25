@@ -116,7 +116,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                 // write pre-action user code here
 //GEN-LINE:|7-commandAction|4|23-postAction
                 // write post-action user code here
-                final Task getter = new HttpGetter(getGeocodeUrl(this.getAddressTextField().getString()));
+                final Task getter = new HttpGetter(Task.HIGH_PRIORITY, getGeocodeUrl(this.getAddressTextField().getString()));
 
                 // Add a task which will run after the HTTP GET
                 getter.chain(new Task(Task.FASTLANE_PRIORITY) {

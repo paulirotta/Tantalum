@@ -42,16 +42,16 @@ public abstract class ImageGridCanvas extends GestureCanvas {
     }
 
     public Task loadFeed(final String search, final int getType) {
-        final Task loadTask = new Task() {
+        final Task loadTask = new Task(Task.FASTLANE_PRIORITY) {
 
-            protected Object exec(Object in) {
+            protected Object exec(final Object in) {
                 try {
                     //#debug
                     L.i("Load feed success, type=" + getType, search);
                     scrollY = 0;
                     imageObjectModel.removeAllElements();
                     images.clear();
-                    final Vector newModel = (Vector) get();
+                    final Vector newModel = (Vector) in;
                     for (int i = 0; i < newModel.size(); i++) {
                         imageObjectModel.addElement(newModel.elementAt(i));
                         PicasaStorage.imageCache.prefetch(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl);
@@ -166,10 +166,10 @@ public abstract class ImageGridCanvas extends GestureCanvas {
      * Object for adding images to hashmap when they're loaded.
      */
     protected final class ImageResult extends Task {
-
         private final Object key;
 
         public ImageResult(Object key) {
+            super(Task.FASTLANE_PRIORITY);
             this.key = key;
         }
 

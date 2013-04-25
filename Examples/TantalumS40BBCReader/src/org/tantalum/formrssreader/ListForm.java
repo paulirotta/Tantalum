@@ -92,7 +92,7 @@ public final class ListForm extends Form implements CommandListener {
             alert.setTimeout(10000);
             //#debug
             L.i("Alert timeout set", "10000");
-            (new Task() {
+            (new Task(Task.HIGH_PRIORITY) {
                 public Object exec(final Object in) {
                     try {
                         try {

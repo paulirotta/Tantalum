@@ -84,39 +84,20 @@ public abstract class AsyncTask extends Task {
      * @param runnable
      */
     public static void execute(final Runnable runnable) {
-        (new Task() {
+        (new Task(Task.SERIAL_PRIORITY) {
             public Object exec(final Object in) {
                 runnable.run();
 
                 return in;
             }
-        }.setClassName("SerialExecutor")).fork(Task.SERIAL_PRIORITY);
+        }.setClassName("SerialExecutor")).fork();
     }
 
     /**
-     * Run the async task on a single background thread. Note that this may be
-     * slower than executeOnExecutor() but is preferred if you require execution
-     * in the order in which execute() is called, or if execute() is not
-     * thread-safe such that multiple execute() calls can not run in parallel.
      *
-     * @param params
-     * @return
      */
-    public final AsyncTask execute(final Object params) {
-        this.params = params;
-        synchronized (this) {
-            if (status != PENDING) {
-                throw new IllegalStateException("AsyncTask can not be started multiple times, create a new AsynTask instance each time: " + this);
-            }
-        }
-        PlatformUtils.getInstance().runOnUiThread(new Runnable() {
-            public void run() {
-                onPreExecute();
-                AsyncTask.this.fork(Task.SERIAL_PRIORITY);
-            }
-        });
-
-        return this;
+    public AsyncTask() {
+        super(Task.NORMAL_PRIORITY);
     }
 
     /**
@@ -142,7 +123,7 @@ public abstract class AsyncTask extends Task {
         synchronized (AsyncTask.class) {
             aggressive = AsyncTask.agressiveThreading;
         }
-        this.params = params;
+        set(params);
 
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {

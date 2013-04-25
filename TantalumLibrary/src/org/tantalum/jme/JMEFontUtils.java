@@ -120,6 +120,7 @@ public final class JMEFontUtils {
      *
      * @param str
      * @param maxWidth
+     * @param useKerning 
      * @return String - truncated string with ellipsis added to end of the
      *         string
      */

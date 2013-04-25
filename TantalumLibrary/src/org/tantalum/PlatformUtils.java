@@ -260,6 +260,7 @@ public final class PlatformUtils {
      * Do not call this directly, call Worker.shutdown() to initiate a close
      *
      * @param reasonDestroyed
+     * @return  
      */
     public boolean shutdownComplete(final String reasonDestroyed) {
         synchronized(MUTEX) {
@@ -498,7 +499,6 @@ public final class PlatformUtils {
      * must finish within 3 seconds or risk being terminated by the phone OS if
      * this is an system-initiated application close.
      *
-     * @param unconditional
      */
     public void shutdown(final boolean block) {
         //#debug

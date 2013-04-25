@@ -64,7 +64,7 @@ public abstract class RSSListView extends View {
     }
 
     protected void clearCache() {
-        feedCache.clearAsync(new Task() {
+        feedCache.clearAsync(new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(final Object in) {
                 reloadAsync(true);
 
@@ -80,7 +80,7 @@ public abstract class RSSListView extends View {
     public Task reloadAsync(final boolean forceNetLoad) {
         this.renderY = 0;
         rssModel.removeAllElements();
-        final Task rssResult = new Task() {
+        final Task rssResult = new Task(Task.FASTLANE_PRIORITY) {
             public Object exec(final Object in) {
                 //#debug
                 L.i(this, "canvas.refresh()", "rssModelLength=" + rssModel.size());

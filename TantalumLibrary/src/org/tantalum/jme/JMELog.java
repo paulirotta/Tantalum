@@ -67,7 +67,7 @@ public class JMELog extends L {
      * <code>L.i("blah", "blah")</code> and
      * <code>L.e("blah", "blah", myException)</code>
      *
-     * @param routeDebugOutputToSerialPort
+     * @param logMode 
      */
     public JMELog(int logMode) {
         OutputStream s = null;

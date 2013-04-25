@@ -103,7 +103,7 @@ public final class AndroidCache extends FlashCache {
         super(priority);
 
         helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION);
-        (new Task() {
+        (new Task(Task.SHUTDOWN) {
             public Object exec(final Object in2) {
                 if (db != null) {
                     db.close();
@@ -112,7 +112,7 @@ public final class AndroidCache extends FlashCache {
 
                 return in2;
             }
-        }.setClassName("CloseOnShutdown")).fork(Task.SHUTDOWN);
+        }.setClassName("CloseOnShutdown")).fork();
     }
 
     /**
@@ -191,7 +191,7 @@ public final class AndroidCache extends FlashCache {
      *
      * @param digest
      * @return the string form of the digest
-     * @throws UnsupportedEncodingException
+     * @throws FlashDatabaseException 
      */
     public String getKey(final long digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
@@ -278,7 +278,7 @@ public final class AndroidCache extends FlashCache {
     /**
      * Remove the byte[] associated with this key from the database
      *
-     * @param key
+     * @param digest 
      * @throws FlashDatabaseException
      */
     public void removeData(final long digest) throws FlashDatabaseException {

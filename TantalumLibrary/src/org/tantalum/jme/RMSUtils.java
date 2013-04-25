@@ -183,8 +183,9 @@ public final class RMSUtils {
      * Write to the record store a cached value based on the hashcode of the key
      * to the data
      *
-     * @param key
+     * @param priority 
      * @param data
+     * @param digest 
      * @throws RecordStoreFullException
      * @throws FlashDatabaseException
      */
@@ -251,7 +252,8 @@ public final class RMSUtils {
      * Read from the record store a cached value based on the hashcode of the
      * key to the data
      *
-     * @param key
+     * @param priority 
+     * @param digest 
      * @return bytes stored in phone flash memory
      * @throws FlashDatabaseException
      */
@@ -297,7 +299,8 @@ public final class RMSUtils {
     /**
      * Delete one item from a cache
      *
-     * @param key
+     * @param priority 
+     * @param digest 
      * @throws FlashDatabaseException
      */
     public void cacheDelete(final char priority, final byte[] digest) throws FlashDatabaseException {

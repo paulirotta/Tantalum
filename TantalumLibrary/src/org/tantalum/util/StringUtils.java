@@ -100,6 +100,7 @@ public class StringUtils {
      *
      * @param s Text that is to be encoded.
      * @return The encoded string.
+     * @throws IOException  
      */
     public static String urlEncode(final String s) throws IOException {
         final ByteArrayInputStream bIn;

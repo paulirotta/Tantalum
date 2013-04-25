@@ -42,8 +42,8 @@ public class JSONGetter extends HttpGetter {
      * @param jsonModel
      * @param priority 
      */
-    public JSONGetter(final String url, final JSONModel jsonModel, final int priority) {
-        super(url, priority);
+    public JSONGetter(final int priority, final String url, final JSONModel jsonModel) {
+        super(priority, url);
         
         this.jsonModel = jsonModel;
     }

@@ -47,6 +47,9 @@ public abstract class FlashCache {
      * A unique local identifier for the cache.
      */
     public final char priority;
+    /**
+     *
+     */
     protected final Vector shutdownTasks = new Vector();
 
     /**
@@ -93,6 +96,12 @@ public abstract class FlashCache {
         shutdownTasks.addElement(shutdownTask);
     }
 
+    /**
+     *
+     * @param digest
+     * @return
+     * @throws FlashDatabaseException
+     */
     public abstract String getKey(final long digest) throws FlashDatabaseException;
 
     /**
@@ -105,7 +114,6 @@ public abstract class FlashCache {
      *
      * @param key
      * @return
-     * @throws UnsupportedEncodingException
      * @throws DigestException
      * @throws FlashDatabaseException
      */
@@ -134,6 +142,7 @@ public abstract class FlashCache {
      *
      * @param digest
      * @return
+     * @throws DigestException 
      * @throws FlashDatabaseException
      */
     public abstract byte[] get(long digest) throws DigestException, FlashDatabaseException;
@@ -144,7 +153,6 @@ public abstract class FlashCache {
      * @param key
      * @param bytes
      * @throws DigestException
-     * @throws UnsupportedEncodingException
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
@@ -155,7 +163,6 @@ public abstract class FlashCache {
      *
      * @param key
      * @throws DigestException
-     * @throws UnsupportedEncodingException
      * @throws FlashDatabaseException
      */
     public final void removeData(final String key) throws DigestException, FlashDatabaseException {
@@ -171,6 +178,11 @@ public abstract class FlashCache {
         }
     }
 
+    /**
+     *
+     * @param digest
+     * @throws FlashDatabaseException
+     */
     public abstract void removeData(long digest) throws FlashDatabaseException;
 
     /**
@@ -178,7 +190,6 @@ public abstract class FlashCache {
      *
      * @return
      * @throws DigestException
-     * @throws UnsupportedEncodingException
      * @throws FlashDatabaseException
      */
     public abstract long[] getDigests() throws DigestException, FlashDatabaseException;

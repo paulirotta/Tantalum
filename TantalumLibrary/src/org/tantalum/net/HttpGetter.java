@@ -518,23 +518,10 @@ public class HttpGetter extends Task {
     /**
      * Create a Task for the specified URL.
      *
-     * @param url
-     */
-    public HttpGetter(final String url) {
-        super(url);
-
-        if (url == null) {
-            throw new IllegalArgumentException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
-        }
-    }
-
-    /**
-     * Create a Task for the specified URL.
-     *
-     * @param url
      * @param priority
+     * @param url
      */
-    public HttpGetter(final String url, final int priority) {
+    public HttpGetter(final int priority, final String url) {
         super(priority, url);
 
         if (url == null) {
@@ -650,8 +637,6 @@ public class HttpGetter extends Task {
      * content_length as this makes the phone run slightly faster when we can
      * predict how many bytes to expect.
      *
-     * @param url - The url we will HTTP GET from
-     *
      * @return - a JSONModel of the data provided by the HTTP server
      */
     public Object exec(final Object in) {
@@ -677,7 +662,6 @@ public class HttpGetter extends Task {
         addUpstreamDataCount(url.length());
 
         try {
-            InputStream inputStream = null;
             final OutputStream outputStream;
             if (this instanceof HttpPoster) {
                 if (postMessage == null && streamWriter == null) {
@@ -695,7 +679,7 @@ public class HttpGetter extends Task {
             } else {
                 httpConn = PlatformUtils.getInstance().getHttpGetConn(url, requestPropertyKeys, requestPropertyValues);
             }
-            inputStream = httpConn.getInputStream();
+            final InputStream inputStream = httpConn.getInputStream();
             final StreamReader reader = streamReader;
             if (reader != null) {
                 reader.readReady(inputStream);
@@ -851,29 +835,28 @@ public class HttpGetter extends Task {
      * Check headers and HTTP response code as needed for your web service to
      * see if this is a valid response. Override if needed.
      *
+     * @param url 
      * @param responseCode
      * @param headers
      * @return
+     * @throws IOException  
      */
-    protected boolean checkResponseCode(final String url, final int responseCode, final Hashtable headers) {
-        boolean ok = true;
-
+    protected boolean checkResponseCode(final String url, final int responseCode, final Hashtable headers) throws IOException {
         if (responseCode < 300) {
-            ok = true;
+            return true;
         } else if (responseCode < 500) {
             // We might be able to extract some useful information in case of a 400+ error code
             //#debug
             L.i("Bad response code (" + responseCode + ")", "url=" + url);
-            ok = false;
-        } else {
-            // 500+ error codes, which means that something went wrong on server side. 
-            // Probably not recoverable, so should we throw an exception instead?
-            //#debug
-            L.i("Server side error. Bad response code (" + responseCode + ")", "url=" + url);
-            ok = false;
+            return false;
         }
-
-        return ok;
+        /*
+         * 500+ error codes, which means that something went wrong on server side. 
+         * Probably not recoverable, so should we throw an exception instead?
+         */
+        //#debug
+        L.i(this, "Server error. Unrecoverable HTTP response code (" + responseCode + ")", "url=" + url);
+        throw new IOException("Server error. Unrecoverable HTTP response code (" + responseCode + ") url=" + url);
     }
 
     /**
@@ -893,6 +876,13 @@ public class HttpGetter extends Task {
         return key.substring(0, i);
     }
 
+    /**
+     *
+     * @param url
+     * @return
+     * @throws DigestException
+     * @throws UnsupportedEncodingException
+     */
     protected String urlToKeyIncludingPostDataHash(final String url) throws DigestException, UnsupportedEncodingException {
         if (this.postMessage == null) {
             throw new IllegalStateException("Attempt to get post-style crypto digest, but postData==null");

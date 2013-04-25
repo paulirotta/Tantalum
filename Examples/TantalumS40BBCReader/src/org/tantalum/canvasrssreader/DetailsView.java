@@ -155,7 +155,10 @@ public final class DetailsView extends View {
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
-                imageCache.getAsync(item.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
+                imageCache.getAsync(item.getThumbnail(),
+                        Task.FASTLANE_PRIORITY,
+                        StaticWebCache.GET_ANYWHERE,
+                        new Task(Task.FASTLANE_PRIORITY) {
                     public Object exec(final Object in) {
                         item.setLoadingImage(false);
                         if (currentItem == item) {
@@ -212,7 +215,10 @@ public final class DetailsView extends View {
         this.leftItem = leftItem;
         this.rightItem = rightItem;
         if (leftItem != null) {
-            imageCache.getAsync(leftItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
+            imageCache.getAsync(leftItem.getThumbnail(),
+                    Task.HIGH_PRIORITY,
+                    StaticWebCache.GET_ANYWHERE,
+                    new Task(Task.FASTLANE_PRIORITY) {
                 public Object exec(final Object image) {
                     if (DetailsView.this.leftItem == leftItem) {
                         leftIcon = (Image) image;
@@ -223,7 +229,10 @@ public final class DetailsView extends View {
             }.setClassName("LeftIcon"));
         }
         if (rightItem != null) {
-            imageCache.getAsync(rightItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
+            imageCache.getAsync(rightItem.getThumbnail(),
+                    Task.HIGH_PRIORITY,
+                    StaticWebCache.GET_WEB,
+                    new Task(Task.FASTLANE_PRIORITY) {
                 public Object exec(final Object image) {
                     if (DetailsView.this.rightItem == rightItem) {
                         rightIcon = (Image) image;

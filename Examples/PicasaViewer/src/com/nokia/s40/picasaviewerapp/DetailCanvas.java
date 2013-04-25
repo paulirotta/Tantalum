@@ -86,7 +86,7 @@ public final class DetailCanvas extends GestureCanvas {
                     PicasaStorage.imageCache.getAsync(selectedImage.imageUrl,
                             Task.HIGH_PRIORITY,
                             StaticWebCache.GET_ANYWHERE,
-                            new Task() {
+                            new Task(Task.FASTLANE_PRIORITY) {
                         public Object exec(final Object in) {
                             if (in != null && selectedImage == PicasaStorage.getSelectedImage()) {
                                 image = (Image) in;

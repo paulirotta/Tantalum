@@ -94,7 +94,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 list.getModel().removeItem(i);
             }
 
-            final Task task = new Task() {
+            final Task task = new Task(Task.FASTLANE_PRIORITY) {
                 public Object exec(final Object in) {
                     isReloading = false;
 

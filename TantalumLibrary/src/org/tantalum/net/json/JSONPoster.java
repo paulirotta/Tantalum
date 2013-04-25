@@ -25,7 +25,6 @@
 package org.tantalum.net.json;
 
 import java.io.UnsupportedEncodingException;
-import org.json.me.JSONObject;
 import org.tantalum.net.HttpPoster;
 import org.tantalum.util.L;
 
@@ -44,9 +43,10 @@ public abstract class JSONPoster extends HttpPoster {
      * The actual JSON will be provided as input from a previously chained Task.
      *
      * @param url
+     * @param priority  
      */
     public JSONPoster(final String url, final int priority) {
-        super(url, priority);
+        super(priority, url);
     }
 
     /**
@@ -58,8 +58,8 @@ public abstract class JSONPoster extends HttpPoster {
      * @throws UnsupportedEncodingException if the String can not be converted
      * to UTF-8 on this device
      */
-    public JSONPoster(final String url, final String json, final int priority) throws UnsupportedEncodingException {
-        super(url, json.getBytes("UTF-8"), priority);
+    public JSONPoster(final int priority, final String url, final String json) throws UnsupportedEncodingException {
+        super(priority, url, json.getBytes("UTF-8"));
     }
 
     /**

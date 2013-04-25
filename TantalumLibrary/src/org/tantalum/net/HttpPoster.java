@@ -47,11 +47,11 @@ public class HttpPoster extends HttpGetter {
      * responses are "unique" from the point of caching the most recent unique
      * response by appending all or just some of the POST data fields.
      *
-     * @param url - The url we will HTTP POST to
      * @param priority
+     * @param url 
      */
-    public HttpPoster(final String url, final int priority) {
-        super(url, priority);
+    public HttpPoster(final int priority, final String url) {
+        super(priority, url);
 
         this.url = url;
     }
@@ -63,8 +63,8 @@ public class HttpPoster extends HttpGetter {
      * @param postData
      * @param priority
      */
-    public HttpPoster(final String url, final byte[] postData, final int priority) {
-        this(url, priority);
+    public HttpPoster(final int priority, final String url, final byte[] postData) {
+        this(priority, url);
 
         setPostData(postData);
     }

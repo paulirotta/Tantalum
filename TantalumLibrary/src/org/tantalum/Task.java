@@ -175,7 +175,6 @@ public abstract class Task implements Runnable {
      *
      */
     public static final int SHUTDOWN = 1;
-    private static final int PRIORITY_NOT_SET = 0;
     /**
      * While holding no other locks, synchronize on the following during
      * critical code sections if your processing routine will temporarily need a
@@ -253,7 +252,7 @@ public abstract class Task implements Runnable {
      * will have cancel() called to notify that they will not execute.
      */
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
-    private int forkPriority = Task.PRIORITY_NOT_SET; // Access only in synchronized(MUTEX) block
+    private final int forkPriority; // Access only in synchronized(MUTEX) block
     private final Object MUTEX = new Object();
     /*
      * Should we run() this task on the UI thread after successful execution
@@ -290,27 +289,21 @@ public abstract class Task implements Runnable {
     }
 
     /**
-     * Create a
-     * <code>Task</code> with input value of null
+     * Create a Task and specify the priority at which this
+     * <code>Task</code> should be forked within a chain if the previous
+     * <code>Task</code> completes normally.
      *
      * Use this constructor if your
      * <code>Task</code> does not accept an input value, otherwise use the
      * <code>Task(Object)</code> constructor.
      *
-     */
-    public Task() {
-    }
-
-    /**
-     * Create a Task and specify the priority at which this
-     * <code>Task</code> should be forked within a chain if the previous
-     * <code>Task</code> completes normally.
-     *
      * @param priority
      */
     public Task(final int priority) {
-        this();
-        setForkPriority(priority);
+        if ((priority < Task.SHUTDOWN) || priority > Task.FASTLANE_PRIORITY) {
+            throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
+        }
+        forkPriority = priority;
     }
 
     /**
@@ -319,16 +312,12 @@ public abstract class Task implements Runnable {
      * The default action is for the output value to be the same as the input
      * value, however many Tasks will return their own value.
      *
+     * @param priority
      * @param initialValue
      */
-    public Task(final Object initialValue) {
-        this();
-        set(initialValue);
-    }
-
     public Task(final int priority, final Object initialValue) {
-        this(initialValue);
-        setForkPriority(priority);
+        this(priority);
+        set(initialValue);
     }
 
     /**
@@ -448,42 +437,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final Task fork() {
-        return doFork(getPriorityDuringFork());
-    }
-
-    /**
-     * Get the priority. If it has not yet been asserted, set it to default.
-     *
-     * Since priority can only be set once, this and PRIORITY_NOT_SET help allow
-     * checks to prevent common multi-chain-or-fork errors.
-     *
-     * @return
-     */
-    private int getPriorityDuringFork() {
-        synchronized (MUTEX) {
-            if (forkPriority == Task.PRIORITY_NOT_SET) {
-                setForkPriority(Task.NORMAL_PRIORITY);
-            }
-
-            return forkPriority;
-        }
-    }
-
-    /**
-     * Execute this task asynchronously on a Worker thread at the specified
-     * priority.
-     *
-     * @param priority
-     * @return
-     */
-    public final Task fork(final int priority) {
-        setForkPriority(priority);
-
-        return doFork(priority);
-    }
-
-    private Task doFork(final int taskPriority) {
-        return Worker.fork(this, taskPriority);
+        return Worker.fork(this, getForkPriority());
     }
 
     /**
@@ -597,7 +551,7 @@ public abstract class Task implements Runnable {
                 case CANCELED:
                     throw new CancellationException(getClassName() + " join(" + timeout + ") was to a Task which was canceled: " + this);
             }
-            
+
             return value;
         }
 
@@ -624,7 +578,6 @@ public abstract class Task implements Runnable {
 //
 //        return chainedJoinTask.join(timeout);
 //    }
-
     /**
      * Run the application on the current thread. In almost all cases the task
      * is still PENDING and will run, but there is a rare race condition whereby
@@ -824,7 +777,6 @@ public abstract class Task implements Runnable {
      * <code>Task</code> results are not satisfactory.
      *
      * @param nextTask
-     * @param insertAsNextLink
      * @return this
      */
     public final Task chain(final Task nextTask) {
@@ -859,7 +811,6 @@ public abstract class Task implements Runnable {
             return this;
         }
     }
-    
     //#mdebug
     // Always access in a synchronized(MUTEX) block
     private Task previousTaskInChain = null;
@@ -886,43 +837,6 @@ public abstract class Task implements Runnable {
     //#enddebug
 
     /**
-     * Update the priority parameter which will be applied to this Task when it
-     * is fork()ed as link in a Task chain.
-     *
-     * @param priority
-     * @return
-     */
-    private Task setForkPriority(final int priority) {
-        synchronized (MUTEX) {
-            if ((priority < Task.SHUTDOWN) || priority > Task.FASTLANE_PRIORITY) {
-                throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
-            }
-            if (forkPriority != Task.PRIORITY_NOT_SET) {
-                throw new IllegalStateException("Task priority has already been set: " + this);
-            }
-            forkPriority = priority;
-
-            return this;
-        }
-    }
-
-    /**
-     * Set the priority, but only if it has not already been set elsewhere
-     *
-     * @param priorityIfPriorityNotSet
-     * @return
-     */
-    private int assertForkPriority(final int priorityIfPriorityNotSet) {
-        synchronized (MUTEX) {
-            if (forkPriority == Task.PRIORITY_NOT_SET) {
-                forkPriority = priorityIfPriorityNotSet;
-            }
-
-            return forkPriority;
-        }
-    }
-
-    /**
      * Return the priority value applied when this Task was fork()ed.
      *
      * If the Task is not yet fork()ed, for example if it is part of a Task
@@ -931,9 +845,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final int getForkPriority() {
-        synchronized (MUTEX) {
-            return forkPriority;
-        }
+        return forkPriority;
     }
 
     /**
@@ -981,7 +893,6 @@ public abstract class Task implements Runnable {
                 if (out != null) {
                     t.set(out);
                 }
-                t.assertForkPriority(forkPriority);
                 t.fork();
             }
         } catch (final Throwable t) {
@@ -1114,6 +1025,14 @@ public abstract class Task implements Runnable {
     //#mdebug
     private String anonInnerClassName = null;
 
+    /**
+     * Get the real and possibly aritificially assigned debug class name for an
+     * anonymous inner class. This helps the debug logs to be more easily
+     * readable.
+     *
+     * @param o
+     * @return
+     */
     public static String getClassName(final Object o) {
         if (o instanceof Task) {
             return ((Task) o).getClassName();
@@ -1238,7 +1157,7 @@ public abstract class Task implements Runnable {
     private static String[] PRIORITY_STRINGS = {"PRIORITY_NOT_SET", "SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "FASTLANE_PRIORITY"};
 
     String getPriorityString() {
-        return PRIORITY_STRINGS[forkPriority];
+        return PRIORITY_STRINGS[getForkPriority()];
     }
 
     /**
@@ -1260,6 +1179,11 @@ public abstract class Task implements Runnable {
         return toString(true);
     }
 
+    /**
+     * Show the pre- and post- tasks in the chain for debug
+     *
+     * @return 
+     */
     public String showChain() {
         final StringBuffer sb = new StringBuffer();
 
@@ -1281,6 +1205,12 @@ public abstract class Task implements Runnable {
         return sb.toString();
     }
 
+    /**
+     * Debug output for the Task
+     * 
+     * @param showChain
+     * @return 
+     */
     public String toString(final boolean showChain) {
         synchronized (MUTEX) {
             StringBuffer sb = new StringBuffer(300);
