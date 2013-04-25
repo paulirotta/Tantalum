@@ -83,7 +83,13 @@ public class JMELog extends L {
 
 
             case PlatformUtils.MEMORY_CARD_LOG_MODE:
-                final String memoryCardPath = System.getProperty("fileconn.dir.memorycard");
+                String memoryCardPath = System.getProperty("fileconn.dir.memorycard");
+                
+                if (memoryCardPath == null) {
+                    L.i("ERROR", "BSEmu does not support System.getProperty-fileconn.dir.memorycard : using internal fallback of current working directory");
+                    memoryCardPath = "";
+                }
+                
                 uri = memoryCardPath + "tantalum.log";
                 System.out.println("Routing debug output to memory card log file: " + uri);
                 break;
