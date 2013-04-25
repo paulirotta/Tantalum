@@ -24,6 +24,7 @@
  */
 package org.tantalum.jme;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Vector;
@@ -51,9 +52,11 @@ public class JMELog extends L {
 
     private final OutputStream os;
 //#mdebug
-    private final Vector byteArrayQueue = new Vector();
+    private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//    private final Vector byteArrayQueue = new Vector();
     private final JMELog.LogWriter usbWriter;
     private static final byte[] CRLF_BYTES = CRLF.getBytes();
+    private final Object OUTPUT_MUTEX = new Object();
 //#enddebug    
 
     /**
@@ -133,14 +136,18 @@ public class JMELog extends L {
      */
     protected void printMessage(final StringBuffer sb, final Throwable t) {
 //#mdebug
-        if (t != null) {
-            sb.append("Exception: ");
-            sb.append(t.toString());
-        }
-        synchronized (byteArrayQueue) {
+        synchronized (OUTPUT_MUTEX) {
+            if (t != null) {
+                sb.append("Exception: ");
+                sb.append(t.toString());
+            }
             if (os != null) {
-                byteArrayQueue.addElement(sb.toString().getBytes());
-                byteArrayQueue.notifyAll();
+                try {
+                    bos.write(sb.toString().getBytes());
+                    bos.write(CRLF_BYTES);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             } else {
                 System.out.println(sb.toString());
             }
@@ -157,9 +164,9 @@ public class JMELog extends L {
         final JMELog.LogWriter writer = usbWriter;
 
         if (writer != null) {
-            synchronized (byteArrayQueue) {
-                writer.shutdownStarted = true;
-                byteArrayQueue.notifyAll();
+            writer.shutdownStarted = true;
+            synchronized (OUTPUT_MUTEX) {
+                OUTPUT_MUTEX.notifyAll();
             }
 
             // Give the queue time to flush final messages
@@ -179,12 +186,12 @@ public class JMELog extends L {
 //#mdebug
     private final class LogWriter implements Runnable {
 
-        boolean shutdownStarted = false;
-        boolean shutdownComplete = false;
+        volatile boolean shutdownStarted = false;
+        boolean shutdownComplete = false; // Access only synchronized(this)
         private final Connection conn;
         private final OutputStream os;
 
-        public LogWriter(final String uri, final boolean serialPortMode) throws IOException {
+        LogWriter(final String uri, final boolean serialPortMode) throws IOException {
             if (serialPortMode) {
                 final CommConnection connection = (CommConnection) Connector.open(uri);
                 os = connection.openOutputStream();
@@ -203,35 +210,41 @@ public class JMELog extends L {
             }
         }
 
-        public OutputStream getOutputStream() {
+        OutputStream getOutputStream() {
             return os;
         }
-        private static final int MAX_LOG_CLUSTER_TIME = 30000;
-        private static final int MAX_LOG_QUEUE_LENGTH = 300;
+
+        private int pendingByteCount() {
+            synchronized (OUTPUT_MUTEX) {
+                return bos.size();
+            }
+        }
 
         public void run() {
             try {
-                Thread.currentThread().setPriority(Thread.NORM_PRIORITY - 2);
-                while (!shutdownStarted || !byteArrayQueue.isEmpty()) {
-                    final long t = System.currentTimeMillis();
-                    while (!shutdownStarted && byteArrayQueue.size() < MAX_LOG_QUEUE_LENGTH && System.currentTimeMillis() < t + MAX_LOG_CLUSTER_TIME) {
-                        synchronized (byteArrayQueue) {
-                            byteArrayQueue.wait(MAX_LOG_CLUSTER_TIME);
+                Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+                while (pendingByteCount() > 0 || !shutdownStarted) { //!byteArrayQueue.isEmpty()) {
+                    final byte[] bytes;
+                    synchronized (OUTPUT_MUTEX) {
+                        while (pendingByteCount() == 0 && !shutdownStarted) {
+                            OUTPUT_MUTEX.wait(1000);
+                        }
+                        if (pendingByteCount() > 0) {
+                            bytes = bos.toByteArray();
+                            bos.reset();
+                        } else {
+                            bytes = null;
                         }
                     }
-                    if (!byteArrayQueue.isEmpty()) {
-                        while (!byteArrayQueue.isEmpty()) {
-                            os.write((byte[]) byteArrayQueue.firstElement());
-                            byteArrayQueue.removeElementAt(0);
-                            os.write(CRLF_BYTES);
-                        }
-                        os.flush();
+                    if (bytes != null) {
+                        os.write(bytes);
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
                 try {
+                    os.flush();
                     os.close();
                 } catch (IOException ex) {
                     ex.printStackTrace();
