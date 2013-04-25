@@ -31,6 +31,9 @@ import java.util.Hashtable;
 /**
  * This is a hashtable which acts as a heap memory cache using WeakReference.
  *
+ * Hashtable is by default not thread safe. WeakHashCache is synchronized and
+ * thread safe. Like a Vector, you can externally synchronize on it.
+ *
  * Objects in the hashtable are not held in memory, they may be garbage
  * collected at any time, in which case the calling routine must do something
  * else to recreate the value. You can freely put as many objects in this cache
@@ -53,8 +56,7 @@ import java.util.Hashtable;
  */
 public class WeakHashCache {
 
-    final static WeakReference NULL_WEAK_REFERENCE = new WeakReference(null);
-    
+    private final static WeakReference NULL_WEAK_REFERENCE = new WeakReference(null);
     /**
      * A Hashtable of WeakReference objects.
      */
@@ -67,19 +69,18 @@ public class WeakHashCache {
      * @return - null if the object is not stored, or if the WeakReference has
      * been garbage collected by the virtual machine.
      */
-    public Object get(final Object key) {
+    public synchronized Object get(final Object key) {
         if (key == null) {
             throw new IllegalArgumentException("Attempt to get(null) from WeakHashCache");
         }
 
-        Object o = null;
         final WeakReference reference = (WeakReference) hash.get(key);
 
-        if (reference != null) {
-            o = reference.get();
+        if (reference == null) {
+            return null;
         }
-
-        return o;
+        
+        return reference.get();
     }
 
     /**
@@ -97,22 +98,15 @@ public class WeakHashCache {
      * @param key
      * @param value
      */
-    public void put(final Object key, final Object value) {
+    public synchronized void put(final Object key, final Object value) {
         if (key == null) {
             throw new IllegalArgumentException("null key put to WeakHashCache");
         }
         if (value == null) {
             throw new IllegalArgumentException("null key put to WeakHashCache");
         }
-//        synchronized (hash) {
-//            if (value == null) {
-//                //#debug
-//                L.i("WeakHash put", "value is null, key removed");
-//                hash.remove(key);
-//                return;
-//            }
+
         hash.put(key, new WeakReference(value));
-//        }
     }
 
     /**
@@ -124,16 +118,14 @@ public class WeakHashCache {
      *
      * @param key
      */
-    public void markContains(final Object key) {
+    public synchronized void markContains(final Object key) {
         if (key == null) {
             throw new IllegalArgumentException("markContains(null) to WeakHashCache");
         }
-        synchronized (hash) {
-            if (hash.containsKey(key)) {
-                return;
-            }
-            hash.put(key, new WeakReference(null));
+        if (hash.containsKey(key)) {
+            return;
         }
+        hash.put(key, new WeakReference(null));
     }
 
     /**
@@ -141,7 +133,7 @@ public class WeakHashCache {
      *
      * @param key
      */
-    public void remove(final Object key) {
+    public synchronized void remove(final Object key) {
         if (key != null) {
             hash.remove(key);
         } else {
@@ -161,7 +153,7 @@ public class WeakHashCache {
      * @param key
      * @return
      */
-    public boolean containsKey(final Object key) {
+    public synchronized boolean containsKey(final Object key) {
         if (key == null) {
             throw new IllegalArgumentException("containsKey() with null key");
         }
@@ -179,7 +171,7 @@ public class WeakHashCache {
      *
      * @return
      */
-    public int size() {
+    public synchronized int size() {
         return hash.size();
     }
 
@@ -189,7 +181,7 @@ public class WeakHashCache {
      * This does not free a great deal of memory, but it does free the overhead
      * structure associated with each collection element.
      */
-    public void clear() {
+    public synchronized void clear() {
         hash.clear();
     }
 
@@ -198,13 +190,11 @@ public class WeakHashCache {
      * they point.
      *
      */
-    public void clearValues() {
-        synchronized (hash) {
-            final Enumeration keys = hash.keys();
+    public synchronized void clearValues() {
+        final Enumeration keys = hash.keys();
 
-            while (keys.hasMoreElements()) {
-                hash.put(keys, NULL_WEAK_REFERENCE);
-            }
+        while (keys.hasMoreElements()) {
+            hash.put(keys, NULL_WEAK_REFERENCE);
         }
     }
 }

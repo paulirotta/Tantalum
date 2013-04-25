@@ -26,6 +26,7 @@ package org.tantalum.storage;
 
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
+import java.util.Enumeration;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.CryptoUtils;
@@ -50,7 +51,6 @@ import org.tantalum.util.WeakHashCache;
  */
 public class StaticCache {
 
-    private static final int MAX_CONSECUTIVE_CLEAR_SPACE_CALLS = 20;
     /**
      * A list of all caches, sorted by cachePriorityChar order (lowest char
      * first)
@@ -76,6 +76,8 @@ public class StaticCache {
      * beginning of the last. Least recently used objects are the ones most
      * likely to be cleared when additional flash memory is needed. The heap
      * memory WeakReferenceCache does not make use of this access order.
+     *
+     * Always access within a synchronized(ramCache) block
      */
     protected final LRUVector accessOrder = new LRUVector();
     /**
@@ -195,8 +197,10 @@ public class StaticCache {
     private void init() throws FlashDatabaseException {
         try {
             final long[] digests = flashCache.getDigests();
-            for (int i = 0; i < digests.length; i++) {
-                ramCache.markContains(new Long(digests[i]));
+            synchronized (ramCache) {
+                for (int i = 0; i < digests.length; i++) {
+                    ramCache.markContains(new Long(digests[i]));
+                }
             }
         } catch (Exception ex) {
             //#debug
@@ -254,8 +258,10 @@ public class StaticCache {
         final Object o = handler.convertToUseForm(key, bytes);
 
         final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
-        accessOrder.addElement(digest);
-        ramCache.put(digest, o);
+        synchronized (ramCache) {
+            accessOrder.addElement(digest);
+            ramCache.put(digest, o);
+        }
         //#debug
         L.i(this, "End convert, elapsedTime=" + (System.currentTimeMillis() - startTime) + "ms", key);
 
@@ -271,15 +277,18 @@ public class StaticCache {
     public Object synchronousRAMCacheGet(final String key) throws FlashDatabaseException {
         try {
             final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
-            final Object o = ramCache.get(digest);
 
-            if (o != null) {
-                //#debug            
-                L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
-                this.accessOrder.addElement(key);
+            synchronized (ramCache) {
+                final Object o = ramCache.get(digest);
+
+                if (o != null) {
+                    //#debug            
+                    L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
+                    this.accessOrder.addElement(key);
+                }
+
+                return o;
             }
-
-            return o;
         } catch (Exception e) {
             //#debug
             L.e(this, "Can not synchronousRAMCacheGet", key, e);
@@ -406,11 +415,11 @@ public class StaticCache {
         (new Task(Task.SERIAL_PRIORITY) {
             public Object exec(final Object in) {
                 try {
-                    synchronousFlashPut(key, bytes, MAX_CONSECUTIVE_CLEAR_SPACE_CALLS);
+                    synchronousFlashPut(key, bytes);
                 } catch (FlashDatabaseException e) {
                     //#debug
                     L.e("Can not synch write to flash", key, e);
-                    cancel(false, "Can not sync write to flash: " + key, e);
+                    cancel(false, "Can not sync write to flash: " + key + " byte length=" + bytes.length, e);
                 }
 
                 return in;
@@ -434,11 +443,10 @@ public class StaticCache {
      *
      * @param key
      * @param bytes
-     * @param putToHeapCache - Set "true" unless an overriding method has
-     * already done this
-     * @return
+     * @throws FlashFullException
+     * @throws FlashDatabaseException
      */
-    private void synchronousFlashPut(final String key, final byte[] bytes, int maxClearSpaceCalls) throws FlashDatabaseException {
+    private void synchronousFlashPut(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("Null key put to cache");
         }
@@ -452,23 +460,10 @@ public class StaticCache {
             } catch (FlashFullException ex) {
                 //#debug
                 L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
-                if (!clearSpace(bytes.length)) {
-                    if (--maxClearSpaceCalls < 0) {
-                        //#debug
-                        L.i("Can not clear enough space for data, ABORTING", key);
-                        throw new FlashDatabaseException("Can not clear space");
-                    } else {
-                        //#debug
-                        L.i("Can not clear enough space for data, trying again", key);
-                        synchronousFlashPut(key, bytes, maxClearSpaceCalls);
-                    }
-                }
+                StaticCache.clearSpace(bytes.length);
+                flashCache.put(key, bytes);
             }
         } catch (DigestException e) {
-            //#debug
-            L.e("Couldn't store object to flash", key, e);
-            throw new FlashDatabaseException("Could not store object to flash: " + key + " - " + e);
-        } catch (UnsupportedEncodingException e) {
             //#debug
             L.e("Couldn't store object to flash", key, e);
             throw new FlashDatabaseException("Could not store object to flash: " + key + " - " + e);
@@ -482,68 +477,44 @@ public class StaticCache {
      * @param minSpaceToClear - in bytes
      * @return true if the requested amount of space has been cleared
      */
-    private boolean clearSpace(final int minSpaceToClear) throws FlashDatabaseException, UnsupportedEncodingException, DigestException {
+    private static void clearSpace(final int minSpaceToClear) throws FlashFullException, FlashDatabaseException, DigestException {
         int spaceCleared = 0;
-
-        final long[] rsv = flashCache.getDigests();
 
         //#debug
         L.i("Clearing RMS space", minSpaceToClear + " bytes");
 
-        // First: clear cached objects not currently appearing in any open ramCache
-        for (int i = rsv.length - 1; i >= 0; i--) {
-            final long digest = rsv[i];
-            final StaticCache sc = getCacheContainingDigest(digest);
+        final Enumeration cacheEnumeration = caches.elements();
 
-            if (sc != null) {
-                spaceCleared += getByteSizeByDigest(digest);
-                sc.remove(digest);
-            }
-        }
-        //#debug
-        L.i("End phase 1: clearing RMS space", spaceCleared + " bytes recovered");
+        while (spaceCleared < minSpaceToClear && cacheEnumeration.hasMoreElements()) {
+            final StaticCache cache = (StaticCache) cacheEnumeration.nextElement();
 
-        // Second: remove currently cached items, first from low cachePriorityChar caches
-        while (spaceCleared < minSpaceToClear && rsv.length > 0) {
-            for (int i = 0; i < caches.size(); i++) {
-                final StaticCache sc = (StaticCache) caches.elementAt(i);
-
-                while (!sc.accessOrder.isEmpty() && spaceCleared < minSpaceToClear) {
-                    final Long digest = (Long) sc.accessOrder.removeLeastRecentlyUsed();
-                    if (digest != null) {
-                        final long d = digest.longValue();
-                        spaceCleared += getByteSizeByDigest(d);
-                        sc.remove(d);
-                    }
+            while (spaceCleared < minSpaceToClear && cache.size() > 0) {
+                final long dig;
+                synchronized (cache.ramCache) {
+                    final Long digest = (Long) cache.accessOrder.removeLeastRecentlyUsed();
+                    cache.ramCache.remove(digest);
+                    dig = digest.longValue();
                 }
+                final byte[] bytes = cache.flashCache.get(dig);
+                cache.flashCache.removeData(dig);
+                //#debug
+                L.i("Cleared bytes from cache " + cache.flashCache.priority, "" + bytes.length);
+                spaceCleared += bytes.length;
             }
         }
-        //#debug
-        L.i("End phase 2: clearing RMS space", spaceCleared + " bytes recovered (total)");
 
-        return spaceCleared >= minSpaceToClear;
+        if (spaceCleared >= minSpaceToClear) {
+            throw new FlashFullException("Caches cleared, but still no space (" + minSpaceToClear + ") for data");
+        }
     }
 
-    private int getByteSizeByDigest(final long digest) throws FlashDatabaseException, DigestException {
-        final byte[] bytes = flashCache.get(digest);
-
-        return bytes.length;
-    }
-
-    private static StaticCache getCacheContainingDigest(final long digest) {
-        StaticCache cache = null;
-
-        synchronized (caches) {
-            for (int i = 0; i < caches.size(); i++) {
-                final StaticCache currentCache = (StaticCache) caches.elementAt(i);
-                if (currentCache.containsDigest(digest)) {
-                    cache = currentCache;
-                    break;
-                }
-            }
-        }
-
-        return cache;
+    /**
+     * The number of items in the cache
+     *
+     * @return
+     */
+    public int size() {
+        return ramCache.size();
     }
 
     /**
@@ -559,8 +530,11 @@ public class StaticCache {
         try {
             if (containsDigest(digest)) {
                 final Long l = new Long(digest);
-                accessOrder.removeElement(l);
-                ramCache.remove(l);
+
+                synchronized (ramCache) {
+                    accessOrder.removeElement(l);
+                    ramCache.remove(l);
+                }
                 flashCache.removeData(digest);
                 //#debug
                 L.i("Cache remove (from RAM and RMS)", Long.toString(digest, 16));
@@ -608,14 +582,16 @@ public class StaticCache {
     public Task clearHeapAsync(final Task chainedTask) {
         final Task task = new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
-                //#debug
-                L.i(this, "Heap cached clear start", "" + cachePriorityChar);
-                accessOrder.removeAllElements();
-                ramCache.clearValues();
-                //#debug
-                L.i(this, "Heap cached cleared", "" + cachePriorityChar);
+                synchronized (ramCache) {
+                    //#debug
+                    L.i(this, "Heap cache clear start", "" + cachePriorityChar);
+                    accessOrder.removeAllElements();
+                    ramCache.clearValues();
+                    //#debug
+                    L.i(this, "Heap cached cleared", "" + cachePriorityChar);
 
-                return in;
+                    return in;
+                }
             }
         }.setClassName("ClearHeapAsync").chain(chainedTask);
 
@@ -699,6 +675,8 @@ public class StaticCache {
         }
 
         return str.toString();
+
+
     }
 //#enddebug
 

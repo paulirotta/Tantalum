@@ -86,7 +86,7 @@ public class JMELog extends L {
                 String memoryCardPath = System.getProperty("fileconn.dir.memorycard");
 
                 if (memoryCardPath == null) {
-                    System.out.println("ERROR: Device or emulator does not support System.getProperty-fileconn.dir.memorycard : using internal fallback of current working directory");
+                    System.out.println("ERROR: Device or emulator does not support System.getProperty-fileconn.dir.memorycard : fallback to PlatformUtils.NORMAL_LOG_MODE");
                     logMode = PlatformUtils.NORMAL_LOG_MODE;
                     break;
                 }
@@ -169,7 +169,6 @@ public class JMELog extends L {
                         writer.wait(1000);
                     }
                 } catch (InterruptedException ex) {
-                    //#debug
                     System.out.println("JMELog.LogWriter was interrupted while waiting one second during shutdown");
                 }
             }
@@ -207,21 +206,27 @@ public class JMELog extends L {
         public OutputStream getOutputStream() {
             return os;
         }
+        private static final int MAX_LOG_CLUSTER_TIME = 30000;
+        private static final int MAX_LOG_QUEUE_LENGTH = 300;
 
         public void run() {
             try {
+                Thread.currentThread().setPriority(Thread.NORM_PRIORITY - 2);
                 while (!shutdownStarted || !byteArrayQueue.isEmpty()) {
-                    synchronized (byteArrayQueue) {
-                        if (byteArrayQueue.isEmpty()) {
-                            byteArrayQueue.wait(1000);
+                    final long t = System.currentTimeMillis();
+                    while (!shutdownStarted && byteArrayQueue.size() < MAX_LOG_QUEUE_LENGTH && System.currentTimeMillis() < t + MAX_LOG_CLUSTER_TIME) {
+                        synchronized (byteArrayQueue) {
+                            byteArrayQueue.wait(MAX_LOG_CLUSTER_TIME);
                         }
                     }
-                    while (!byteArrayQueue.isEmpty()) {
-                        os.write((byte[]) byteArrayQueue.firstElement());
-                        byteArrayQueue.removeElementAt(0);
-                        os.write(CRLF_BYTES);
+                    if (!byteArrayQueue.isEmpty()) {
+                        while (!byteArrayQueue.isEmpty()) {
+                            os.write((byte[]) byteArrayQueue.firstElement());
+                            byteArrayQueue.removeElementAt(0);
+                            os.write(CRLF_BYTES);
+                        }
+                        os.flush();
                     }
-                    os.flush();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
