@@ -1,7 +1,5 @@
 package org.json.me;
 
-import org.tantalum.util.L;
-
 /*
 Copyright (c) 2002 JSON.org
 
@@ -36,7 +34,7 @@ SOFTWARE.
  * @author JSON.org
  * @version 2
  */
-public class JSONTokener {
+public final class JSONTokener {
 
     /**
      * The index of the next character.
@@ -55,7 +53,7 @@ public class JSONTokener {
      *
      * @param s     A source string.
      */
-    public JSONTokener(String s) {
+    public JSONTokener(final String s) {
         this.myIndex = 0;
         this.mySource = s;
     }
@@ -80,7 +78,7 @@ public class JSONTokener {
      * between 'a' and 'f'.
      * @return  An int between 0 and 15, or -1 if c was not a hex digit.
      */
-    public static int dehexchar(char c) {
+    public static int dehexchar(final char c) {
         if (c >= '0' && c <= '9') {
             return c - '0';
         }
@@ -126,7 +124,7 @@ public class JSONTokener {
      * @return The character.
      * @throws JSONException if the character does not match.
      */
-    public char next(char c) throws JSONException {
+    public char next(final char c) throws JSONException {
         char n = next();
         if (n != c) {
             throw syntaxError("Expected '" + c + "' and instead saw '" +
@@ -145,7 +143,7 @@ public class JSONTokener {
      *   Substring bounds error if there are not
      *   n characters remaining in the source string.
      */
-    public String next(int n) throws JSONException {
+    public String next(final int n) throws JSONException {
         int i = this.myIndex;
         int j = i + n;
         if (j >= this.mySource.length()) {
@@ -212,7 +210,7 @@ public class JSONTokener {
      * @return      A String.
      * @throws JSONException Unterminated string.
      */
-    public String nextString(char quote) throws JSONException {
+    public String nextString(final char quote) throws JSONException {
         char c;
         StringBuffer sb = new StringBuffer();
         for (;;) {
@@ -266,7 +264,7 @@ public class JSONTokener {
      * @param  d A delimiter character.
      * @return   A string.
      */
-    public String nextTo(char d) {
+    public String nextTo(final char d) {
         StringBuffer sb = new StringBuffer();
         for (;;) {
             char c = next();
@@ -287,7 +285,7 @@ public class JSONTokener {
      * @param delimiters A set of delimiter characters.
      * @return A string, trimmed.
      */
-    public String nextTo(String delimiters) {
+    public String nextTo(final String delimiters) {
         char c;
         StringBuffer sb = new StringBuffer();
         for (;;) {
@@ -413,7 +411,7 @@ public class JSONTokener {
      * @return The requested character, or zero if the requested character
      * is not found.
      */
-    public char skipTo(char to) {
+    public char skipTo(final char to) {
         char c;
         int index = this.myIndex;
         do {
@@ -433,7 +431,7 @@ public class JSONTokener {
      * If it is not found, we are left at the end of the source.
      * @param to A string to skip past.
      */
-    public void skipPast(String to) {
+    public void skipPast(final String to) {
         this.myIndex = this.mySource.indexOf(to, this.myIndex);
         if (this.myIndex < 0) {
             this.myIndex = this.mySource.length();
@@ -449,7 +447,7 @@ public class JSONTokener {
      * @param message The error message.
      * @return  A JSONException object, suitable for throwing
      */
-    public JSONException syntaxError(String message) {
+    public JSONException syntaxError(final String message) {
         return new JSONException(message + toString());
     }
 

@@ -33,7 +33,7 @@ import java.io.Writer;
 /**
  * A simple StringBuffer-based implementation of StringWriter
  */
-public class StringWriter extends Writer {
+public final class StringWriter extends Writer {
 
     final private StringBuffer buf;
 
@@ -49,7 +49,7 @@ public class StringWriter extends Writer {
      * 
      * @param initialSize 
      */
-    public StringWriter(int initialSize) {
+    public StringWriter(final int initialSize) {
         super();
         buf = new StringBuffer(initialSize);
     }
@@ -61,7 +61,7 @@ public class StringWriter extends Writer {
      * @param len
      * @throws IOException 
      */
-    public void write(char[] cbuf, int off, int len) throws IOException {
+    public void write(final char[] cbuf, final int off, final int len) throws IOException {
         buf.append(cbuf, off, len);
     }
 
@@ -70,7 +70,7 @@ public class StringWriter extends Writer {
      * @param str
      * @throws IOException 
      */
-    public void write(String str) throws IOException {
+    public void write(final String str) throws IOException {
         buf.append(str);
     }
 
@@ -81,7 +81,7 @@ public class StringWriter extends Writer {
      * @param len
      * @throws IOException 
      */
-    public void write(String str, int off, int len) throws IOException {
+    public void write(final String str, final int off, final int len) throws IOException {
         buf.append(str.substring(off, len));
     }
 

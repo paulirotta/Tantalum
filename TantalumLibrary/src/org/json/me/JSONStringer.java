@@ -57,7 +57,7 @@ SOFTWARE.
  * @author JSON.org
  * @version 2
  */
-public class JSONStringer extends JSONWriter {
+public final class JSONStringer extends JSONWriter {
     /**
      * Make a fresh JSONStringer. It can be used to build one JSON text.
      */
