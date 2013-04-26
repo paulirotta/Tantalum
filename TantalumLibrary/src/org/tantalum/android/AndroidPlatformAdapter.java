@@ -243,14 +243,25 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          * @throws IOException
          */
         public void getResponseHeaders(final Hashtable headers) throws IOException {
+            headers.clear();
             for (int i = 0; i < 1000; i++) {
                 final String key = httpConnection.getHeaderFieldKey(i);
-                
+
                 if (key == null) {
                     break;
                 }
                 final String value = httpConnection.getHeaderField(i);
-                headers.put(key, value);
+                String[] values = (String[]) headers.get(key);
+                if (values == null) {
+                    values = new String[1];
+                    values[0] = value;
+                    headers.put(key, values);
+                } else {
+                    String[] newValues = new String[values.length + 1];
+                    System.arraycopy(values, 0, newValues, 0, values.length);
+                    newValues[values.length] = value;
+                    headers.put(key, newValues);
+                }
             }
         }
 
@@ -296,8 +307,8 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
 
         /**
          * 10MB or you should do a streaming operation instead
-         * 
-         * @return 
+         *
+         * @return
          */
         public long getMaxLengthSupportedAsBlockOperation() {
             return 10000000;

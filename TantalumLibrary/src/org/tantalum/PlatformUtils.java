@@ -27,6 +27,7 @@ package org.tantalum;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.storage.FlashCache;
@@ -52,14 +53,14 @@ public final class PlatformUtils {
     public static final int PHONE_DATABASE_CACHE = 0;
     /**
      * A cache type stored in the flash memory on the phone in the file system
-     * 
+     *
      * This type is not yet supported- value is reserved for future use
      */
     public static final int PHONE_FILESYSTEM_CACHE = 1;
     /**
      * A cache type stored in the flash memory on the phone's memory card in the
      * file system
-     * 
+     *
      * This type is not yet supported- value is reserved for future use
      */
     public static final int MEMORY_CARD_FILESYSTEM_CACHE = 2;
@@ -86,8 +87,6 @@ public final class PlatformUtils {
      * and there will not be any log output.
      */
     public static final int MEMORY_CARD_LOG_MODE = 2;
-
-
     private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be JME MIDlet or Android Activity";
     /**
      * PlatformUtils.setProgram() has not yet been called. Usually this is done
@@ -260,10 +259,10 @@ public final class PlatformUtils {
      * Do not call this directly, call Worker.shutdown() to initiate a close
      *
      * @param reasonDestroyed
-     * @return  
+     * @return
      */
     public boolean shutdownComplete(final String reasonDestroyed) {
-        synchronized(MUTEX) {
+        synchronized (MUTEX) {
             if (shutdownComplete) {
                 return shutdownComplete;
             }
@@ -274,7 +273,7 @@ public final class PlatformUtils {
         L.shutdown();
         //#enddebug
         platformAdapter.shutdownComplete();
-        
+
         return true;
     }
 
@@ -283,10 +282,12 @@ public final class PlatformUtils {
      *
      * You can specify a lockoutTime to filter out repeated vibrations in too
      * short an interval
-     * 
-     * @param duration in milliseconds. Zero is allowed, there will be no vibration
-     * @param lockoutTime if we vibrate, for how long after vibration stops should the phone ignore additional vibration requests
-     * prevent a new vibration from starting. Set zero to not set a timeout
+     *
+     * @param duration in milliseconds. Zero is allowed, there will be no
+     * vibration
+     * @param lockoutTime if we vibrate, for how long after vibration stops
+     * should the phone ignore additional vibration requests prevent a new
+     * vibration from starting. Set zero to not set a timeout
      */
     public void vibrateAsync(final int duration, final int lockoutTime) {
         if (duration < 0 || lockoutTime < 0) {
@@ -332,7 +333,7 @@ public final class PlatformUtils {
      * collected first
      * @param cacheType
      * @return the new or existing cache object
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public FlashCache getFlashCache(final char priority, final int cacheType) throws FlashDatabaseException {
         return platformAdapter.getFlashCache(priority, cacheType);
@@ -412,6 +413,55 @@ public final class PlatformUtils {
     }
 
     /**
+     * Close the current application after all current queued and shutdown Tasks
+     * are completed. Resources held by the system will be closed and queued
+     * compute such as writing to the RMS or file system will complete.
+     *
+     * @param block Block the calling thread up to three seconds to allow
+     * orderly shutdown. This is only needed in shutdown(true) which is called
+     * for example by the user pressing the red HANGUP button.
+     *
+     * Ongoing Tasks will be canceled or complete depending on their current run
+     * state and shutdown preference. The default is for Tasks not at
+     * Task.PRIORITY_SHUTDOWN to be canceled immediately. In any case, all work
+     * must finish within 3 seconds or risk being terminated by the phone OS if
+     * this is an system-initiated application close.
+     *
+     */
+    public void shutdown(final boolean block) {
+        //#debug
+        L.i(this, "Shutdown", "block calling thread up to 3 seconds=" + block);
+        Worker.shutdown(block);
+    }
+
+    /**
+     * A human-readable copy of the response headers
+     *
+     * @return
+     */
+    public static String responseHeadersToString(final Hashtable responseHeaders) {
+        if (responseHeaders.isEmpty()) {
+            return "(no HTTP response headers)";
+        }
+
+        final StringBuffer sb = new StringBuffer();
+        final Enumeration keys = responseHeaders.keys();
+
+        while (keys.hasMoreElements()) {
+            final String k = (String) keys.nextElement();
+            final String[] values = (String[]) responseHeaders.get(k);
+            for (int i = 0; i < values.length; i++) {
+                sb.append("\r\n   ");
+                sb.append(k);
+                sb.append(": ");
+                sb.append(values[i]);
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
      * A convenience class abstracting HTTP connection operations between
      * different platforms.
      *
@@ -449,6 +499,18 @@ public final class PlatformUtils {
         /**
          * Get the HTTP header fields provided by the server
          *
+         * Since a key may occur multiple times in the response header, as with
+         * cookies, the value associated with each key is a String[] of all
+         * associated values. In most cases there is only one response and you
+         * can safely use [0] if the result is non-null.
+         *
+         * Since
+         * <code>Hashtable</code> is not thread-safe, you are responsible for
+         * synchronizing your provided
+         * <code>Hashtable</code> if the connection is kept around and the
+         * values are used by more than one thread. Keeping the connection after
+         * the data is checks is unusual, so there is not normally a concern.
+         *
          * @param headers
          * @throws IOException
          */
@@ -462,14 +524,14 @@ public final class PlatformUtils {
          * @return
          */
         public long getLength();
-        
+
         /**
          * If the routine will read the entire HTTP contents into memory in one
          * operation, what is the maximum Content-Length header we should accept
          * before automatically canceling the operation to prevent a likely
          * OutOfMemoryError
-         * 
-         * @return 
+         *
+         * @return
          */
         public long getMaxLengthSupportedAsBlockOperation();
 
@@ -482,27 +544,5 @@ public final class PlatformUtils {
          * @throws IOException
          */
         public void close() throws IOException;
-    }
-
-    /**
-     * Close the current application after all current queued and shutdown Tasks
-     * are completed. Resources held by the system will be closed and queued
-     * compute such as writing to the RMS or file system will complete.
-     *
-     * @param block Block the calling thread up to three seconds to allow
-     * orderly shutdown. This is only needed in shutdown(true) which is called
-     * for example by the user pressing the red HANGUP button.
-     *
-     * Ongoing Tasks will be canceled or complete depending on their current run
-     * state and shutdown preference. The default is for Tasks not at
-     * Task.PRIORITY_SHUTDOWN to be canceled immediately. In any case, all work
-     * must finish within 3 seconds or risk being terminated by the phone OS if
-     * this is an system-initiated application close.
-     *
-     */
-    public void shutdown(final boolean block) {
-        //#debug
-        L.i(this, "Shutdown", "block calling thread up to 3 seconds=" + block);
-        Worker.shutdown(block);
     }
 }

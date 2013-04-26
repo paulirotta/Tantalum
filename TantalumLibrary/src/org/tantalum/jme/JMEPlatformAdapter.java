@@ -116,7 +116,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         switch (cacheType) {
             case PlatformUtils.PHONE_DATABASE_CACHE:
                 try {
-                //                return new RMSCache(priority);
+                    //                return new RMSCache(priority);
                     return new RMSFastCache(priority);
                 } catch (Exception e) {
                     //#debug
@@ -253,13 +253,25 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         }
 
         public void getResponseHeaders(final Hashtable headers) throws IOException {
+            headers.clear();
             for (int i = 0; i < 10000; i++) {
                 final String key = httpConnection.getHeaderFieldKey(i);
                 if (key == null) {
                     break;
                 }
                 final String value = httpConnection.getHeaderField(i);
-                headers.put(key, value);
+                final String[] values = (String[]) headers.get(key);
+                final String[] newValues;
+                
+                if (values == null) {
+                    newValues = new String[1];
+                    newValues[0] = value;
+                } else {
+                    newValues = new String[values.length + 1];
+                    System.arraycopy(values, 0, newValues, 0, values.length);
+                    newValues[values.length] = value;
+                }
+                headers.put(key, newValues);
             }
         }
 
@@ -278,11 +290,11 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
             }
             httpConnection.close();
         }
-        
+
         /**
          * 500kB or you should do a streaming operation instead
-         * 
-         * @return 
+         *
+         * @return
          */
         public long getMaxLengthSupportedAsBlockOperation() {
             return 500000;

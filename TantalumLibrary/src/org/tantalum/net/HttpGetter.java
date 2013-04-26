@@ -27,7 +27,6 @@ package org.tantalum.net;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.io.OutputStream;
@@ -699,7 +698,7 @@ public class HttpGetter extends Task {
             synchronized (this) {
                 responseCode = httpConn.getResponseCode();
                 httpConn.getResponseHeaders(responseHeaders);
-                downstreamDataHeaderLength = responseHeaders.toString().length();
+                downstreamDataHeaderLength = PlatformUtils.responseHeadersToString(responseHeaders).length();
             }
 
             // Response headers length estimation
@@ -987,16 +986,8 @@ public class HttpGetter extends Task {
             sb.append(L.CRLF + "serverHTTPResponseCode=");
             sb.append(responseCode);
 
-            sb.append(L.CRLF + "HTTP RESPONSE HEADERS");
-            final Enumeration enu = responseHeaders.keys();
-            while (enu.hasMoreElements()) {
-                final String k = (String) enu.nextElement();
-                sb.append(L.CRLF + "   ");
-                sb.append(k);
-                sb.append(": ");
-                final String value = (String) responseHeaders.get(k);
-                sb.append(value);
-            }
+            sb.append(L.CRLF + "HTTP RESPONSE HEADERS" + L.CRLF);
+            sb.append(PlatformUtils.responseHeadersToString(responseHeaders));
         }
         sb.append(L.CRLF);
 
