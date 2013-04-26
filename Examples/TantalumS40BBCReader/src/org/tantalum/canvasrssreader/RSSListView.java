@@ -38,7 +38,7 @@ import org.xml.sax.SAXException;
  * @author phou
  */
 public abstract class RSSListView extends View {
-
+    protected Object MUTEX = new Object();
     static boolean prefetchImages = false;
     protected final RSSListView.LiveUpdateRSSModel rssModel = new RSSListView.LiveUpdateRSSModel();
     protected final StaticWebCache feedCache;

@@ -15,6 +15,9 @@ package org.json.me;
 
  The Software shall be used for Good, not Evil.
 
+ This variant of the JSON.org code has been sport-tuned for Tantalum Mobile,
+ https://github.com/TantalumMobile
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -105,10 +108,6 @@ import java.util.Vector;
  */
 public class JSONObject {
 
-//#if CLDC=="1.0"
-//#     public static final Boolean TRUE = new Boolean(true);
-//#     public static final Boolean FALSE = new Boolean(false);
-//#endif
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
      * whilst Java's null is equivalent to the value that JavaScript calls
@@ -152,8 +151,10 @@ public class JSONObject {
     }
     /**
      * The hash map where the JSONObject's properties are kept.
+     *
+     * Hashtable is not thread safe- always access withing a MUTEX
      */
-    private Hashtable myHashMap;
+    private final Hashtable myHashMap = new Hashtable();
     /**
      * It is sometimes more convenient and less ambiguous to have a
      * <code>NULL</code> object than to use Java's
@@ -169,7 +170,6 @@ public class JSONObject {
      * Construct an empty JSONObject.
      */
     public JSONObject() {
-        this.myHashMap = new Hashtable();
     }
 
 //#ifdef PRODUCER
@@ -334,7 +334,6 @@ public class JSONObject {
 //#         return this;
 //#     }
 //#endif
-//#if CLDC!="1.0"
     /**
      * Produce a string from a double. The string "null" will be returned if the
      * number is not finite.
@@ -347,8 +346,7 @@ public class JSONObject {
             return "null";
         }
 
-// Shave off trailing zeros and decimal point, if possible.
-
+        // Shave off trailing zeros and decimal point, if possible.
         String s = Double.toString(d);
         if (s.indexOf('.') > 0 && s.indexOf('e') < 0 && s.indexOf('E') < 0) {
             while (s.endsWith("0")) {
@@ -360,7 +358,6 @@ public class JSONObject {
         }
         return s;
     }
-//#endif
 
     /**
      * Get the value object associated with a key.
@@ -369,12 +366,13 @@ public class JSONObject {
      * @return The object associated with the key.
      * @throws JSONException if the key is not found.
      */
-    public Object get(String key) throws JSONException {
+    public Object get(final String key) throws JSONException {
         Object o = opt(key);
         if (o == null) {
             throw new JSONException("JSONObject[" + quote(key)
                     + "] not found.");
         }
+        
         return o;
     }
 
@@ -386,8 +384,9 @@ public class JSONObject {
      * @throws JSONException if the value is not a Boolean or the String "true"
      * or "false".
      */
-    public boolean getBoolean(String key) throws JSONException {
-        Object o = get(key);
+    public boolean getBoolean(final String key) throws JSONException {
+        final Object o = get(key);
+        
         if (o.equals(Boolean.FALSE) || (o instanceof String
                 && ((String) o).toLowerCase().equals("false"))) {
             return false;
@@ -395,8 +394,7 @@ public class JSONObject {
                 || (o instanceof String && ((String) o).toLowerCase().equals("true"))) {
             return true;
         }
-        throw new JSONException("JSONObject[" + quote(key)
-                + "] is not a Boolean.");
+        throw new JSONException("JSONObject[" + quote(key) + "] is not a Boolean.");
     }
 
     /**
@@ -407,8 +405,9 @@ public class JSONObject {
      * @throws JSONException if the key is not found or if the value is not a
      * Number object and cannot be converted to a number.
      */
-    public double getDouble(String key) throws JSONException {
-        Object o = get(key);
+    public double getDouble(final String key) throws JSONException {
+        final Object o = get(key);
+        
         if (o instanceof Byte) {
             return (double) ((Byte) o).byteValue();
         } else if (o instanceof Short) {
@@ -425,12 +424,10 @@ public class JSONObject {
             try {
                 return Double.valueOf((String) o).doubleValue();
             } catch (Exception e) {
-                throw new JSONException("JSONObject[" + quote(key)
-                        + "] is not a number.");
+                throw new JSONException("JSONObject[" + quote(key) + "] is not a number.");
             }
         }
-        throw new JSONException("JSONObject[" + quote(key)
-                + "] is not a number.");
+        throw new JSONException("JSONObject[" + quote(key) + "] is not a number.");
     }
 
     /**
@@ -442,7 +439,7 @@ public class JSONObject {
      * @throws JSONException if the key is not found or if the value cannot be
      * converted to an integer.
      */
-    public int getInt(String key) throws JSONException {
+    public int getInt(final String key) throws JSONException {
         Object o = get(key);
         if (o instanceof Byte) {
             return ((Byte) o).byteValue();
@@ -452,14 +449,12 @@ public class JSONObject {
             return ((Integer) o).intValue();
         } else if (o instanceof Long) {
             return (int) ((Long) o).longValue();
-//#if CLDC!="1.0"
         } else if (o instanceof Float) {
             return (int) ((Float) o).floatValue();
         } else if (o instanceof Double) {
             return (int) ((Double) o).doubleValue();
         } else if (o instanceof String) {
             return (int) getDouble(key);
-//#endif
         }
         throw new JSONException("JSONObject[" + quote(key)
                 + "] is not a number.");
@@ -473,7 +468,7 @@ public class JSONObject {
      * @throws JSONException if the key is not found or if the value is not a
      * JSONArray.
      */
-    public JSONArray getJSONArray(String key) throws JSONException {
+    public JSONArray getJSONArray(final String key) throws JSONException {
         Object o = get(key);
         if (o instanceof JSONArray) {
             return (JSONArray) o;
@@ -490,7 +485,7 @@ public class JSONObject {
      * @throws JSONException if the key is not found or if the value is not a
      * JSONObject.
      */
-    public JSONObject getJSONObject(String key) throws JSONException {
+    public JSONObject getJSONObject(final String key) throws JSONException {
         Object o = get(key);
         if (o instanceof JSONObject) {
             return (JSONObject) o;
@@ -508,7 +503,7 @@ public class JSONObject {
      * @throws JSONException if the key is not found or if the value cannot be
      * converted to a long.
      */
-    public long getLong(String key) throws JSONException {
+    public long getLong(final String key) throws JSONException {
         Object o = get(key);
         if (o instanceof Byte) {
             return ((Byte) o).byteValue();
@@ -518,17 +513,14 @@ public class JSONObject {
             return ((Integer) o).intValue();
         } else if (o instanceof Long) {
             return ((Long) o).longValue();
-//#if CLDC!="1.0"
         } else if (o instanceof Float) {
             return (long) ((Float) o).floatValue();
         } else if (o instanceof Double) {
             return (long) ((Double) o).doubleValue();
         } else if (o instanceof String) {
             return (long) getDouble(key);
-//#endif
         }
-        throw new JSONException("JSONObject[" + quote(key)
-                + "] is not a number.");
+        throw new JSONException("JSONObject[" + quote(key) + "] is not a number.");
     }
 
     /**
@@ -538,7 +530,7 @@ public class JSONObject {
      * @return A string which is the value.
      * @throws JSONException if the key is not found.
      */
-    public String getString(String key) throws JSONException {
+    public String getString(final String key) throws JSONException {
         return get(key).toString();
     }
 
@@ -548,7 +540,7 @@ public class JSONObject {
      * @param key A key string.
      * @return true if the key exists in the JSONObject.
      */
-    public boolean has(String key) {
+    public boolean has(final String key) {
         return this.myHashMap.containsKey(key);
     }
 
@@ -560,7 +552,7 @@ public class JSONObject {
      * @return true if there is no value associated with the key or if the value
      * is the JSONObject.NULL object.
      */
-    public boolean isNull(String key) {
+    public boolean isNull(final String key) {
         return JSONObject.NULL.equals(opt(key));
     }
 
@@ -945,8 +937,8 @@ public class JSONObject {
      * right places. A backslash will be inserted within </, allowing JSON text
      * to be delivered in HTML. In JSON text, a string cannot contain a control
      * character or an unescaped quote or backslash. @param string A String
-     * @param string 
-     * @return A String correctly formatted for insertion in a JSON text.
+     * @param string @return A String correctly formatted for insertion in a
+     * JSON text.
      */
     public static String quote(String string) {
         if (string == null || string.length() == 0) {

@@ -17,6 +17,9 @@ copies or substantial portions of the Software.
 
 The Software shall be used for Good, not Evil.
 
+This variant of the JSON.org code has been sport-tuned for Tantalum Mobile,
+https://github.com/TantalumMobile
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
