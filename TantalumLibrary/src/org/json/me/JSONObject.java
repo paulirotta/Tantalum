@@ -676,7 +676,6 @@ public class JSONObject {
         return this;
     }
 
-//#if CLDC!="1.0"
     /**
      * Get an optional double associated with a key, or NaN if there is no such
      * key or if its value is not a number. If the value is a string, an attempt
@@ -688,9 +687,7 @@ public class JSONObject {
     public double optDouble(String key) {
         return optDouble(key, Double.NaN);
     }
-//#endif
 
-//#if CLDC!="1.0"
     /**
      * Get an optional double associated with a key, or the defaultValue if
      * there is no such key or if its value is not a number. If the value is a
@@ -708,7 +705,6 @@ public class JSONObject {
             return defaultValue;
         }
     }
-//#endif
 
     /**
      * Get an optional int value associated with a key, or zero if there is no
@@ -825,16 +821,12 @@ public class JSONObject {
      * @return this.
      * @throws JSONException If the key is null.
      */
-    public JSONObject put(String key, boolean value) throws JSONException {
-//#if CLDC!="1.0"
+    public JSONObject put(final String key, final boolean value) throws JSONException {
         put(key, value ? Boolean.TRUE : Boolean.FALSE);
-//#else
-//#         put(key, value ? TRUE : FALSE);
-//#endif
+
         return this;
     }
 
-//#if CLDC!="1.0"
     /**
      * Put a key/double pair in the JSONObject.
      *
@@ -847,7 +839,6 @@ public class JSONObject {
         put(key, new Double(value));
         return this;
     }
-//#endif
 
     /**
      * Put a key/int pair in the JSONObject.
@@ -1219,16 +1210,12 @@ public class JSONObject {
         if (value == null) {
             return "null";
         }
-//        try {
         if (value instanceof JSONString) {
             Object o = ((JSONString) value).toJSONString();
             if (o instanceof String) {
                 return (String) o;
             }
         }
-//        } catch (Exception e) {
-//        	/* forget about it */
-//        }
         if (value instanceof Float || value instanceof Double
                 || value instanceof Byte || value instanceof Short
                 || value instanceof Integer || value instanceof Long) {

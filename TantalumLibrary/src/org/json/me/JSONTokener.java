@@ -353,18 +353,10 @@ public class JSONTokener {
             throw syntaxError("Missing value.");
         }
         if (s.toLowerCase().equals("true")) {
-//#if CLDC!="1.0"
             return Boolean.TRUE;
-            //#else
-//#             return JSONObject.TRUE;
-            //#endif
         }
         if (s.toLowerCase().equals("false")) {
-//#if CLDC!="1.0"
             return Boolean.FALSE;
-            //#else
-//#             return JSONObject.FALSE;
-            //#endif
         }
         if (s.toLowerCase().equals("null")) {
             return JSONObject.NULL;
@@ -402,15 +394,11 @@ public class JSONTokener {
                 try {
                     return new Long(Long.parseLong(s));
                 } catch (Exception f) {
-//#if CLDC!="1.0"
                     try {
                         return Double.valueOf(s);
                     }  catch (Exception g) {
                         return s;
                     }
-//#else
-//#                     return s;
-//#endif
                 }
             }
         }
