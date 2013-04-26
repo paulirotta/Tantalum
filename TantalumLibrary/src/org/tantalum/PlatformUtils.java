@@ -452,7 +452,7 @@ public final class PlatformUtils {
          * @param headers
          * @throws IOException
          */
-        public void getResponseHeaders(final Hashtable headers) throws IOException;
+        public void getResponseHeaders(Hashtable headers) throws IOException;
 
         /**
          * Get the length in bytes of the HTTP response body that the server

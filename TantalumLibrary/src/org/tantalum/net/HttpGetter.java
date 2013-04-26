@@ -485,6 +485,7 @@ public class HttpGetter extends Task {
      * Data to be sent to the server as part of an HTTP POST operation
      */
     protected byte[] postMessage = null;
+    // Always access in a synchronized(HttpGetter.this) block
     private final Hashtable responseHeaders = new Hashtable();
     private Vector requestPropertyKeys = new Vector();
     private Vector requestPropertyValues = new Vector();
@@ -502,7 +503,8 @@ public class HttpGetter extends Task {
     private static int upstreamDataCount = 0;
     private volatile StreamWriter streamWriter = null;
     private volatile StreamReader streamReader = null;
-    private volatile int responseCode = HTTP_OPERATION_PENDING;
+    // Always access in a synchronized(HttpGetter.this) block
+    private int responseCode = HTTP_OPERATION_PENDING;
 
     /**
      * Get the byte[] from the URL specified by the input argument when
@@ -602,7 +604,7 @@ public class HttpGetter extends Task {
      *
      * @return
      */
-    public int getResponseCode() {
+    public synchronized int getResponseCode() {
         return responseCode;
     }
 
@@ -611,7 +613,7 @@ public class HttpGetter extends Task {
      *
      * @return
      */
-    public Hashtable getResponseHeaders() {
+    public synchronized Hashtable getResponseHeaders() {
         return responseHeaders;
     }
 
@@ -621,7 +623,7 @@ public class HttpGetter extends Task {
      * @param key
      * @param value
      */
-    public void setRequestProperty(final String key, final String value) {
+    public synchronized void setRequestProperty(final String key, final String value) {
         if (responseCode != HTTP_OPERATION_PENDING) {
             throw new IllegalStateException("Can not set request property to HTTP operation already executed  (" + key + ": " + value + ")");
         }
@@ -693,11 +695,15 @@ public class HttpGetter extends Task {
             }
 
             final long length = httpConn.getLength();
-            responseCode = httpConn.getResponseCode();
-            httpConn.getResponseHeaders(responseHeaders);
+            final int downstreamDataHeaderLength;
+            synchronized (this) {
+                responseCode = httpConn.getResponseCode();
+                httpConn.getResponseHeaders(responseHeaders);
+                downstreamDataHeaderLength = responseHeaders.toString().length();
+            }
 
             // Response headers length estimation
-            addDownstreamDataCount(responseHeaders.toString().length());
+            addDownstreamDataCount(downstreamDataHeaderLength);
 
             if (length == 0) {
                 //#debug
@@ -719,7 +725,9 @@ public class HttpGetter extends Task {
                 //#debug
                 L.i(this, "End read", "url=" + url + " bytes=" + ((byte[]) out).length);
             }
-            success = checkResponseCode(url, responseCode, responseHeaders);
+            synchronized (this) {
+                success = checkResponseCode(url, responseCode, responseHeaders);
+            }
             //#debug
             L.i(this, "Response", "HTTP response code indicates success=" + success);
         } catch (IllegalArgumentException e) {
@@ -835,11 +843,11 @@ public class HttpGetter extends Task {
      * Check headers and HTTP response code as needed for your web service to
      * see if this is a valid response. Override if needed.
      *
-     * @param url 
+     * @param url
      * @param responseCode
      * @param headers
      * @return
-     * @throws IOException  
+     * @throws IOException
      */
     protected boolean checkResponseCode(final String url, final int responseCode, final Hashtable headers) throws IOException {
         if (responseCode < 300) {
@@ -946,7 +954,7 @@ public class HttpGetter extends Task {
     }
 
     //#mdebug
-    public String toString() {
+    public synchronized String toString() {
         final StringBuffer sb = new StringBuffer();
 
         sb.append(super.toString());

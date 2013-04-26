@@ -243,8 +243,9 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          * @throws IOException
          */
         public void getResponseHeaders(final Hashtable headers) throws IOException {
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < 1000; i++) {
                 final String key = httpConnection.getHeaderFieldKey(i);
+                
                 if (key == null) {
                     break;
                 }

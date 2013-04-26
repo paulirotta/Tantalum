@@ -26,7 +26,6 @@ package org.tantalum.storage;
 
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
-import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.Task;
 import org.tantalum.util.CryptoUtils;
@@ -41,10 +40,12 @@ import org.tantalum.util.StringUtils;
  * @author phou
  */
 public abstract class FlashCache {
-
-    private static final Hashtable priorities = new Hashtable();
     /**
-     * A unique local identifier for the cache.
+     * An application-unique local identifier for the cache
+     * 
+     * Uniqueness is not internally checked or enforced. StaticCache does this,
+     * so be aware that you should cooperate with StaticCache if used for other
+     * purposes.
      */
     public final char priority;
     /**
@@ -61,12 +62,6 @@ public abstract class FlashCache {
      * @param priority
      */
     public FlashCache(final char priority) {
-        final Character c = new Character(priority);
-        if (priorities.contains(c)) {
-            throw new IllegalArgumentException("Duplicate FlashCache priority '" + priority + "' has already been created by your application. Keep a reference to this object or use a different priority");
-        }
-        priorities.put(c, c);
-
         this.priority = priority;
     }
 

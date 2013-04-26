@@ -45,6 +45,7 @@ public abstract class GestureCanvas extends Canvas implements CommandListener {
     private static final int dots = shades.length;
     private static final double step = (2 * Math.PI) / dots;
     private static final double circle = (2 * Math.PI);
+    protected final Object MUTEX = new Object();
 
     static {
         try {

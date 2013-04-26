@@ -102,7 +102,7 @@ public final class JMEFontUtils {
      * @param c
      * @return
      */
-    public int charWidth(final char c) {
+    public synchronized int charWidth(final char c) {
         final Character ca = new Character(c);
         Integer width = (Integer) this.charWidth.get(ca);
 

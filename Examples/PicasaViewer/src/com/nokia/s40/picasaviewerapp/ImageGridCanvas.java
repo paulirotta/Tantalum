@@ -27,6 +27,7 @@ import com.nokia.common.picasaviewerapp.PicasaStorage;
  */
 public abstract class ImageGridCanvas extends GestureCanvas {
 
+    // Always access withing a synchronized(MUTEX) block as Hashtable is not thread safe
     protected final Hashtable images = new Hashtable();
     protected final Vector imageObjectModel = new Vector(); // Access only from UI thread
     protected final int imageSide;
@@ -43,14 +44,13 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
     public Task loadFeed(final String search, final int getType) {
         final Task loadTask = new Task(Task.FASTLANE_PRIORITY) {
-
             protected Object exec(final Object in) {
                 try {
                     //#debug
                     L.i("Load feed success, type=" + getType, search);
                     scrollY = 0;
                     imageObjectModel.removeAllElements();
-                    images.clear();
+                    clearImages();
                     final Vector newModel = (Vector) in;
                     for (int i = 0; i < newModel.size(); i++) {
                         imageObjectModel.addElement(newModel.elementAt(i));
@@ -65,13 +65,13 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
                 return in;
             }
-            
+
             public void onCanceled(String reason) {
                 //#debug
                 L.i("Load feed canceled, type=" + getType + " reason=" + reason, search);
                 if (getType == StaticWebCache.GET_LOCAL) {
                     imageObjectModel.removeAllElements();
-                    images.clear();
+                    clearImages();
                     top = -getHeight();
                 }
                 stopSpinner();
@@ -86,6 +86,12 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         }
 
         return loadTask;
+    }
+
+    protected final void clearImages() {
+        synchronized (MUTEX) {
+            images.clear();
+        }
     }
 
     /**
@@ -105,25 +111,27 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                 break;
             }
             // If image is in RAM
-            if (images.containsKey(imageObjectModel.elementAt(i))) {
-                g.drawImage((Image) (images.get(imageObjectModel.elementAt(i))), xPosition, yPosition, Graphics.LEFT | Graphics.TOP);
-            } else {
-                // If there were no results
-                if (((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl.length() == 0) {
-                    g.setColor(0xFFFFFF);
-                    g.drawString("No Result.", 0, headerHeight, Graphics.TOP | Graphics.LEFT);
+            synchronized (MUTEX) {
+                if (images.containsKey(imageObjectModel.elementAt(i))) {
+                    g.drawImage((Image) (images.get(imageObjectModel.elementAt(i))), xPosition, yPosition, Graphics.LEFT | Graphics.TOP);
                 } else {
-                    // Start loading the image, draw a placeholder
-                    PicasaStorage.imageCache.getAsync(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl,
-                            Task.NORMAL_PRIORITY, StaticWebCache.GET_ANYWHERE, new ImageResult(imageObjectModel.elementAt(i)));
-                    g.setColor(0x111111);
-                    g.fillRect(xPosition, yPosition, imageSide, imageSide);
+                    // If there were no results
+                    if (((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl.length() == 0) {
+                        g.setColor(0xFFFFFF);
+                        g.drawString("No Result.", 0, headerHeight, Graphics.TOP | Graphics.LEFT);
+                    } else {
+                        // Start loading the image, draw a placeholder
+                        PicasaStorage.imageCache.getAsync(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl,
+                                Task.NORMAL_PRIORITY, StaticWebCache.GET_ANYWHERE, new ImageResult(imageObjectModel.elementAt(i)));
+                        g.setColor(0x111111);
+                        g.fillRect(xPosition, yPosition, imageSide, imageSide);
+                    }
                 }
             }
         }
         drawSpinner(g);
     }
-    
+
     public void refresh(final String url, final int getType) {
         top = -getHeight();
         repaint();
@@ -161,11 +169,12 @@ public abstract class ImageGridCanvas extends GestureCanvas {
         }
         return -1;
     }
-    
+
     /**
      * Object for adding images to hashmap when they're loaded.
      */
     protected final class ImageResult extends Task {
+
         private final Object key;
 
         public ImageResult(Object key) {
@@ -175,7 +184,9 @@ public abstract class ImageGridCanvas extends GestureCanvas {
 
         public Object exec(final Object in) {
             if (in != null) {
-                images.put(key, in);
+                synchronized (MUTEX) {
+                    images.put(key, in);
+                }
                 repaint();
             }
 

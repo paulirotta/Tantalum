@@ -31,8 +31,8 @@ import java.util.Hashtable;
 /**
  * This is a hashtable which acts as a heap memory cache using WeakReference.
  *
- * Hashtable is by default not thread safe. WeakHashCache is synchronized and
- * thread safe. Like a Vector, you can externally synchronize on it.
+ * <code>Hashtable</code> is not thread safe, but <code>WeakHashCache</code> is synchronized and
+ * thread safe. Like <code>Vector</code>, you can externally synchronize on it.
  *
  * Objects in the hashtable are not held in memory, they may be garbage
  * collected at any time, in which case the calling routine must do something
@@ -191,10 +191,16 @@ public class WeakHashCache {
      *
      */
     public synchronized void clearValues() {
+        final Object[] keyCopy = new Object[hash.size()];
         final Enumeration keys = hash.keys();
+        int i = 0;
 
         while (keys.hasMoreElements()) {
-            hash.put(keys, NULL_WEAK_REFERENCE);
+            keyCopy[i++] = keys.nextElement();
+        }
+        hash.clear();
+        for (i = 0; i < keyCopy.length; i++) {
+            hash.put(keyCopy[i], NULL_WEAK_REFERENCE);            
         }
     }
 }

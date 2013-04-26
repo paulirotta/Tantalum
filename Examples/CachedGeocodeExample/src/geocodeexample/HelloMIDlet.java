@@ -35,19 +35,17 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 
     public HelloMIDlet() {
     }
-
-
     /*
-    * Think of a cache as a Hashtable of key-value pairs, where the key is the
-    * URL of a web service (HTTP GET of a unique URL).
-    *
-    * This cache keep local copies of the web service to speed up the application
-    * and allow it to work also when there is no network available (online-offline
-    * application). When the phone runs out of flash memory for storing cached
-    * data (too many pictures etc on the phone) the cache will automatically delete the
-    * least-recently-used local data. If that data is requested again, it will
-    * be requested from the web server.
-    */
+     * Cache as like a Hashtable of key-value pairs, where the key is the
+     * URL of a web service (HTTP GET of a unique URL).
+     *
+     * This cache keep local copies of the web service to speed up the application
+     * and allow it to work also when there is no network available (online-offline
+     * application). When the phone runs out of flash memory for storing cached
+     * data (too many pictures etc on the phone) the cache will automatically delete the
+     * least-recently-used local data. If that data is requested again, it will
+     * be requested from the web server.
+     */
     private final StaticWebCache locationsCache = StaticWebCache.getWebCache('0', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
         /**
          * This method converts the JSON byte[] received from the web service,
@@ -182,12 +180,12 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         try {
                             // UI Thread callback on success
                             HelloMIDlet.this.getLocationStringItem().setText((String) get());
-                       } catch (CancellationException ex) {
+                        } catch (CancellationException ex) {
                             L.e(this, "Canceled", "", ex);
                         } catch (TimeoutException ex) {
                             L.e(this, "Timeout", "", ex);
                         }
-                     }
+                    }
 
                     protected void onCanceled(String reason) {
                         // UI Thread callback if not already cached and the HTTP GET fails
@@ -324,7 +322,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
     public String getGeocodeUrl(String address) {
         return "http://maps.googleapis.com/maps/api/geocode/json?sensor=false&address=" + urlEncode(address);
     }
-
     private final static String UNRESERVED_CHARS = ".-_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQURSTUVWXYZ*~";
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
 
@@ -356,6 +353,5 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
     }
 
     protected void destroyApp(boolean b) throws MIDletStateChangeException {
-
     }
 }

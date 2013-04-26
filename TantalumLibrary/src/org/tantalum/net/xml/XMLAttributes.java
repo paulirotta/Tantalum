@@ -58,7 +58,7 @@ public final class XMLAttributes {
      * 
      * @param a 
      */
-    public void setAttributes(final Attributes a) {
+    public synchronized void setAttributes(final Attributes a) {
         final int l = a.getLength();
         
         attributes.clear();
@@ -72,7 +72,7 @@ public final class XMLAttributes {
      * 
      * @return 
      */
-    public int getLength() {
+    public synchronized int getLength() {
         return attributes.size();
     }
 
@@ -82,7 +82,7 @@ public final class XMLAttributes {
      * @param qName
      * @return 
      */
-    public String getValue(final String qName) {
+    public synchronized String getValue(final String qName) {
         return (String) attributes.get(qName);
     }
 }

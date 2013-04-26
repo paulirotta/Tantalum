@@ -541,7 +541,7 @@ public final class JSONObject {
      * @param key A key string.
      * @return true if the key exists in the JSONObject.
      */
-    public boolean has(final String key) {
+    public synchronized boolean has(final String key) {
         return this.myHashMap.containsKey(key);
     }
 
@@ -562,7 +562,7 @@ public final class JSONObject {
      *
      * @return An iterator of the keys.
      */
-    public Enumeration keys() {
+    public synchronized Enumeration keys() {
         return this.myHashMap.keys();
     }
 
@@ -571,7 +571,7 @@ public final class JSONObject {
      *
      * @return The number of keys in the JSONObject.
      */
-    public int length() {
+    public synchronized int length() {
         return this.myHashMap.size();
     }
 
@@ -631,7 +631,7 @@ public final class JSONObject {
      * @param key A key string.
      * @return An object which is the value, or null if there is no value.
      */
-    public Object opt(final String key) {
+    public synchronized Object opt(final String key) {
         return key == null ? null : this.myHashMap.get(key);
     }
 
@@ -893,7 +893,7 @@ public final class JSONObject {
      * @throws JSONException If the value is non-finite number or if the key is
      * null.
      */
-    public final JSONObject put(final String key, final Object value) throws JSONException {
+    public synchronized final JSONObject put(final String key, final Object value) throws JSONException {
         if (key == null) {
             throw new JSONException("Null key.");
         }
@@ -995,7 +995,7 @@ public final class JSONObject {
      * @return The value that was associated with the name, or null if there was
      * no value.
      */
-    public Object remove(final String key) {
+    public synchronized Object remove(final String key) {
         return this.myHashMap.remove(key);
     }
 
@@ -1055,7 +1055,7 @@ public final class JSONObject {
      * brace)</small> and ending with <code>}</code>&nbsp;<small>(right
      * brace)</small>.
      */
-    public String toString() {
+    public synchronized String toString() {
         try {
             final Enumeration keys = keys();
             final StringBuffer sb = new StringBuffer("{");
@@ -1109,7 +1109,7 @@ public final class JSONObject {
      * and ending with <code>}</code>&nbsp;<small>(right brace)</small>.
      * @throws JSONException If the object contains an invalid number.
      */
-    String toString(final int indentFactor, final int indent) throws JSONException {
+    synchronized String toString(final int indentFactor, final int indent) throws JSONException {
         final int n = length();
         if (n == 0) {
             return "{}";
@@ -1251,7 +1251,7 @@ public final class JSONObject {
      * @return
      * @throws JSONException
      */
-    public Writer write(final Writer writer) throws JSONException {
+    public synchronized Writer write(final Writer writer) throws JSONException {
         try {
             boolean b = false;
             final Enumeration keys = keys();

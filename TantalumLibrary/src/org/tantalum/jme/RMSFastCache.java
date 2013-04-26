@@ -44,6 +44,8 @@ public class RMSFastCache extends FlashCache {
     private final Object MUTEX = new Object();
     /*
      * The Integer index of each key record in the hashtable
+     * 
+     * Always access within a synchronized(MUTEX) block
      */
     private final Hashtable indexHash;
 
