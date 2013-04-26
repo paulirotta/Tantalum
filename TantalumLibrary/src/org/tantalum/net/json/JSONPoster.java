@@ -45,7 +45,7 @@ public abstract class JSONPoster extends HttpPoster {
      * @param url
      * @param priority  
      */
-    public JSONPoster(final String url, final int priority) {
+    public JSONPoster( final int priority, final String url) {
         super(priority, url);
     }
 

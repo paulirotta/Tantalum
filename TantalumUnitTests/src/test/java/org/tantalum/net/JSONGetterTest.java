@@ -71,7 +71,7 @@ public class JSONGetterTest extends MockedStaticInitializers {
         final JSONModel model;
 
         MyFailedTestJSONGetter() {
-            super(new JSONModel(), Task.HIGH_PRIORITY);
+            super(Task.HIGH_PRIORITY, new JSONModel());
 
             model = super.jsonModel;
         }
