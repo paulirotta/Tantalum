@@ -87,7 +87,7 @@ public final class PlatformUtils {
      * and there will not be any log output.
      */
     public static final int MEMORY_CARD_LOG_MODE = 2;
-    private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be JME MIDlet or Android Activity";
+    private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be JME MIDlet, Blackberry UiApplication or Android Activity";
     /**
      * PlatformUtils.setProgram() has not yet been called. Usually this is done
      * by overriding a platform-specific base class such as TantalumMIDlet or
