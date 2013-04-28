@@ -119,6 +119,8 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
      */
     public void paint(final Graphics g) {
         refreshed = false;
+        //#debug
+        L.i(this, "Paint", "" + currentView);
         currentView.render(g, getWidth() - View.SCROLL_BAR_WIDTH, getHeight());
     }
 
@@ -159,7 +161,8 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
                         listView.setSelectedIndex(-1);
                     }
                     currentView.setRenderY(currentView.getRenderY() + ge.getDragDistanceY());
-                    animator.drag(0, currentView.getRenderY() + ge.getDragDistanceY());
+//                    animator.drag(0, currentView.getRenderY() + ge.getDragDistanceY());
+                    animator.drag(ge.getStartX() + 0, ge.getStartY() + ge.getDragDistanceY());
                     break;
                 case GestureInteractiveZone.GESTURE_DROP:
                     //no-op

@@ -31,7 +31,9 @@ import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.tantalum.storage.FlashDatabaseException;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.StringUtils;
 
 /**
  * RMS Utility methods
@@ -41,7 +43,8 @@ import org.tantalum.util.L;
 public final class RMSUtils {
 
     private static final int MAX_RECORD_NAME_LENGTH = 32;
-    private static final char RECORD_HASH_PREFIX = '@';
+    private static final char RECORD_HASH_PREFIX = '_';
+    private static final int RADIX = 32;
 
     private static class RMSUtilsHolder {
 
@@ -51,7 +54,7 @@ public final class RMSUtils {
     /**
      * Access the singleton
      *
-     * @return
+     * @return the singleton
      */
     public static RMSUtils getInstance() {
         return RMSUtilsHolder.instance;
@@ -68,7 +71,7 @@ public final class RMSUtils {
      * Return of a list of record stores whose name indicates that they are
      * caches
      *
-     * @return
+     * @return list of cache-related RMS names as strings
      */
     public Vector getCacheRecordStoreNames() {
         final String[] rs = RecordStore.listRecordStores();
@@ -92,7 +95,7 @@ public final class RMSUtils {
     /**
      * Return of a list of record stores which are not part of a cache
      *
-     * @return
+     * @return all RMS names, whether part of the cache or not
      */
     public Vector getNoncacheRecordStoreNames() {
         final String[] rs = RecordStore.listRecordStores();
@@ -131,38 +134,63 @@ public final class RMSUtils {
         }
     }
 
-    private String getRecordStoreCacheName(final String key) {
+    private String getRecordStoreCacheName(final char priority, final byte[] digest) {
         final StringBuffer sb = new StringBuffer(MAX_RECORD_NAME_LENGTH);
 
         sb.append(RECORD_HASH_PREFIX);
-        if (key.length() > MAX_RECORD_NAME_LENGTH - 1) {
-            final String hashString = Integer.toString(key.hashCode(), Character.MAX_RADIX);
-            final int fillLength = MAX_RECORD_NAME_LENGTH - 1 - hashString.length();
-            sb.append(key.substring(0, fillLength));
-            sb.append(hashString);
-        } else {
-            // Short key, just prepend 
-            sb.append(key);
-        }
+        sb.append(priority);
+        appendDigestAsShortString(digest, sb);
 
         final String s = sb.toString();
         //#debug
-        L.i("key to rms cache key", key + " -> " + s);
+        L.i("digest to rms cache key", StringUtils.toHex(digest) + " -> " + s);
 
         return s;
     }
 
     /**
+     * The digest length must be evenly divisible by 8
+     *
+     * @param digest
+     * @param sb
+     */
+    private void appendDigestAsShortString(final byte[] digest, final StringBuffer sb) {
+        final long l = CryptoUtils.getInstance().bytesToLong(digest, 0);
+        sb.append(Long.toString(l, RADIX));
+    }
+
+//    private String getRecordStoreCacheName(final String key) {
+//        final StringBuffer sb = new StringBuffer(MAX_RECORD_NAME_LENGTH);
+//
+//        sb.append(RECORD_HASH_PREFIX);
+//        if (key.length() > MAX_RECORD_NAME_LENGTH - 1) {
+//            final String hashString = Integer.toString(key.hashCode(), Character.MAX_RADIX);
+//            final int fillLength = MAX_RECORD_NAME_LENGTH - 1 - hashString.length();
+//            sb.append(key.substring(0, fillLength));
+//            sb.append(hashString);
+//        } else {
+//            // Short key, just prepend 
+//            sb.append(key);
+//        }
+//
+//        final String s = sb.toString();
+//        //#debug
+//        L.i("key to rms cache key", key + " -> " + s);
+//
+//        return s;
+//    }
+    /**
      * Write to the record store a cached value based on the hashcode of the key
      * to the data
      *
-     * @param key
+     * @param priority 
      * @param data
+     * @param digest 
      * @throws RecordStoreFullException
      * @throws FlashDatabaseException
      */
-    public void cacheWrite(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
-        write(getRecordStoreCacheName(key), data);
+    public void cacheWrite(final char priority, final byte[] digest, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
+        write(getRecordStoreCacheName(priority, digest), data);
     }
 
     /**
@@ -201,13 +229,10 @@ public final class RMSUtils {
             L.i("RMS FULL when writing", key + " " + recordStoreName);
             throw e;
         } catch (Exception e) {
-            try {
-                //#debug
-                L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
-                delete(key);
-            } finally {
-                throw new FlashDatabaseException("RMS write problem, delete was attempted: " + key + " : " + e);
-            }
+            //#debug
+            L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
+            delete(key);
+            throw new FlashDatabaseException("RMS write problem, delete was attempted: " + key + " : " + e);
         } finally {
             close(key, rs);
         }
@@ -227,19 +252,20 @@ public final class RMSUtils {
      * Read from the record store a cached value based on the hashcode of the
      * key to the data
      *
-     * @param key
-     * @return
+     * @param priority 
+     * @param digest 
+     * @return bytes stored in phone flash memory
      * @throws FlashDatabaseException
      */
-    public byte[] cacheRead(final String key) throws FlashDatabaseException {
-        return read(getRecordStoreCacheName(key));
+    public byte[] cacheRead(final char priority, final byte[] digest) throws FlashDatabaseException {
+        return read(getRecordStoreCacheName(priority, digest));
     }
 
     /**
      * Reads the data from the given record store.
      *
      * @param key
-     * @return
+     * @return bytes stored in phone flash memory
      * @throws FlashDatabaseException
      */
     public byte[] read(final String key) throws FlashDatabaseException {
@@ -273,11 +299,12 @@ public final class RMSUtils {
     /**
      * Delete one item from a cache
      *
-     * @param key
+     * @param priority 
+     * @param digest 
      * @throws FlashDatabaseException
      */
-    public void cacheDelete(final String key) throws FlashDatabaseException {
-        delete(getRecordStoreCacheName(key));
+    public void cacheDelete(final char priority, final byte[] digest) throws FlashDatabaseException {
+        delete(getRecordStoreCacheName(priority, digest));
     }
 
     /**
@@ -290,7 +317,7 @@ public final class RMSUtils {
      * @return null if the record store does not exist
      * @throws RecordStoreException
      */
-    private RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException {
+    RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException {
         RecordStore rs = null;
         boolean success = false;
 
@@ -299,7 +326,7 @@ public final class RMSUtils {
         try {
             rs = RecordStore.openRecordStore(recordStoreName, createIfNecessary);
             //            openRecordStores.addElement(rs);
-            
+
             success = true;
         } catch (RecordStoreNotFoundException e) {
             success = !createIfNecessary;
@@ -342,7 +369,8 @@ public final class RMSUtils {
      * Shorten the name to fit within the 32 character limit imposed by RMS.
      *
      * @param recordStoreName
-     * @return
+     * @return (possibly) shortened string suitable for use as an RMS (file
+     * system) name
      */
     private String truncateRecordStoreNameToLast32(String recordStoreName) {
         if (recordStoreName == null || recordStoreName.length() == 0) {

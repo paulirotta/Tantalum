@@ -38,6 +38,8 @@ import java.io.InputStream;
  */
 public class StringUtils {
 
+    private final static char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
+
     private static final class StringUtilsHolder {
 
         public static final StringUtils instance = new StringUtils();
@@ -98,8 +100,9 @@ public class StringUtils {
      *
      * @param s Text that is to be encoded.
      * @return The encoded string.
+     * @throws IOException  
      */
-    public static String encodeURL(final String s) throws IOException {
+    public static String urlEncode(final String s) throws IOException {
         final ByteArrayInputStream bIn;
         final StringBuffer ret = new StringBuffer((s.length() * 5) / 4); //return value
         {
@@ -118,17 +121,17 @@ public class StringUtils {
                     || c == '*' || c == '_') {
                 ret.append((char) c);
             } else if (c == ' ') {
-                ret.append("%20");
+                ret.append('+');
             } else {
                 if (c < 128) {
-                    appendHex(c, ret);
+                    appendTaggedHex(c, ret);
                 } else if (c < 224) {
-                    appendHex(c, ret);
-                    appendHex(bIn.read(), ret);
+                    appendTaggedHex(c, ret);
+                    appendTaggedHex(bIn.read(), ret);
                 } else if (c < 240) {
-                    appendHex(c, ret);
-                    appendHex(bIn.read(), ret);
-                    appendHex(bIn.read(), ret);
+                    appendTaggedHex(c, ret);
+                    appendTaggedHex(bIn.read(), ret);
+                    appendTaggedHex(bIn.read(), ret);
                 }
             }
             c = bIn.read();
@@ -141,15 +144,33 @@ public class StringUtils {
     /**
      * Appends integer as a hex formatted string to buffer.
      *
-     * @param arg0 Value that should be appended
-     * @param buff Buffer we are appending to
+     * @param i Value that should be appended
+     * @param sb Buffer we are appending to
      * @return The encoded string.
      */
-    private static void appendHex(final int arg0, final StringBuffer buff) {
-        buff.append('%');
-        if (arg0 < 16) {
-            buff.append('0');
+    private static void appendTaggedHex(final int i, final StringBuffer sb) {
+        sb.append('%');
+        appendHex((byte) (i & 0xFF), sb);
+    }
+
+    private static void appendHex(final int i, final StringBuffer sb) {
+        sb.append(HEX_CHARS[(i & 0xF0) >>> 4]);
+        sb.append(HEX_CHARS[i & 0x0F]);
+    }
+
+    /**
+     * Return a string of the form "0FCC" with two characters per byte
+     * 
+     * @param bytes
+     * @return 
+     */
+    public static String toHex(final byte[] bytes) {
+        final StringBuffer sb = new StringBuffer(bytes.length);
+
+        for (int i = 0; i < bytes.length; i++) {
+            appendHex(bytes[i], sb);
         }
-        buff.append(Integer.toHexString(arg0).toUpperCase());
+
+        return sb.toString();
     }
 }

@@ -27,20 +27,35 @@ package org.tantalum.net;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.security.DigestException;
+import javax.microedition.io.ConnectionNotFoundException;
 
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 
 /**
  * GET something from a URL on the Worker thread
  *
- * Implement Runnable if you want to automatically update the UI on the EDT
- * after the GET completes
+ * This Task will, when fork()ed, get the byte[] from a specified web service
+ * URL.
+ *
+ * Be default, the client will automatically retry 3 times if the web service
+ * does not respond on the first attempt (happens frequently with the mobile
+ * web...). You can disable this by calling setRetriesRemaining(0).
+ *
+ * The input "key" is a url with optional additional lines of text which are
+ * ignored from the URL but may be useful for distinguishing multiple HTTP
+ * operations to the same URL (HttpPoster). You can optionally attach additional
+ * information to the key after \n (newline) to create a unique hashcode for
+ * cache management purposes. This is sometimes needed for example with HTTP
+ * POST where the url does not alone indicate a unique cachable entity- the post
+ * parameters do.
  *
  * @author pahought
  */
@@ -460,11 +475,6 @@ public class HttpGetter extends Task {
     private static final int HTTP_GET_RETRIES = 3;
     private static final int HTTP_RETRY_DELAY = 5000; // 5 seconds
     /**
-     * The url, with optional additional lines to create a unique hash code is
-     * may be needed for HTTP POST.
-     */
-    protected String key = null;
-    /**
      * How many more times will we try to re-connect after a 5 second delay
      * before giving up. This aids in working with low quality networks and
      * normal HTTP connection setup errors even on a "good" mobile network.
@@ -474,7 +484,7 @@ public class HttpGetter extends Task {
      * Data to be sent to the server as part of an HTTP POST operation
      */
     protected byte[] postMessage = null;
-    private int responseCode = HTTP_OPERATION_PENDING;
+    // Always access in a synchronized(HttpGetter.this) block
     private final Hashtable responseHeaders = new Hashtable();
     private Vector requestPropertyKeys = new Vector();
     private Vector requestPropertyValues = new Vector();
@@ -492,6 +502,33 @@ public class HttpGetter extends Task {
     private static int upstreamDataCount = 0;
     private volatile StreamWriter streamWriter = null;
     private volatile StreamReader streamReader = null;
+    // Always access in a synchronized(HttpGetter.this) block
+    private int responseCode = HTTP_OPERATION_PENDING;
+
+    /**
+     * Get the byte[] from the URL specified by the input argument when
+     * exec(url) is called. This may be chained from a previous chain()ed
+     * asynchronous task.
+     *
+     * @param priority
+     */
+    public HttpGetter(final int priority) {
+        super(priority);
+    }
+
+    /**
+     * Create a Task for the specified URL.
+     *
+     * @param priority
+     * @param url
+     */
+    public HttpGetter(final int priority, final String url) {
+        super(priority, url);
+
+        if (url == null) {
+            throw new IllegalArgumentException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
+        }
+    }
 
     /**
      * Set the StreamWriter which will provide data in the optional streaming
@@ -544,48 +581,6 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Get the byte[] from the URL specified by the input argument when
-     * exec(url) is called. This may be chained from a previous chain()ed
-     * asynchronous task.
-     */
-    public HttpGetter() {
-        super();
-    }
-
-    /**
-     * Create a Task which which will, when fork()ed, get the byte[] from a
-     * specified web service URL.
-     *
-     * Be default, the client will automatically retry 3 times if the web
-     * service does not respond on the first attempt (happens frequently with
-     * the mobile web...). You can disable this by calling
-     * setRetriesRemaining(0).
-     *
-     * The "key" is a url. You can optionally attach additional information to
-     * the key after \n (newline) to create a unique hashcode for cache
-     * management purposes. This is sometimes needed for example with HTTP POST
-     * where the url does not alone indicate a unique cachable entity- the post
-     * parameters do.
-     *
-     * @param key
-     */
-    public HttpGetter(final String key) {
-        super(key);
-    }
-
-    /**
-     * HTTP POST the associated message
-     *
-     * @param key
-     * @param postMessage
-     */
-    protected HttpGetter(final String key, final byte[] postMessage) {
-        this(key);
-
-        this.postMessage = postMessage;
-    }
-
-    /**
      * Specify how many more times the HttpGetter should re-attempt HTTP GET if
      * there is a network error.
      *
@@ -608,7 +603,7 @@ public class HttpGetter extends Task {
      *
      * @return
      */
-    public int getResponseCode() {
+    public synchronized int getResponseCode() {
         return responseCode;
     }
 
@@ -617,7 +612,7 @@ public class HttpGetter extends Task {
      *
      * @return
      */
-    public Hashtable getResponseHeaders() {
+    public synchronized Hashtable getResponseHeaders() {
         return responseHeaders;
     }
 
@@ -627,8 +622,8 @@ public class HttpGetter extends Task {
      * @param key
      * @param value
      */
-    public void setRequestProperty(final String key, final String value) {
-        if (this.responseCode != HTTP_OPERATION_PENDING) {
+    public synchronized void setRequestProperty(final String key, final String value) {
+        if (responseCode != HTTP_OPERATION_PENDING) {
             throw new IllegalStateException("Can not set request property to HTTP operation already executed  (" + key + ": " + value + ")");
         }
 
@@ -643,54 +638,53 @@ public class HttpGetter extends Task {
      * content_length as this makes the phone run slightly faster when we can
      * predict how many bytes to expect.
      *
-     * @param url - The url we will HTTP GET from
-     *
      * @return - a JSONModel of the data provided by the HTTP server
      */
-    public Object exec(final Object url) {
-        Object out = url;
+    public Object exec(final Object in) {
+        Object out = null;
 
-        if (!(url instanceof String) || url == null || ((String) url).indexOf(':') <= 0) {
-            throw new IllegalArgumentException("HttpGetter was passed bad URL: " + url);
+        if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
+            final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
+            //#debug
+            L.e("HttpGetter with non-String input", s, new IllegalArgumentException());
+            cancel(false, s);
+            return out;
         }
-        this.key = (String) url;
+
+        final String url = keyIncludingPostDataHashtoUrl((String) in);
 
         //#debug
-        L.i(this.getClass().getName() + " start", key);
+        L.i(this, "Start", url);
         ByteArrayOutputStream bos = null;
         PlatformUtils.HttpConn httpConn = null;
         boolean tryAgain = false;
         boolean success = false;
-        final String url2 = getUrl();
 
-        addUpstreamDataCount(url2.length());
+        addUpstreamDataCount(url.length());
 
         try {
-            InputStream inputStream = null;
-            OutputStream outputStream = null;
+            final OutputStream outputStream;
             if (this instanceof HttpPoster) {
                 if (postMessage == null && streamWriter == null) {
-                    throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + key);
+                    throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + url);
                 }
 
-                httpConn = PlatformUtils.getInstance().getHttpPostConn(url2, requestPropertyKeys, requestPropertyValues, postMessage);
+                httpConn = PlatformUtils.getInstance().getHttpPostConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
                 outputStream = httpConn.getOutputStream();
                 final StreamWriter writer = this.streamWriter;
                 if (writer != null) {
                     writer.writeReady(outputStream);
                     success = true;
-                    out = null;
                 }
                 addUpstreamDataCount(postMessage.length);
             } else {
-                httpConn = PlatformUtils.getInstance().getHttpGetConn(url2, requestPropertyKeys, requestPropertyValues);
+                httpConn = PlatformUtils.getInstance().getHttpGetConn(url, requestPropertyKeys, requestPropertyValues);
             }
-            inputStream = httpConn.getInputStream();
+            final InputStream inputStream = httpConn.getInputStream();
             final StreamReader reader = streamReader;
             if (reader != null) {
                 reader.readReady(inputStream);
                 success = true;
-                out = null;
             }
 
             // Estimate data length of the sent headers
@@ -700,18 +694,24 @@ public class HttpGetter extends Task {
             }
 
             final long length = httpConn.getLength();
-            responseCode = httpConn.getResponseCode();
-            httpConn.getResponseHeaders(responseHeaders);
+            final int downstreamDataHeaderLength;
+            synchronized (this) {
+                responseCode = httpConn.getResponseCode();
+                httpConn.getResponseHeaders(responseHeaders);
+                downstreamDataHeaderLength = PlatformUtils.responseHeadersToString(responseHeaders).length();
+            }
 
             // Response headers length estimation
-            addDownstreamDataCount(responseHeaders.toString().length());
+            addDownstreamDataCount(downstreamDataHeaderLength);
 
-            if (length == 0 || inputStream == null) {
+            if (length == 0) {
                 //#debug
-                L.i(this.getClass().getName() + " exec", "No response. Stream is null, or length is 0");
-            } else if (length > 0 && length < 1000000) {
+                L.i(this, "Exec", "No response. Stream is null, or length is 0");
+            } else if (length > httpConn.getMaxLengthSupportedAsBlockOperation()) {
+                cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
+            } else if (length > 0) {
                 final byte[] bytes = new byte[(int) length];
-                readBytesFixedLength(inputStream, bytes);
+                readBytesFixedLength(url, inputStream, bytes);
                 out = bytes;
             } else {
                 bos = new ByteArrayOutputStream(16384);
@@ -719,23 +719,34 @@ public class HttpGetter extends Task {
                 out = bos.toByteArray();
             }
 
-            addDownstreamDataCount(
-                    ((byte[]) out).length);
-
-            success = checkResponseCode(responseCode, responseHeaders);
+            if (out != null) {
+                addDownstreamDataCount(((byte[]) out).length);
+                //#debug
+                L.i(this, "End read", "url=" + url + " bytes=" + ((byte[]) out).length);
+            }
+            synchronized (this) {
+                success = checkResponseCode(url, responseCode, responseHeaders);
+            }
+            //#debug
+            L.i(this, "Response", "HTTP response code indicates success=" + success);
         } catch (IllegalArgumentException e) {
             //#debug
-            L.e(this.getClass().getName() + " HttpGetter has illegal argument", key, e);
+            L.e(this, "HttpGetter has illegal argument", url, e);
             throw e;
+        } catch (ConnectionNotFoundException e) {
+            //#debug
+            L.e(this, "Connection not found", url + ", retries=" + retriesRemaining, e);
+            cancel(false, "No internet connection");
         } catch (IOException e) {
             //#debug
-            L.e(this.getClass().getName() + " retries remaining", key + ", retries=" + retriesRemaining, e);
+            L.e(this, "Retries remaining", url + ", retries=" + retriesRemaining, e);
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
             } else {
                 //#debug
-                L.i(this.getClass().getName() + " no more retries", key);
+                L.i(this, "No more retries", url);
+                cancel(false, "No more retries");
             }
         } finally {
             if (httpConn != null) {
@@ -743,7 +754,7 @@ public class HttpGetter extends Task {
                     httpConn.close();
                 } catch (Exception e) {
                     //#debug
-                    L.e("Closing Http InputStream error", key, e);
+                    L.e(this, "Closing Http InputStream error", url, e);
                 } finally {
                     httpConn = null;
                 }
@@ -751,9 +762,12 @@ public class HttpGetter extends Task {
             try {
                 if (bos != null) {
                     bos.close();
-                    bos = null;
                 }
             } catch (Exception e) {
+                //#debug
+                L.e(this, "HttpGetter byteArrayOutputStream close error", url, e);
+            } finally {
+                bos = null;
             }
 
             if (tryAgain) {
@@ -769,102 +783,87 @@ public class HttpGetter extends Task {
                 cancel(false, "HttpGetter failed response code and header check: " + this.toString());
             }
             //#debug
-            L.i("End " + this.getClass().getName(), key + " status=" + getStatus());
+            L.i(this, "End", url + " status=" + getStatus() + " out=" + out);
+        }
 
-            return out;
+        if (!success) {
+            return null;
+        }
+
+        return out;
+    }
+
+    private void readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
+        int totalBytesRead = 0;
+
+        while (totalBytesRead < bytes.length) {
+            final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
+            if (b >= 0) {
+                bytes[totalBytesRead++] = (byte) b;
+                synchronized (NET_MUTEX) {
+                    final int br = inputStream.read(bytes, totalBytesRead, bytes.length - totalBytesRead);
+                    if (br >= 0) {
+                        totalBytesRead += br;
+                    } else {
+                        prematureEOF(url, totalBytesRead, bytes.length);
+                    }
+                }
+            } else {
+                prematureEOF(url, totalBytesRead, bytes.length);
+            }
         }
     }
 
-    private void readBytesFixedLength(final InputStream inputStream, final byte[] bytes) throws IOException {
-        int totalBytesRead = 0;
-
+    private void prematureEOF(final String url, final int bytesRead, final int length) throws IOException {
         //#debug
-        L.i(this.getClass().getName() + " start Content-Length=" + bytes.length + " read", "" + this);
-        try {
-            while (totalBytesRead < bytes.length) {
-                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
-                if (b >= 0) {
-                    bytes[totalBytesRead++] = (byte) b;
-                    synchronized (NET_MUTEX) {
-                        final int br = inputStream.read(bytes, totalBytesRead, bytes.length - totalBytesRead);
-                        if (br >= 0) {
-                            totalBytesRead += br;
-                        } else {
-                            prematureEOF(totalBytesRead, bytes.length);
-                        }
-                    }
-                } else {
-                    prematureEOF(totalBytesRead, bytes.length);
-                }
-            }
-        } finally {
-            //#debug
-            L.i(this.getClass().getName() + " end Content-Length=" + bytes.length + " read", "" + this);
-        }
+        L.i(this, "EOF before Content-Length sent by server", url + ", Content-Length=" + length + " bytesRead=" + bytesRead);
+        throw new IOException(getClassName() + " recieved EOF before content_length exceeded");
     }
 
     private void readBytesVariableLength(final InputStream inputStream, final OutputStream bos) throws IOException {
-        //#debug
-        L.i(this.getClass().getName() + " start variable length read", key);
-        try {
-            final byte[] readBuffer = new byte[16384];
-            while (true) {
-                final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
-                if (b >= 0) {
-                    bos.write(b);
-                    synchronized (NET_MUTEX) {
-                        final int bytesRead = inputStream.read(readBuffer);
-                        if (bytesRead >= 0) {
-                            bos.write(readBuffer, 0, bytesRead);
-                        } else {
-                            break;
-                        }
-                    }
-                } else {
-                    //#debug
-                    L.i("Suspicious zero length result from a web service that does not set the Content-Length header: " + this.getClass().getName(), "" + this);
-                }
+        final byte[] readBuffer = new byte[16384];
+        while (true) {
+            final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
+            if (b < 0) {
+                break;
             }
-        } finally {
-            //#debug
-            L.i(this.getClass().getName() + " end variable length read", key);
+            bos.write(b);
+            synchronized (NET_MUTEX) {
+                final int bytesRead = inputStream.read(readBuffer);
+                if (bytesRead < 0) {
+                    break;
+                }
+                bos.write(readBuffer, 0, bytesRead);
+            }
         }
-    }
-
-    private void prematureEOF(final int bytesRead, final int length) throws IOException {
-        final String s = this.getClass().getName() + " recieved EOF before content_length exceeded";
-        //#debug
-        L.i(s, key + ", content_length=" + length + " bytes_read=" + bytesRead);
-        throw new IOException(s);
     }
 
     /**
      * Check headers and HTTP response code as needed for your web service to
      * see if this is a valid response. Override if needed.
      *
+     * @param url
      * @param responseCode
      * @param headers
      * @return
+     * @throws IOException
      */
-    protected boolean checkResponseCode(final int responseCode, final Hashtable headers) {
-        boolean ok = true;
-
-        if (responseCode < 400) {
-            ok = true;
+    protected boolean checkResponseCode(final String url, final int responseCode, final Hashtable headers) throws IOException {
+        if (responseCode < 300) {
+            return true;
         } else if (responseCode < 500) {
             // We might be able to extract some useful information in case of a 400+ error code
             //#debug
-            L.i("Bad response code (" + responseCode + ")", "");
-            ok = false;
-        } else {
-            // 500+ error codes, which means that something went wrong on server side. 
-            // Probably not recoverable, so should we throw an exception instead?
-            //#debug
-            L.i("Server side error. Bad response code (" + responseCode + ")", "");
-            ok = false;
+            L.i("Bad response code (" + responseCode + ")", "url=" + url);
+            return false;
         }
-
-        return ok;
+        /*
+         * 500+ error codes, which means that something went wrong on server side. 
+         * Probably not recoverable, so should we throw an exception instead?
+         */
+        //#debug
+        L.i(this, "Server error. Unrecoverable HTTP response code (" + responseCode + ")", "url=" + url);
+        throw new IOException("Server error. Unrecoverable HTTP response code (" + responseCode + ") url=" + url);
     }
 
     /**
@@ -874,7 +873,7 @@ public class HttpGetter extends Task {
      *
      * @return
      */
-    private String getUrl() {
+    private String keyIncludingPostDataHashtoUrl(final String key) {
         final int i = key.indexOf('\n');
 
         if (i < 0) {
@@ -884,57 +883,23 @@ public class HttpGetter extends Task {
         return key.substring(0, i);
     }
 
-    //#mdebug
-    public String toString() {
-        final StringBuffer sb = new StringBuffer();
-
-        sb.append("HttpGetter: key=");
-        sb.append(key);
-
-        sb.append(" retriesRemaining=");
-        sb.append(retriesRemaining);
-
-        sb.append(" postMessageLength=");
-        if (postMessage == null) {
-            sb.append("<null>");
-        } else {
-            sb.append(postMessage.length);
+    /**
+     *
+     * @param url
+     * @return
+     * @throws DigestException
+     * @throws UnsupportedEncodingException
+     */
+    protected String urlToKeyIncludingPostDataHash(final String url) throws DigestException, UnsupportedEncodingException {
+        if (this.postMessage == null) {
+            throw new IllegalStateException("Attempt to get post-style crypto digest, but postData==null");
         }
+        final long digest = CryptoUtils.getInstance().toDigest(this.postMessage);
+        final String digestAsHex = Long.toString(digest, 16);
 
-        sb.append(" responseCode=");
-        sb.append(responseCode);
-
-        sb.append("\nHTTP RESPONSE HEADERS");
-        final Enumeration enu = responseHeaders.keys();
-        while (enu.hasMoreElements()) {
-            final String k = (String) enu.nextElement();
-            sb.append("\n   ");
-            sb.append(k);
-            sb.append(": ");
-            final String value = (String) responseHeaders.get(k);
-            sb.append(value);
-        }
-
-        if (requestPropertyKeys.isEmpty()) {
-            sb.append("\n(no HTTP request customer header)");
-        } else {
-            sb.append("\nHTTP REQUEST CUSTOM HEADERS");
-            for (int i = 0; i < requestPropertyKeys.size(); i++) {
-                final String key = (String) requestPropertyKeys.elementAt(i);
-                sb.append("\n   ");
-                sb.append(key);
-                sb.append(": ");
-                final String value = (String) requestPropertyValues.elementAt(i);
-                sb.append(value);
-            }
-        }
-
-        sb.append('\n');
-        sb.append(super.toString());
-
-        return sb.toString();
+        return url + '\n' + digestAsHex;
     }
-    //#enddebug
+
     /**
      * Retrieves an estimated count of transfered bytes downstream. The counter
      * is valid during the application run.
@@ -986,4 +951,47 @@ public class HttpGetter extends Task {
     protected synchronized static void addUpstreamDataCount(final int byteCount) {
         upstreamDataCount += byteCount;
     }
+
+    //#mdebug
+    public synchronized String toString() {
+        final StringBuffer sb = new StringBuffer();
+
+        sb.append(super.toString());
+        sb.append("   retriesRemaining=");
+        sb.append(retriesRemaining);
+        sb.append("   postMessageLength=");
+        if (postMessage == null) {
+            sb.append("<null>");
+        } else {
+            sb.append(postMessage.length);
+        }
+
+        if (requestPropertyKeys.isEmpty()) {
+            sb.append(L.CRLF + "(default HTTP request, no customer header params)");
+        } else {
+            sb.append(L.CRLF + "HTTP REQUEST CUSTOM HEADERS");
+            for (int i = 0; i < requestPropertyKeys.size(); i++) {
+                final String key = (String) requestPropertyKeys.elementAt(i);
+                sb.append(L.CRLF + "   ");
+                sb.append(key);
+                sb.append(": ");
+                final String value = (String) requestPropertyValues.elementAt(i);
+                sb.append(value);
+            }
+        }
+
+        if (responseCode == HTTP_OPERATION_PENDING) {
+            sb.append(L.CRLF + "(http operation pending, no server response yet)");
+        } else {
+            sb.append(L.CRLF + "serverHTTPResponseCode=");
+            sb.append(responseCode);
+
+            sb.append(L.CRLF + "HTTP RESPONSE HEADERS" + L.CRLF);
+            sb.append(PlatformUtils.responseHeadersToString(responseHeaders));
+        }
+        sb.append(L.CRLF);
+
+        return sb.toString();
+    }
+    //#enddebug
 }

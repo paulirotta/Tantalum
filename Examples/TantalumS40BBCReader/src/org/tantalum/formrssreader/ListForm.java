@@ -43,7 +43,7 @@ public final class ListForm extends Form implements CommandListener {
     private static ListForm instance;
     private final FormRSSReader rssReader;
     private final DetailsForm detailsView;
-    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', new DataTypeHandler() {
+    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
         public Object convertToUseForm(final Object key, final byte[] bytes) {
             try {
                 rssModel.removeAllElements();
@@ -92,7 +92,7 @@ public final class ListForm extends Form implements CommandListener {
             alert.setTimeout(10000);
             //#debug
             L.i("Alert timeout set", "10000");
-            (new Task() {
+            (new Task(Task.HIGH_PRIORITY) {
                 public Object exec(final Object in) {
                     try {
                         try {
@@ -111,7 +111,7 @@ public final class ListForm extends Form implements CommandListener {
 
                     return in;
                 }
-            }).fork();
+            }.setClassName("Alert")).fork();
             rssReader.switchDisplayable(alert, this);
         } else if (command == settingsCommand) {
             String feedUrl = FormRSSReader.INITIAL_FEED_URL;
@@ -170,14 +170,14 @@ public final class ListForm extends Form implements CommandListener {
                     paint();
                 }
 
-                protected void onCanceled() {
+                protected void onCanceled(String reason) {
                     //#debug
                     L.i("force reload canceled", "model length=" + rssModel.size());
                     loading = false;
                     paint();
                 }
-            };
-            uiTask.setRunOnUIThreadWhenFinished(true);
+            }.setRunOnUIThreadWhenFinished(true);
+            uiTask.setClassName("ForceLoadPainter").setRunOnUIThreadWhenFinished(true);;
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
             uiTask = new Task(Task.HIGH_PRIORITY) {
@@ -201,8 +201,8 @@ public final class ListForm extends Form implements CommandListener {
 
                     return false;
                 }
-            };
-            uiTask.setRunOnUIThreadWhenFinished(true);
+            }.setRunOnUIThreadWhenFinished(true);
+            uiTask.setClassName("LoadPainter").setRunOnUIThreadWhenFinished(true);
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
         }
 

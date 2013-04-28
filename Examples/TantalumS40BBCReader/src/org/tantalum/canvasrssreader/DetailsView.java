@@ -35,6 +35,7 @@ import org.tantalum.Task;
 import org.tantalum.jme.JMEFontUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -44,7 +45,7 @@ import org.tantalum.util.L;
  */
 public final class DetailsView extends View {
 
-    public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.getInstance().getImageTypeHandler());
+    public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler());
     private static final JMEFontUtils titleFontUtils = JMEFontUtils.getFontUtils(RSSReaderCanvas.FONT_TITLE, "...");
     private static final JMEFontUtils descriptionFontUtils = JMEFontUtils.getFontUtils(RSSReaderCanvas.FONT_DESCRIPTION, "...");
 
@@ -137,7 +138,12 @@ public final class DetailsView extends View {
 
         final String url = item.getThumbnail();
         if (url != null) {
-            image = (Image) imageCache.synchronousRAMCacheGet(url);
+            try {
+                image = (Image) imageCache.synchronousRAMCacheGet(url);
+            } catch (FlashDatabaseException ex) {
+                //#debug
+                L.e("Can not get image", url, ex);
+            }
             if (image != null) {
                 currentIcon = image;
                 if (canvas.isPortrait()) {
@@ -149,7 +155,10 @@ public final class DetailsView extends View {
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
-                imageCache.getAsync(item.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
+                imageCache.getAsync(item.getThumbnail(),
+                        Task.FASTLANE_PRIORITY,
+                        StaticWebCache.GET_ANYWHERE,
+                        new Task(Task.FASTLANE_PRIORITY) {
                     public Object exec(final Object in) {
                         item.setLoadingImage(false);
                         if (currentItem == item) {
@@ -165,7 +174,7 @@ public final class DetailsView extends View {
 
                         return false;
                     }
-                });
+                }.setClassName("RefereshCanvas"));
             }
         }
 
@@ -206,7 +215,10 @@ public final class DetailsView extends View {
         this.leftItem = leftItem;
         this.rightItem = rightItem;
         if (leftItem != null) {
-            imageCache.getAsync(leftItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
+            imageCache.getAsync(leftItem.getThumbnail(),
+                    Task.HIGH_PRIORITY,
+                    StaticWebCache.GET_ANYWHERE,
+                    new Task(Task.FASTLANE_PRIORITY) {
                 public Object exec(final Object image) {
                     if (DetailsView.this.leftItem == leftItem) {
                         leftIcon = (Image) image;
@@ -214,10 +226,13 @@ public final class DetailsView extends View {
 
                     return image;
                 }
-            });
+            }.setClassName("LeftIcon"));
         }
         if (rightItem != null) {
-            imageCache.getAsync(rightItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, new Task() {
+            imageCache.getAsync(rightItem.getThumbnail(),
+                    Task.HIGH_PRIORITY,
+                    StaticWebCache.GET_WEB,
+                    new Task(Task.FASTLANE_PRIORITY) {
                 public Object exec(final Object image) {
                     if (DetailsView.this.rightItem == rightItem) {
                         rightIcon = (Image) image;
@@ -225,7 +240,7 @@ public final class DetailsView extends View {
 
                     return image;
                 }
-            });
+            }.setClassName("RightIcon"));
         }
     }
 
@@ -268,5 +283,9 @@ public final class DetailsView extends View {
         this.leftIcon = null;
         this.rightIcon = null;
         this.currentIcon = null;
+    }
+    
+    public String toString() {
+        return "Details" + super.toString() + " currentIcon=" + currentIcon + " currentItem=" + currentItem;
     }
 }

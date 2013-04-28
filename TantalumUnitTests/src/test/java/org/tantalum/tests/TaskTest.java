@@ -24,7 +24,6 @@
  */
 package org.tantalum.tests;
 
-
 import org.junit.Test;
 import org.tantalum.*;
 import org.tantalum.util.L;
@@ -40,13 +39,24 @@ import static org.junit.Assert.*;
  */
 public class TaskTest extends MockedStaticInitializers {
 
+    @Test
+    public void testAnonInnerClassNameOverride() {
+        Task instance = new Task(Task.FASTLANE_PRIORITY) {
+            protected Object exec(Object in) {
+                return "run";
+            }
+        }.setClassName("TestInnerClassName");
+
+        assertEquals("Inner class name override is correct: " + instance.getClassName(), "org.tantalum.tests.TaskTest$1TestInnerClassName", instance.getClassName());
+    }
+
     /**
      * Test of testFork method, of class Task.
      */
     @Test
     public void testFork() {
         System.out.println("fork");
-        Task instance = new Task() {
+        Task instance = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(Object in) {
                 return "run";
             }
@@ -71,7 +81,7 @@ public class TaskTest extends MockedStaticInitializers {
      */
     @Test
     public void taskGetReturnsTheExecValue() throws CancellationException, TimeoutException {
-        Task instance2 = new Task("white") {
+        Task instance2 = new Task(Task.FASTLANE_PRIORITY, "white") {
             protected Object exec(Object in) {
                 System.out.println("Executing task 2");
                 return (String) in + " rabbit";
@@ -84,17 +94,14 @@ public class TaskTest extends MockedStaticInitializers {
 
     @Test(expected = TimeoutException.class)
     public void taskTimesOutIfJoinedBeforeFork() throws CancellationException, TimeoutException {
-        Task instance = new Task("white") {
+        Task instance = new Task(Task.FASTLANE_PRIORITY, "white") {
             protected Object exec(Object in) {
                 System.out.println("Executing task 1");
                 return (String) in + " rabbit";
             }
         };
-        instance.join(400);
+        instance.join(100);
         fail("join() or get() to a Task that was not fork()ed should timeout");
-
-        // FIXME: We don't seem to set the value to finished, bug in code, or in test?
-        //assertEquals("status is FINISHED", Task.FINISHED, instance.getStatus());
     }
 
     /**
@@ -105,7 +112,7 @@ public class TaskTest extends MockedStaticInitializers {
 //    @Test
     public void testJoin() throws Exception {
         System.out.println("join");
-        Task instance = new Task() {
+        Task instance = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(Object in) {
                 return "run";
             }
@@ -119,7 +126,7 @@ public class TaskTest extends MockedStaticInitializers {
         String result_1 = (String) instance.join(1000);
         assertEquals("run", result_1);
 
-        Task instance_2 = new Task() {
+        Task instance_2 = new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(1000);
@@ -138,7 +145,7 @@ public class TaskTest extends MockedStaticInitializers {
         String result_2 = (String) instance_2.join(1000);
         assertEquals("run2", result_2);
 
-        Task instance_3 = new Task() {
+        Task instance_3 = new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -160,7 +167,7 @@ public class TaskTest extends MockedStaticInitializers {
         } catch (Exception e) {
         }
 
-        Task blocker = new Task() {
+        Task blocker = new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -170,7 +177,7 @@ public class TaskTest extends MockedStaticInitializers {
                 return "blocker";
             }
         };
-        Task blocker2 = new Task() {
+        Task blocker2 = new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -180,7 +187,7 @@ public class TaskTest extends MockedStaticInitializers {
                 return "blocker2";
             }
         };
-        Task instance_4 = new Task() {
+        Task instance_4 = new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -208,7 +215,7 @@ public class TaskTest extends MockedStaticInitializers {
 //    @Test
     public void testGet() throws Exception {
         System.out.println("get");
-        Task instance = new Task() {
+        Task instance = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(Object in) {
                 return "result";
             }
@@ -218,7 +225,7 @@ public class TaskTest extends MockedStaticInitializers {
         Object result_1 = instance.get();
         assertEquals(expResult_1, result_1);
 
-        Task instance2 = new Task() {
+        Task instance2 = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(Object in) {
                 return "result2";
             }
@@ -227,7 +234,7 @@ public class TaskTest extends MockedStaticInitializers {
         Object result_2 = instance2.get();
         assertEquals(expResult_2, result_2);
 
-        Task instance3 = new Task() {
+        Task instance3 = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(Object in) {
                 return "result3";
             }
@@ -246,17 +253,17 @@ public class TaskTest extends MockedStaticInitializers {
     public void testSetResult() {
         System.out.println("setResult");
         try {
-            Task instance = new Task() {
+            Task instance = new Task(Task.FASTLANE_PRIORITY) {
                 protected Object exec(Object in) {
                     return "result";
                 }
             };
-            Task instance2 = new Task() {
+            Task instance2 = new Task(Task.FASTLANE_PRIORITY) {
                 protected Object exec(Object in) {
                     return "result";
                 }
             };
-            Task instance3 = new Task() {
+            Task instance3 = new Task(Task.FASTLANE_PRIORITY) {
                 protected Object exec(Object in) {
                     return "result";
                 }
@@ -287,19 +294,19 @@ public class TaskTest extends MockedStaticInitializers {
 //    @Test
     public void testNotifyTaskForked() throws InterruptedException, Exception {
         System.out.println("notifyTaskForked");
-        final Task instance = new Task() {
+        final Task instance = new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 return "result";
             }
         };
-        final Task t2 = (new Task() {
+        final Task t2 = (new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 synchronized (instance) {
                     try {
                         instance.wait(200);
                     } catch (InterruptedException ex) {
                         ex.printStackTrace();
-                        fail("Interrupt while waiting notirfyTaskForked notification semaphore");
+                        fail("Interrupt while waiting notifyTaskForked notification semaphore");
                     }
                     assertEquals(Task.PENDING, instance.getStatus());
                 }
@@ -317,12 +324,12 @@ public class TaskTest extends MockedStaticInitializers {
 //    @Test
     public void testGetResult() {
         System.out.println("getResult");
-        final Task instance = new Task("start") {
+        final Task instance = new Task(Task.FASTLANE_PRIORITY, "start") {
             protected Object exec(Object in) {
                 return in;
             }
         };
-        final Task instance2 = new Task("start") {
+        final Task instance2 = new Task(Task.FASTLANE_PRIORITY, "start") {
             protected Object exec(Object in) {
                 return in;
             }
@@ -342,7 +349,7 @@ public class TaskTest extends MockedStaticInitializers {
 //    @Test
     public void testToString() {
         System.out.println("toString");
-        final Task instance = new Task("start") {
+        final Task instance = new Task(Task.FASTLANE_PRIORITY, "start") {
             protected Object exec(Object in) {
                 return in;
             }
@@ -358,12 +365,12 @@ public class TaskTest extends MockedStaticInitializers {
     public void testCancel() {
         final Vector errors = new Vector();
         System.out.println("cancel");
-        final Task testCancelRunsToEnd = new Task("I AM") {
+        final Task testCancelRunsToEnd = new Task(Task.FASTLANE_PRIORITY, "I AM") {
             protected Object exec(Object in) {
                 return in + " DONE";
             }
         };
-        final Task testCancelInstance = new Task("test_cancel_instance") {
+        final Task testCancelInstance = new Task(Task.FASTLANE_PRIORITY, "test_cancel_instance") {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(400);
@@ -373,7 +380,7 @@ public class TaskTest extends MockedStaticInitializers {
                 return in;
             }
         };
-        final Task testCancelInstance2 = new Task("test_cancel_instance2") {
+        final Task testCancelInstance2 = new Task(Task.FASTLANE_PRIORITY, "test_cancel_instance2") {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(400);
@@ -383,7 +390,7 @@ public class TaskTest extends MockedStaticInitializers {
                 return in;
             }
         };
-        final Task testCancelInstance3 = new Task("test_cancel_instance3") {
+        final Task testCancelInstance3 = new Task(Task.FASTLANE_PRIORITY, "test_cancel_instance3") {
             protected Object exec(Object in) {
                 return in;
             }
@@ -417,7 +424,7 @@ public class TaskTest extends MockedStaticInitializers {
             Thread.sleep(1000);
         } catch (Exception e) {
         }
-        final Task instance4 = new Task("instance4") {
+        final Task instance4 = new Task(Task.HIGH_PRIORITY, "instance4") {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -427,7 +434,7 @@ public class TaskTest extends MockedStaticInitializers {
                 return in;
             }
         };
-        final Task instance5 = new Task("instance5") {
+        final Task instance5 = new Task(Task.HIGH_PRIORITY, "instance5") {
             @Override
             protected Object exec(Object in) {
                 try {
@@ -469,11 +476,13 @@ public class TaskTest extends MockedStaticInitializers {
     /**
      * Test of testOnCanceled method, of class Task.
      */
-//    @Test
-    public void testOnCanceled() {
+    //@Test
+    public void onCanceledTest() {
         System.out.println("onCanceled");
         final Vector v = new Vector();
-        final Task instance = new Task() {
+        v.addElement("Dummy");
+        final Task instance = new Task(Task.HIGH_PRIORITY) {
+            @Override
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -483,8 +492,9 @@ public class TaskTest extends MockedStaticInitializers {
                 return in;
             }
 
-            protected void onCanceled() {
-                v.addElement("canceled");
+            @Override
+            protected void onCanceled(String reason) {
+                v.insertElementAt("canceled-" + reason, 0);
             }
         };
         instance.fork();
@@ -499,16 +509,16 @@ public class TaskTest extends MockedStaticInitializers {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        assertEquals("canceled", (String) v.firstElement());
+        assertEquals("canceled-testing", (String) v.firstElement());
     }
 
     /**
      * Test of testDoInBackground method, of class Task.
      */
-//    @Test
-    public void testDoInBackground() {
+    @Test
+    public void doInBackgroundTest() {
         System.out.println("doInBackground");
-        final Task instance = new Task("ca") {
+        final Task instance = new Task(Task.FASTLANE_PRIORITY, "ca") {
             @Override
             protected Object exec(Object in) {
                 return (String) in + "tty";
@@ -516,7 +526,7 @@ public class TaskTest extends MockedStaticInitializers {
         };
         instance.set("be");
         try {
-            assertEquals("betty", (String) instance.get());
+            assertEquals("betty", (String) instance.fork().get());
         } catch (Exception ex) {
             fail("Could not testDoInBackground: " + ex);
         }
@@ -528,34 +538,34 @@ public class TaskTest extends MockedStaticInitializers {
 //    @Test
     public void testChain() {
         System.out.println("chain");
-        final Task instance = new Task("1") {
+        final Task instance = new Task(Task.FASTLANE_PRIORITY, "1") {
             protected Object exec(Object in) {
                 return (String) in + "2";
             }
         };
-        final Task instance2 = new Task("bad") {
+        final Task instance2 = new Task(Task.FASTLANE_PRIORITY, "bad") {
             protected Object exec(Object in) {
                 return in + "3";
             }
         };
-        final Task instance3 = new Task("ugly") {
+        final Task instance3 = new Task(Task.FASTLANE_PRIORITY, "ugly") {
             protected Object exec(Object in) {
                 return in + "4";
             }
         };
-        final Task instanceA = new Task("A") {
+        final Task instanceA = new Task(Task.FASTLANE_PRIORITY, "A") {
             @Override
             protected Object exec(Object in) {
                 return (String) in + "B";
             }
         };
-        final Task instance5 = new Task("5") {
+        final Task instance5 = new Task(Task.FASTLANE_PRIORITY, "5") {
             @Override
             protected Object exec(Object in) {
                 return (String) in + "6";
             }
         };
-        final Task instance6 = new Task("BAD") {
+        final Task instance6 = new Task(Task.FASTLANE_PRIORITY, "BAD") {
             @Override
             protected Object exec(Object in) {
                 return in + "7";
@@ -586,12 +596,12 @@ public class TaskTest extends MockedStaticInitializers {
 //    @Test
     public void testGetStatus() {
         System.out.println("getStatus");
-        final Task instanceA = new Task() {
+        final Task instanceA = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(Object in) {
                 return in;
             }
         };
-        final Task instance2 = new Task() {
+        final Task instance2 = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -600,7 +610,7 @@ public class TaskTest extends MockedStaticInitializers {
                 return in;
             }
         };
-        final Task instance3 = new Task() {
+        final Task instance3 = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(Object in) {
                 try {
                     Thread.sleep(200);
@@ -629,41 +639,41 @@ public class TaskTest extends MockedStaticInitializers {
 //    @Test
     public void testJoinAll() {
         System.out.println("joinAll");
-        final Task task1 = new Task("1") {
+        final Task task1 = new Task(Task.FASTLANE_PRIORITY, "1") {
             protected Object exec(Object in) {
                 return (String) in + "2";
             }
         };
-        final Task task2 = new Task("3") {
+        final Task task2 = new Task(Task.FASTLANE_PRIORITY, "3") {
             protected Object exec(Object in) {
                 return in + "4";
             }
         };
-        final Task task3 = new Task("A") {
+        final Task task3 = new Task(Task.FASTLANE_PRIORITY, "A") {
             protected Object exec(Object in) {
                 return (String) in + "2";
             }
         };
-        final Task task4 = new Task("B") {
+        final Task task4 = new Task(Task.FASTLANE_PRIORITY, "B") {
             protected Object exec(Object in) {
                 return in + "3";
             }
         };
-        final Task task5a = new Task("fail_a") {
+        final Task task5a = new Task(Task.FASTLANE_PRIORITY, "fail_a") {
             protected Object exec(Object in) {
                 this.cancel(false, "testing");
 
                 return in + "fail";
             }
         };
-        final Task task5b = new Task("fail_b") {
+        final Task task5b = new Task(Task.FASTLANE_PRIORITY, "fail_b") {
             protected Object exec(Object in) {
                 this.cancel(false, "testing");
 
                 return in + "fail";
             }
         };
-        final Task task6 = new Task("slow") {
+        final Task task6 = new Task(Task.FASTLANE_PRIORITY, "slow") {
             protected Object exec(Object in) {
                 double j = Double.MIN_VALUE;
                 for (int i = 0; i < 1000000; i++) {
@@ -734,22 +744,23 @@ public class TaskTest extends MockedStaticInitializers {
 //    @Test
     public void testCancelSelf() {
         System.out.println("cancelSelf");
-        final Task task1a = new Task("1") {
+        final Task task1a = new Task(Task.FASTLANE_PRIORITY, "1") {
             @Override
             protected Object exec(Object in) {
                 return (String) in + "2";
             }
 
-            public void run(Object result) {
+            @Override
+            public void run() {
                 try {
                     // TEST FOR LOGIC ERROR- you can not set() after background execution completes
-                    set(result + "UI");
+                    set("UI");
                     fail("set() after run should have been stopped");
                 } catch (Exception e) {
                 }
             }
-        };
-        final Task task1b = new Task("3") {
+        }.setRunOnUIThreadWhenFinished(true);
+        final Task task1b = new Task(Task.FASTLANE_PRIORITY, "3") {
             protected Object exec(Object in) {
                 return (String) in + "4";
             }
@@ -763,7 +774,7 @@ public class TaskTest extends MockedStaticInitializers {
                 }
             }
         };
-        final Task task2 = new Task("5") {
+        final Task task2 = new Task(Task.FASTLANE_PRIORITY, "5") {
             @Override
             protected Object exec(Object in) {
                 cancel(true, "testing");
@@ -771,14 +782,14 @@ public class TaskTest extends MockedStaticInitializers {
                 return in + "6";
             }
         };
-        final Task task3 = new Task("B") {
+        final Task task3 = new Task(Task.FASTLANE_PRIORITY, "B") {
             protected Object exec(Object in) {
                 cancel(false, "testing");
 
                 return in + "C";
             }
         };
-        final Task task4 = new Task("D") {
+        final Task task4 = new Task(Task.FASTLANE_PRIORITY, "D") {
             protected Object exec(Object in) {
                 cancel(false, "testing");
 
@@ -787,10 +798,12 @@ public class TaskTest extends MockedStaticInitializers {
         };
 
         try {
-            task1a.fork(Task.FASTLANE_PRIORITY).join();
-            assertEquals("task1a was not EXEC_FINISHED", Task.FINISHED, task1a.getStatus());
+            task1a.fork();
+            Thread.sleep(300);
+            assertEquals("task1a was FINISHED", Task.FINISHED, task1a.getStatus());
+            assertEquals("task1a result was 12", "12", task1a.get());
 
-            task1b.fork(Task.NORMAL_PRIORITY | Task.FASTLANE_PRIORITY).join();
+            task1b.fork().join();
             assertEquals("task1b was not EXEC_FINISHED", Task.FINISHED, task1b.getStatus());
 
             task2.fork().join();
@@ -814,7 +827,7 @@ public class TaskTest extends MockedStaticInitializers {
     //    @Test
     public void testCancelThread() {
         System.out.println("cancelSelf");
-        final Task task1 = new Task("1") {
+        final Task task1 = new Task(Task.FASTLANE_PRIORITY, "1") {
             @Override
             protected Object exec(Object in) {
                 assertNotEquals("doInBackground() blue must not run on UI thread", true, PlatformUtils.getInstance().isUIThread());
@@ -823,7 +836,7 @@ public class TaskTest extends MockedStaticInitializers {
             }
 
             @Override
-            protected void onCanceled() {
+            protected void onCanceled(final String reason) {
                 assertEquals("onCanceled() blue must run on UI thread", true, PlatformUtils.getInstance().isUIThread());
                 try {
                     set("blue");
@@ -846,7 +859,7 @@ public class TaskTest extends MockedStaticInitializers {
     public void taskChainDelayTest() {
         final long t = System.currentTimeMillis();
 
-        Task sleeper3sec = new Task() {
+        Task sleeper3sec = new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 try {
                     L.i("sleeper3", "start sleep");
@@ -859,13 +872,13 @@ public class TaskTest extends MockedStaticInitializers {
                 return in;
             }
         };
-        Task sleeper3chain = new Task() {
+        Task sleeper3chain = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(Object in) {
                 L.i("getter3sec", "completed");
                 return new Long(System.currentTimeMillis() - t);
             }
         };
-        Task sleeper4sec = new Task() {
+        Task sleeper4sec = new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 try {
                     L.i("sleeper4", "start sleep");
@@ -878,7 +891,7 @@ public class TaskTest extends MockedStaticInitializers {
                 return in;
             }
         };
-        Task sleeper4chain = new Task() {
+        Task sleeper4chain = new Task(Task.HIGH_PRIORITY) {
             protected Object exec(Object in) {
                 L.i("getter10sec", "completed");
                 in = new Long(System.currentTimeMillis() - t);

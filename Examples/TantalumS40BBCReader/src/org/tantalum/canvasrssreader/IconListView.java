@@ -61,12 +61,12 @@ public final class IconListView extends RSSListView {
     public IconListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        try {
-            updateCommand = (Command) Class.forName("org.tantalum.canvasrssreader.UpdateIconCommand").newInstance();
-            iconSupport = true;
-        } catch (Throwable t) {
-            L.e("IconCommand not supported", "Update", t);
-        }
+//        try {
+//            updateCommand = (Command) Class.forName("org.tantalum.canvasrssreader.UpdateIconCommand").newInstance();
+//            iconSupport = true;
+//        } catch (Throwable t) {
+//            L.e("IconCommand not supported", "Update", t);
+//        }
     }
 
     public Command[] getCommands() {
@@ -99,18 +99,20 @@ public final class IconListView extends RSSListView {
         try {
             numberOfColumns = canvas.isPortrait() ? 3 : 4;
             modelCopy = rssModel.copy(modelCopy);
+            //#debug
+            L.i(this, "render", "modelLength=" + modelCopy.length);
             if (modelCopy.length == 0) {
-                if (iconSupport && !animationRunning) {
-                    ((UpdateIconCommand) updateCommand).startAnimation();
-                }
+//                if (iconSupport && !animationRunning) {
+//                    ((UpdateIconCommand) updateCommand).startAnimation();
+//                }
                 g.setColor(RSSReader.COLOR_BACKGROUND);
                 g.fillRect(0, 0, width, height);
                 g.setColor(RSSReader.COLOR_FOREGROUND);
                 g.drawString("Loading...", canvas.getWidth() >> 1, canvas.getHeight() >> 1, Graphics.BASELINE | Graphics.HCENTER);
                 return;
-            } else if (iconSupport) {
-                ((UpdateIconCommand) updateCommand).stopAnimation();
-                animationRunning = false;
+//            } else if (iconSupport) {
+//                ((UpdateIconCommand) updateCommand).stopAnimation();
+//                animationRunning = false;
             }
 
             final int totalHeight = modelCopy.length * ROW_HEIGHT / numberOfColumns;
@@ -128,84 +130,88 @@ public final class IconListView extends RSSListView {
             int curY = this.renderY;
 
             //start rendeing from the first visible item
-            for (int i = 0; i < modelCopy.length; i++) {
-                final int column = i % numberOfColumns;
-                final RSSItem item = modelCopy[i];
+            synchronized (MUTEX) {
+                for (int i = 0; i < modelCopy.length; i++) {
+                    final int column = i % numberOfColumns;
+                    final RSSItem item = modelCopy[i];
 
-                if (curY > -(ROW_HEIGHT * 3) && curY <= height + ROW_HEIGHT * 2) {
-                    final boolean visible = curY > -ROW_HEIGHT && curY <= height;
-                    final Object icon = icons.get(item);
+                    if (curY > -(ROW_HEIGHT * 3) && curY <= height + ROW_HEIGHT * 2) {
+                        final boolean visible = curY > -ROW_HEIGHT && curY <= height;
+                        final Object icon = icons.get(item);
 
-                    if (visible) {
-                        g.setColor(i == this.selectedIndex ? RSSReader.COLOR_HIGHLIGHTED_BACKGROUND : RSSReader.COLOR_BACKGROUND);
-                        g.fillRect(columnWidth * column, curY, columnWidth, ROW_HEIGHT);
-                    }
-                    if (icon != null) {
                         if (visible) {
-                            final int x = columnWidth * column + columnWidth / 2;
-                            final int y = curY + ROW_HEIGHT / 2;
-                            if (icon instanceof Image) {
-                                g.drawImage((Image) icon, x, y, Graphics.HCENTER | Graphics.VCENTER);
-                            } else {
-                                if (((AnimatedImage) icon).animate(g, x, y)) {
-                                    // End animation
-                                    icons.put(item, ((AnimatedImage) icon).image);
-                                }
-                                canvas.refresh();
-                            }
+                            g.setColor(i == this.selectedIndex ? RSSReader.COLOR_HIGHLIGHTED_BACKGROUND : RSSReader.COLOR_BACKGROUND);
+                            g.fillRect(columnWidth * column, curY, columnWidth, ROW_HEIGHT);
                         }
-                    } else if (!item.isLoadingImage()) {
-                        // Shrunken image not available in RAM cache, getAsync and create it
-                        item.setLoadingImage(true);
-                        if (item.getThumbnail() == null || item.getThumbnail().length() == 0) {
-                            //#debug
-                            L.i("Trivial thumbnail link in RSS feed", item.getTitle());
-                        } else {
-                            DetailsView.imageCache.getAsync(item.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task() {
-                                public Object exec(Object o) {
-                                    try {
-                                        //#debug
-                                        L.i("getIcon result", "" + o);
-                                        item.setLoadingImage(false);
-                                        Image icon = (Image) o;
-                                        o = null;
-                                        final int w = icon.getWidth();
-                                        final int h = icon.getHeight();
-                                        synchronized (Task.LARGE_MEMORY_MUTEX) {
-                                            if (data == null || data.length < w * h) {
-                                                data = new int[w * h];
+                        if (icon != null) {
+                            if (visible) {
+                                final int x = columnWidth * column + columnWidth / 2;
+                                final int y = curY + ROW_HEIGHT / 2;
+                                if (icon instanceof Image) {
+                                    g.drawImage((Image) icon, x, y, Graphics.HCENTER | Graphics.VCENTER);
+                                } else {
+                                    if (((AnimatedImage) icon).animate(g, x, y)) {
+                                        // End animation
+                                        icons.put(item, ((AnimatedImage) icon).image);
+                                    }
+                                    canvas.refresh();
+                                }
+                            }
+                        } else if (!item.isLoadingImage()) {
+                            // Shrunken image not available in RAM cache, getAsync and create it
+                            item.setLoadingImage(true);
+                            if (item.getThumbnail() == null || item.getThumbnail().length() == 0) {
+                                //#debug
+                                L.i("Trivial thumbnail link in RSS feed", item.getTitle());
+                            } else {
+                                DetailsView.imageCache.getAsync(item.getThumbnail(),
+                                        Task.HIGH_PRIORITY,
+                                        StaticWebCache.GET_ANYWHERE,
+                                        new Task(Task.FASTLANE_PRIORITY) {
+                                    public Object exec(final Object o) {
+                                        try {
+                                            //#debug
+                                            L.i(this, "getIcon result received", "" + this);
+                                            item.setLoadingImage(false);
+                                            Image icon = (Image) o;
+                                            final int w = icon.getWidth();
+                                            final int h = icon.getHeight();
+                                            synchronized (Task.LARGE_MEMORY_MUTEX) {
+                                                if (data == null || data.length < w * h) {
+                                                    data = new int[w * h];
+                                                }
+                                                icon.getRGB(data, 0, w, 0, 0, w, h);
+                                                icon = JMEImageUtils.scaleImage(data, data, w, h, 72, h, true, JMEImageUtils.FIVE_POINT_BLEND);
                                             }
-                                            icon.getRGB(data, 0, w, 0, 0, w, h);
-                                            icon = JMEImageUtils.scaleImage(data, data, w, h, 72, h, true, JMEImageUtils.FIVE_POINT_BLEND);
+                                            if (item.isNewItem()) {
+                                                item.setNewItem(false);
+                                                icons.put(item, new AnimatedImage(icon, 10, icon.getHeight(), icon.getWidth(), icon.getHeight(), 10));
+                                            } else {
+                                                icons.put(item, icon);
+                                            }
+                                            canvas.refresh();
+                                        } catch (Exception e) {
+                                            //#debug
+                                            L.e(this, "Problem with getIcon setValue", item.getThumbnail(), e);
+                                            cancel(false, "Problem with getIcon: " + item, e);
                                         }
-                                        if (item.isNewItem()) {
-                                            item.setNewItem(false);
-                                            icons.put(item, new AnimatedImage(icon, 10, icon.getHeight(), icon.getWidth(), icon.getHeight(), 10));
-                                        } else {
-                                            icons.put(item, icon);
-                                        }
-                                        canvas.refresh();
-                                    } catch (Exception e) {
-                                        //#debug
-                                        L.e("Problem with getIcon setValue", item.getThumbnail(), e);
-                                        cancel(false, "Problem with getIcon: " + item);
+
+                                        return null;
                                     }
 
-                                    return null;
-                                }
-
-                                protected void onCanceled() {
-                                    item.setLoadingImage(false);
-                                }
-                            });
+                                    protected void onCanceled(String reason) {
+                                        item.setLoadingImage(false);
+                                    }
+                                }.setClassName("GetIcon"));
+                            }
                         }
+                    } else {
+                        // Remove icons currently off screen
+                        icons.remove(item);
                     }
-                } else {
-                    // Remove icons currently off screen
-                    icons.remove(item);
-                }
-                if (column == numberOfColumns - 1) {
-                    curY += ROW_HEIGHT;
+                    if (column == numberOfColumns - 1) {
+                        curY += ROW_HEIGHT;
+                    }
                 }
             }
             renderScrollBar(g, totalHeight);
@@ -217,8 +223,9 @@ public final class IconListView extends RSSListView {
 
     protected void doClearCache() {
         super.clearCache();
-
-        icons.clear();
+        synchronized (MUTEX) {
+            icons.clear();
+        }
     }
 
     public void deselectItem() {
@@ -255,6 +262,12 @@ public final class IconListView extends RSSListView {
             } else {
                 canvas.refresh();
             }
+        }
+    }
+
+    public String toString() {
+        synchronized (MUTEX) {
+            return "IconList" + super.toString() + " iconsSize=" + icons.size();
         }
     }
 }

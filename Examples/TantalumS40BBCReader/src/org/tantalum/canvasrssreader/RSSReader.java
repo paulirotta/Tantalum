@@ -27,7 +27,6 @@ package org.tantalum.canvasrssreader;
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
-import org.tantalum.PlatformAdapter;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.L;
@@ -122,15 +121,15 @@ public class RSSReader extends MIDlet implements CommandListener {
      */
     public void startApp() {
         try {
-            PlatformUtils.getInstance().setProgram(this, 4, PlatformAdapter.NORMAL_LOG_MODE);
+            PlatformUtils.getInstance().setProgram(this, 4, PlatformUtils.NORMAL_LOG_MODE);
             final Task reloadTask = getCanvas().getListView().reloadAsync(false);
-            final Display display = getDisplay();
-            COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
-            COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
-            COLOR_FOREGROUND = display.getColor(Display.COLOR_FOREGROUND);
-            COLOR_HIGHLIGHTED_FOREGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
-            COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
-            COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
+//            final Display display = getDisplay();
+//            COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
+//            COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
+//            COLOR_FOREGROUND = display.getColor(Display.COLOR_FOREGROUND);
+//            COLOR_HIGHLIGHTED_FOREGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
+//            COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
+//            COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
             try {
                 reloadTask.join(200);
             } catch (Exception ex) {
@@ -140,7 +139,7 @@ public class RSSReader extends MIDlet implements CommandListener {
             switchDisplayable(null, canvas);
         } catch (Exception ex) {
             //#debug
-            L.e("Startup execption", "", ex);
+            L.e("Startup exception", "", ex);
             PlatformUtils.getInstance().shutdown(false);
         }
     }

@@ -27,7 +27,6 @@ package org.tantalum.formrssreader;
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
-import org.tantalum.PlatformAdapter;
 import org.tantalum.PlatformUtils;
 
 /**
@@ -36,50 +35,15 @@ import org.tantalum.PlatformUtils;
 public class FormRSSReader extends MIDlet implements CommandListener {
 
     public static final String INITIAL_FEED_URL = "http://feeds.bbci.co.uk/news/rss.xml";
-    private boolean midletPaused = false;
-    //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
-    //</editor-fold>//GEN-END:|fields|0|
     private Displayable currentDisplayable;
     private SettingsForm settingsForm;
     private ListForm list;
 
-    //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
-    //</editor-fold>//GEN-END:|methods|0|
-    //<editor-fold defaultstate="collapsed" desc=" Generated Method: initialize ">//GEN-BEGIN:|0-initialize|0|0-preInitialize
-    /**
-     * Initializes the application. It is called only once when the MIDlet is
-     * started. The method is called before the
-     * <code>startMIDlet</code> method.
-     */
-    private void initialize() {//GEN-END:|0-initialize|0|0-preInitialize
-        // write pre-initialize user code here
-//GEN-LINE:|0-initialize|1|0-postInitialize
-        // write post-initialize user code here
-    }//GEN-BEGIN:|0-initialize|2|
-    //</editor-fold>//GEN-END:|0-initialize|2|
-
-    //<editor-fold defaultstate="collapsed" desc=" Generated Method: startMIDlet ">//GEN-BEGIN:|3-startMIDlet|0|3-preAction
-    /**
-     * Performs an action assigned to the Mobile Device - MIDlet Started point.
-     */
-    public void startMIDlet() {//GEN-END:|3-startMIDlet|0|3-preAction
-        // write pre-action user code here
-        switchDisplayable(null, getList());
-//GEN-LINE:|3-startMIDlet|1|3-postAction
-        // write post-action user code here
-    }//GEN-BEGIN:|3-startMIDlet|2|
-    //</editor-fold>//GEN-END:|3-startMIDlet|2|
-
-    //<editor-fold defaultstate="collapsed" desc=" Generated Method: resumeMIDlet ">//GEN-BEGIN:|4-resumeMIDlet|0|4-preAction
     /**
      * Performs an action assigned to the Mobile Device - MIDlet Resumed point.
      */
-    public void resumeMIDlet() {//GEN-END:|4-resumeMIDlet|0|4-preAction
-        // write pre-action user code here
-//GEN-LINE:|4-resumeMIDlet|1|4-postAction
-        // write post-action user code here
-    }//GEN-BEGIN:|4-resumeMIDlet|2|
-    //</editor-fold>//GEN-END:|4-resumeMIDlet|2|
+    public void resumeMIDlet() {
+    }
 
     //<editor-fold defaultstate="collapsed" desc=" Generated Method: switchDisplayable ">//GEN-BEGIN:|5-switchDisplayable|0|5-preSwitch
     /**
@@ -88,8 +52,7 @@ public class FormRSSReader extends MIDlet implements CommandListener {
      * <code>getDisplay</code> method. This method is used by all actions in the
      * design for switching displayable.
      *
-     * @param alert the Alert which is temporarily set to the display;
-     * if <code>null</code>, then <code>nextDisplayable</code> is set
+     * @param alert the Alert which is temporarily set to the display;      * if <code>null</code>, then <code>nextDisplayable</code> is set
      * immediately
      * @param nextDisplayable the Displayable to be set
      */
@@ -148,20 +111,11 @@ public class FormRSSReader extends MIDlet implements CommandListener {
      * already started and initialize/starts or resumes the MIDlet.
      */
     public void startApp() {
-        if (midletPaused) {
-            resumeMIDlet();
-        } else {
-            initialize();
-            startMIDlet();
-        }
-        midletPaused = false;
+        PlatformUtils.getInstance().setProgram(this, 4);
+        switchDisplayable(null, getList());
     }
 
-    /**
-     * Called when MIDlet is paused.
-     */
     public void pauseApp() {
-        midletPaused = true;
     }
 
     protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {

@@ -88,18 +88,16 @@ public class RSSModel extends XMLModel {
     protected synchronized void parseElement(final String qname, final String chars, final XMLAttributes attributes) {
         try {
             if (currentItem != null) {
-                synchronized (currentItem) {
-                    if (qname.equals("title")) {
-                        currentItem.setTitle(chars);
-                    } else if (qname.equals("description")) {
-                        currentItem.setDescription(chars);
-                    } else if (qname.equals("link")) {
-                        currentItem.setLink(chars);
-                    } else if (qname.equals("pubDate")) {
-                        currentItem.setPubDate(chars);
-                    } else if (qname.equals("media:thumbnail")) {
-                        currentItem.setThumbnail((String) attributes.getValue("url"));
-                    }
+                if (qname.equals("title")) {
+                    currentItem.setTitle(chars);
+                } else if (qname.equals("description")) {
+                    currentItem.setDescription(chars);
+                } else if (qname.equals("link")) {
+                    currentItem.setLink(chars);
+                } else if (qname.equals("pubDate")) {
+                    currentItem.setPubDate(chars);
+                } else if (qname.equals("media:thumbnail")) {
+                    currentItem.setThumbnail((String) attributes.getValue("url"));
                 }
             }
         } catch (Exception e) {
@@ -116,7 +114,7 @@ public class RSSModel extends XMLModel {
      * @param qname
      * @throws SAXException
      */
-    public void endElement(final String uri, final String localName, final String qname) throws SAXException {
+    public synchronized void endElement(final String uri, final String localName, final String qname) throws SAXException {
         super.endElement(uri, localName, qname);
 
         if (qname.equals("item")) {
@@ -195,4 +193,21 @@ public class RSSModel extends XMLModel {
 
         return adjacentItem;
     }
+
+    //#mdebug
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+        
+        sb.append("RSSModel:" + L.CRLF);
+        RSSItem[] model = copy(null);
+        for (int i = 0; i < model.length; i++) {
+            sb.append(i);
+            sb.append(" : ");
+            sb.append(model[i].toString());
+            sb.append(L.CRLF);
+        }
+        
+        return sb.toString();
+    }
+    //#enddebug
 }

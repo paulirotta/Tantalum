@@ -73,8 +73,6 @@ public class WeakHashCacheTest extends MockedStaticInitializers {
         } catch (Exception e) {
         }
         assertEquals(instance.size(), 2);
-        instance.put(key2, null);
-        assertEquals(instance.size(), 1);
         for (int i = 0; i < 10000; i++) {
             instance.put("keykeykey" + i, "valuevaluevalue" + i);
         }
@@ -82,6 +80,25 @@ public class WeakHashCacheTest extends MockedStaticInitializers {
         if (val1 != null) {
             assertEquals(val1, expectedVal1);
         }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutNullValue() {
+        WeakHashCache instance = new WeakHashCache();
+        instance.put("aKey", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutNullKey() {
+        WeakHashCache instance = new WeakHashCache();
+        instance.put(null, "aValue");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetNullKey() {
+        WeakHashCache instance = new WeakHashCache();
+        instance.put("aKey", "aValue");
+        instance.get(null);
     }
 
     /**

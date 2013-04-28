@@ -31,42 +31,84 @@ package org.tantalum.net;
  */
 public class HttpPoster extends HttpGetter {
 
+    private String url;
+    private volatile boolean isChainInputPostData = false;
+
     /**
      * HTTP POST a message to a given URL
      *
-     * Make sure you call setMessage(byte[]) to specify what you want to POST or
-     * you will get an IllegalArgumentException
+     * Make sure you call setPostData(byte[]) to specify what you want to POST
+     * or you will get an IllegalArgumentException
      *
-     * @param key - The url we will HTTP POST to, plus optional lines of text to
-     * create a unique hashcode for caching this value locally.
+     * If you wish to locally cache multiple responses from the server in which
+     * the URL is the same but the POST data is different, you should append to
+     * the url field additional line(s) of text. This will be used create a
+     * unique String hash in your StaticWebCache. You can control which POST
+     * responses are "unique" from the point of caching the most recent unique
+     * response by appending all or just some of the POST data fields.
+     *
+     * @param priority
+     * @param url 
      */
-    public HttpPoster(final String key) {
-        super(key);
+    public HttpPoster(final int priority, final String url) {
+        super(priority, url);
+
+        this.url = url;
     }
 
     /**
      * Create an HTTP POST operation
-     * 
-     * @param key
-     * @param message 
+     *
+     * @param url
+     * @param postData
+     * @param priority
      */
-    public HttpPoster(final String key, final byte[] message) {
-        super(key, message);
+    public HttpPoster(final int priority, final String url, final byte[] postData) {
+        this(priority, url);
+
+        setPostData(postData);
     }
 
     /**
      * Set the message to be HTTP POSTed to the server
-     * 
-     * @param message
-     * @return 
+     *
+     * @param postData
+     * @return
      */
-    public HttpPoster setMessage(final byte[] message) {
-        if (message == null) {
-            throw new IllegalArgumentException(this.getClass().getName() + " was passed null message- meaningless POST or PUT operation: " + key);
+    public final HttpPoster setPostData(final byte[] postData) {
+        if (postData == null) {
+            throw new IllegalArgumentException(getClassName() + " was passed null message- meaningless POST or PUT operation");
         }
-        this.postMessage = new byte[message.length];
-        System.arraycopy(message, 0, this.postMessage, 0, message.length);
+        this.postMessage = new byte[postData.length];
+        System.arraycopy(postData, 0, this.postMessage, 0, postData.length);
 
         return this;
+    }
+
+    /**
+     * The default when an HttpPoster is not the first Task in a chain is for
+     * the previous Task output to be passed as the URL, not post data, to this
+     * task.
+     *
+     * You can override this to have the previous Task in the chain set the post
+     * data instead of the URL. The previous Task should then output a byte[]
+     *
+     * @param isPostData
+     * @return
+     */
+    public HttpPoster setChainInputIsPostData(final boolean isPostData) {
+        this.isChainInputPostData = isPostData;
+
+        return this;
+    }
+
+    public Object exec(final Object in) {
+        if (isChainInputPostData) {
+            setPostData((byte[]) in);
+
+            return super.exec(url);
+        } else {
+            return super.exec(in);
+        }
     }
 }

@@ -140,30 +140,25 @@ public final class JMEImageUtils {
     }
 
     /**
-     * Return an image which is smaller then the original.
+     * Return an image which is, if needed to fit inside a bounding box,
+     * down-scaled and smaller then the original on one or both axes. The image
+     * will not be up-scaled if smaller than the bounding box.
      *
-     * The destination size can be defined exactly, or to fit within a bounding
-     * box with aspect ratio preserved.
+     * Using this variant receiving an <source>int[]</source>
+     * instead of <source>Image</source> allows you to reduce peak memory usage
+     * during scaling. This reduces the likelihood you will see OutOfMemory
+     * problems when scaling. A low-memory example usage pattern is below. The
+     * <source>Task.LARGE_MEMORY_MUTEX</source> prevents multiple threads from
+     * entering memory-spike sections simultaneously. The source and result data
+     * arrays can be the same for maximum speed and minimal memory consumption.
      *
-     * To ensure your application does not use too much memory to scale the
-     * image at the same time other parts of the program have a peak memory
-     * usage, use the following calling pattern, modify as appropriate for your
-     * needs.
-     *
-     * synchronized (Worker.LARGE_MEMORY_MUTEX) {
-     *
-     * int[] data = new int[w * h];
-     *
-     * image.getRGB(data, 0, w, 0, 0, w, h);
-     *
-     * image = null;
-     *
-     * image = JMEImageUtils.downscaleImage(data, w, h, maxW, maxH, true, false,
-     * false);
-     *
-     * data = null;
-     *
-     * }
+     * <source><pre>synchronized (Task.LARGE_MEMORY_MUTEX) {
+     *    final int[] data = new int[w * h];
+     *    image.getRGB(data, 0, w, 0, 0, w, h);
+     *    image = null;
+     *    image = JMEImageUtils.scaleImage(data, data, w, h, maxW, maxH, true,
+     *       false, false);
+     * }</pre></source>
      *
      * @param inputImageARGB - ARGB data for the original image
      * @param outputImageARGB - ARGB data buffer for the scaled image, can be
@@ -223,6 +218,7 @@ public final class JMEImageUtils {
             maxH = srcH;
         }
         switch (scalingAlgorithm) {
+            default:
             case ONE_POINT_PICK:
                 while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
                     JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
@@ -231,7 +227,7 @@ public final class JMEImageUtils {
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
                     JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
-                            srcH >>= 1);
+                            srcH >> 1);
                     break;
                 }
             case BASIC_ONE_POINT_PICK:
@@ -245,8 +241,8 @@ public final class JMEImageUtils {
                     srcW >>= 1;
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-                    JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
-                            srcH >>= 1);
+                    JMEImageUtils.half(inputImageARGB, outputImageARGB, maxW,
+                            maxH);
                     break;
                 }
                 JMEImageUtils.fivePointSampleDownscale(inputImageARGB,
@@ -302,7 +298,7 @@ public final class JMEImageUtils {
             srcW >>= 1;
         }
         if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-            JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW, srcH >>= 1);
+            JMEImageUtils.half(inputImageARGB, outputImageARGB, maxW, maxH);
         } else {
             maxW = Math.min(srcW, maxW);
             maxH = Math.min(srcH, maxH);

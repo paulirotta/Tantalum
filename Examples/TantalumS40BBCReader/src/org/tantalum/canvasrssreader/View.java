@@ -81,4 +81,8 @@ public abstract class View implements CommandListener {
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_BACKGROUND);
         g.fillRect(canvas.getWidth() - SCROLL_BAR_WIDTH, barY, SCROLL_BAR_WIDTH, barHeight);
     }
+    
+    public String toString() {
+        return "View renderY=" + renderY;
+    }
 }

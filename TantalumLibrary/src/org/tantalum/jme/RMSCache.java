@@ -24,11 +24,14 @@
  */
 package org.tantalum.jme;
 
+import java.io.UnsupportedEncodingException;
+import java.security.DigestException;
 import java.util.Vector;
 import javax.microedition.rms.RecordStoreFullException;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 
 /**
@@ -39,140 +42,135 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public final class RMSCache extends FlashCache {
-
-    /**
-     * Create a new RMSCache. You should not call this method directly, but
-     * rather request the cache from
-     * <code>PlatformUtils.getInstance().getFlashCache(priority)</code>
-     *
-     * @param priority
-     */
-    public RMSCache(final char priority) {
-        super(priority);
-    }
-
-    /**
-     * Get the key with the priority prepended to create a key that is uniquely
-     * stamped as belonging to this cache.
-     *
-     * The cache implementation is a flat hashtable structure. The key must thus
-     * be marked to indicate the "path" of the specific cache to which it
-     * belongs.
-     *
-     * @param key
-     * @return
-     */
-    private String getCacheKey(final String key) {
-        return priority + key;
-    }
-
-    /**
-     * Remove the priority from the beginning of the key
-     *
-     * @param priorityKey
-     * @return
-     */
-    private String getKeyPriorityStripped(final String priorityKey) {
-        return priorityKey.substring(1);
-    }
-
-    /**
-     * Get one item from flash memory
-     *
-     * @param key
-     * @return
-     * @throws FlashDatabaseException
-     */
-    public byte[] getData(final String key) throws FlashDatabaseException {
-        final String cacheKey = getCacheKey(key);
-
-        return RMSUtils.getInstance().cacheRead(cacheKey);
-    }
-
-    /**
-     * Add one item to flash memory
-     *
-     * @param key
-     * @param bytes
-     * @throws FlashFullException
-     * @throws FlashDatabaseException
-     */
-    public void putData(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException {
-        final String cacheKey = getCacheKey(key);
-
-        try {
-            RMSUtils.getInstance().cacheWrite(cacheKey, bytes);
-        } catch (RecordStoreFullException ex) {
-            //#debug
-            L.e("RMS Full", cacheKey, ex);
-            throw new FlashFullException("key = " + cacheKey + " : " + ex);
-        }
-    }
-
-    /**
-     * Remove one item from flash memory
-     *
-     * @param key
-     */
-    public void removeData(final String key) throws FlashDatabaseException {
-        final String cacheKey = getCacheKey(key);
-
-        RMSUtils.getInstance().cacheDelete(cacheKey);
-    }
-
-    /**
-     * Get a list of flash memory cache contents
-     *
-     * @return
-     * @throws FlashDatabaseException
-     */
-    public Vector getKeys() throws FlashDatabaseException {
-        final Vector keys = RMSUtils.getInstance().getCacheRecordStoreNames();
-        final String prefix = String.valueOf(priority);
-
-        for (int i = keys.size() - 1; i >= 0; i--) {
-            final String key = (String) keys.elementAt(i);
-
-            if (key.startsWith(prefix)) {
-                keys.setElementAt(getKeyPriorityStripped(key), i);
-            } else {
-                /**
-                 * From some other RMS cache, but not the same priority tag
-                 */
-                keys.removeElementAt(i);
-            }
-        }
-
-        return keys;
-    }
-
-    /**
-     * Clear everything from flash memory for this specific cache
-     */
-    public void clear() {
-        try {
-            //#debug
-            L.i("Clear RMS cache", "" + priority);
-
-            final Vector keys = getKeys();
-
-            for (int i = keys.size() - 1; i >= 0; i--) {
-                final String key = (String) keys.elementAt(i);
-
-                try {
-                    //#debug
-                    L.i("Clear RMS, remove one item, cache priority=" + priority, "key=" + key);
-                    removeData(key);
-                } catch (Exception e) {
-                    //#debug
-                    L.e("Problem during clear() of RMSCache, will continue to try next item", key, e);
-                }
-            }
-        } catch (FlashDatabaseException e) {
-            //#debug
-            L.e("Problem during clear() of RMSCache- aborting clear()", "cache priority=" + priority, e);
-            RMSUtils.getInstance().wipeRMS();
-        }
-    }
+public final class RMSCache {
+//extends FlashCache {
+//
+//    /**
+//     * Create a new RMSCache. You should not call this method directly, but
+//     * rather request the cache from
+//     * <code>PlatformUtils.getInstance().getFlashCache(priority)</code>
+//     *
+//     * @param priority
+//     */
+//    public RMSCache(final char priority) {
+//        super(priority);
+//    }
+//
+//    /**
+//     * Remove the priority from the beginning of the key
+//     *
+//     * @param priorityKey
+//     * @return
+//     */
+//    private String getKeyPriorityStripped(final String priorityKey) {
+//        return priorityKey.substring(1);
+//    }
+//
+//    /**
+//     *
+//     * @param key
+//     * @return
+//     * @throws FlashDatabaseException
+//     */
+//    public byte[] get(final byte[] digest) throws FlashDatabaseException {
+//        return RMSUtils.getInstance().cacheRead(priority, digest);
+//    }
+//
+//    /**
+//     * Add one item to flash memory
+//     *
+//     * @param key
+//     * @param bytes
+//     * @throws FlashFullException
+//     * @throws FlashDatabaseException
+//     */
+//    public void put(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException, DigestException, UnsupportedEncodingException {
+//        try {
+//            final byte[] digest = toDigest(key);
+//            RMSUtils.getInstance().cacheWrite(priority, digest, bytes);
+//        } catch (RecordStoreFullException ex) {
+//            throw new FlashFullException("key = " + key + " : " + ex);
+//        }
+//    }
+//
+//    /**
+//     * Remove one item from flash memory
+//     *
+//     * @param key
+//     */
+//    public void removeData(final byte[] digest) throws FlashDatabaseException {
+//        RMSUtils.getInstance().cacheDelete(priority, digest);
+//    }
+//
+//    /**
+//     * Get a list of flash memory cache contents
+//     *
+//     * To save memory we a list of cryptographic digests of the index string of
+//     * each element
+//     *
+//     * @return
+//     * @throws DigestException
+//     * @throws FlashDatabaseException 
+//     */
+//    public long[] getDigests() throws DigestException, FlashDatabaseException {
+//        final Vector keys = RMSUtils.getInstance().getCacheRecordStoreNames();
+//        final String prefix = String.valueOf(priority);
+//
+//        for (int i = keys.size() - 1; i >= 0; i--) {
+//            final String key = (String) keys.elementAt(i);
+//
+//            if (key.startsWith(prefix)) {
+//                keys.setElementAt(getKeyPriorityStripped(key), i);
+//            } else {
+//                /**
+//                 * From some other RMS cache, but not the same priority tag
+//                 */
+//                keys.removeElementAt(i);
+//            }
+//        }
+//        final long[] dig = new long[keys.size()];
+//        for (int i = 0; i < dig.length; i++) {
+//            try {
+//                dig[i] = CryptoUtils.getInstance().toDigest((String) keys.elementAt(i));
+//            } catch (UnsupportedEncodingException ex) {
+//               adf
+//            }
+//        }
+//
+//        return dig;
+//    }
+//
+//    /**
+//     * Clear everything from flash memory for this specific cache
+//     */
+//    public void clear() {
+//        try {
+//            //#debug
+//            L.i("Clear RMS cache", "" + priority);
+//
+//            final byte[][] digests = getDigests();
+//
+//            for (int i = digests.length - 1; i >= 0; i--) {
+//                final byte[] digest = digests[i];
+//                final String key = toString(digest);
+//
+//                try {
+//                    //#debug
+//                    L.i("Clear RMS, remove one item, cache priority=" + priority, "key=" + key);
+//                    removeData(key);
+//                } catch (Exception e) {
+//                    //#debug
+//                    L.e("Problem during clear() of RMSCache, will continue to try next item", key, e);
+//                }
+//            }
+//        } catch (Exception e) {
+//            //#debug
+//            L.e("Problem during clear() of RMSCache- aborting clear()", "cache priority=" + priority, e);
+//            RMSUtils.getInstance().wipeRMS();
+//        }
+//    }
+//
+//    public String toString(final byte[] digest) throws FlashDatabaseException, UnsupportedEncodingException {
+//        return new String(digest, "UTF-8");
+//    }
 }

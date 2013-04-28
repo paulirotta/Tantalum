@@ -100,39 +100,6 @@ public abstract class Task implements Runnable {
      */
     public static final int FASTLANE_PRIORITY = 6;
     /**
-     * LIFO with no guaranteed sequence (multi-thread concurrent execution)
-     * start the task as soon as possible. The
-     * <code>fork()</code> operation will place this as the next Task to be
-     * completed unless subsequent
-     * <code>HIGH_PRIORITY</code> fork operations occur before a Worker start
-     * execution.
-     *
-     * This is the priority to use if your UI-related task must execute soon
-     * even under heavy load AND it never takes very long to to execute. A good
-     * example example reading from the local file system. A good example of
-     * what not to put in the fastlane is reading from or writing to the network
-     * as this can block for a long time and then the fastlane is not so fast
-     * anymore.
-     */
-    public static final int HIGH_PRIORITY = 5;
-    /**
-     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
-     * Start execution after any previously
-     * <code>fork()</code>ed work, first in is usually first out, however
-     * multiple Workers in parallel means that execution start and completion
-     * order is not guaranteed.
-     */
-    public static final int NORMAL_PRIORITY = 4;
-    /**
-     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
-     * Start execution if there is nothing else for the Workers to do. At least
-     * one Worker will always be left idle for immediate activation if only
-     * <code>IDLE_PRIORITY</code> work is queued for execution. This is intended
-     * for background tasks such as pre-fetch and pre-processing of data that
-     * doe not affect the current user view.
-     */
-    public static final int IDLE_PRIORITY = 3;
-    /**
      * FIFO with guaranteed sequence (single-thread concurrent execution, this
      * one thread also does
      * <code>FASTLANE</code> work first, but then
@@ -153,13 +120,50 @@ public abstract class Task implements Runnable {
      * <code>Task</code> chains to or forks other
      * <code>Task</code>s.
      */
-    public static final int SERIAL_PRIORITY = 2;
+    public static final int SERIAL_PRIORITY = 5;
+    /**
+     * LIFO with no guaranteed sequence (multi-thread concurrent execution)
+     * start the task as soon as possible. The
+     * <code>fork()</code> operation will place this as the next Task to be
+     * completed unless subsequent
+     * <code>HIGH_PRIORITY</code> fork operations occur before a Worker start
+     * execution.
+     *
+     * This is the priority to use if your UI-related task must execute soon
+     * even under heavy load AND it never takes very long to to execute. A good
+     * example example reading from the local file system. A good example of
+     * what not to put in the fastlane is reading from or writing to the network
+     * as this can block for a long time and then the fastlane is not so fast
+     * anymore.
+     */
+    public static final int HIGH_PRIORITY = 4;
+    /**
+     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
+     * Start execution after any previously
+     * <code>fork()</code>ed work, first in is usually first out, however
+     * multiple Workers in parallel means that execution start and completion
+     * order is not guaranteed.
+     */
+    public static final int NORMAL_PRIORITY = 3;
+    /**
+     * FIFO with no guaranteed sequence (multi-thread concurrent execution).
+     * Start execution if there is nothing else for the Workers to do. At least
+     * one Worker will always be left idle for immediate activation if only
+     * <code>IDLE_PRIORITY</code> work is queued for execution. This is intended
+     * for background tasks such as pre-fetch and pre-processing of data that
+     * doe not affect the current user view.
+     */
+    public static final int IDLE_PRIORITY = 2;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      *
      * Start execution when
      * <code>PlatformUtils.getInstance().shutdown()</code> is called, and do not
      * exit the program until all such shutdown tasks are completed.
+     *
+     * Shutdown Tasks are run concurrently in no specified order. If you want
+     * your Task to execute before a given cache closes, you should call
+     * StaticCache.addShutdownTask() instead.
      *
      * Note that if shutdown takes too long and the phone is telling the
      * application to exit, then the phone may give the application a limited
@@ -168,9 +172,9 @@ public abstract class Task implements Runnable {
      * if the application initiates the exit as by clicking an "Exit" button in
      * the application, but since this can never be guaranteed to be the only
      * shutdown sequence, you must design for quick shutdown.
+     *
      */
     public static final int SHUTDOWN = 1;
-    private static final int PRIORITY_NOT_SET = Integer.MIN_VALUE;
     /**
      * While holding no other locks, synchronize on the following during
      * critical code sections if your processing routine will temporarily need a
@@ -248,7 +252,7 @@ public abstract class Task implements Runnable {
      * will have cancel() called to notify that they will not execute.
      */
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
-    private int forkPriority = Task.PRIORITY_NOT_SET; // Access only in synchronized(MUTEX) block
+    private final int forkPriority; // Access only in synchronized(MUTEX) block
     private final Object MUTEX = new Object();
     /*
      * Should we run() this task on the UI thread after successful execution
@@ -285,27 +289,21 @@ public abstract class Task implements Runnable {
     }
 
     /**
-     * Create a
-     * <code>Task</code> with input value of null
+     * Create a Task and specify the priority at which this
+     * <code>Task</code> should be forked within a chain if the previous
+     * <code>Task</code> completes normally.
      *
      * Use this constructor if your
      * <code>Task</code> does not accept an input value, otherwise use the
      * <code>Task(Object)</code> constructor.
      *
-     */
-    public Task() {
-    }
-
-    /**
-     * Create a Task and specify the priority at which this
-     * <code>Task</code> should be forked within a chain if the previous
-     * <code>Task</code> completes normally.
-     *
      * @param priority
      */
     public Task(final int priority) {
-        this();
-        setForkPriority(priority);
+        if ((priority < Task.SHUTDOWN) || priority > Task.FASTLANE_PRIORITY) {
+            throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
+        }
+        forkPriority = priority;
     }
 
     /**
@@ -314,16 +312,12 @@ public abstract class Task implements Runnable {
      * The default action is for the output value to be the same as the input
      * value, however many Tasks will return their own value.
      *
+     * @param priority
      * @param initialValue
      */
-    public Task(final Object initialValue) {
-        this();
-        set(initialValue);
-    }
-
     public Task(final int priority, final Object initialValue) {
-        this(initialValue);
-        setForkPriority(priority);
+        this(priority);
+        set(initialValue);
     }
 
     /**
@@ -357,7 +351,7 @@ public abstract class Task implements Runnable {
     public final Task setShutdownBehaviour(final int shutdownBehaviour) {
         synchronized (MUTEX) {
             if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
-                throw new IllegalArgumentException("Invalid shutdownBehaviour value: " + shutdownBehaviour);
+                throw new IllegalArgumentException(getClassName() + " invalid shutdownBehaviour value: " + shutdownBehaviour);
             }
 
             this.shutdownBehaviour = shutdownBehaviour;
@@ -374,7 +368,7 @@ public abstract class Task implements Runnable {
      *
      * @return
      */
-    public final Object getValue() {
+    final Object getValue() {
         synchronized (MUTEX) {
             return value;
         }
@@ -427,8 +421,8 @@ public abstract class Task implements Runnable {
      */
     public final Object set(final Object value) {
         synchronized (MUTEX) {
-            if (this.status >= Task.FINISHED) {
-                throw new IllegalStateException("Can not setValue(), Task value is final after execution: " + this);
+            if (this.status != Task.PENDING) {
+                throw new IllegalStateException(getClassName() + " can not setValue(), Task value is final after execution: " + this);
             }
 
             return this.value = value;
@@ -443,42 +437,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final Task fork() {
-        return doFork(getPriorityDuringFork());
-    }
-
-    /**
-     * Get the priority. If it has not yet been asserted, set it to default.
-     *
-     * Since priority can only be set once, this and PRIORITY_NOT_SET help allow
-     * checks to prevent common multi-chain-or-fork errors.
-     *
-     * @return
-     */
-    private int getPriorityDuringFork() {
-        synchronized (MUTEX) {
-            if (forkPriority == Task.PRIORITY_NOT_SET) {
-                setForkPriority(Task.NORMAL_PRIORITY);
-            }
-
-            return forkPriority;
-        }
-    }
-
-    /**
-     * Execute this task asynchronously on a Worker thread at the specified
-     * priority.
-     *
-     * @param priority
-     * @return
-     */
-    public final Task fork(final int priority) {
-        setForkPriority(priority);
-
-        return doFork(priority);
-    }
-
-    private Task doFork(final int taskPriority) {
-        return Worker.fork(this, taskPriority);
+        return Worker.fork(this, getForkPriority());
     }
 
     /**
@@ -533,22 +492,22 @@ public abstract class Task implements Runnable {
      * priority.
      *
      * @param timeout in milliseconds
-     * @return final evaluation result of the Task
+     * @return final evaluation result of the Task, or if the Task returns a
+     * Task t2, then the value of t2.join()
      * @throws CancellationException - task was explicitly canceled by another
      * thread
      * @throws TimeoutException - UITask failed to complete within timeout
      * milliseconds
      */
-    public final Object join(final long timeout) throws CancellationException, TimeoutException {
+    public final Object join(long timeout) throws CancellationException, TimeoutException {
         if (timeout < 0) {
-            throw new IllegalArgumentException("Can not join() with timeout < 0: timeout=" + timeout);
+            throw new TimeoutException("Can not join(" + timeout + ") " + this);
         }
         //#mdebug
         if (PlatformUtils.getInstance().isUIThread() && timeout > 200) {
-            L.i("WARNING- slow Task.join() on UI Thread", "timeout=" + timeout + " " + this);
+            L.i(this, "WARNING- slow join(" + timeout + ")", "UI Thread may become unresponsive " + this);
         }
         //#enddebug
-        Object out = null;
 
         if (getStatus() == PENDING && Worker.tryUnfork(this)) {
             return executeOutOfOrderAfterSuccessfulUnfork();
@@ -556,42 +515,69 @@ public abstract class Task implements Runnable {
 
         synchronized (MUTEX) {
             //#debug
-            L.i("Start join", "timeout=" + timeout + " " + this);
+            L.i(this, "start join(" + timeout + ")", "" + this);
             switch (status) {
                 case FINISHED:
-                    return value;
+                    break;
 
                 case PENDING:
                     final long t = System.currentTimeMillis();
                     try {
                         //#debug
-                        L.i("Can not unfork, must be an executing or chained task. Start join() wait", "timeout=" + timeout + " - " + this.toString());
+                        L.i(this, "Can not unfork, must be an executing or chained Task. Start join(" + timeout + ")", "" + this);
 
                         try {
                             MUTEX.wait(timeout);
                         } catch (InterruptedException e) {
                             //#debug
-                            L.e("InterruptedException during join() wait", "Task will canel: " + this, e);
+                            L.e(this, "InterruptedException during join(" + timeout + ") wait", "Task will cancel: " + this, e);
                         }
+                        //#debug
+                        L.i(this, "End join(" + timeout + ") after can not unfork executing or chained Task", "" + this);
                         if (status == FINISHED) {
-                            return value;
+                            timeout -= System.currentTimeMillis() - t;
+                            break;
                         }
-                        if (System.currentTimeMillis() > t) {
-                            throw new TimeoutException("join(" + timeout + ") was to a Task which did not complete within the specified timeout: " + this);
+                        if (System.currentTimeMillis() > t && !(value instanceof Task)) {
+                            throw new TimeoutException(getClassName() + " join(" + timeout + ") was to a Task which did not complete within the specified timeout: " + this);
                         }
-                        throw new CancellationException("join(" + timeout + ") was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
+                        throw new CancellationException(getClassName() + " join(" + timeout + ") was to a Task which was PENDING but was then canceled or externally interrupted: " + this);
                     } finally {
                         //#debug
-                        L.i("End join(" + timeout + ") wait", "join wait time=" + (System.currentTimeMillis() - t) + " - " + this.toString());
+                        L.i(this, "End join(" + timeout + ") wait", "join wait timeElapsed=" + (System.currentTimeMillis() - t) + " - " + this.toString());
                     }
 
                 default:
                 case CANCELED:
-                    throw new CancellationException("join() was to a Task which was canceled: " + this);
+                    throw new CancellationException(getClassName() + " join(" + timeout + ") was to a Task which was canceled: " + this);
             }
+
+            return value;
         }
+
+//        return getChainedJoin(timeout);
     }
 
+    /**
+     * A Task must return a real value, not another Task. Some Tasks may
+     * dynamically chain to other Tasks. When we synchronoutsly get() the
+     * result, it must be the final result of the entire Task-returns-Task
+     * chain. The dynamically generated Task is swallowed in the process.
+     *
+     * @return
+     */
+//    private Object getChainedJoin(final long timeout) throws CancellationException, TimeoutException {
+//        final Task chainedJoinTask;
+//
+//        synchronized (MUTEX) {
+//            if (!(value instanceof Task)) {
+//                return value;
+//            }
+//            chainedJoinTask = (Task) value;
+//        }
+//
+//        return chainedJoinTask.join(timeout);
+//    }
     /**
      * Run the application on the current thread. In almost all cases the task
      * is still PENDING and will run, but there is a rare race condition whereby
@@ -602,7 +588,7 @@ public abstract class Task implements Runnable {
      */
     private Object executeOutOfOrderAfterSuccessfulUnfork() throws CancellationException {
         //#debug
-        L.i("Successful unfork of start join of PENDING task", "out of order execution starting on this thread: " + this.toString());
+        L.i(this, "Successful unfork join() PENDING task", "Out of order exec: " + this);
 
         switch (getStatus()) {
             case PENDING:
@@ -650,15 +636,15 @@ public abstract class Task implements Runnable {
         }
         //#mdebug
         if (PlatformUtils.getInstance().isUIThread() && timeout > 100) {
-            L.i("WARNING- slow Task.joinAll() on UI Thread", "timeout=" + timeout);
+            L.i("WARNING- slow", "Task.joinAll(" + timeout + ") on UI Thread");
         }
         //#enddebug
 
         //#debug
         L.i("Start joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length);
         long timeLeft = Long.MAX_VALUE;
+        final long startTime = System.currentTimeMillis();
         try {
-            final long startTime = System.currentTimeMillis();
             for (int i = 0; i < tasks.length; i++) {
                 final Task task = tasks[i];
                 timeLeft = startTime + timeout - System.currentTimeMillis();
@@ -670,7 +656,7 @@ public abstract class Task implements Runnable {
             }
         } finally {
             //#debug
-            L.i("End joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length + " timeElapsed=" + (timeout - timeLeft));
+            L.i("End joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length + " timeElapsed=" + (System.currentTimeMillis() - startTime));
         }
     }
 
@@ -709,18 +695,18 @@ public abstract class Task implements Runnable {
      */
     final void setStatus(final int status) {
         if (status == CANCELED) {
-            throw new IllegalArgumentException("Do not setStatus(Task.CANCELED). Call Task.cancel(false, \"Reason for cancel\") instead to keep your code debuggable");
+            throw new IllegalArgumentException(getClassName() + ": do not setStatus(Task.CANCELED). Call Task.cancel(false, \"Reason for cancel\") instead to keep your code debuggable");
         }
 
-        doSetStatus(status);
+        doSetStatus(status, "");
     }
 
-    private void doSetStatus(final int status) {
+    private void doSetStatus(final int status, final String reason) {
         final Task t;
         synchronized (MUTEX) {
             if (this.status == status) {
                 //#debug
-                L.i("State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
+                L.i(this, "State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
                 return;
             }
             if (status > FINISHED) {
@@ -742,76 +728,113 @@ public abstract class Task implements Runnable {
             PlatformUtils.getInstance().runOnUiThread(new Runnable() {
                 public void run() {
                     //#debug
-                    L.i("Task onCanceled()", Task.this.toString());
-                    onCanceled();
+                    L.i(this, "Firing onCanceled(" + reason + ")", Task.this.toString());
+                    onCanceled(reason);
                 }
             });
             // Also cancel any chained Tasks expecting the output of this Task
             if (t != null) {
-                t.cancel(false, "Previous task in chain was canceled");
+                t.cancel(false, "Previous task in chain was canceled: " + this);
             }
         }
     }
 
     /**
-     * Set a
-     * <code>Task</code> which will
-     * <code>fork()</code>ed after the current
-     * <code>Task</code> completes. nextTask == null is legal and has no effect.
+     * Execute the chained
+     * <code>Task</code> after this
+     * <code>Task</code>, using this
+     * <code>Task</code>'s output as the nextTask input.
+     *
+     * <code>nextTask</code> will be
+     * <code>fork()</code>ed at the same time as any previously
+     * <code>chain()</code>ed
+     * <code>Task</code>s for concurrent execution.
+     *
+     * nextTask == null is legal and has no effect.
      *
      * Each
      * <code>Task</code> in a chain will run at the same priority as the
      * previous
-     * <code>Task</code> in the chain unless you explicitly set a different
-     * priority for it.
+     * <code>Task</code> unless you explicitly set a different priority for it.
+     * Best practice is for you to explicitly set the priority for each
+     * <code>Task</code> in a chain for code clarity.
+     *
+     * If the
+     * <code>Task</code> is already chained, this new
+     * <code>Task</code> will be inserted into the chain immediately after the
+     * current task.
+     *
+     * <code>insertAsNextLink</code> - The default value is
+     * <code>false</code>, meaning multiple
+     * <code>Task</code>s chained after this
+     * <code>Task</code> will be
+     * <code>fork()</code>ed in parallel for concurrent execution. Set
+     * <code>insertAsNextLink = true</code> if you prefer to have
+     * <code>nextTask</code> run serially before any previously
+     * <code>chain()</code>ed
+     * <code>Task</code>s. This is unusual but useful for example if you insert
+     * a validator or change tactics to add a new approach when the first
+     * <code>Task</code> results are not satisfactory.
      *
      * @param nextTask
-     * @return nextTask
+     * @return this
      */
     public final Task chain(final Task nextTask) {
-        if (nextTask != null) {
-            final Task multiLinkChain;
-            synchronized (MUTEX) {
-                if (chainedTask == null) {
-                    chainedTask = nextTask;
-                    multiLinkChain = null;
-                } else {
-                    // Already chained- we must add to the end of the chain
-                    multiLinkChain = chainedTask;
-                }
-            }
-            if (multiLinkChain != null) {
-                /*
-                 * Call this outside the above synchronized block so that we are not
-                 * holding multiple locks for Tasks at the same time
-                 */
-                multiLinkChain.chain(nextTask);
-            }
+        if (nextTask == null) {
+            //#debug
+            L.i(this, "Ignoring chain(null)", "" + this);
+            return this;
         }
-
-        return nextTask;
-    }
-
-    /**
-     * Update the priority parameter which will be applied to this Task when it
-     * is fork()ed as link in a Task chain.
-     *
-     * @param priority
-     * @return
-     */
-    private Task setForkPriority(final int priority) {
+        if (nextTask == this) {
+            throw new IllegalArgumentException("Can not chain a task to itself");
+        }
         synchronized (MUTEX) {
-            if ((priority < Task.SHUTDOWN) || priority > Task.FASTLANE_PRIORITY) {
-                throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
+            if (getStatus() > Task.PENDING) {
+                throw new IllegalStateException("Can not chain() to a Task unless it is still PENDING: " + this);
             }
-            if (forkPriority != Task.PRIORITY_NOT_SET) {
-                throw new IllegalStateException("Task priority has alrady been set: " + this);
+
+            if (chainedTask == null) {
+                chainedTask = nextTask;
+            } else if (chainedTask instanceof ChainSplitter) {
+                ((ChainSplitter) chainedTask).addSplit(nextTask);
+            } else {
+                chainedTask = new ChainSplitter(chainedTask, nextTask);
             }
-            forkPriority = priority;
+            //#mdebug
+            if (previousTaskInChain == nextTask) {
+                L.i(this, "ERROR", "Do not chain a task to the task before it in a chain()" + showChain());
+            }
+            nextTask.setPreviousTaskInChain(this);
+            L.i(this, "Chain added", showChain());
+            //#enddebug
 
             return this;
         }
     }
+    //#mdebug
+    // Always access in a synchronized(MUTEX) block
+    private Task previousTaskInChain = null;
+
+    private void setPreviousTaskInChain(final Task previousTaskInChain) {
+        if (previousTaskInChain == null) {
+            throw new IllegalArgumentException("setPreiouvTaskInChain(null) not allowed");
+        }
+
+        this.previousTaskInChain = previousTaskInChain;
+        /*
+         * We want to eliminate long chains of used-up previous chain step which
+         * can not be garbage collected. This is occurs naturally in a production
+         * build since there are not backward references in the chain. But for
+         * debug clarity, knowing where a Task receives it's value is useful. Thus
+         * in the debug build we keep the previous step for debug display. This
+         * referese reference might however cause artificial memory problems in
+         * the debug build which do not apply to the production build, so to minimize
+         * the issue we only keep one step back in the chain, not the entire previous
+         * chain.
+         */
+        previousTaskInChain.previousTaskInChain = null;
+    }
+    //#enddebug
 
     /**
      * Return the priority value applied when this Task was fork()ed.
@@ -822,19 +845,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final int getForkPriority() {
-        synchronized (MUTEX) {
-            return forkPriority;
-        }
-    }
-
-    private int assertForkPriority(final int priorityIfPriorityNotSet) {
-        synchronized (MUTEX) {
-            if (forkPriority == Task.PRIORITY_NOT_SET) {
-                forkPriority = priorityIfPriorityNotSet;
-            }
-
-            return forkPriority;
-        }
+        return forkPriority;
     }
 
     /**
@@ -878,15 +889,17 @@ public abstract class Task implements Runnable {
             }
             if (t != null) {
                 //#debug
-                L.i("Begin fork chained task", t.toString() + " INPUT: " + in);
-                t.set(out);
-                t.assertForkPriority(forkPriority);
+                L.i(this, "Begin fork chained task", t + " outputBecomesNextTaskInput=" + out);
+                if (out != null) {
+                    t.set(out);
+                }
                 t.fork();
             }
         } catch (final Throwable t) {
+            final String s = "Exception during Task exec(): ";
             //#debug
-            L.e("Exception during Task exec()", this.toString(), t);
-            cancel(false, "Unhandled task exception: " + this.toString() + " : " + t);
+            L.e(s, "" + this, t);
+            cancel(false, s + " : " + this, t);
             out = null;
         }
 
@@ -902,7 +915,18 @@ public abstract class Task implements Runnable {
     protected abstract Object exec(Object in);
 
     /**
-     * Cancel execution if possible. This is called on the Worker thread
+     * Cancel execution of this Task
+     *
+     * @param mayInterruptIfRunning
+     * @param reason
+     * @return
+     */
+    public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
+        return cancel(mayInterruptIfRunning, reason, null);
+    }
+
+    /**
+     * Cancel execution of this Task. This is called on the Worker thread
      *
      * Do not override this unless you also call super.cancel(boolean).
      *
@@ -911,11 +935,12 @@ public abstract class Task implements Runnable {
      *
      * @param mayInterruptIfRunning
      * @param reason
+     * @param t
      * @return
      */
-     public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
+    public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
         synchronized (MUTEX) {
-            if (reason == null || reason.length() == 0) {
+            if (reason == null) {
                 throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
             }
 
@@ -923,14 +948,14 @@ public abstract class Task implements Runnable {
 
             if (canceled) {
                 //#debug
-                L.i("Ignore cancel() - " + reason, "already CANCELED: " + this);
+                L.i(this, "Ignoring cancel(\"" + reason + " - " + t + "\")", "Already CANCELED: " + this);
             } else {
                 //#debug
-                L.i("Begin cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
+                L.e(this, "Begin cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " " + this, t);
                 switch (status) {
                     case FINISHED:
                         //#debug
-                        L.i("Ignored attempt to interrupt an EXEC_FINISHED Task", this.toString());
+                        L.i(this, "Ignored attempt to interrupt an EXEC_FINISHED Task:" + reason + " - " + t, this.toString());
                         break;
 
                     case PENDING:
@@ -949,10 +974,10 @@ public abstract class Task implements Runnable {
 
                     default:
                         canceled = true;
-                        doSetStatus(CANCELED);
+                        doSetStatus(CANCELED, reason);
                 }
                 //#debug
-                L.i("End cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
+                L.i(this, "End cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
             }
 
             return canceled;
@@ -968,10 +993,11 @@ public abstract class Task implements Runnable {
      * Use getStatus() to distinguish between CANCELED and EXCEPTION states if
      * necessary.
      *
+     * @param reason
      */
-    protected void onCanceled() {
+    protected void onCanceled(final String reason) {
         //#debug
-        L.i("Task canceled", this.toString());
+        L.i(this, "default Task.onCanceled() - this method was not overridden: cancellationReason=" + reason, this.toString());
     }
 
     /**
@@ -996,8 +1022,144 @@ public abstract class Task implements Runnable {
      */
     public void run() {
     }
-
     //#mdebug
+    private String anonInnerClassName = null;
+
+    /**
+     * Get the real and possibly aritificially assigned debug class name for an
+     * anonymous inner class. This helps the debug logs to be more easily
+     * readable.
+     *
+     * @param o
+     * @return
+     */
+    public static String getClassName(final Object o) {
+        if (o instanceof Task) {
+            return ((Task) o).getClassName();
+        }
+        if (o == null) {
+            return "<null>";
+        }
+
+        return o.getClass().getName();
+    }
+    //#enddebug
+
+    /**
+     * Return the class name.
+     *
+     * If this is an anonymous inner class, the name return will include any
+     * appended name you assigned by a previous call to setClassName(). This can
+     * be useful for debugging since it is common to have anonymous inner
+     * classes which extend Task that are run asynchronously.
+     *
+     * @return
+     */
+    public String getClassName() {
+        String s = this.getClass().getName();
+        //#mdebug
+        synchronized (MUTEX) {
+            if (anonInnerClassName != null) {
+                s += anonInnerClassName;
+            }
+        }
+        //#enddebug
+
+        return s;
+    }
+
+    /**
+     * You can call this to make your debug output more clear if needed since by
+     * default anonymous inner classes don't have very useful names.
+     *
+     * This code will be automatically removed without a performance impact when
+     * you obfuscate your final build using the production Tantalum.JAR
+     *
+     * @param name
+     * @return
+     */
+    public Task setClassName(final String name) {
+        //#debug
+        this.anonInnerClassName = name;
+
+        return this;
+    }
+
+    private static final class ChainSplitter extends Task {
+
+        final Vector tasksToFork = new Vector();
+
+        ChainSplitter(final Task t1, final Task t2) {
+            super(Task.FASTLANE_PRIORITY);
+
+            addSplit(t1);
+            addSplit(t2);
+        }
+
+        void addSplit(final Task t) {
+            if (t == this) {
+                throw new IllegalArgumentException("Can not add split chain linking to itself: " + this + " - " + t);
+            }
+            if (tasksToFork.contains(t)) {
+                //#debug
+                L.i(this, "Duplicate chain warning", "You already chain()ed the same task to the same place: " + this + " - " + t);
+                return;
+            }
+            tasksToFork.addElement(t);
+            //#mdebug
+            if (tasksToFork.size() > 1) {
+                L.i(this, "Splitting the Task chain, tasks will be fork()ed for concurrentl execution", "" + this);
+            }
+            //#enddebug
+        }
+
+        protected Object exec(final Object in) {
+            //#debug
+            L.i(this, "Start chain split", "" + this);
+            for (int i = 0; i < tasksToFork.size(); i++) {
+                final Task t = (Task) tasksToFork.elementAt(i);
+
+                if (in != null) {
+                    t.set(in);
+                }
+                t.fork();
+            }
+
+            return in;
+        }
+
+        protected void onCanceled(final String reason) {
+            //#debug
+            L.i(this, "onCanceled(" + reason + ")", "" + this);
+            for (int i = 0; i < tasksToFork.size(); i++) {
+                ((Task) tasksToFork.elementAt(i)).cancel(false, "Previous task in chain was canceled, then the chain split");
+            }
+        }
+
+        //#mdebug
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+
+            sb.append("ChainSplitter concurrent fork() tasks: ");
+            synchronized (tasksToFork) {
+                for (int i = 0; i < tasksToFork.size(); i++) {
+                    final Task t = (Task) tasksToFork.elementAt(i);
+                    sb.append(t.getClassName());
+                    sb.append(" ");
+                }
+            }
+
+            return sb.toString();
+        }
+        //#enddebug
+    }
+    //#mdebug
+    private static String[] PRIORITY_STRINGS = {"PRIORITY_NOT_SET", "SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "FASTLANE_PRIORITY"};
+
+    String getPriorityString() {
+        return PRIORITY_STRINGS[getForkPriority()];
+    }
+
     /**
      * When debugging, show what each Worker is doing and the queue length
      *
@@ -1014,9 +1176,68 @@ public abstract class Task implements Runnable {
      * @return
      */
     public String toString() {
+        return toString(true);
+    }
+
+    /**
+     * Show the pre- and post- tasks in the chain for debug
+     *
+     * @return 
+     */
+    public String showChain() {
+        final StringBuffer sb = new StringBuffer();
+
+        sb.append(L.CRLF);
+        sb.append("   chain: ");
+        if (previousTaskInChain == null) {
+            sb.append("<null>");
+        } else {
+            sb.append(previousTaskInChain.getClassName());
+        }
+        sb.append(" -> this -> ");
+        if (chainedTask == null) {
+            sb.append("<null>");
+        } else {
+            sb.append(chainedTask.getClassName());
+        }
+        sb.append(L.CRLF);
+
+        return sb.toString();
+    }
+
+    /**
+     * Debug output for the Task
+     * 
+     * @param showChain
+     * @return 
+     */
+    public String toString(final boolean showChain) {
         synchronized (MUTEX) {
-            return "TASK: status=" + getStatusString() + " result=" + value + " nextTask=(" + chainedTask + ")";
+            StringBuffer sb = new StringBuffer(300);
+
+            sb.append("{task=");
+            sb.append(this.getClassName());
+            sb.append(" status=");
+            sb.append(getStatusString());
+            sb.append(" priority=");
+            sb.append(getPriorityString());
+            if (showChain) {
+                sb.append(showChain());
+            }
+            sb.append("   value=");
+            if (value instanceof byte[]) {
+                sb.append("byte[");
+                sb.append(((byte[]) value).length);
+                sb.append(']');
+            } else if (value instanceof Task) {
+                sb.append(((Task) value).getClassName());
+            } else {
+                sb.append(value);
+            }
+            sb.append("}" + L.CRLF);
+
+            return sb.toString();
         }
     }
-    //#enddebug
+//#enddebug    
 }

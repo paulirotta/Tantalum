@@ -88,7 +88,6 @@ public class StringUtils {
         }
 
         while (currentIndex != -1 && currentIndex < str.length()) {
-
             word = str.substring(currentIndex, wordBoundaryIndex+1);
 
             if (currentIndex == 0) {

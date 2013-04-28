@@ -24,10 +24,12 @@
  */
 package org.tantalum.canvasrssreader;
 
+import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSModel;
 import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 import org.xml.sax.SAXException;
 
@@ -36,7 +38,7 @@ import org.xml.sax.SAXException;
  * @author phou
  */
 public abstract class RSSListView extends View {
-
+    protected final Object MUTEX = new Object();
     static boolean prefetchImages = false;
     protected final RSSListView.LiveUpdateRSSModel rssModel = new RSSListView.LiveUpdateRSSModel();
     protected final StaticWebCache feedCache;
@@ -44,10 +46,12 @@ public abstract class RSSListView extends View {
     public RSSListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        feedCache = StaticWebCache.getWebCache('5', new DataTypeHandler() {
-	public Object convertToUseForm(final Object key, byte[] bytes) {
+        feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
+            public Object convertToUseForm(final Object key, byte[] bytes) {
                 try {
                     rssModel.setXML(bytes);
+                    //#debug
+                    L.i(this, "convertToUseForm", "" + rssModel);
 
                     return rssModel;
                 } catch (Exception e) {
@@ -60,15 +64,13 @@ public abstract class RSSListView extends View {
     }
 
     protected void clearCache() {
-        feedCache.clearAsync(new Task() {
-
+        feedCache.clearAsync(new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(final Object in) {
                 reloadAsync(true);
-                
+
                 return in;
             }
-            
-        });
+        }.setClassName("ClearCache"));
         DetailsView.imageCache.clearAsync(null);
     }
 
@@ -78,19 +80,23 @@ public abstract class RSSListView extends View {
     public Task reloadAsync(final boolean forceNetLoad) {
         this.renderY = 0;
         rssModel.removeAllElements();
-        final Task rssResult = new Task() {
-            public Object exec(final Object params) {
+        final Task rssResult = new Task(Task.FASTLANE_PRIORITY) {
+            public Object exec(final Object in) {
+                //#debug
+                L.i(this, "canvas.refresh()", "rssModelLength=" + rssModel.size());
                 canvas.refresh();
 
-                return null;
+                return in;
             }
-        };
+        }.setClassName("RSSResult");
 
         String feedUrl = RSSReader.INITIAL_FEED_URL;
+        //#debug
+        L.i(this, "getAsync()", "forceNetLoad=" + forceNetLoad);
         if (forceNetLoad) {
             return feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, rssResult);
         } else {
-            return feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, rssResult);
+            return feedCache.getAsync(feedUrl, Task.FASTLANE_PRIORITY, StaticWebCache.GET_ANYWHERE, rssResult);
         }
     }
 
@@ -123,7 +129,12 @@ public abstract class RSSListView extends View {
             if (currentItem != null && qName.equals("item")) {
                 if (items.size() < maxLength) {
                     if (prefetchImages) {
-                        DetailsView.imageCache.prefetch(currentItem.getThumbnail());
+                        try {
+                            DetailsView.imageCache.prefetch(currentItem.getThumbnail());
+                        } catch (FlashDatabaseException ex) {
+                            //#debug
+                            L.e("Can not get prefetch image", currentItem.getThumbnail(), ex);
+                        }
                     }
                     canvas.refresh();
                 }

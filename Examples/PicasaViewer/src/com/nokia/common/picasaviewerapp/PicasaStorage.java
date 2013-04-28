@@ -64,8 +64,8 @@ public class PicasaStorage {
                 imageSize = 720; //Picasa size for "fullsize" images
             }
             imageTypeHandler.setMaxSize(width, width);
-            imageCache = StaticWebCache.getWebCache('4', imageTypeHandler);
-            feedCache = StaticWebCache.getWebCache('5', new ImageObjectTypeHandler());
+            imageCache = StaticWebCache.getWebCache('4', PlatformUtils.PHONE_DATABASE_CACHE, imageTypeHandler);
+            feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new PicasaJSONDataTypeHandler());
 
             thumbSize = imageSide + "c"; // c is for cropped, ensures image proportions
 
@@ -104,7 +104,7 @@ public class PicasaStorage {
      * Class for converting the JSON response in to a Vector of
      * PicasaImageObject-objects. The vector is saved by Tantalum.
      */
-    private static class ImageObjectTypeHandler implements DataTypeHandler {
+    private static class PicasaJSONDataTypeHandler implements DataTypeHandler {
 
         public Object convertToUseForm(final Object key, byte[] bytes) {
             JSONObject o;
@@ -118,43 +118,42 @@ public class PicasaStorage {
                 return null;
             }
 
-            if (o != null) {
-                JSONArray entries = new JSONArray();
+            JSONArray entries = new JSONArray();
+            try {
+                final JSONObject feed = ((JSONObject) o).getJSONObject("feed");
+                entries = feed.getJSONArray("entry");
+            } catch (JSONException e) {
+                vector.addElement(new PicasaImageObject("No Results", "", "", ""));
+
+                //#debug
+                L.e("JSON no result", featURL, e);
+            }
+
+            for (int i = 0; i < entries.length(); i++) {
                 try {
-                    final JSONObject feed = ((JSONObject) o).getJSONObject("feed");
-                    entries = feed.getJSONArray("entry");
+                    final JSONObject m = entries.getJSONObject(i);
+                    final String title = m.getJSONObject("title").getString("$t");
+                    final String author = m.getJSONArray("author").getJSONObject(0).getJSONObject("name").getString("$t");
+                    final String thumbUrl = m.getJSONObject("media$group").getJSONArray("media$thumbnail").getJSONObject(0).getString("url");
+                    final String imageUrl = m.getJSONObject("media$group").getJSONArray("media$content").getJSONObject(0).getString("url");
+
+                    //#mdebug
+                    L.i("JSON parsed title: ", title);
+                    L.i("JSON parsed author: ", author);
+                    L.i("JSON parsed thumb url: ", thumbUrl);
+                    L.i("JSON parsed image url: ", imageUrl);
+                    //#enddebug
+
+                    vector.addElement(new PicasaImageObject(title, author, thumbUrl, imageUrl));
                 } catch (JSONException e) {
-                    vector.addElement(new PicasaImageObject("No Results", "", "", ""));
-
                     //#debug
-                    L.e("JSON no result", featURL, e);
-                }
-
-                for (int i = 0; i < entries.length(); i++) {
-                    try {
-                        final JSONObject m = entries.getJSONObject(i);
-                        final String title = m.getJSONObject("title").getString("$t");
-                        final String author = m.getJSONArray("author").getJSONObject(0).getJSONObject("name").getString("$t");
-                        final String thumbUrl = m.getJSONObject("media$group").getJSONArray("media$thumbnail").getJSONObject(0).getString("url");
-                        final String imageUrl = m.getJSONObject("media$group").getJSONArray("media$content").getJSONObject(0).getString("url");
-
-                        //#mdebug
-                        L.i("JSON parsed title: ", title);
-                        L.i("JSON parsed author: ", author);
-                        L.i("JSON parsed thumb url: ", thumbUrl);
-                        L.i("JSON parsed image url: ", imageUrl);
-                        //#enddebug
-
-                        vector.addElement(new PicasaImageObject(title, author, thumbUrl, imageUrl));
-                    } catch (JSONException e) {
-                        //#debug
-                        L.e("JSON item parse error", featURL, e);
-                    }
-                }
-                if (entries.length() == 0) {
-                    vector.addElement(new PicasaImageObject("No Results", "", "", ""));
+                    L.e("JSON item parse error", featURL, e);
                 }
             }
+            if (entries.length() == 0) {
+                vector.addElement(new PicasaImageObject("No Results", "", "", ""));
+            }
+
             return vector;
         }
     }

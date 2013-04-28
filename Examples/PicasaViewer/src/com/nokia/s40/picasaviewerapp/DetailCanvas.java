@@ -86,7 +86,7 @@ public final class DetailCanvas extends GestureCanvas {
                     PicasaStorage.imageCache.getAsync(selectedImage.imageUrl,
                             Task.HIGH_PRIORITY,
                             StaticWebCache.GET_ANYWHERE,
-                            new Task() {
+                            new Task(Task.FASTLANE_PRIORITY) {
                         public Object exec(final Object in) {
                             if (in != null && selectedImage == PicasaStorage.getSelectedImage()) {
                                 image = (Image) in;
@@ -94,7 +94,7 @@ public final class DetailCanvas extends GestureCanvas {
                             }
                             return in;
                         }
-                    }).fork().join(100);
+                    }.setClassName("DisplayCachedOnStartupOrSpinner")).fork().join(100);
                 } catch (TimeoutException ex) {
                     // Normal for slow load
                 } catch (Exception ex) {

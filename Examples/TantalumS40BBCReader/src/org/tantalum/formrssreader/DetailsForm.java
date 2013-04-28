@@ -30,6 +30,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -40,7 +41,7 @@ public final class DetailsForm extends Form implements CommandListener {
 
     private FormRSSReader rssReader;
     private RSSItem selectedItem;
-    private static StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.getInstance().getImageTypeHandler());
+    private static StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler());
     private Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private Command backCommand = new Command("Back", Command.BACK, 0);
 
@@ -101,31 +102,43 @@ public final class DetailsForm extends Form implements CommandListener {
         this.append(descriptionStringItem);
 
         if (selectedItem.getThumbnail() != null) {
-            final Image image = (Image) imageCache.synchronousRAMCacheGet(selectedItem.getThumbnail());
+            Image image = null;
+            try {
+                image = (Image) imageCache.synchronousRAMCacheGet(selectedItem.getThumbnail());
+            } catch (FlashDatabaseException ex) {
+                //#debug
+                L.e("Can not get image", selectedItem.getThumbnail(), ex);
+            }
             if (image != null) {
                 DetailsForm.this.appendImageItem();
             } else if (!selectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 selectedItem.setLoadingImage(true);
                 imageCache.getAsync(selectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.HIGH_PRIORITY) {
-
                     protected Object exec(final Object in) {
+                        //#debug
                         L.i("IMAGE DEBUG", selectedItem.getThumbnail());
                         selectedItem.setLoadingImage(false);
-                        
+
                         return in;
                     }
-                    public void run(final Object result) {
+
+                    public void run() {
                         DetailsForm.this.appendImageItem();
                     }
-                }.setRunOnUIThreadWhenFinished(true));
+                }.setRunOnUIThreadWhenFinished(true).setClassName("IconAppender").setRunOnUIThreadWhenFinished(true));
             }
         }
     }
 
     public void appendImageItem() {
-        final Image image = (Image) imageCache.synchronousRAMCacheGet(selectedItem.getThumbnail());
-        final ImageItem imageItem = new ImageItem(null, image, Item.LAYOUT_CENTER, "");
-        this.append(imageItem);
+        try {
+            final Image image = (Image) imageCache.synchronousRAMCacheGet(selectedItem.getThumbnail());
+            final ImageItem imageItem = new ImageItem(null, image, Item.LAYOUT_CENTER, "");
+            this.append(imageItem);
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e("Can not get append image", selectedItem.getThumbnail(), ex);
+        }
     }
 }

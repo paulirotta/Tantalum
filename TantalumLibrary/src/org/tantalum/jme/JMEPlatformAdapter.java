@@ -38,6 +38,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.PlatformUtils.HttpConn;
 import org.tantalum.PlatformAdapter;
 import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 import org.tantalum.util.StringUtils;
@@ -111,8 +112,21 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         return new JMEImageTypeHandler();
     }
 
-    public FlashCache getFlashCache(final char priority) {
-        return new RMSCache(priority);
+    public FlashCache getFlashCache(final char priority, final int cacheType) throws FlashDatabaseException {
+        switch (cacheType) {
+            case PlatformUtils.PHONE_DATABASE_CACHE:
+                try {
+                    //                return new RMSCache(priority);
+                    return new RMSFastCache(priority);
+                } catch (Exception e) {
+                    //#debug
+                    L.e("Can not create flash cache", "" + priority, e);
+                    throw new FlashDatabaseException("Can not create flash cache: " + e);
+                }
+
+            default:
+                throw new IllegalArgumentException("Unsupported cache type " + cacheType + ": only PlatformAdapter.PHONE_DATABASE_CACHE is supported at this time");
+        }
     }
 
     /**
@@ -133,7 +147,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
             final JMEHttpConn httpConn = new JMEHttpConn(url, requestPropertyKeys, requestPropertyValues);
             httpConn.httpConnection.setRequestMethod(requestMethod);
             if (bytes != null) {
-                out = httpConn.getOutputStream();
+                out = httpConn.httpConnection.openOutputStream();
                 out.write(bytes);
             }
 
@@ -239,14 +253,26 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         }
 
         public void getResponseHeaders(final Hashtable headers) throws IOException {
+            headers.clear();
             for (int i = 0; i < 10000; i++) {
                 final String key = httpConnection.getHeaderFieldKey(i);
                 if (key == null) {
                     break;
                 }
                 final String value = httpConnection.getHeaderField(i);
-                headers.put(key, value);
-            };
+                final String[] values = (String[]) headers.get(key);
+                final String[] newValues;
+                
+                if (values == null) {
+                    newValues = new String[1];
+                    newValues[0] = value;
+                } else {
+                    newValues = new String[values.length + 1];
+                    System.arraycopy(values, 0, newValues, 0, values.length);
+                    newValues[values.length] = value;
+                }
+                headers.put(key, newValues);
+            }
         }
 
         public long getLength() {
@@ -263,6 +289,15 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
                 os = null;
             }
             httpConnection.close();
+        }
+
+        /**
+         * 500kB or you should do a streaming operation instead
+         *
+         * @return
+         */
+        public long getMaxLengthSupportedAsBlockOperation() {
+            return 500000;
         }
     }
 }

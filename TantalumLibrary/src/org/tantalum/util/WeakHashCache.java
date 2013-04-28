@@ -25,10 +25,14 @@
 package org.tantalum.util;
 
 import java.lang.ref.WeakReference;
+import java.util.Enumeration;
 import java.util.Hashtable;
 
 /**
  * This is a hashtable which acts as a heap memory cache using WeakReference.
+ *
+ * <code>Hashtable</code> is not thread safe, but <code>WeakHashCache</code> is synchronized and
+ * thread safe. Like <code>Vector</code>, you can externally synchronize on it.
  *
  * Objects in the hashtable are not held in memory, they may be garbage
  * collected at any time, in which case the calling routine must do something
@@ -52,6 +56,7 @@ import java.util.Hashtable;
  */
 public class WeakHashCache {
 
+    private final static WeakReference NULL_WEAK_REFERENCE = new WeakReference(null);
     /**
      * A Hashtable of WeakReference objects.
      */
@@ -64,15 +69,18 @@ public class WeakHashCache {
      * @return - null if the object is not stored, or if the WeakReference has
      * been garbage collected by the virtual machine.
      */
-    public Object get(final Object key) {
-        Object o = null;
-        final WeakReference reference = (WeakReference) hash.get(key);
-
-        if (reference != null) {
-            o = reference.get();
+    public synchronized Object get(final Object key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Attempt to get(null) from WeakHashCache");
         }
 
-        return o;
+        final WeakReference reference = (WeakReference) hash.get(key);
+
+        if (reference == null) {
+            return null;
+        }
+        
+        return reference.get();
     }
 
     /**
@@ -90,19 +98,34 @@ public class WeakHashCache {
      * @param key
      * @param value
      */
-    public void put(final Object key, final Object value) {
+    public synchronized void put(final Object key, final Object value) {
         if (key == null) {
             throw new IllegalArgumentException("null key put to WeakHashCache");
         }
-        synchronized (hash) {
-            if (value == null) {
-                //#debug
-                L.i("WeakHash put", "value is null, key removed");
-                hash.remove(key);
-                return;
-            }
-            hash.put(key, new WeakReference(value));
+        if (value == null) {
+            throw new IllegalArgumentException("null key put to WeakHashCache");
         }
+
+        hash.put(key, new WeakReference(value));
+    }
+
+    /**
+     * Mark the collection as containing this key, but do not yet provide a
+     * value associated with the key
+     *
+     * This can be useful for initialization and when the set of keys is treated
+     * as a set
+     *
+     * @param key
+     */
+    public synchronized void markContains(final Object key) {
+        if (key == null) {
+            throw new IllegalArgumentException("markContains(null) to WeakHashCache");
+        }
+        if (hash.containsKey(key)) {
+            return;
+        }
+        hash.put(key, new WeakReference(null));
     }
 
     /**
@@ -110,7 +133,7 @@ public class WeakHashCache {
      *
      * @param key
      */
-    public void remove(final Object key) {
+    public synchronized void remove(final Object key) {
         if (key != null) {
             hash.remove(key);
         } else {
@@ -130,7 +153,7 @@ public class WeakHashCache {
      * @param key
      * @return
      */
-    public boolean containsKey(final Object key) {
+    public synchronized boolean containsKey(final Object key) {
         if (key == null) {
             throw new IllegalArgumentException("containsKey() with null key");
         }
@@ -148,7 +171,7 @@ public class WeakHashCache {
      *
      * @return
      */
-    public int size() {
+    public synchronized int size() {
         return hash.size();
     }
 
@@ -158,7 +181,26 @@ public class WeakHashCache {
      * This does not free a great deal of memory, but it does free the overhead
      * structure associated with each collection element.
      */
-    public void clear() {
+    public synchronized void clear() {
         hash.clear();
+    }
+
+    /**
+     * Keep the index values of the collection, but clear all values to which
+     * they point.
+     *
+     */
+    public synchronized void clearValues() {
+        final Object[] keyCopy = new Object[hash.size()];
+        final Enumeration keys = hash.keys();
+        int i = 0;
+
+        while (keys.hasMoreElements()) {
+            keyCopy[i++] = keys.nextElement();
+        }
+        hash.clear();
+        for (i = 0; i < keyCopy.length; i++) {
+            hash.put(keyCopy[i], NULL_WEAK_REFERENCE);            
+        }
     }
 }

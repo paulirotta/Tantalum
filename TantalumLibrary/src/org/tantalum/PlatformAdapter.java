@@ -26,14 +26,14 @@ package org.tantalum;
 
 import java.io.IOException;
 import java.util.Vector;
-import org.tantalum.jme.JMELog;
 import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 
 /**
- * For each platform we support (JME, Android, ..) there is an implementation
- * of PlatformAdapter which hooks to the appropriate platform code.
+ * For each platform we support (JME, Android, ..) there is an implementation of
+ * PlatformAdapter which hooks to the appropriate platform code.
  *
  * Note that by design this is a very minimal set of functions that provide
  * object persistence, logging, creating an image, UI thread access and network
@@ -45,37 +45,12 @@ import org.tantalum.util.L;
  * @author phou
  */
 public interface PlatformAdapter {
-
-    /**
-     * Send log output to the standard output device, usually your IDE log
-     * window
-     */
-    public static final int NORMAL_LOG_MODE = 0;
-    /**
-     * Open a serial port connection to terminal-emulator software opened to the
-     * USB serial port on your computer. On Windows open Control Panel - System
-     * - Devices to set the maximum baud rate, no parity and hardware CTS flow
-     * control and to the same in terminal emulation software such as Putty
-     *
-     * With the release build of the Tantalum library, this setting is ignored
-     * and there will not be any log output.
-     */
-    public static final int USB_SERIAL_PORT_LOG_MODE = 1;
-    /**
-     * Store the most recent run log data as "tantalum.log" on the phone's
-     * memory card in the root directory.
-     *
-     * With the release build of the Tantalum library, this setting is ignored
-     * and there will not be any log output.
-     */
-    public static final int MEMORY_CARD_LOG_MODE = 2;
     /**
      * Initialize logging
-     * 
-     * @param logMode 
+     *
+     * @param logMode
      */
     public void init(int logMode);
-
 
     /**
      * Execute the run() method of the action on the platform's user interface
@@ -106,8 +81,8 @@ public interface PlatformAdapter {
     /**
      * Get a platform-specific logging class. Add Tantalum logs to the
      * platform's own logs allows you to use filters, redirect from remote
-     * device, and any any similar features as for example on Android. On JME
-     * we provide USB debugging in a terminal on your PC.
+     * device, and any any similar features as for example on Android. On JME we
+     * provide USB debugging in a terminal on your PC.
      *
      * @return
      */
@@ -128,19 +103,19 @@ public interface PlatformAdapter {
 
     /**
      * Vibrate the phone
-     * 
+     *
      * @param duration in milliseconds
      * @param timekeeperLambda code which is run just before vibration begins
      */
     public void vibrateAsync(int duration, Runnable timekeeperLambda);
-    
+
     /**
      * Return the platform-specific Image type as a resource decompressed from
      * the application JAR
      *
      * @param jarPathAndFilename
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public Object readImageFromJAR(String jarPathAndFilename) throws IOException;
 
@@ -151,9 +126,11 @@ public interface PlatformAdapter {
      * unique within each application.
      *
      * @param priority
-     * @return
+     * @param cacheType
+     * @return the existing or new cache
+     * @throws FlashDatabaseException 
      */
-    public FlashCache getFlashCache(char priority);
+    public FlashCache getFlashCache(char priority, int cacheType) throws FlashDatabaseException;
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform

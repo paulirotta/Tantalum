@@ -10,8 +10,10 @@ import javax.microedition.midlet.MIDletStateChangeException;
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
+import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.TimeoutException;
 import org.tantalum.net.HttpGetter;
 import org.tantalum.util.L;
 
@@ -114,7 +116,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                 // write pre-action user code here
 //GEN-LINE:|7-commandAction|4|23-postAction
                 // write post-action user code here
-                final Task getter = new HttpGetter(getGeocodeUrl(this.getAddressTextField().getString()));
+                final Task getter = new HttpGetter(Task.HIGH_PRIORITY, getGeocodeUrl(this.getAddressTextField().getString()));
 
                 // Add a task which will run after the HTTP GET
                 getter.chain(new Task(Task.FASTLANE_PRIORITY) {
@@ -139,16 +141,22 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         return out;
                     }
 
-                    public void run(Object result) {
-                        // Update UI on the UI thread
-                        HelloMIDlet.this.getLocationStringItem().setText((String) result);
+                    public void run() {
+                        try {
+                            // Update UI on the UI thread
+                            HelloMIDlet.this.getLocationStringItem().setText((String) get());
+                        } catch (CancellationException ex) {
+                            L.e(this, "Canceled", "", ex);
+                        } catch (TimeoutException ex) {
+                            L.e(this, "Timeout", "", ex);
+                        }
                     }
 
-                    protected void onCanceled() {
+                    protected void onCanceled(String reason) {
                         // Update on the UI thread if there is a problem
-                        HelloMIDlet.this.getLocationStringItem().setText("Service not available");
+                        HelloMIDlet.this.getLocationStringItem().setText("Service not available: " + reason);
                     }
-                });
+                }.setRunOnUIThreadWhenFinished(true).setClassName("JSONParserAndUITextSetter"));
 
                 getter.fork(); // Start task on a background Worker thread
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction

@@ -104,5 +104,4 @@ public class SortedVectorTest extends MockedStaticInitializers {
             assertEquals("sequence test " + (i + 1), expected[i], (Integer) collection.elementAt(i));
         }
     }
-
 }

@@ -36,7 +36,6 @@ package org.tantalum.net.xml;
 public class RSSItem {
 
     private String title = "";
-    private String truncatedTitle = null;
     private String description = "";
     private String link = "";
     private String pubDate = "";
@@ -175,14 +174,13 @@ public class RSSItem {
     }
 
 //#mdebug
-    
     /**
      * Debug use
      * 
      * @return 
      */
     public synchronized String toString() {
-        return "RSSItem- title:" + title + " truncatedTitle:" + truncatedTitle + " description:" + description + " link:" + link + " pubDate:" + pubDate + " thumbnail:" + thumbnail;
+        return "RSSItem- title:" + title + " description:" + description + " link:" + link + " pubDate:" + pubDate + " thumbnail:" + thumbnail;
     }
 //#enddebug    
 }

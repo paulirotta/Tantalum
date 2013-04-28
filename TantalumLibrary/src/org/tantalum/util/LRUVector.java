@@ -94,14 +94,26 @@ public class LRUVector extends Vector {
      * @return
      */
     public synchronized Object removeLeastRecentlyUsed() {
-        Object o = null;
+        final Object o = getLeastRecentlyUsed();
 
-        if (size() > 0) {
-            o = firstElement();
+        if (o != null) {
             removeElementAt(0);
         }
 
         return o;
+    }
+
+    /**
+     * Return the item least-recently added or accessed
+     * 
+     * @return 
+     */
+    public synchronized Object getLeastRecentlyUsed() {
+        if (isEmpty()) {
+            return null;
+        }
+        
+        return firstElement();
     }
 
     /**

@@ -13,6 +13,9 @@ copies or substantial portions of the Software.
 
 The Software shall be used for Good, not Evil.
 
+This variant of the JSON.org code has been sport-tuned for Tantalum Mobile,
+https://github.com/TantalumMobile
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,29 +33,52 @@ import java.io.Writer;
 /**
  * A simple StringBuffer-based implementation of StringWriter
  */
-public class StringWriter extends Writer {
-    
+public final class StringWriter extends Writer {
+
     final private StringBuffer buf;
     
     public StringWriter() {
         super();
         buf = new StringBuffer();
     }
-    
-    public StringWriter(int initialSize) {
+
+    /**
+     * 
+     * @param initialSize 
+     */
+    public StringWriter(final int initialSize) {
         super();
         buf = new StringBuffer(initialSize);
     }
-    
-    public void write(char[] cbuf, int off, int len) throws IOException {
+
+    /**
+     * 
+     * @param cbuf
+     * @param off
+     * @param len
+     * @throws IOException 
+     */
+    public void write(final char[] cbuf, final int off, final int len) throws IOException {
         buf.append(cbuf, off, len);
     }
 
-    public void write(String str) throws IOException {
+    /**
+     * 
+     * @param str
+     * @throws IOException 
+     */
+    public void write(final String str) throws IOException {
         buf.append(str);
     }
 
-    public void write(String str, int off, int len) throws IOException {
+    /**
+     * 
+     * @param str
+     * @param off
+     * @param len
+     * @throws IOException 
+     */
+    public void write(final String str, final int off, final int len) throws IOException {
         buf.append(str.substring(off, len));
     }
 

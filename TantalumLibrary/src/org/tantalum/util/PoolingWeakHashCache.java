@@ -54,22 +54,20 @@ public class PoolingWeakHashCache extends WeakHashCache {
      *
      * @param key
      */
-    public void remove(final Object key) {
-        synchronized (hash) {
-            if (key == null) {
-                //#debug
-                L.i("PoolingWeakHashCache", "remove() with null key");
-                return;
-            }
-            final WeakReference wr = (WeakReference) hash.get(key);
+    public synchronized void remove(final Object key) {
+        if (key == null) {
+            //#debug
+            L.i("PoolingWeakHashCache", "remove() with null key");
+            return;
+        }
+        final WeakReference wr = (WeakReference) hash.get(key);
 
-            if (wr != null) {
-                hash.remove(key);
-                if (wr.get() != null) {
-                    //#debug
-                    L.i("Adding to pool", key.toString());
-                    pool.addElement(wr);
-                }
+        if (wr != null) {
+            hash.remove(key);
+            if (wr.get() != null) {
+                //#debug
+                L.i("Adding to pool", key.toString());
+                pool.addElement(wr);
             }
         }
     }
@@ -79,32 +77,28 @@ public class PoolingWeakHashCache extends WeakHashCache {
      *
      * @return - null if the pool is empty
      */
-    public Object getFromPool() {
-        synchronized (hash) {
-            Object o = null;
-            WeakReference wr;
+    public synchronized Object getFromPool() {
+        Object o = null;
+        WeakReference wr;
 
-            while (pool.size() > 0) {
-                wr = (WeakReference) pool.firstElement();
-                pool.removeElementAt(0);
-                o = wr.get();
-                if (o != null) {
-                    break;
-                }
+        while (pool.size() > 0) {
+            wr = (WeakReference) pool.firstElement();
+            pool.removeElementAt(0);
+            o = wr.get();
+            if (o != null) {
+                break;
             }
-
-            return o;
         }
+
+        return o;
     }
 
     /**
      * Clear both the cache and the pool of re-use objects
      */
-    public void clear() {
-        synchronized (hash) {
-            super.clear();
+    public synchronized void clear() {
+        super.clear();
 
-            pool.removeAllElements();
-        }
+        pool.removeAllElements();
     }
 }

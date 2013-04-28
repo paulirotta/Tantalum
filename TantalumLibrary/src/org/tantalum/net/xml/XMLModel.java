@@ -35,22 +35,22 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * XMLModel is a data structure extracted from XML text. The simplified
- * parsing and integration to utility methods allows these to work online and
- * offline (using RMS) transparent to the application developer using the
- * caching classes.
+ * XMLModel is a data structure extracted from XML text. The simplified parsing
+ * and integration to utility methods allows these to work online and offline
+ * (using RMS) transparent to the application developer using the caching
+ * classes.
  *
  * For an example of how to use this for your XML data format, see RSSModel
- * 
+ *
  * @author phou
  */
 public abstract class XMLModel extends DefaultHandler {
 
     /**
      * A hierarchical list of XML tags appearing lower in a DOM tree than the
-     * current tag during parsing. The entire DOM model is not saved, but you can
-     * use this hierarchy for similar parse-time hierarchical condition logic. In
-     * most simple XML cases you do not need this information.
+     * current tag during parsing. The entire DOM model is not saved, but you
+     * can use this hierarchy for similar parse-time hierarchical condition
+     * logic. In most simple XML cases you do not need this information.
      */
     protected String[] qnameStack = new String[100];
     /**
@@ -59,8 +59,8 @@ public abstract class XMLModel extends DefaultHandler {
      */
     protected String[] charStack = new String[100];
     /**
-     * A hierarchical list of XML attributes lower in the DOM tree than the current
-     * element during SAX parsing.
+     * A hierarchical list of XML attributes lower in the DOM tree than the
+     * current element during SAX parsing.
      */
     protected XMLAttributes[] attributeStack = new XMLAttributes[100];
     /**
@@ -73,12 +73,12 @@ public abstract class XMLModel extends DefaultHandler {
 
     /**
      * Parse the XML document using a SAX parser.
-     * 
+     *
      * @param xml
      * @throws SAXException
-     * @throws IllegalArgumentException 
+     * @throws IllegalArgumentException
      */
-    public synchronized void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
+    public void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
         if (xml == null || xml.length == 0) {
             throw new IllegalArgumentException("Attempt to XML parse a null or zero byte value");
         }
@@ -91,11 +91,13 @@ public abstract class XMLModel extends DefaultHandler {
             currentDepth = 0;
 
             try {
-                //#debug
-                L.i("Start parse", "length=" + xml.length);
+                //#mdebug
+                L.i(this, "Start XML parse", "length=" + xml.length);
+                final long t = System.currentTimeMillis();
+                //#enddebug
                 SAXParserFactory.newInstance().newSAXParser().parse(in, this);
                 //#debug
-                L.i("End parse", "length=" + xml.length);
+                L.i(this, "End XML parse", "elapsedTime=" + (System.currentTimeMillis() - t) + "ms");
             } catch (SAXException t) {
                 //#debug
                 L.e("SAX Parse error", new String(xml), t);
@@ -123,52 +125,58 @@ public abstract class XMLModel extends DefaultHandler {
      *
      * @param qname
      * @param chars
-     * @param attributes 
+     * @param attributes
      */
     abstract protected void parseElement(String qname, String chars, XMLAttributes attributes);
 
     /**
      * Being SAX parsing an XML tag
-     * 
+     *
      * @param uri
      * @param localName
      * @param qName
      * @param attributes
-     * @throws SAXException 
+     * @throws SAXException
      */
     public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException {
-        qnameStack[currentDepth] = qName;
-        if (attributeStack[currentDepth] == null) {
-            attributeStack[currentDepth] = new XMLAttributes(attributes);
-        } else {
-            attributeStack[currentDepth].setAttributes(attributes);
+        synchronized (MUTEX) {
+            qnameStack[currentDepth] = qName;
+            if (attributeStack[currentDepth] == null) {
+                attributeStack[currentDepth] = new XMLAttributes(attributes);
+            } else {
+                attributeStack[currentDepth].setAttributes(attributes);
+            }
+            charStack[currentDepth] = "";
+            ++currentDepth;
         }
-        charStack[currentDepth] = "";
-        ++currentDepth;
     }
 
     /**
      * SAX parse the body of an XML element
-     * 
+     *
      * @param ch
      * @param start
      * @param length
-     * @throws SAXException 
+     * @throws SAXException
      */
     public void characters(final char[] ch, final int start, final int length) throws SAXException {
-        charStack[currentDepth - 1] = new String(ch, start, length);
+        synchronized (MUTEX) {
+            charStack[currentDepth - 1] = new String(ch, start, length);
+        }
     }
 
     /**
      * SAX parse the XML element closing tag
-     * 
+     *
      * @param uri
      * @param localName
      * @param qname
-     * @throws SAXException 
+     * @throws SAXException
      */
     public void endElement(final String uri, final String localName, final String qname) throws SAXException {
-        --currentDepth;
-        parseElement(qname, charStack[currentDepth], attributeStack[currentDepth]);
+        synchronized (MUTEX) {
+            --currentDepth;
+            parseElement(qname, charStack[currentDepth], attributeStack[currentDepth]);
+        }
     }
 }

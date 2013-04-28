@@ -24,9 +24,12 @@
  */
 package org.tantalum.storage;
 
-import java.util.Vector;
+import java.io.UnsupportedEncodingException;
+import java.security.DigestException;
+import java.util.Enumeration;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
@@ -49,13 +52,17 @@ import org.tantalum.util.WeakHashCache;
 public class StaticCache {
 
     /**
-     * A list of all caches, sorted by priority order (lowest char first)
+     * A list of all caches, sorted by cachePriorityChar order (lowest char
+     * first)
      */
     protected static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
         public boolean before(final Object o1, final Object o2) {
-            return ((StaticCache) o1).priority < ((StaticCache) o2).priority;
+            return ((StaticCache) o1).cachePriorityChar < ((StaticCache) o2).cachePriorityChar;
         }
     });
+    /*
+     * Always access withing a synchronized block
+     */
     private final FlashCache flashCache;
     /**
      * A heap memory ramCache in the form of a Hashtable from which data can be
@@ -69,17 +76,19 @@ public class StaticCache {
      * beginning of the last. Least recently used objects are the ones most
      * likely to be cleared when additional flash memory is needed. The heap
      * memory WeakReferenceCache does not make use of this access order.
+     *
+     * Always access within a synchronized(ramCache) block
      */
     protected final LRUVector accessOrder = new LRUVector();
     /**
      * This character serves as a market tag to distinguish the contents of this
      * ramCache from other caches which may also be stored in flash memory in a
      * flat name space. This must be unique like '0'..'9' or 'a'..'z'. Larger
-     * character values indicate lower priority caches which will be garage
-     * collected first when flash memory is low, so use larger characters for
-     * more transient or less-important-to-persist data.
+     * character values indicate lower cachePriorityChar caches which will be
+     * garage collected first when flash memory is low, so use larger characters
+     * for more transient or less-important-to-persist data.
      */
-    protected final char priority;
+    protected final char cachePriorityChar;
     /**
      * This interface gives one method you must provide to convert from the raw
      * byte[] format received from a web server or similar source into an Object
@@ -92,37 +101,30 @@ public class StaticCache {
      * possibly multiple cores at the same time.
      */
     protected final DataTypeHandler handler;
-    /**
-     * Total size of the ramCache as it exists in flash memory. This is often
-     * larger than the current heap ramCache memory consumption.
-     */
-    protected int sizeAsBytes = 0;
     /*
      *  For testing and performance comparison
+     * 
+     *  Always access within a synchronized block
      */
+    //#debug
     private volatile boolean flashCacheEnabled = true;
-    /**
-     * All synchronization is not on "this", but on the hidden MUTEX Object to
-     * encapsulate synch and disallow the bad practice of externally
-     * synchronizing on the ramCache object itself.
-     */
-    protected final Object MUTEX = new Object();
 
     /**
      * Get the previously-created cache with the same parameters
      *
+     * @param priority 
      * @param priority
      * @param handler
      * @param taskFactory
      * @param clas
-     * @return
+     * @return 
      */
     protected static StaticCache getExistingCache(final char priority, final DataTypeHandler handler, final Object taskFactory, final Class clas) {
         synchronized (caches) {
             for (int i = 0; i < caches.size(); i++) {
                 final StaticCache c = (StaticCache) caches.elementAt(i);
 
-                if (c.priority == priority) {
+                if (c.cachePriorityChar == priority) {
                     if (c.getClass() != clas) {
                         throw new IllegalArgumentException("You can not create a StaticCache and a StaticWebCache with the same priority: " + priority);
                     }
@@ -141,24 +143,26 @@ public class StaticCache {
     /**
      * Get a named Cache
      *
-     * Caches with higher priority are more likely to keep their data when space
-     * is limited.
+     * Caches with higher cachePriorityChar are more likely to keep their data
+     * when space is limited.
      *
-     * You will get IllegalArgumentException if you call this multiple times for
-     * the same cache priority but with a different (not .equals())
-     * DataTypeHandler.
+     * You will getDigests IllegalArgumentException if you call this multiple
+     * times for the same cache cachePriorityChar but with a different (not
+     * .equals()) DataTypeHandler.
      *
-     * @param priority - a character from '0' to '9', higher numbers get a
-     * preference for space. Letters are also allowed.
+     * @param priority 
+     * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
      * @param handler - a routine to convert from byte[] to Object form when
      * loading into the RAM ramCache.
      * @return
+     * @throws FlashDatabaseException 
      */
-    public static synchronized StaticCache getCache(final char priority, final DataTypeHandler handler) {
+    public static synchronized StaticCache getCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
         StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
 
         if (c == null) {
-            c = new StaticCache(priority, handler);
+            c = new StaticCache(priority, cacheType, handler);
+            caches.addElement(c);
         }
 
         return c;
@@ -167,17 +171,18 @@ public class StaticCache {
     /**
      * Create a named Cache
      *
-     * @param priority
+     * @param priority 
+     * @param cacheType
      * @param handler
+     * @throws FlashDatabaseException 
      */
-    protected StaticCache(final char priority, final DataTypeHandler handler) {
+    protected StaticCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
         if (priority < '0') {
             throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
-        caches.addElement(this);
-        this.priority = priority;
+        this.cachePriorityChar = priority;
         this.handler = handler;
-        flashCache = PlatformUtils.getInstance().getFlashCache(priority);
+        flashCache = PlatformUtils.getInstance().getFlashCache(priority, cacheType);
         init();
     }
 
@@ -187,21 +192,24 @@ public class StaticCache {
      * We want to use the RAM Hashtable to know what the ramCache contains, even
      * though we do not pre-load from flash all the values
      */
-    private void init() {
+    private void init() throws FlashDatabaseException {
         try {
-            Vector keys = flashCache.getKeys();
-            for (int i = 0; i < keys.size(); i++) {
-                String key = (String) keys.elementAt(i);
-                this.ramCache.put(key, null);
+            final long[] digests = flashCache.getDigests();
+            synchronized (ramCache) {
+                for (int i = 0; i < digests.length; i++) {
+                    ramCache.markContains(new Long(digests[i]));
+                }
             }
-        } catch (FlashDatabaseException ex) {
+        } catch (Exception ex) {
             //#debug
-            L.e("Can not load keys to RAM during init() cache", "cache priority=" + priority, ex);
+            L.e(this, "Can not load keys to RAM during init() cache", "cache priority=" + cachePriorityChar, ex);
+            throw new FlashDatabaseException("Can not load cache keys during init for cache '" + cachePriorityChar + "' : " + ex);
         }
     }
 
+//#mdebug    
     /**
-     * Turn off persistent local storage use for read and write to see what
+     * Turn off persistent local storage' use for read and write to see what
      * happens to the application performance. This is most useful for
      * StaticWebCache but may be useful in other test cases.
      *
@@ -210,7 +218,25 @@ public class StaticCache {
      * @param enabled
      */
     public void setFlashCacheEnabled(final boolean enabled) {
-        this.flashCacheEnabled = enabled;
+        flashCacheEnabled = enabled;
+    }
+//#enddebug
+
+    /**
+     * Add a Task which will be run before the cache closes.
+     *
+     * This is normally useful to save in-memory data during shutdown.
+     *
+     * Note that there is a limited amount of time between when the phone tells
+     * the application to close, and when it must close. This varies by phone,
+     * but about 3 seconds is typical. Thus like Task.SHUTDOWN_PRIORITY tasks,
+     * this Task should not take long to complete or it may block other Tasks
+     * from completing.
+     *
+     * @param shutdownTask
+     */
+    public void addShutdownTask(final Task shutdownTask) {
+        flashCache.addShutdownTask(shutdownTask);
     }
 
     /**
@@ -221,18 +247,23 @@ public class StaticCache {
      * @param key
      * @param bytes
      * @return
+     * @throws DigestException 
+     * @throws UnsupportedEncodingException  
      */
-    protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) {
-        //#debug
-        L.i("Start to convert", key + " bytes length=" + bytes.length);
+    protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
+        //#mdebug
+        L.i(this, "Start to convert", key + " bytes length=" + bytes.length);
+        final long startTime = System.currentTimeMillis();
+        //#enddebug
         final Object o = handler.convertToUseForm(key, bytes);
 
-        synchronized (MUTEX) {
-            accessOrder.addElement(key);
-            ramCache.put(key, o);
+        final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
+        synchronized (ramCache) {
+            accessOrder.addElement(digest);
+            ramCache.put(digest, o);
         }
         //#debug
-        L.i("End convert", key);
+        L.i(this, "End convert, elapsedTime=" + (System.currentTimeMillis() - startTime) + "ms", key);
 
         return o;
     }
@@ -242,18 +273,27 @@ public class StaticCache {
      *
      * @param key
      * @return
+     * @throws FlashDatabaseException  
      */
-    public Object synchronousRAMCacheGet(final String key) {
-        synchronized (MUTEX) {
-            Object o = ramCache.get(key);
+    public Object synchronousRAMCacheGet(final String key) throws FlashDatabaseException {
+        try {
+            final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
 
-            if (o != null) {
-                //#debug            
-                L.i("Possible StaticCache hit in RAM (might be expired WeakReference)", key);
-                this.accessOrder.addElement(key);
+            synchronized (ramCache) {
+                final Object o = ramCache.get(digest);
+
+                if (o != null) {
+                    //#debug            
+                    L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
+                    this.accessOrder.addElement(key);
+                }
+
+                return o;
             }
-
-            return o;
+        } catch (Exception e) {
+            //#debug
+            L.e(this, "Can not synchronousRAMCacheGet", key, e);
+            throw new FlashDatabaseException("Can not get from heap cache: " + key + " - " + e);
         }
     }
 
@@ -261,23 +301,19 @@ public class StaticCache {
      * Retrieve an object from RAM or RMS storage.
      *
      * @param key
-     * @param priority - set to Work.FASTLANE_PRIORITY if you want the results
-     * quickly to update the UI.
-     * @param chainedTask
+     * @param priority 
+     * @param nextTask
      * @return
      */
-    public Task getAsync(final String key, int priority, final Task chainedTask) {
+    public Task getAsync(final String key, int priority, final Task nextTask) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
         if (priority == Task.HIGH_PRIORITY) {
             priority = Task.FASTLANE_PRIORITY;
         }
-        final Task task = new GetLocalTask(key, priority);
-        task.chain(chainedTask);
-        task.fork();
 
-        return task;
+        return (new GetLocalTask(priority, key)).chain(nextTask).fork();
     }
 
     /**
@@ -292,24 +328,35 @@ public class StaticCache {
         Object o = synchronousRAMCacheGet(key);
 
         //#debug
-        L.i("StaticCache RAM result", "(" + priority + ") " + key + " : " + o);
+        L.i(this, "Heap get result", "(" + cachePriorityChar + ") " + key + " : " + o);
         if (o == null) {
-            // Load from flash memory
-            final byte[] bytes;
-            if (flashCacheEnabled) {
-                bytes = flashCache.getData(key);
-            } else {
-                bytes = null;
-            }
+            try {
+                // Load from flash memory
+                final byte[] bytes;
+//#debug                
+                if (flashCacheEnabled) {
+                    bytes = flashCache.get(key);
+//#mdebug
+                } else {
+                    bytes = null;
+                }
+//#enddebug
 
-            //#debug
-            L.i("StaticCache flash intermediate result", "(" + priority + ") " + key + " : " + bytes);
-            if (bytes != null) {
                 //#debug
-                L.i("StaticCache flash hit", "(" + priority + ") " + key);
-                o = convertAndPutToHeapCache(key, bytes);
+                L.i(this, "Flash get result", "(" + cachePriorityChar + ") key=" + key + " byteLength=" + (bytes != null ? ("" + bytes.length) : "<null>"));
+                if (bytes != null) {
+                    o = convertAndPutToHeapCache(key, bytes);
+                    //#debug
+                    L.i(this, "Flash get converted result", "(" + cachePriorityChar + ") " + key + " : " + o);
+                }
+            } catch (DigestException e) {
                 //#debug
-                L.i("StaticCache flash hit result", "(" + priority + ") " + key + " : " + o);
+                L.e(this, "Can not synchronousGet", key, e);
+                throw new FlashDatabaseException("Can not synchronousGet: " + key + " - " + e);
+            } catch (UnsupportedEncodingException e) {
+                //#debug
+                L.e(this, "Can not synchronousGet", key, e);
+                throw new FlashDatabaseException("Can not synchronousGet: " + key + " - " + e);
             }
         }
 
@@ -319,42 +366,67 @@ public class StaticCache {
     /**
      * Store a value to heap and flash memory.
      *
-     * Note that the storage to RMS is done asynchronously in the background
-     * which may lead to large binary objects being queued up on the Worker
-     * thread. If you do this many times, you could run short on memory, and
-     * should re-factor with use of synchronousPutToRMS() instead.
+     * Conversion to from byte[] to use form (POJO, Plain Old Java Object)
+     * happens synchronously on the calling thread before before this method
+     * returns. If data type conversion may take a long time (XML or JSON
+     * parsing, etc) then avoid calling this method from the UI thread.
      *
-     * Note that conversion to use form happens immediately and synchronously on
-     * the calling thread before before this method returns. If conversion may
-     * take a long time (XML parsing, etc) then consider not calling this from
-     * the user event dispatch thread.
+     * Actual storage to persistent flash storage is done asynchronously on a
+     * background worker thread. This is done at high priority to prevent the
+     * queue of to-be-written objects from taking up precious heap memory. Items
+     * are written in the order in which calls to this method complete. You may
+     * prefer to explicitly manage this processes yourself by use of
+     * synchronousPutToRMS().
      *
      * @param key
      * @param bytes
-     * @return the byte[] converted to use form by the ramCache's Handler
+     * @return the byte[] converted to the parsed Object "use form" returned by
+     * this cache's DataTypeHandler
+     * @throws FlashDatabaseException
      */
-    public Object putAsync(final String key, final byte[] bytes) {
+    public Object put(final String key, final byte[] bytes) throws FlashDatabaseException {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }
         if (bytes == null || bytes.length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
-        final Object useForm = convertAndPutToHeapCache(key, bytes);
-        if (flashCacheEnabled) {
-            (new Task(Task.SERIAL_PRIORITY) {
-                public Object exec(final Object in) {
-                    try {
-                        synchronousFlashPut(key, bytes);
-                    } catch (Exception e) {
-                        //#debug
-                        L.e("Can not synch write to RMS", key, e);
-                    }
-
-                    return in;
-                }
-            }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN)).fork();
+        final Object useForm;
+        //#debug
+        L.i(this, "put", "key=" + key + " byteLength=" + bytes.length);
+        try {
+            useForm = convertAndPutToHeapCache(key, bytes);
+        } catch (DigestException ex) {
+            //#debug
+            L.e("Can not putAync", key, ex);
+            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+        } catch (UnsupportedEncodingException ex) {
+            //#debug
+            L.e("Can not putAync", key, ex);
+            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
         }
+
+//#mdebug        
+        if (!flashCacheEnabled) {
+            return useForm;
+        }
+//#enddebug        
+
+        (new Task(Task.SERIAL_PRIORITY) {
+            public Object exec(final Object in) {
+                try {
+                    synchronousFlashPut(key, bytes);
+                } catch (FlashDatabaseException e) {
+                    //#debug
+                    L.e("Can not synch write to flash", key, e);
+                    cancel(false, "Can not sync write to flash: " + key + " byte length=" + bytes.length, e);
+                }
+
+                return in;
+            }
+        }.setClassName("FlashPut")
+                .setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN))
+                .fork();
 
         return useForm;
     }
@@ -371,35 +443,30 @@ public class StaticCache {
      *
      * @param key
      * @param bytes
-     * @param putToHeapCache - Set "true" unless an overriding method has
-     * already done this
-     * @return
+     * @throws FlashFullException
+     * @throws FlashDatabaseException
      */
-    private void synchronousFlashPut(final String key, final byte[] bytes) {
+    private void synchronousFlashPut(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException {
         if (key == null) {
             throw new IllegalArgumentException("Null key put to cache");
         }
         try {
-            do {
-                try {
-                    //#debug
-                    L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
-                    flashCache.putData(key, bytes);
-                    //#debug
-                    L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
-                    break;
-                } catch (FlashFullException ex) {
-                    //#debug
-                    L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
-                    if (!clearSpace(bytes.length)) {
-                        //#debug
-                        L.i("Can not clear enough space for data, ABORTING", key);
-                    }
-                }
-            } while (true);
-        } catch (Exception e) {
+            try {
+                //#debug
+                L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");
+                flashCache.put(key, bytes);
+                //#debug
+                L.i("RMS cache write end", key + " (" + bytes.length + " bytes)");
+            } catch (FlashFullException ex) {
+                //#debug
+                L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
+                StaticCache.clearSpace(bytes.length);
+                flashCache.put(key, bytes);
+            }
+        } catch (DigestException e) {
             //#debug
-            L.e("Couldn't store object to RMS", key, e);
+            L.e("Couldn't store object to flash", key, e);
+            throw new FlashDatabaseException("Could not store object to flash: " + key + " - " + e);
         }
     }
 
@@ -410,136 +477,95 @@ public class StaticCache {
      * @param minSpaceToClear - in bytes
      * @return true if the requested amount of space has been cleared
      */
-    private boolean clearSpace(final int minSpaceToClear) throws FlashDatabaseException {
+    private static void clearSpace(final int minSpaceToClear) throws FlashFullException, FlashDatabaseException, DigestException {
         int spaceCleared = 0;
-        //FIXME Not appropriate for Android. Why is there no compilation bad reference error?
-        final Vector rsv = flashCache.getKeys();
 
         //#debug
         L.i("Clearing RMS space", minSpaceToClear + " bytes");
 
-        // First: clear cached objects not currently appearing in any open ramCache
-        for (int i = rsv.size() - 1; i >= 0; i--) {
-            final String key = (String) rsv.elementAt(i);
-            final StaticCache sc = getCacheContainingKey(key);
+        final Enumeration cacheEnumeration = caches.elements();
 
-            if (sc != null) {
-                spaceCleared += getByteSizeByKey(key);
-                sc.remove(key);
-            }
-        }
-        //#debug
-        L.i("End phase 1: clearing RMS space", spaceCleared + " bytes recovered");
+        while (spaceCleared < minSpaceToClear && cacheEnumeration.hasMoreElements()) {
+            final StaticCache cache = (StaticCache) cacheEnumeration.nextElement();
 
-        // Second: remove currently cached items, first from low priority caches
-        while (spaceCleared < minSpaceToClear && rsv.size() > 0) {
-            for (int i = 0; i < caches.size(); i++) {
-                final StaticCache sc = (StaticCache) caches.elementAt(i);
-
-                while (!sc.accessOrder.isEmpty() && spaceCleared < minSpaceToClear) {
-                    final String key = (String) sc.accessOrder.removeLeastRecentlyUsed();
-                    spaceCleared += getByteSizeByKey(key);
-                    sc.remove(key);
+            while (spaceCleared < minSpaceToClear && cache.size() > 0) {
+                final long dig;
+                synchronized (cache.ramCache) {
+                    final Long digest = (Long) cache.accessOrder.removeLeastRecentlyUsed();
+                    cache.ramCache.remove(digest);
+                    dig = digest.longValue();
                 }
-            }
-        }
-        //#debug
-        L.i("End phase 2: clearing RMS space", spaceCleared + " bytes recovered (total)");
-
-        return spaceCleared >= minSpaceToClear;
-    }
-
-    private int getByteSizeByKey(final String key) throws FlashDatabaseException {
-        int size = 0;
-
-        final byte[] bytes = flashCache.getData(key);
-        if (bytes != null) {
-            size = bytes.length;
-        } else {
-            //#debug
-            L.i("Can not check size of record store to clear space", key);
-        }
-
-        return size;
-    }
-
-    private static StaticCache getCacheContainingKey(String key) {
-        StaticCache cache = null;
-
-        synchronized (caches) {
-            for (int i = 0; i < caches.size(); i++) {
-                final StaticCache currentCache = (StaticCache) caches.elementAt(i);
-                if (currentCache.containsKey(key)) {
-                    cache = currentCache;
-                    break;
-                }
+                final byte[] bytes = cache.flashCache.get(dig);
+                cache.flashCache.removeData(dig);
+                //#debug
+                L.i("Cleared bytes from cache " + cache.flashCache.priority, "" + bytes.length);
+                spaceCleared += bytes.length;
             }
         }
 
-        return cache;
+        if (spaceCleared >= minSpaceToClear) {
+            throw new FlashFullException("Caches cleared, but still no space (" + minSpaceToClear + ") for data");
+        }
     }
 
     /**
-     * Note that delete is synchronous, so while this operation does not take
-     * long, other operations using the RMS may cause a slight stagger or pause
-     * before this operation can complete.
+     * The number of items in the cache
      *
-     * @param key
+     * @return
      */
-    protected void remove(final String key) {
+    public int size() {
+        return ramCache.size();
+    }
+
+    /**
+     * Note that delete from flash is synchronous, so while this operation does
+     * not take long, other operations using the RMS may cause a slight stagger
+     * or pause before this operation can complete. On some phones this may be
+     * visible as UI thread jitter even though the UI thread is only weakly
+     * linked to the flash operations by concurrency.
+     *
+     * @param digest
+     */
+    protected void remove(final long digest) {
         try {
-            if (containsKey(key)) {
-                synchronized (MUTEX) {
-                    accessOrder.removeElement(key);
-                    ramCache.remove(key);
+            if (containsDigest(digest)) {
+                final Long l = new Long(digest);
+
+                synchronized (ramCache) {
+                    accessOrder.removeElement(l);
+                    ramCache.remove(l);
                 }
-                flashCache.removeData(key);
+                flashCache.removeData(digest);
                 //#debug
-                L.i("Cache remove (from RAM and RMS)", key);
+                L.i("Cache remove (from RAM and RMS)", Long.toString(digest, 16));
             }
         } catch (Exception e) {
             //#debug
-            L.e("Couldn't remove object from cache", key, e);
+            L.e("Couldn't remove object from cache", Long.toString(digest, 16), e);
         }
     }
 
     /**
      * Remove all elements from this ramCache
      *
-     * @param chainedTask
+     * @param nextTask
      * @return
      */
-    public Task clearAsync(final Task chainedTask) {
-        final Task task = new Task() {
+    public Task clearAsync(final Task nextTask) {
+        final Task task = new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
                 //#debug
-                L.i("Start Cache Clear", "ID=" + priority);
-                final String[] keys;
-
-                synchronized (MUTEX) {
-                    keys = new String[accessOrder.size()];
-                    accessOrder.copyInto(keys);
-                }
-                for (int i = 0; i < keys.length; i++) {
-                    remove(keys[i]);
-                }
+                L.i("Start Cache Clear", "ID=" + cachePriorityChar);
+                accessOrder.removeAllElements();
+                flashCache.clear();
                 //#debug
-                L.i("Cache cleared", "ID=" + priority);
+                L.i("Cache cleared", "ID=" + cachePriorityChar);
 
                 return in;
             }
-        };
-        task.chain(chainedTask);
-        task.fork(Task.SERIAL_PRIORITY);
+        }.setClassName("ClearAsync");
 
-        return task;
-    }
-
-    /**
-     * Remove all elements from this ramCache
-     *
-     */
-    private void clear() {
+        return task.chain(nextTask).fork();
     }
 
     /**
@@ -553,44 +579,47 @@ public class StaticCache {
      * @param chainedTask
      * @return
      */
-    public Task clearHeapCacheAsync(final Task chainedTask) {
-        final Task task = new Task() {
+    public Task clearHeapAsync(final Task chainedTask) {
+        final Task task = new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
-                synchronized (MUTEX) {
+                synchronized (ramCache) {
                     //#debug
-                    L.i("Heap cached clear start", "" + priority);
-                    ramCache.clear();
-                    init();
+                    L.i(this, "Heap cache clear start", "" + cachePriorityChar);
+                    accessOrder.removeAllElements();
+                    ramCache.clearValues();
                     //#debug
-                    L.i("Heap cached cleared", "" + priority);
+                    L.i(this, "Heap cached cleared", "" + cachePriorityChar);
+
+                    return in;
                 }
-
-                return in;
             }
-        };
-        task.chain(chainedTask);
-        task.fork();
+        }.setClassName("ClearHeapAsync").chain(chainedTask);
 
-        return task;
+        return task.fork();
+    }
+
+    /**
+     * Check if the key is contained in the database.
+     *
+     * @param key
+     * @return
+     * @throws UnsupportedEncodingException
+     * @throws DigestException
+     */
+    public boolean containsKey(final String key) throws UnsupportedEncodingException, DigestException {
+        final long digest = CryptoUtils.getInstance().toDigest(key);
+
+        return containsDigest(digest);
     }
 
     /**
      * Does this ramCache contain an object matching the key?
      *
-     * @param key
+     * @param digest 
      * @return
      */
-    public boolean containsKey(final String key) {
-        if (key == null) {
-            throw new IllegalArgumentException("containsKey was passed null");
-        }
-
-        boolean contained;
-        synchronized (MUTEX) {
-            contained = ramCache.containsKey(key);
-        }
-
-        return contained;
+    public boolean containsDigest(final long digest) {
+        return ramCache.containsKey(new Long(digest));
     }
 
     /**
@@ -599,21 +628,18 @@ public class StaticCache {
      * @return
      */
     public int getSize() {
-        synchronized (MUTEX) {
-            return this.ramCache.size();
-        }
+        return this.ramCache.size();
     }
 
     /**
-     * The relative priority used for allocating RMS space between multiple
-     * caches. Higher priority caches synchronousRAMCacheGet more space.
+     * The relative cachePriorityChar used for allocating RMS space between
+     * multiple caches. Higher cachePriorityChar caches synchronousRAMCacheGet
+     * more space.
      *
      * @return
      */
     public int getPriority() {
-        synchronized (MUTEX) {
-            return priority;
-        }
+        return cachePriorityChar;
     }
 
     /**
@@ -626,35 +652,6 @@ public class StaticCache {
         return handler;
     }
 
-    /**
-     * Get a Vector of all keys for key-value pairs currently in the local
-     * ramCache at the flash memory level. The value may or may not be in heap
-     * memory at the current time.
-     *
-     * @param chainedTask
-     * @return
-     */
-    public Task getKeysAsync(final Task chainedTask) {
-        final Task task = new Task() {
-            protected Object exec(Object in) {
-                try {
-                    return flashCache.getKeys();
-                } catch (Exception e) {
-                    //#debug
-                    L.e("Can not complete", "getKeysTask", e);
-                    cancel(false, "Exception during async keys get");
-                    flashCache.clear();
-
-                    return new Vector();
-                }
-            }
-        };
-        task.chain(chainedTask);
-        task.fork();
-
-        return task;
-    }
-
 //#mdebug
     /**
      * For debugging use
@@ -662,62 +659,48 @@ public class StaticCache {
      * @return
      */
     public String toString() {
-        synchronized (MUTEX) {
-            StringBuffer str = new StringBuffer();
+        final StringBuffer str = new StringBuffer();
 
-            str.append("StaticCache --- priority: ");
-            str.append(priority);
-            str.append(" size: ");
-            str.append(getSize());
-            str.append(" size (bytes): ");
-            str.append(sizeAsBytes);
-            str.append("\n");
+        str.append("StaticCache --- priority: ");
+        str.append(cachePriorityChar);
+        str.append(" size: ");
+        str.append(getSize());
+        str.append("\n");
 
+        synchronized (accessOrder) {
             for (int i = 0; i < accessOrder.size(); i++) {
                 str.append(accessOrder.elementAt(i));
                 str.append("\n");
             }
-
-            return str.toString();
         }
+
+        return str.toString();
+
+
     }
 //#enddebug
 
     /**
-     * A helper class to get data asynchronously from the local ramCache without
-     * attempting to get data from the web.
+     * A helper class to getDigests data asynchronously from the local ramCache
+     * without attempting to getDigests data from the web.
      *
      * Usually you do not invoke this directly, but rather call
-     * StaticCache.getAsync() or StaticWebCache.get(StaticWebCache.GET_LOCAL) to
-     * invoke this with chain() support. You can use this to build your own
-     * custom asynchronous background processing Task chain.
+     * StaticCache.getAsync() or
+     * StaticWebCache.getDigests(StaticWebCache.GET_LOCAL) to invoke this with
+     * chain() support. You can use this to build your own custom asynchronous
+     * background processing Task chain.
      */
-    protected final class GetLocalTask extends Task {
-
-        final int priority;
+    final public class GetLocalTask extends Task {
 
         /**
-         * Create a new get operation. The url will be supplied as an input to
-         * this chained Task (the output of the previous Task in the chain).
+         * Create a new getDigests operation, specifying the url in advance.
          *
-         * @param priority
-         */
-        public GetLocalTask(final int priority) {
-            super();
-
-            this.priority = priority;
-        }
-
-        /**
-         * Create a new get operation, specifying the url in advance.
-         *
+         * @param priority 
          * @param key
-         * @param priority
          */
-        public GetLocalTask(final String key, final int priority) {
-            super(key);
+        public GetLocalTask(final int priority, final String key) {
+            super(priority, key);
 
-            this.priority = priority;
             // Better not to interrupt RMS read operation, just in case
             setShutdownBehaviour(Task.DEQUEUE_ON_SHUTDOWN);
         }
@@ -736,20 +719,19 @@ public class StaticCache {
          */
         protected Object exec(final Object in) {
             //#debug
-            L.i("Async StaticCache get", (String) in);
+            L.i(this, "Async StaticCache get", (String) in);
             if (in == null || !(in instanceof String)) {
                 //#debug
-                L.i("ERROR", "StaticCache.GetLocalTask must receive a String url, but got " + in);
+                L.i(this, "ERROR", "Must receive a String url, but got " + in);
                 cancel(false, "StaticCache.GetLocalTask got bad input to exec(): " + in);
 
                 return in;
             }
             try {
                 return synchronousGet((String) in);
-            } catch (Exception e) {
+            } catch (FlashDatabaseException e) {
                 //#debug
-                L.e("Can not async StaticCache get", in.toString(), e);
-                cancel(false, "Exception during StatiCache.GetLocalTask synchronousGet(): " + e);
+                L.e(this, "Can not exec async get", in.toString(), e);
             }
 
             return in;
@@ -760,7 +742,7 @@ public class StaticCache {
      * Analyze if this cache is the same one that would be returned by a call to
      * StaticCache.getCache() with the same parameters
      *
-     * @param priority
+     * @param priority 
      * @param handler
      * @param taskFactory - always null. The parameter exists for polymorphic
      * equivalency with the overriding StaticWebCache implementation.
@@ -768,6 +750,6 @@ public class StaticCache {
      * @return
      */
     protected boolean equals(final char priority, final DataTypeHandler handler, final Object taskFactory) {
-        return this.priority == priority && this.handler.equals(handler);
+        return this.cachePriorityChar == priority && this.handler.equals(handler);
     }
 }

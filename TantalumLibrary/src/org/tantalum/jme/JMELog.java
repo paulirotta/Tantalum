@@ -24,6 +24,7 @@
  */
 package org.tantalum.jme;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Vector;
@@ -31,7 +32,7 @@ import javax.microedition.io.CommConnection;
 import javax.microedition.io.Connection;
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
-import org.tantalum.PlatformAdapter;
+import org.tantalum.PlatformUtils;
 import org.tantalum.util.L;
 
 /**
@@ -48,11 +49,14 @@ import org.tantalum.util.L;
  * @author phou
  */
 public class JMELog extends L {
+
     private final OutputStream os;
 //#mdebug
-    private final byte[] CRLF = "\r\n".getBytes();
-    private final Vector byteArrayQueue = new Vector();
+    private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//    private final Vector byteArrayQueue = new Vector();
     private final JMELog.LogWriter usbWriter;
+    private static final byte[] CRLF_BYTES = CRLF.getBytes();
+    private final Object OUTPUT_MUTEX = new Object();
 //#enddebug    
 
     /**
@@ -63,26 +67,33 @@ public class JMELog extends L {
      * <code>L.i("blah", "blah")</code> and
      * <code>L.e("blah", "blah", myException)</code>
      *
-     * @param routeDebugOutputToSerialPort
+     * @param logMode 
      */
-    public JMELog(final int logMode) {
+    public JMELog(int logMode) {
         OutputStream s = null;
 //#mdebug
         String uri = null;
         JMELog.LogWriter writer = null;
         switch (logMode) {
-            case PlatformAdapter.NORMAL_LOG_MODE:
+            case PlatformUtils.NORMAL_LOG_MODE:
                 break;
 
-            case PlatformAdapter.USB_SERIAL_PORT_LOG_MODE:
+            case PlatformUtils.USB_SERIAL_PORT_LOG_MODE:
                 System.out.println("Routing debug output to USB serial port");
                 final String commPort = System.getProperty("microedition.commports");
                 uri = "comm:" + commPort;
                 break;
 
 
-            case PlatformAdapter.MEMORY_CARD_LOG_MODE:
-                final String memoryCardPath = System.getProperty("fileconn.dir.memorycard");
+            case PlatformUtils.MEMORY_CARD_LOG_MODE:
+                String memoryCardPath = System.getProperty("fileconn.dir.memorycard");
+
+                if (memoryCardPath == null) {
+                    System.out.println("ERROR: Device or emulator does not support System.getProperty-fileconn.dir.memorycard : fallback to PlatformUtils.NORMAL_LOG_MODE");
+                    logMode = PlatformUtils.NORMAL_LOG_MODE;
+                    break;
+                }
+
                 uri = memoryCardPath + "tantalum.log";
                 System.out.println("Routing debug output to memory card log file: " + uri);
                 break;
@@ -91,7 +102,7 @@ public class JMELog extends L {
                 throw new IllegalArgumentException("Log mode must be one of the pre-defined constants such as JMELog.NORMAL_LOG_MODE");
         }
         try {
-            writer = initWriter(uri, logMode == PlatformAdapter.USB_SERIAL_PORT_LOG_MODE);
+            writer = initWriter(uri, logMode == PlatformUtils.USB_SERIAL_PORT_LOG_MODE);
             if (writer != null) {
                 s = writer.getOutputStream();
             }
@@ -125,17 +136,19 @@ public class JMELog extends L {
      */
     protected void printMessage(final StringBuffer sb, final Throwable t) {
 //#mdebug
-        if (t != null) {
-            sb.append("Exception: ");
-            sb.append(t.toString());
-        }
-        if (os != null) {
-            byteArrayQueue.addElement(sb.toString().getBytes());
-            synchronized (L.class) {
-                L.class.notifyAll();
+        synchronized (OUTPUT_MUTEX) {
+            if (t != null) {
+                sb.append("Exception: ");
+                sb.append(t.toString());
             }
-        } else {
-            synchronized (L.class) {
+            if (os != null) {
+                try {
+                    bos.write(sb.toString().getBytes());
+                    bos.write(CRLF_BYTES);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            } else {
                 System.out.println(sb.toString());
             }
         }
@@ -150,12 +163,10 @@ public class JMELog extends L {
 //#mdebug
         final JMELog.LogWriter writer = usbWriter;
 
-
-
         if (writer != null) {
-            synchronized (L.class) {
-                writer.shutdownStarted = true;
-                L.class.notifyAll();
+            writer.shutdownStarted = true;
+            synchronized (OUTPUT_MUTEX) {
+                OUTPUT_MUTEX.notifyAll();
             }
 
             // Give the queue time to flush final messages
@@ -165,7 +176,6 @@ public class JMELog extends L {
                         writer.wait(1000);
                     }
                 } catch (InterruptedException ex) {
-                    //#debug
                     System.out.println("JMELog.LogWriter was interrupted while waiting one second during shutdown");
                 }
             }
@@ -176,18 +186,19 @@ public class JMELog extends L {
 //#mdebug
     private final class LogWriter implements Runnable {
 
-        boolean shutdownStarted = false;
-        boolean shutdownComplete = false;
+        volatile boolean shutdownStarted = false;
+        boolean shutdownComplete = false; // Access only synchronized(this)
         private final Connection conn;
         private final OutputStream os;
 
-        public LogWriter(final String uri, final boolean serialPortMode) throws IOException {
+        LogWriter(final String uri, final boolean serialPortMode) throws IOException {
             if (serialPortMode) {
                 final CommConnection connection = (CommConnection) Connector.open(uri);
                 os = connection.openOutputStream();
                 conn = connection;
             } else {
-                final FileConnection connection = (FileConnection) Connector.open("file:///CFCard/newfile.txt", Connector.READ_WRITE);
+                System.out.println("Creating a file connection for:" + uri);
+                final FileConnection connection = (FileConnection) Connector.open(uri, Connector.READ_WRITE);
                 if (connection.exists()) {
                     System.out.println("Log file exists on the memory card, clearing old data... " + uri);
                     connection.truncate(0);
@@ -199,34 +210,49 @@ public class JMELog extends L {
             }
         }
 
-        public OutputStream getOutputStream() {
+        OutputStream getOutputStream() {
             return os;
+        }
+
+        private int pendingByteCount() {
+            synchronized (OUTPUT_MUTEX) {
+                return bos.size();
+            }
         }
 
         public void run() {
             try {
-                while (!shutdownStarted || !byteArrayQueue.isEmpty()) {
-                    synchronized (L.class) {
-                        if (byteArrayQueue.isEmpty()) {
-                            L.class.wait(1000);
+                Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+                while (pendingByteCount() > 0 || !shutdownStarted) { //!byteArrayQueue.isEmpty()) {
+                    final byte[] bytes;
+                    synchronized (OUTPUT_MUTEX) {
+                        while (pendingByteCount() == 0 && !shutdownStarted) {
+                            OUTPUT_MUTEX.wait(1000);
+                        }
+                        if (pendingByteCount() > 0) {
+                            bytes = bos.toByteArray();
+                            bos.reset();
+                        } else {
+                            bytes = null;
                         }
                     }
-                    while (!byteArrayQueue.isEmpty()) {
-                        os.write((byte[]) byteArrayQueue.firstElement());
-                        byteArrayQueue.removeElementAt(0);
-                        os.write(CRLF);
+                    if (bytes != null) {
+                        os.write(bytes);
                     }
-                    os.flush();
                 }
             } catch (Exception e) {
+                e.printStackTrace();
             } finally {
                 try {
+                    os.flush();
                     os.close();
                 } catch (IOException ex) {
+                    ex.printStackTrace();
                 }
                 try {
                     conn.close();
                 } catch (IOException ex) {
+                    ex.printStackTrace();
                 }
                 synchronized (this) {
                     shutdownComplete = true;

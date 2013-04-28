@@ -44,7 +44,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
     static final Command exitCommand = new Command("Exit");
     private final ListModel listModel = new ListModel(this);
     public final List list = new List(listModel);
-    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', listModel);
+    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, listModel);
     private RSSReader midlet;
     private boolean isReloading = false;
 
@@ -94,17 +94,17 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 list.getModel().removeItem(i);
             }
 
-            final Task task = new Task() {
+            final Task task = new Task(Task.FASTLANE_PRIORITY) {
                 public Object exec(final Object in) {
                     isReloading = false;
 
                     return in;
                 }
 
-                protected void onCanceled() {
+                protected void onCanceled(String reason) {
                     isReloading = false;
                 }
-            };
+            }.setClassName("ReloadingStateUpdater");
 
             if (fromNet) {
                 feedCache.getAsync(midlet.getUrl(), Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, task);

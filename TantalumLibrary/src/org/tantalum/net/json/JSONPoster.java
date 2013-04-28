@@ -22,14 +22,15 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
- package org.tantalum.net.json;
+package org.tantalum.net.json;
 
+import java.io.UnsupportedEncodingException;
 import org.tantalum.net.HttpPoster;
 import org.tantalum.util.L;
 
 /**
  * A convenience class for sending HTTP POST to a web server
- * 
+ *
  * @author combes
  */
 public abstract class JSONPoster extends HttpPoster {
@@ -37,26 +38,42 @@ public abstract class JSONPoster extends HttpPoster {
     private final JSONModel jsonModel = new JSONModel();
 
     /**
-     * HTTP POST a JSONModel to a server
-     * 
-     * @param key 
+     * HTTP POST a JSON to a server
+     *
+     * The actual JSON will be provided as input from a previously chained Task.
+     *
+     * @param url
+     * @param priority  
      */
-    public JSONPoster(final String key) {
-        super(key);
+    public JSONPoster( final int priority, final String url) {
+        super(priority, url);
     }
 
     /**
-     * Receives a "key", which is a URL plus optional additional lines
-     * of text to create a unique cacheable hash code.
-     * 
+     * HTTP POST JSON to a server
+     *
+     * @param url
+     * @param json
+     * @param priority
+     * @throws UnsupportedEncodingException if the String can not be converted
+     * to UTF-8 on this device
+     */
+    public JSONPoster(final int priority, final String url, final String json) throws UnsupportedEncodingException {
+        super(priority, url, json.getBytes("UTF-8"));
+    }
+
+    /**
+     * Receives a "key", which is a URL plus optional additional lines of text
+     * to create a unique cacheable hash code.
+     *
      * This returns a JSONModel of the data provided by the HTTP server.
-     * 
+     *
      * @param key
-     * @return 
+     * @return
      */
     public Object exec(final Object key) {
         String value = null;
-        
+
         try {
             value = new String((byte[]) super.exec(key), "UTF8").trim();
             if (value.startsWith("[")) {
@@ -67,9 +84,9 @@ public abstract class JSONPoster extends HttpPoster {
         } catch (Exception e) {
             //#debug
             L.e("JSONPoster HTTP response problem", key + " : " + value, e);
-            cancel(false, "JSONPoster exception - " + key + " : " + e);
+            cancel(false, "JSONPoster exception - " + key, e);
         }
-        
+
         return jsonModel;
     }
 }

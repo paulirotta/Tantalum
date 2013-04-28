@@ -118,10 +118,6 @@ public final class CategoryBarHandler implements ElementListener {
     }
 
     public void setVisibility(final boolean visibility) {
-//        PlatformUtils.runOnUiThread(new Runnable() {
-//            public void run() {
-                categoryBar.setVisibility(visibility);
-//            }
-//        });
+        categoryBar.setVisibility(visibility);
     }
 }

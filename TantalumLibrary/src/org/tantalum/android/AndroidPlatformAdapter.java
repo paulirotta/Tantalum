@@ -141,8 +141,14 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
         return log;
     }
 
-    public FlashCache getFlashCache(final char priority) {
-        return new AndroidCache(priority);
+    public FlashCache getFlashCache(final char priority, final int cacheType) {
+        switch (cacheType) {
+            case PlatformUtils.PHONE_DATABASE_CACHE:
+                return new AndroidCache(priority);
+
+            default:
+                throw new IllegalArgumentException("Unsupported cache type " + cacheType + ": only PlatformAdapter.PHONE_DATABASE_CACHE is supported at this time");
+        }
     }
 
     public ImageTypeHandler getImageTypeHandler() {
@@ -237,14 +243,26 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          * @throws IOException
          */
         public void getResponseHeaders(final Hashtable headers) throws IOException {
-            for (int i = 0; i < 10000; i++) {
+            headers.clear();
+            for (int i = 0; i < 1000; i++) {
                 final String key = httpConnection.getHeaderFieldKey(i);
+
                 if (key == null) {
                     break;
                 }
                 final String value = httpConnection.getHeaderField(i);
-                headers.put(key, value);
-            };
+                String[] values = (String[]) headers.get(key);
+                if (values == null) {
+                    values = new String[1];
+                    values[0] = value;
+                    headers.put(key, values);
+                } else {
+                    String[] newValues = new String[values.length + 1];
+                    System.arraycopy(values, 0, newValues, 0, values.length);
+                    newValues[values.length] = value;
+                    headers.put(key, newValues);
+                }
+            }
         }
 
         /**
@@ -277,7 +295,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          *
          * @throws IOException
          */
-        public final void close() throws IOException {
+        public void close() throws IOException {
             if (is != null) {
                 is.close();
             }
@@ -285,6 +303,15 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
                 os.close();
             }
             httpConnection.disconnect();
+        }
+
+        /**
+         * 10MB or you should do a streaming operation instead
+         *
+         * @return
+         */
+        public long getMaxLengthSupportedAsBlockOperation() {
+            return 10000000;
         }
     }
 }
