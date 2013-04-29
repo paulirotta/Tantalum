@@ -87,7 +87,7 @@ public final class PlatformUtils {
      * and there will not be any log output.
      */
     public static final int MEMORY_CARD_LOG_MODE = 2;
-    private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be JME MIDlet or Android Activity";
+    private static final String UNSUPPORTED_PLATFORM_MESSAGE = "Unsupported platform- getIntance(program) argument must be JME MIDlet, Blackberry UiApplication or Android Activity";
     /**
      * PlatformUtils.setProgram() has not yet been called. Usually this is done
      * by overriding a platform-specific base class such as TantalumMIDlet or
@@ -102,6 +102,11 @@ public final class PlatformUtils {
      * Automatically detected that we are in an Android phone
      */
     public static final int PLATFORM_ANDROID = 2;
+    /**
+     * Automatically detects that we are using a Blackberry device
+     */
+    public static final int PLATFORM_BLACKBERRY = 3;
+    
     private int platform = PLATFORM_NOT_INITIALIZED;
     private PlatformAdapter platformAdapter = null;
     /**
@@ -190,6 +195,16 @@ public final class PlatformUtils {
             }
         } catch (Throwable t) {
             System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
+        }
+        try {
+            if (Class.forName("net.rim.device.api.ui.UiApplication").isAssignableFrom(program.getClass())) {
+                platform = PLATFORM_BLACKBERRY;
+                platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.blackberry.BBPlatformAdapter").newInstance();
+                init(logMode);
+                return;
+            }
+        } catch (Throwable t) {
+            System.out.println("Can not init Blackberry in setProgram(" + program.getClass().getName() + ") : " + t);
         }
         try {
             if (Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(program.getClass())

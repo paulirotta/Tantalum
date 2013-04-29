@@ -28,6 +28,7 @@ package org.json.me;
  */
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.util.L;
 
@@ -366,7 +367,7 @@ public class JSONArray {
     public boolean optBoolean(final int index) {
         return optBoolean(index, false);
     }
-
+    
     /**
      * Get the optional boolean value associated with an index. It returns the
      * defaultValue if there is no value at that index or if it is not a Boolean
@@ -629,7 +630,7 @@ public class JSONArray {
 
         return this;
     }
-
+    
     /**
      * Put a value in the JSONArray, where the value will be a JSONArray which
      * is produced from a Collection.

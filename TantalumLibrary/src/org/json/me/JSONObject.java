@@ -317,7 +317,7 @@ public final class JSONObject {
 //#      * @param key   A key string.
 //#      * @param value An object to be accumulated under the key.
 //#      * @return this.
-//#      * @throws JSONException If the key is null or if the current value
+//#      * @throws JSONException If the key is null or if the current value 
 //#      * 	associated with the key is not a JSONArray.
 //#      */
 //#     public JSONObject append(String key, Object value)
@@ -327,7 +327,7 @@ public final class JSONObject {
 //#         if (o == null) {
 //#             put(key, new JSONArray().put(value));
 //#         } else if (o instanceof JSONArray) {
-//#             throw new JSONException("JSONObject[" + key +
+//#             throw new JSONException("JSONObject[" + key + 
 //#             		"] is not a JSONArray.");
 //#         } else {
 //#             put(key, new JSONArray().put(o).put(value));
