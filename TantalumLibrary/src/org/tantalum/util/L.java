@@ -100,6 +100,7 @@ public abstract class L {
      * @param t exception
      */
     public static final void e(final String tag, final String message, final Throwable t) {
+        //#debug
         e(null, tag, message, t);
     }
 

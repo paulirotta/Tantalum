@@ -30,6 +30,7 @@ import org.tantalum.util.SortedVector;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import org.tantalum.util.Comparator;
 
 /**
  * Unit tests for SortedVector
@@ -44,9 +45,9 @@ public class SortedVectorTest extends MockedStaticInitializers {
     @Test
     public void testInsertElementAt() {
         System.out.println("insertElementAt");
-        SortedVector instance = new SortedVector(new SortedVector.Comparator() {
-            public boolean before(Object o1, Object o2) {
-                return ((Integer) o1).intValue() < ((Integer) o2).intValue();
+        SortedVector instance = new SortedVector(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Integer) o1).intValue() - ((Integer) o2).intValue();
             }
         });
         Object o_1 = null;
@@ -65,9 +66,9 @@ public class SortedVectorTest extends MockedStaticInitializers {
     @Test
     public void testSetElementAt() {
         System.out.println("setElementAt");
-        SortedVector instance = new SortedVector(new SortedVector.Comparator() {
-            public boolean before(Object o1, Object o2) {
-                return ((Integer) o1).intValue() < ((Integer) o2).intValue();
+        SortedVector instance = new SortedVector(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Integer) o1).intValue() - ((Integer) o2).intValue();
             }
         });
         Object o_1 = null;
@@ -86,9 +87,9 @@ public class SortedVectorTest extends MockedStaticInitializers {
     @Test
     public void testAddElement() {
         System.out.println("addElement");
-        SortedVector instance = new SortedVector(new SortedVector.Comparator() {
-            public boolean before(Object o1, Object o2) {
-                return ((Integer) o1).intValue() < ((Integer) o2).intValue();
+        SortedVector instance = new SortedVector(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Integer) o1).intValue() - ((Integer) o2).intValue();
             }
         });
         Object o_1 = new Integer(10);
@@ -110,9 +111,9 @@ public class SortedVectorTest extends MockedStaticInitializers {
     @Test
     public void testSequence() {
         System.out.println("testSequence");
-        SortedVector instance = new SortedVector(new SortedVector.Comparator() {
-            public boolean before(Object o1, Object o2) {
-                return ((Integer) o1).intValue() < ((Integer) o2).intValue();
+        SortedVector instance = new SortedVector(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Integer) o1).intValue() - ((Integer) o2).intValue();
             }
         });
         Object o_1 = new Integer(10);
