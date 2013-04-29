@@ -208,7 +208,7 @@ public abstract class Task implements Runnable {
     public static final int EXECUTE_NORMALLY_ON_SHUTDOWN = 0;
     /**
      * Tasks which have not yet started are removed from the task queue when an
-     * application shutdown begins.
+     * application shutdown begins. This is the default behavior.
      */
     public static final int DEQUEUE_ON_SHUTDOWN = 1;
     /**
@@ -245,7 +245,7 @@ public abstract class Task implements Runnable {
      * may be required during shutdown, but HttpGetter could block or a long
      * time and should be cancel()ed during shutdown to speed application close.
      */
-    private int shutdownBehaviour = DEQUEUE_OR_CANCEL_ON_SHUTDOWN;
+    private int shutdownBehaviour = Task.DEQUEUE_ON_SHUTDOWN;
     /**
      * The next Task to be executed after this Task completes successfully. If
      * the current task is canceled or throws an exception, the chainedTask(s)

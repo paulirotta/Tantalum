@@ -89,7 +89,7 @@ public final class ListForm extends Form implements CommandListener {
             PlatformUtils.getInstance().shutdown(false);
         } else if (command == reloadCommand) {
             final Alert alert = new Alert("Reloading", "Reloading..", null, AlertType.INFO);
-            alert.setTimeout(10000);
+            alert.setTimeout(2000);
             //#debug
             L.i("Alert timeout set", "10000");
             (new Task(Task.HIGH_PRIORITY) {
@@ -101,8 +101,7 @@ public final class ListForm extends Form implements CommandListener {
                         }
                         //#debug
                         L.i("start reload", ".join(10000)");
-                        reload(true).join(10000);
-                        alert.setTimeout(1);
+                        reload(true);
                         //#debug
                         L.i("Alert timeout set", "1");
                     } catch (Exception ex) {
@@ -176,8 +175,7 @@ public final class ListForm extends Form implements CommandListener {
                     loading = false;
                     paint();
                 }
-            }.setRunOnUIThreadWhenFinished(true);
-            uiTask.setClassName("ForceLoadPainter").setRunOnUIThreadWhenFinished(true);;
+            }.setClassName("ForceLoadPainter").setRunOnUIThreadWhenFinished(true);
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
             uiTask = new Task(Task.HIGH_PRIORITY) {
@@ -201,8 +199,7 @@ public final class ListForm extends Form implements CommandListener {
 
                     return false;
                 }
-            }.setRunOnUIThreadWhenFinished(true);
-            uiTask.setClassName("LoadPainter").setRunOnUIThreadWhenFinished(true);
+            }.setClassName("LoadPainter").setRunOnUIThreadWhenFinished(true);
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
         }
 
@@ -216,7 +213,6 @@ public final class ListForm extends Form implements CommandListener {
     }
 
     public void showList() {
-        detailsView.setSelectedItem(null);
         rssReader.switchDisplayable(null, this);
     }
 

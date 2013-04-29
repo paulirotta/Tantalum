@@ -700,9 +700,6 @@ public class StaticCache {
          */
         public GetLocalTask(final int priority, final String key) {
             super(priority, key);
-
-            // Better not to interrupt RMS read operation, just in case
-            setShutdownBehaviour(Task.DEQUEUE_ON_SHUTDOWN);
         }
 
         /**

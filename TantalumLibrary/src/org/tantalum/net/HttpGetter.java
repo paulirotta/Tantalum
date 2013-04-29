@@ -514,6 +514,8 @@ public class HttpGetter extends Task {
      */
     public HttpGetter(final int priority) {
         super(priority);
+        
+        setShutdownBehaviour(Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN);
     }
 
     /**
@@ -523,11 +525,12 @@ public class HttpGetter extends Task {
      * @param url
      */
     public HttpGetter(final int priority, final String url) {
-        super(priority, url);
-
+        this(priority);
+        
         if (url == null) {
             throw new IllegalArgumentException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
         }
+        set(url);
     }
 
     /**

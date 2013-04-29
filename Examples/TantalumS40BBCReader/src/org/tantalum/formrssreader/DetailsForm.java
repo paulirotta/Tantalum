@@ -39,11 +39,11 @@ import org.tantalum.util.L;
  */
 public final class DetailsForm extends Form implements CommandListener {
 
-    private FormRSSReader rssReader;
+    private final FormRSSReader rssReader;
     private RSSItem selectedItem;
-    private static StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler());
-    private Command openLinkCommand = new Command("Open link", Command.OK, 0);
-    private Command backCommand = new Command("Back", Command.BACK, 0);
+    private static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler());
+    private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
+    private final Command backCommand = new Command("Back", Command.BACK, 0);
 
     public DetailsForm(FormRSSReader rssReader, String title) {
         super(title);
@@ -74,26 +74,27 @@ public final class DetailsForm extends Form implements CommandListener {
         }
     }
 
-    public void setSelectedItem(RSSItem selectedItem) {
+    public synchronized void setSelectedItem(RSSItem selectedItem) {
         this.selectedItem = selectedItem;
     }
 
-    public RSSItem getSelectedItem() {
+    public synchronized RSSItem getSelectedItem() {
         return selectedItem;
     }
 
     public void paint() {
         this.deleteAll();
 
-        final StringItem titleStringItem = new StringItem(null, selectedItem.getTitle(), StringItem.PLAIN);
+        final RSSItem currentSelectedItem = this.selectedItem;        
+        final StringItem titleStringItem = new StringItem(null, currentSelectedItem.getTitle(), StringItem.PLAIN);
         titleStringItem.setFont(ListForm.FONT_TITLE);
         titleStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
 
-        final StringItem dateStringItem = new StringItem(null, selectedItem.getPubDate(), StringItem.PLAIN);
+        final StringItem dateStringItem = new StringItem(null, currentSelectedItem.getPubDate(), StringItem.PLAIN);
         dateStringItem.setFont(ListForm.FONT_DATE);
         dateStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
 
-        final StringItem descriptionStringItem = new StringItem(null, selectedItem.getDescription(), StringItem.PLAIN);
+        final StringItem descriptionStringItem = new StringItem(null, currentSelectedItem.getDescription(), StringItem.PLAIN);
         descriptionStringItem.setFont(ListForm.FONT_DESCRIPTION);
         descriptionStringItem.setLayout(Item.LAYOUT_NEWLINE_AFTER);
 
@@ -101,24 +102,24 @@ public final class DetailsForm extends Form implements CommandListener {
         this.append(dateStringItem);
         this.append(descriptionStringItem);
 
-        if (selectedItem.getThumbnail() != null) {
+        if (currentSelectedItem.getThumbnail() != null) {
             Image image = null;
             try {
-                image = (Image) imageCache.synchronousRAMCacheGet(selectedItem.getThumbnail());
+                image = (Image) imageCache.synchronousRAMCacheGet(currentSelectedItem.getThumbnail());
             } catch (FlashDatabaseException ex) {
                 //#debug
-                L.e("Can not get image", selectedItem.getThumbnail(), ex);
+                L.e("Can not get image", currentSelectedItem.getThumbnail(), ex);
             }
             if (image != null) {
                 DetailsForm.this.appendImageItem();
-            } else if (!selectedItem.isLoadingImage()) {
+            } else if (!currentSelectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
-                selectedItem.setLoadingImage(true);
-                imageCache.getAsync(selectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.HIGH_PRIORITY) {
+                currentSelectedItem.setLoadingImage(true);
+                imageCache.getAsync(currentSelectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.HIGH_PRIORITY) {
                     protected Object exec(final Object in) {
                         //#debug
-                        L.i("IMAGE DEBUG", selectedItem.getThumbnail());
-                        selectedItem.setLoadingImage(false);
+                        L.i("IMAGE DEBUG", currentSelectedItem.getThumbnail());
+                        currentSelectedItem.setLoadingImage(false);
 
                         return in;
                     }
