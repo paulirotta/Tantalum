@@ -49,6 +49,7 @@ public final class AndroidLog extends L {
      * @param stringBuffer information to print for debugging purposes
      * @param t is this an error or just information
      */
+    @Override
     protected void printMessage(final StringBuffer stringBuffer, final Throwable t) {
         if (t == null) {
             Log.i(LOG_TANTALUM, stringBuffer.toString());
@@ -61,13 +62,7 @@ public final class AndroidLog extends L {
      * Finalize logging. This does nothing on the Android platform.
      * 
      */
+    @Override
     protected void close() {
-    }
-
-    /**
-     * This does nothing on the Android platform. Debug over USB cable is
-     * automatic when running in an Android IDE.
-     */
-    protected void routeDebugOutputToUsbSerialPort() {
     }
 }

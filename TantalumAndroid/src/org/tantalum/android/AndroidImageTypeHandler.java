@@ -37,6 +37,7 @@ import org.tantalum.util.L;
  */
 public final class AndroidImageTypeHandler extends ImageTypeHandler {
 
+    @Override
     public Object convertToUseForm(final Object key, final byte[] bytes) {
         try {
             Bitmap b = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);

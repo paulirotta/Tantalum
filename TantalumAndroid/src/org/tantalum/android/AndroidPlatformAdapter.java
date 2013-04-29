@@ -66,6 +66,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
      *
      * @param logMode
      */
+    @Override
     public void init(int logMode) {
     }
 
@@ -74,6 +75,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
      *
      * @param action
      */
+    @Override
     public void runOnUiThread(final Runnable action) {
         ((Activity) PlatformUtils.getInstance().getProgram()).runOnUiThread(action);
     }
@@ -86,25 +88,9 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
      * navigates to another Activity, or asynchronously after a slight delay
      * when you call Worker.shutdown() to terminate the program.
      */
+    @Override
     public void shutdownComplete() {
         ((Activity) PlatformUtils.getInstance().getProgram()).finish();
-    }
-
-    /**
-     * Create an HTTP GET connection appropriate for this phone platform
-     *
-     * @param url
-     * @param requestPropertyKeys header tags for the server
-     * @param requestPropertyValues values associated with each header key
-     * @return
-     * @throws IOException
-     */
-    public static HttpConn getHttpGetConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues) throws IOException {
-        final AndroidHttpConn httpConn = new AndroidHttpConn(url, requestPropertyKeys, requestPropertyValues);
-        httpConn.httpConnection.setDoInput(true);
-        httpConn.httpConnection.setRequestMethod("GET");
-
-        return httpConn;
     }
 
     /**
@@ -114,6 +100,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
      * @return
      * @throws IOException
      */
+    @Override
     public HttpConn getHttpConn(final String url, final Vector requestPropertyKeys, final Vector requestPropertyValues, final byte[] bytes, final String requestMethod) throws IOException {
         OutputStream out = null;
         final boolean doOutput = requestMethod.equals("POST");
@@ -137,10 +124,12 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
         }
     }
 
+    @Override
     public L getLog() {
         return log;
     }
 
+    @Override
     public FlashCache getFlashCache(final char priority, final int cacheType) {
         switch (cacheType) {
             case PlatformUtils.PHONE_DATABASE_CACHE:
@@ -151,16 +140,19 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
         }
     }
 
+    @Override
     public ImageTypeHandler getImageTypeHandler() {
         return new AndroidImageTypeHandler();
     }
 
+    @Override
     public Object readImageFromJAR(final String jarPathAndFilename) throws IOException {
         final byte[] bytes = StringUtils.readBytesFromJAR(jarPathAndFilename);
 
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
     }
 
+    @Override
     public void vibrateAsync(final int duration, final Runnable timekeeperLambda) {
         final Vibrator v = (Vibrator) applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
 
@@ -204,6 +196,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          * @return
          * @throws IOException
          */
+        @Override
         public InputStream getInputStream() throws IOException {
             if (is == null) {
                 is = httpConnection.getInputStream();
@@ -218,6 +211,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          * @return
          * @throws IOException
          */
+        @Override
         public OutputStream getOutputStream() throws IOException {
             if (os == null) {
                 os = httpConnection.getOutputStream();
@@ -232,6 +226,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          * @return
          * @throws IOException
          */
+        @Override
         public int getResponseCode() throws IOException {
             return httpConnection.getResponseCode();
         }
@@ -242,6 +237,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          * @param headers
          * @throws IOException
          */
+        @Override
         public void getResponseHeaders(final Hashtable headers) throws IOException {
             headers.clear();
             for (int i = 0; i < 1000; i++) {
@@ -276,6 +272,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
             httpConnection.setRequestProperty(key, value);
         }
 
+        @Override
         public long getLength() {
             final String s = httpConnection.getHeaderField("Content-Length");
             long length = 0;
@@ -295,6 +292,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          *
          * @throws IOException
          */
+        @Override
         public void close() throws IOException {
             if (is != null) {
                 is.close();
@@ -310,6 +308,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
          *
          * @return
          */
+        @Override
         public long getMaxLengthSupportedAsBlockOperation() {
             return 10000000;
         }

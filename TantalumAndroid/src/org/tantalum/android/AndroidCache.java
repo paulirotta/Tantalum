@@ -29,6 +29,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import java.io.UnsupportedEncodingException;
+import java.security.DigestException;
 import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
@@ -102,15 +104,20 @@ public final class AndroidCache extends FlashCache {
         super(priority);
 
         helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION) {
-
             @Override
-            public void onCreate(SQLiteDatabase sqld) {
-                sqld.execSQL(CREATE_TABLE);
+            public void onCreate(final SQLiteDatabase sqld) {
+                synchronized (MUTEX) {
+                    sqld.execSQL(CREATE_TABLE);
+                    db = sqld;
+                }
             }
 
             @Override
-            public void onUpgrade(SQLiteDatabase sqld, int i, int i1) {
-                sqld.execSQL(CREATE_TABLE);
+            public void onUpgrade(final SQLiteDatabase sqld, int i, int i1) {
+                synchronized (MUTEX) {
+                    sqld.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+                    sqld.execSQL(CREATE_TABLE);
+                }
             }
         };
         (new Task(Task.SHUTDOWN) {
@@ -130,25 +137,25 @@ public final class AndroidCache extends FlashCache {
      *
      * @param db
      */
-    public void onCreate(final SQLiteDatabase db) {
-        synchronized (MUTEX) {
-            db.execSQL(CREATE_TABLE);
-        }
-    }
-
-    /**
-     * Execute SQL to update the database
-     *
-     * @param db
-     * @param oldVersion
-     * @param newVersion
-     */
-    public void onUpgrade(final SQLiteDatabase db, final int oldVersion, final int newVersion) {
-        synchronized (MUTEX) {
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-            onCreate(db);
-        }
-    }
+//    public void onCreate(final SQLiteDatabase db) {
+//        synchronized (MUTEX) {
+//            db.execSQL(CREATE_TABLE);
+//        }
+//    }
+//
+//    /**
+//     * Execute SQL to update the database
+//     *
+//     * @param db
+//     * @param oldVersion
+//     * @param newVersion
+//     */
+//    public void onUpgrade(final SQLiteDatabase db, final int oldVersion, final int newVersion) {
+//        synchronized (MUTEX) {
+//            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+//            onCreate(db);
+//        }
+//    }
 
     /**
      * Get the stored byte[] associated with the specified key
@@ -157,6 +164,7 @@ public final class AndroidCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
+    @Override
     public byte[] get(final long digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             Cursor cursor = null;
@@ -201,8 +209,9 @@ public final class AndroidCache extends FlashCache {
      *
      * @param digest
      * @return the string form of the digest
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
+    @Override
     public String getKey(final long digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             Cursor cursor = null;
@@ -250,6 +259,7 @@ public final class AndroidCache extends FlashCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
+    @Override
     public void put(final String url, final byte[] data) throws FlashFullException, FlashDatabaseException {
         if (url == null) {
             throw new IllegalArgumentException("You attempted to put a null key to the cache");
@@ -288,9 +298,10 @@ public final class AndroidCache extends FlashCache {
     /**
      * Remove the byte[] associated with this key from the database
      *
-     * @param digest 
+     * @param digest
      * @throws FlashDatabaseException
      */
+    @Override
     public void removeData(final long digest) throws FlashDatabaseException {
         synchronized (MUTEX) {
             final String where;
@@ -315,6 +326,7 @@ public final class AndroidCache extends FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
+    @Override
     public long[] getDigests() throws FlashDatabaseException {
         synchronized (MUTEX) {
             long[] digests = null;
@@ -337,7 +349,7 @@ public final class AndroidCache extends FlashCache {
                         digests[i] = CryptoUtils.getInstance().toDigest(s);
                     }
                 }
-            } catch (Exception e) {
+            } catch (UnsupportedEncodingException | DigestException e) {
                 //#debug
                 L.e("Can not access database on getKeys()", "", e);
                 throw new FlashDatabaseException("Can not acccess database on getKeys() : " + e);
@@ -356,6 +368,7 @@ public final class AndroidCache extends FlashCache {
      * each cache, other caches still contain values.
      *
      */
+    @Override
     public void clear() {
         synchronized (MUTEX) {
             db.execSQL(CLEAR_TABLE);
