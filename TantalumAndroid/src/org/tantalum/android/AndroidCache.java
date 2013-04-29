@@ -29,7 +29,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import java.io.UnsupportedEncodingException;
 import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
@@ -102,7 +101,18 @@ public final class AndroidCache extends FlashCache {
     public AndroidCache(final char priority) {
         super(priority);
 
-        helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION);
+        helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION) {
+
+            @Override
+            public void onCreate(SQLiteDatabase sqld) {
+                sqld.execSQL(CREATE_TABLE);
+            }
+
+            @Override
+            public void onUpgrade(SQLiteDatabase sqld, int i, int i1) {
+                sqld.execSQL(CREATE_TABLE);
+            }
+        };
         (new Task(Task.SHUTDOWN) {
             public Object exec(final Object in2) {
                 if (db != null) {
