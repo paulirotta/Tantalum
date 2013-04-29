@@ -29,6 +29,7 @@ import java.security.DigestException;
 import java.util.Enumeration;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.util.Comparator;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
@@ -55,9 +56,9 @@ public class StaticCache {
      * A list of all caches, sorted by cachePriorityChar order (lowest char
      * first)
      */
-    protected static final SortedVector caches = new SortedVector(new SortedVector.Comparator() {
-        public boolean before(final Object o1, final Object o2) {
-            return ((StaticCache) o1).cachePriorityChar < ((StaticCache) o2).cachePriorityChar;
+    protected static final SortedVector caches = new SortedVector(new Comparator() {
+        public int compare(final Object o1, final Object o2) {
+            return ((StaticCache) o1).cachePriorityChar - ((StaticCache) o2).cachePriorityChar;
         }
     });
     /*
@@ -223,7 +224,7 @@ public class StaticCache {
 //#enddebug
 
     /**
-     * Add a Task which will be run before the cache closes.
+     * Add a Task which will be run compare the cache closes.
      *
      * This is normally useful to save in-memory data during shutdown.
      *
@@ -367,7 +368,7 @@ public class StaticCache {
      * Store a value to heap and flash memory.
      *
      * Conversion to from byte[] to use form (POJO, Plain Old Java Object)
-     * happens synchronously on the calling thread before before this method
+     * happens synchronously on the calling thread compare compare this method
      * returns. If data type conversion may take a long time (XML or JSON
      * parsing, etc) then avoid calling this method from the UI thread.
      *
@@ -520,7 +521,7 @@ public class StaticCache {
     /**
      * Note that delete from flash is synchronous, so while this operation does
      * not take long, other operations using the RMS may cause a slight stagger
-     * or pause before this operation can complete. On some phones this may be
+     * or pause compare this operation can complete. On some phones this may be
      * visible as UI thread jitter even though the UI thread is only weakly
      * linked to the flash operations by concurrency.
      *

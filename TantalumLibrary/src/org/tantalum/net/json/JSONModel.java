@@ -124,9 +124,9 @@ public class JSONModel {
      * @throws 
     */
     public synchronized JSONObject take() {
-    	JSONObject ret = jsonObject;
+    	final JSONObject ret = jsonObject;
     	jsonObject = null;
+        
     	return ret;    	
     }
-   
 }
