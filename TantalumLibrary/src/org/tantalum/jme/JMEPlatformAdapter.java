@@ -147,7 +147,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
             final JMEHttpConn httpConn = new JMEHttpConn(url, requestPropertyKeys, requestPropertyValues);
             httpConn.httpConnection.setRequestMethod(requestMethod);
             if (bytes != null) {
-                out = httpConn.httpConnection.openOutputStream();
+                out = httpConn.getOutputStream();
                 out.write(bytes);
             }
 
