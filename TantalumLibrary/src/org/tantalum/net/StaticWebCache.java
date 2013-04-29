@@ -77,7 +77,7 @@ public final class StaticWebCache extends StaticCache {
      * rather gives an unexpected response body that you need to watch for
      * before deciding to cache the response.
      *
-     * @param priority 
+     * @param priority
      * @param cacheType
      * @param handler
      * @return
@@ -108,8 +108,8 @@ public final class StaticWebCache extends StaticCache {
     /**
      * Get existing or create a new local cache of a web service.
      *
-     * @param priority 
-     * @param cacheType 
+     * @param priority
+     * @param cacheType
      * @param handler - an object for converting from the byte[] format returned
      * by the web server or stored in local flash memory into Object form. The
      * most common handlers use cases return something like a String, JSONModel,
@@ -243,14 +243,17 @@ public final class StaticWebCache extends StaticCache {
      * @param url - The web service location to HTTP_GET the cacheable data
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
-     * @param priority 
-     * @param getType * * * * * * * * * * * *
-     *      * - <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
+     * @param priority
+     * @param
+     * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
      * and executed after the getAsync operation.
      *
-     * @return a new Task containing the result
+     * @return a new Task containing the result, or null if the
+     * StaticWebCache.HttpTaskFactory decided not to honor the GET_WEB request
+     * for application-specific reasons such as 'we don't need to do this anymore'.
+     * If you
      */
     public Task getAsync(final String url, final byte[] postMessage, final int priority, final int getType, final Task nextTask) {
         if (url == null) {
@@ -283,6 +286,10 @@ public final class StaticWebCache extends StaticCache {
                 L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_WEB)", url);
                 getterPriority = preventWebTaskFromUsingFastLane(priority);
                 getTask = getHttpGetter(getterPriority, url, postMessage, nextTask);
+                if (getTask == null) {
+                    nextTask.cancel(false, "StaticWebCache was told by " + this.httpTaskFactory.getClass().getName() + " not to complete the get operation (null returned): " + url);
+                    return null;
+                }
                 break;
 
             default:
@@ -428,7 +435,7 @@ public final class StaticWebCache extends StaticCache {
             if (in == null || !(in instanceof String)) {
                 //#debug
                 L.i(this, "ERROR", "Must receive a String url, but got " + (in == null ? "null" : in.toString()));
-                cancel(false, "StaticWebCache.getAnywhereTask got bad input: " + in);
+                cancel(false, this.getClassName() + " got bad input: " + in);
             } else {
                 //#debug
                 L.i(this, "get", (String) in);
@@ -438,7 +445,10 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i(this, "Not found locally, get from the web", (String) in);
-                        getHttpGetter(preventWebTaskFromUsingFastLane(priority), url, postMessage, nextTask).fork();
+                        final Task httpGetter = getHttpGetter(preventWebTaskFromUsingFastLane(priority), url, postMessage, nextTask).fork();
+                        if (httpGetter == null) {
+                            cancel(false, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter: " + url);
+                        }
                     } else {
                         chain(nextTask);
                     }
@@ -477,13 +487,20 @@ public final class StaticWebCache extends StaticCache {
     private Task getHttpGetter(final int priority, final String url, final byte[] postMessage, final Task nextTask) {
         final HttpGetter httpGetter = httpTaskFactory.getHttpTask(priority, url, postMessage);
 
+        if (httpGetter == null) {
+            //#debug
+            L.i(this, httpTaskFactory.getClass().getName() + " signaled the HttpGetter is no longer needed- aborting", url);
+            return httpGetter;
+        }
+
         //#debug
         L.i(this, "getHttpGetter", L.CRLF + httpGetter);
 
         final class ValidationTask extends Task {
+
             public ValidationTask(final int priority) {
                 super(priority);
-                
+
                 setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN);
             }
 
@@ -535,7 +552,7 @@ public final class StaticWebCache extends StaticCache {
          * then that will trigger the StaticWebCache async get Task and any
          * chained operations to cancel.
          *
-         * @param priority 
+         * @param priority
          * @param url
          * @param postMessage
          * @return
@@ -561,7 +578,7 @@ public final class StaticWebCache extends StaticCache {
          * This is also where you can check, store and otherwise process cookies
          * and custom security tags from the server.
          *
-         * @param httpGetter 
+         * @param httpGetter
          * @param bytesReceived
          * @return false to cancel() the HTTP operation
          */
@@ -602,7 +619,7 @@ public final class StaticWebCache extends StaticCache {
      * Analyze if this cache is the same one that would be returned by a call to
      * StaticWebCache.getCache() with the same parameters
      *
-     * @param priority 
+     * @param priority
      * @param handler
      * @param taskFactory
      * @return

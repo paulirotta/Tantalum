@@ -41,12 +41,13 @@ public class SortedVectorTest extends MockedStaticInitializers {
 
     @Before
     public final void fixtureSortedVectorTest() {
-        collection = new SortedVector(new SortedVector.Comparator() {
-            public boolean before(Object o1, Object o2) {
+        collection = new SortedVector(new Comparator() {
+            @Override
+            public int compare(Object o1, Object o2) {
                 Integer int1 = (Integer) o1;
                 Integer int2 = (Integer) o2;
 
-                return int1 < int2;
+                return int1 - int2;
             }
         });
     }

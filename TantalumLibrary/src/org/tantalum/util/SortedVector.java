@@ -53,7 +53,7 @@ public class SortedVector extends Vector {
         int insertIndex = size(); /* Future index of o in the SortedVector? */
         /* Finding the index */
         for (int i = size() - 1; i >= 0; i--) {
-            if (comparator.before(o, elementAt(i))) {
+            if (comparator.compare(o, elementAt(i)) < 0) {
                 insertIndex--;
             } else {
                 break;
@@ -109,23 +109,5 @@ public class SortedVector extends Vector {
      */
     public int hashCode() {
         return super.hashCode() ^ comparator.hashCode();
-    }
-
-    /**
-     * A helper class to indicate the sort order for the Vector with the given
-     * current data type
-     *
-     */
-    public abstract static class Comparator {
-
-        /**
-         * Return true of o1 should be before o1 in the ordering imposed by this
-         * Comparator
-         *
-         * @param o1
-         * @param o2
-         * @return
-         */
-        public abstract boolean before(Object o1, Object o2);
     }
 }
