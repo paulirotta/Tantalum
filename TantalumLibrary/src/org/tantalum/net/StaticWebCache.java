@@ -248,7 +248,7 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
+     * @param *      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
      * and executed after the getAsync operation.
@@ -453,9 +453,11 @@ public final class StaticWebCache extends StaticCache {
                     if (out == null) {
                         //#debug
                         L.i(this, "Not found locally, get from the web", (String) in);
-                        final Task httpGetter = getHttpGetter(preventWebTaskFromUsingFastLane(priority), url, postMessage, nextTask, taskFactory).fork();
+                        final Task httpGetter = getHttpGetter(preventWebTaskFromUsingFastLane(priority), url, postMessage, nextTask, taskFactory);
                         if (httpGetter == null) {
                             cancel(false, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter: " + url);
+                        } else {
+                            httpGetter.fork();
                         }
                     } else {
                         chain(nextTask);
@@ -486,6 +488,9 @@ public final class StaticWebCache extends StaticCache {
 
     /**
      * Fetch from the url and validate the response.
+     *
+     * If the taskFactory decides not to fetch at this time (no longer needed,
+     * etc) then this method may return null
      *
      * @param priority
      * @param url
