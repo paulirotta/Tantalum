@@ -217,7 +217,8 @@ public final class StaticWebCache extends StaticCache {
     }
 
     public Task getAsync(final String url, final int priority, final int getType, final Task chainedTask, final StaticWebCache.HttpTaskFactory taskFactory) {
-        return getAsync(url, null, priority, getType, chainedTask, httpTaskFactory);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" + Thread.currentThread().getName() + " -- " + taskFactory.getClass().getName());
+        return getAsync(url, null, priority, getType, chainedTask, taskFactory);
     }
 
     /**
@@ -262,6 +263,7 @@ public final class StaticWebCache extends StaticCache {
      * @return
      */
     public Task getAsync(final String url, final byte[] postMessage, final int priority, final int getType, final Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory) {
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" + Thread.currentThread().getName() + " -- " + taskFactory.getClass().getName());
         if (url == null) {
             throw new IllegalArgumentException("Can not getAsync() with null key");
         }
@@ -293,7 +295,7 @@ public final class StaticWebCache extends StaticCache {
                 getterPriority = preventWebTaskFromUsingFastLane(priority);
                 getTask = getHttpGetter(getterPriority, url, postMessage, nextTask, taskFactory);
                 if (getTask == null) {
-                    nextTask.cancel(false, "StaticWebCache was told by " + this.httpTaskFactory.getClass().getName() + " not to complete the get operation (null returned): " + url);
+                    nextTask.cancel(false, "StaticWebCache was told by " +taskFactory.getClass().getName() + " not to complete the get operation (null returned): " + url);
                     return null;
                 }
                 break;
@@ -499,7 +501,7 @@ public final class StaticWebCache extends StaticCache {
 
         if (httpGetter == null) {
             //#debug
-            L.i(this, httpTaskFactory.getClass().getName() + " signaled the HttpGetter is no longer needed- aborting", url);
+            L.i(this, taskFactory.getClass().getName() + " signaled the HttpGetter is no longer needed- aborting", url);
             return httpGetter;
         }
 
@@ -519,7 +521,7 @@ public final class StaticWebCache extends StaticCache {
 
                 //#debug
                 L.i(this, "Validation start", "in=" + in + " - " + httpGetter.toString());
-                if (!httpTaskFactory.validateHttpResponse(httpGetter, (byte[]) in)) {
+                if (!taskFactory.validateHttpResponse(httpGetter, (byte[]) in)) {
                     //#debug
                     L.i(this, "Rejected server response", httpGetter.toString());
                     cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
