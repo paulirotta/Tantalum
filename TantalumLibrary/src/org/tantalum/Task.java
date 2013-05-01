@@ -709,7 +709,7 @@ public abstract class Task implements Runnable {
                 L.i(this, "State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
                 return;
             }
-            if (status > FINISHED) {
+            if (this.status > FINISHED) {
                 throw new IllegalArgumentException("setStatus(" + Task.STATUS_STRINGS[status] + ") not allowed, already FINISHED or CANCELED: " + this);
             }
             this.status = status;
