@@ -1182,23 +1182,32 @@ public abstract class Task implements Runnable {
     /**
      * Show the pre- and post- tasks in the chain for debug
      *
-     * @return 
+     * Do not call within a synchronized block
+     *
+     * @return
      */
     public String showChain() {
         final StringBuffer sb = new StringBuffer();
+        final Task previousTask;
+        final Task nextTask;
+
+        synchronized (MUTEX) {
+            previousTask = previousTaskInChain;
+            nextTask = chainedTask;
+        }
 
         sb.append(L.CRLF);
         sb.append("   chain: ");
-        if (previousTaskInChain == null) {
+        if (previousTask == null) {
             sb.append("<null>");
         } else {
-            sb.append(previousTaskInChain.getClassName());
+            sb.append(previousTask.getClassName());
         }
         sb.append(" -> this -> ");
-        if (chainedTask == null) {
+        if (nextTask == null) {
             sb.append("<null>");
         } else {
-            sb.append(chainedTask.getClassName());
+            sb.append(nextTask.getClassName());
         }
         sb.append(L.CRLF);
 
@@ -1207,11 +1216,13 @@ public abstract class Task implements Runnable {
 
     /**
      * Debug output for the Task
-     * 
+     *
      * @param showChain
-     * @return 
+     * @return
      */
     public String toString(final boolean showChain) {
+        final String chain = showChain ? showChain() : "";
+        
         synchronized (MUTEX) {
             StringBuffer sb = new StringBuffer(300);
 
@@ -1221,9 +1232,7 @@ public abstract class Task implements Runnable {
             sb.append(getStatusString());
             sb.append(" priority=");
             sb.append(getPriorityString());
-            if (showChain) {
-                sb.append(showChain());
-            }
+            sb.append(chain);
             sb.append("   value=");
             if (value instanceof byte[]) {
                 sb.append("byte[");
