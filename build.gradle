@@ -4,7 +4,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.eriwen:gradle-cobertura-plugin:1.0'
-        classpath files(antennaJar)
+		classpath files(antennaJar)
     }
 }
 
@@ -40,7 +40,6 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'cobertura'
     apply plugin: 'eclipse'
-
 
     configurations {
         bootClasspath

@@ -1,0 +1,133 @@
+/**
+ * TantalumJME/build.gradle
+ *
+ * Builds the TantalumLibrary-project, and generates two jar files
+ *
+ * TantalumJME.jar contains preprocessed classes without logging and other debug code
+ *
+ *  TantalumJME-debug.jar contains the compiled code from the original sources
+ *
+ * The project contains an additional config, called 'codeCoverageJar', which
+ * packages and exposes the cobertura-instrumented classes as a jar file.
+ * This jar file is being used by the J2SE-project to execute the unit tests
+ * and generate the coverage report.
+ */
+project.ext.preprocessedSources = "${buildDir}/preprocessed-sources"
+
+buildscript {
+    dependencies {
+		classpath 'org.gradle.api.plugins:gradle-android-plugin:1.2.1'
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+
+    preprocessed {
+        java {
+            srcDir project.ext.preprocessedSources
+        }
+    }
+}
+// Run static checks on the library code
+apply plugin: 'jdepend'
+apply plugin: 'pmd'
+apply plugin: 'project-report'
+apply plugin: 'findbugs'
+
+// Don't fail the build for static analysis warnings
+project.findbugs.ignoreFailures = true
+project.pmd.ignoreFailures = true
+
+// Enable HTML report generation
+tasks.withType(FindBugs) {
+    reports.xml.enabled = false
+    reports.html.enabled = true
+}	
+tasks.withType(Pmd) {
+    reports.xml.enabled = false
+    reports.html.enabled = true
+}	
+
+// Use this as the name for the generated jars
+
+project.ext.releaseArchivesName = 'TantalumJME'
+project.archivesBaseName = 'TantalumJME-debug'
+
+configurations {
+    codeCoverageJar
+}
+
+/**
+ * Run the WTK preprocessor on the sources files, to clean out debug code
+ */
+task wtkpreprocess(dependsOn: init) << {
+    file(project.ext.preprocessedSources).mkdirs()
+
+    project.ext.preProcSourceDirectories = ""
+    for (file in sourceSets.main.java.srcDirs) {
+        if (file.exists()) {
+            if (project.ext.preProcSourceDirectories.length() > 0) {
+                project.ext.preProcSourceDirectories += ":"
+            }
+
+            project.ext.preProcSourceDirectories += file.getAbsolutePath()
+        }
+    }
+
+    ant.wtkpreprocess(
+            verbose: true,
+            srcdir: project.ext.preProcSourceDirectories,
+            destdir: project.ext.preprocessedSources
+    )
+}
+
+task wtkprodbuild(dependsOn: wtkpreprocess) << {
+    sourceSets.preprocessed.output.classesDir.mkdirs()
+    sourceSets.preprocessed.output.resourcesDir.mkdirs()
+    project.ext.preprocSourceDirectories = project.ext.convertSourceSetToDirectories(sourceSets.preprocessed.java.srcDirs)
+    project.ext.executeWtkBuild(project.ext.preprocSourceDirectories, sourceSets.preprocessed.output.classesDir)
+}
+
+task compileJava(overwrite: true, dependsOn: wtkbuild) << {
+}
+
+task compilePreprocessedJava(overwrite: true, dependsOn: wtkprodbuild) << {
+}
+
+task releaseJar(type: Jar) {
+    baseName = project.ext.releaseArchivesName
+    dependsOn compilePreprocessedJava
+    from sourceSets.preprocessed.output
+}
+
+task jarInstrumented(type: Jar) {
+    baseName = project.name + '-instrumented'
+    dependsOn coberturaInstrumentMain
+    from sourceSets.main.output
+    from sourceSets.main.cobertura.output
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    baseName = project.ext.releaseArchivesName
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    baseName = project.ext.releaseArchivesName
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    codeCoverageJar jarInstrumented
+    archives releaseJar
+    archives sourcesJar
+    archives javadocJar
+}
+
