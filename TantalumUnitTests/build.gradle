@@ -20,10 +20,10 @@
  */
 
 dependencies {
-    testCompile project(path: ':TantalumLibrary', configuration: 'codeCoverageJar')
+    testCompile project(path: ':TantalumCore', configuration: 'codeCoverageJar')
 }
 
-final Project mainProject = project(':TantalumLibrary')
+final Project mainProject = project(':TantalumCore')
 final def coberturaDirectory = "/cobertura"
 
 task createDirs << {

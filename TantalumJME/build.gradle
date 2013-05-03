@@ -1,11 +1,11 @@
 /**
  * TantalumJME/build.gradle
  *
- * Builds the TantalumLibrary-project, and generates two jar files
+ * Builds the TantalumJME-project, and generates two jar files
  *
  * TantalumJME.jar contains preprocessed classes without logging and other debug code
  *
- *  TantalumJME-debug.jar contains the compiled code from the original sources
+ * TantalumJME-debug.jar contains the compiled code from the original sources
  *
  * The project contains an additional config, called 'codeCoverageJar', which
  * packages and exposes the cobertura-instrumented classes as a jar file.
@@ -14,10 +14,8 @@
  */
 project.ext.preprocessedSources = "${buildDir}/preprocessed-sources"
 
-buildscript {
-    dependencies {
-		classpath 'org.gradle.api.plugins:gradle-android-plugin:1.2.1'
-    }
+dependencies {
+    compile project(path: ':TantalumCore')
 }
 
 sourceSets {
