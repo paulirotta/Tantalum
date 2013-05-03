@@ -554,30 +554,8 @@ public abstract class Task implements Runnable {
 
             return value;
         }
-
-//        return getChainedJoin(timeout);
     }
 
-    /**
-     * A Task must return a real value, not another Task. Some Tasks may
-     * dynamically chain to other Tasks. When we synchronoutsly get() the
-     * result, it must be the final result of the entire Task-returns-Task
-     * chain. The dynamically generated Task is swallowed in the process.
-     *
-     * @return
-     */
-//    private Object getChainedJoin(final long timeout) throws CancellationException, TimeoutException {
-//        final Task chainedJoinTask;
-//
-//        synchronized (MUTEX) {
-//            if (!(value instanceof Task)) {
-//                return value;
-//            }
-//            chainedJoinTask = (Task) value;
-//        }
-//
-//        return chainedJoinTask.join(timeout);
-//    }
     /**
      * Run the application on the current thread. In almost all cases the task
      * is still PENDING and will run, but there is a rare race condition whereby
@@ -642,17 +620,15 @@ public abstract class Task implements Runnable {
 
         //#debug
         L.i("Start joinAll(" + timeout + ")", "numberOfTasks=" + tasks.length);
-        long timeLeft = Long.MAX_VALUE;
         final long startTime = System.currentTimeMillis();
         try {
             for (int i = 0; i < tasks.length; i++) {
-                final Task task = tasks[i];
-                timeLeft = startTime + timeout - System.currentTimeMillis();
+                final long timeLeft = startTime + timeout - System.currentTimeMillis();
 
                 if (timeLeft <= 0) {
-                    throw new TimeoutException("joinAll(" + timeout + ") timout exceeded (" + timeLeft + ")");
+                    throw new TimeoutException("joinAll(" + timeout + ") timout exceeded (" + timeLeft + "): " + tasks[i]);
                 }
-                task.join(timeout);
+                tasks[i].join(timeout);
             }
         } finally {
             //#debug
@@ -911,8 +887,10 @@ public abstract class Task implements Runnable {
      *
      * @param in
      * @return
+     * @throws CancellationException
+     * @throws TimeoutException 
      */
-    protected abstract Object exec(Object in);
+    protected abstract Object exec(Object in) throws CancellationException, TimeoutException;
 
     /**
      * Cancel execution of this Task
