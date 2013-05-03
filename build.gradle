@@ -4,7 +4,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.eriwen:gradle-cobertura-plugin:1.0'
-		classpath files(antennaJar)
+	classpath files(antennaJar)
+        classpath 'com.android.tools.build:gradle:0.3'
     }
 }
 

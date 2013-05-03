@@ -1,7 +1,7 @@
 include 'TantalumCore'
 include 'TantalumUnitTests'
 include 'TantalumJME'
-//include 'TantalumAndroid'
+include 'TantalumAndroid'
 
 
 // Can we include these only in the Examples-project?

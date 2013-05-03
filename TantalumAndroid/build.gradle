@@ -31,6 +31,14 @@ sourceSets {
         }
     }
 }
+
+// Run static checks on the library code
+apply plugin: 'jdepend'
+apply plugin: 'pmd'
+apply plugin: 'project-report'
+apply plugin: 'findbugs'
+apply plugin: 'android'
+
 android {
     target = 'android-10'
     sourceSets {
@@ -53,12 +61,6 @@ android {
         }
     }
 }
-// Run static checks on the library code
-apply plugin: 'jdepend'
-apply plugin: 'pmd'
-apply plugin: 'project-report'
-apply plugin: 'findbugs'
-apply plugin: 'android'
 
 // Don't fail the build for static analysis warnings
 project.findbugs.ignoreFailures = true
