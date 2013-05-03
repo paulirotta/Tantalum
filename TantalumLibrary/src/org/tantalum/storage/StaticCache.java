@@ -113,12 +113,12 @@ public class StaticCache {
     /**
      * Get the previously-created cache with the same parameters
      *
-     * @param priority 
+     * @param priority
      * @param priority
      * @param handler
      * @param taskFactory
      * @param clas
-     * @return 
+     * @return
      */
     protected static StaticCache getExistingCache(final char priority, final DataTypeHandler handler, final Object taskFactory, final Class clas) {
         synchronized (caches) {
@@ -151,31 +151,33 @@ public class StaticCache {
      * times for the same cache cachePriorityChar but with a different (not
      * .equals()) DataTypeHandler.
      *
-     * @param priority 
+     * @param priority
      * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
      * @param handler - a routine to convert from byte[] to Object form when
      * loading into the RAM ramCache.
      * @return
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
-    public static synchronized StaticCache getCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
-        StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
+    public static StaticCache getCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
+        synchronized (caches) {
+            StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
 
-        if (c == null) {
-            c = new StaticCache(priority, cacheType, handler);
-            caches.addElement(c);
+            if (c == null) {
+                c = new StaticCache(priority, cacheType, handler);
+                caches.addElement(c);
+            }
+
+            return c;
         }
-
-        return c;
     }
 
     /**
      * Create a named Cache
      *
-     * @param priority 
+     * @param priority
      * @param cacheType
      * @param handler
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     protected StaticCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
         if (priority < '0') {
@@ -248,8 +250,8 @@ public class StaticCache {
      * @param key
      * @param bytes
      * @return
-     * @throws DigestException 
-     * @throws UnsupportedEncodingException  
+     * @throws DigestException
+     * @throws UnsupportedEncodingException
      */
     protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
         //#mdebug
@@ -274,7 +276,7 @@ public class StaticCache {
      *
      * @param key
      * @return
-     * @throws FlashDatabaseException  
+     * @throws FlashDatabaseException
      */
     public Object synchronousRAMCacheGet(final String key) throws FlashDatabaseException {
         try {
@@ -302,7 +304,7 @@ public class StaticCache {
      * Retrieve an object from RAM or RMS storage.
      *
      * @param key
-     * @param priority 
+     * @param priority
      * @param nextTask
      * @return
      */
@@ -349,6 +351,8 @@ public class StaticCache {
                     o = convertAndPutToHeapCache(key, bytes);
                     //#debug
                     L.i(this, "Flash get converted result", "(" + cachePriorityChar + ") " + key + " : " + o);
+                } else {
+                    o = null;
                 }
             } catch (DigestException e) {
                 //#debug
@@ -616,7 +620,7 @@ public class StaticCache {
     /**
      * Does this ramCache contain an object matching the key?
      *
-     * @param digest 
+     * @param digest
      * @return
      */
     public boolean containsDigest(final long digest) {
@@ -696,7 +700,7 @@ public class StaticCache {
         /**
          * Create a new getDigests operation, specifying the url in advance.
          *
-         * @param priority 
+         * @param priority
          * @param key
          */
         public GetLocalTask(final int priority, final String key) {
@@ -740,7 +744,7 @@ public class StaticCache {
      * Analyze if this cache is the same one that would be returned by a call to
      * StaticCache.getCache() with the same parameters
      *
-     * @param priority 
+     * @param priority
      * @param handler
      * @param taskFactory - always null. The parameter exists for polymorphic
      * equivalency with the overriding StaticWebCache implementation.
