@@ -15,12 +15,6 @@
 project.ext.preprocessedSources = "${buildDir}/preprocessed-sources"
 
 sourceSets {
-    main {
-        java {
-            srcDir 'src'
-        }
-    }
-
     preprocessed {
         java {
             srcDir project.ext.preprocessedSources

@@ -6,7 +6,7 @@
  */
 
 dependencies {
-    compile project(':TantalumLibrary')
+    compile project(':TantalumCore')
 }
 
 task compileJava(overwrite: true, dependsOn: wtkbuild) << {
