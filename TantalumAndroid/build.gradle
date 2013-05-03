@@ -72,8 +72,8 @@ tasks.withType(Pmd) {
 
 // Use this as the name for the generated jars
 
-project.ext.releaseArchivesName = 'Tantalum'
-project.archivesBaseName = 'Tantalum-debug'
+project.ext.releaseArchivesName = 'TantalumAndroid'
+project.archivesBaseName = 'TantalumAndroid-debug'
 
 configurations {
     codeCoverageJar
