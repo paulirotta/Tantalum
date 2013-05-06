@@ -34,26 +34,29 @@ apply plugin: 'findbugs'
 apply plugin: 'android'
 
 android {
-    target = 'android-10'
+    def target = 'android-10'
+    def androidAnnotationsVersion = '2.7.1'
     sourceSets {
         main {
-            manifest {
-                srcFile 'AndroidManifest.xml'
-            }
             java {
-                srcDir 'src'
+                srcDir 'src/main/java'
             }
             res {
-                srcDir 'res'
+                srcDir 'src/main/res'
             }
             assets {
-                srcDir 'assets'
+                srcDir 'src/main/assets'
             }
             resources {
-                srcDir 'src'
+                srcDir 'src/main/java'
             }
         }
-    }
+        test {
+            java {
+                srcDir 'src/main/tests'
+            }
+        }
+	}
 }
 
 // Don't fail the build for static analysis warnings
@@ -77,43 +80,6 @@ project.archivesBaseName = 'TantalumAndroid-debug'
 
 configurations {
     codeCoverageJar
-}
-
-/**
- * Run the WTK preprocessor on the sources files, to clean out debug code
- */
-task wtkpreprocess(dependsOn: init) << {
-    file(project.ext.preprocessedSources).mkdirs()
-
-    project.ext.preProcSourceDirectories = ""
-    for (file in sourceSets.main.java.srcDirs) {
-        if (file.exists()) {
-            if (project.ext.preProcSourceDirectories.length() > 0) {
-                project.ext.preProcSourceDirectories += ":"
-            }
-
-            project.ext.preProcSourceDirectories += file.getAbsolutePath()
-        }
-    }
-
-    ant.wtkpreprocess(
-            verbose: true,
-            srcdir: project.ext.preProcSourceDirectories,
-            destdir: project.ext.preprocessedSources
-    )
-}
-
-task wtkprodbuild(dependsOn: wtkpreprocess) << {
-    sourceSets.preprocessed.output.classesDir.mkdirs()
-    sourceSets.preprocessed.output.resourcesDir.mkdirs()
-    project.ext.preprocSourceDirectories = project.ext.convertSourceSetToDirectories(sourceSets.preprocessed.java.srcDirs)
-    project.ext.executeWtkBuild(project.ext.preprocSourceDirectories, sourceSets.preprocessed.output.classesDir)
-}
-
-task compileJava(overwrite: true, dependsOn: wtkbuild) << {
-}
-
-task compilePreprocessedJava(overwrite: true, dependsOn: wtkprodbuild) << {
 }
 
 task releaseJar(type: Jar) {
@@ -147,4 +113,3 @@ artifacts {
     archives sourcesJar
     archives javadocJar
 }
-
