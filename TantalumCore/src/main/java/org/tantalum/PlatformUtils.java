@@ -152,9 +152,10 @@ public final class PlatformUtils {
      *
      * @param program
      * @param numberOfWorkers
+     * @return true if program has not been previously set, otherwise ignore
      */
-    public void setProgram(final Object program, final int numberOfWorkers) {
-        setProgram(program, numberOfWorkers, 0);
+    public boolean setProgram(final Object program, final int numberOfWorkers) {
+        return setProgram(program, numberOfWorkers, 0);
     }
 
     /**
@@ -169,10 +170,11 @@ public final class PlatformUtils {
      * @param program
      * @param numberOfWorkers
      * @param logMode
+     * @return true if program has not been previously set, otherwise ignore
      */
-    public void setProgram(final Object program, final int numberOfWorkers, final int logMode) {
-        if (this.numberOfWorkers != 0) {
-            throw new UnsupportedOperationException("You can only call PlatformUtils.getInstance().setProgram() one time per application");
+    public boolean setProgram(final Object program, final int numberOfWorkers, final int logMode) {
+        if (this.program != null) {
+            return false;
         }
         if (numberOfWorkers < 2 || numberOfWorkers > 16) {
             throw new IllegalArgumentException("Less than 2 or more than 16 workers threads is not supported: " + numberOfWorkers);
@@ -186,7 +188,7 @@ public final class PlatformUtils {
                 platform = PLATFORM_ANDROID;
                 platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.android.AndroidPlatformAdapter").newInstance();
                 init(logMode);
-                return;
+                return true;
             }
         } catch (Throwable t) {
             System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
@@ -197,7 +199,7 @@ public final class PlatformUtils {
                 platform = PLATFORM_JME;
                 platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.jme.JMEPlatformAdapter").newInstance();
                 init(logMode);
-                return;
+                return true;
             }
         } catch (Throwable t) {
             System.out.println("Can not init JME in setProgram(" + program.getClass().getName() + ") : " + t);
