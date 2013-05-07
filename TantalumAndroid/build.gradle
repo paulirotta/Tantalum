@@ -15,7 +15,8 @@
 project.ext.preprocessedSources = "${buildDir}/preprocessed-sources"
 
 dependencies {
-    compile project(path: ':TantalumCore')
+    compile project(path: ':TantalumCore', includes: ['TantalumCore-debug.jar'])
+    compile fileTree(dir: '../lib/android.jar')
 }
 
 sourceSets {
@@ -31,33 +32,6 @@ apply plugin: 'jdepend'
 apply plugin: 'pmd'
 apply plugin: 'project-report'
 apply plugin: 'findbugs'
-apply plugin: 'android'
-
-android {
-    def target = 'android-10'
-    def androidAnnotationsVersion = '2.7.1'
-    sourceSets {
-        main {
-            java {
-                srcDir 'src/main/java'
-            }
-            res {
-                srcDir 'src/main/res'
-            }
-            assets {
-                srcDir 'src/main/assets'
-            }
-            resources {
-                srcDir 'src/main/java'
-            }
-        }
-        test {
-            java {
-                srcDir 'src/main/tests'
-            }
-        }
-	}
-}
 
 // Don't fail the build for static analysis warnings
 project.findbugs.ignoreFailures = true
