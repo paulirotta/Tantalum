@@ -23,6 +23,11 @@ dependencies {
     testCompile project(path: ':TantalumCore', configuration: 'codeCoverageJar')
 }
 
+        sourceSets.main.compileClasspath += configurations.provided
+	sourceSets.test.compileClasspath += configurations.provided
+        sourceSets.test.runtimeClasspath += configurations.provided
+
+
 final Project mainProject = project(':TantalumCore')
 final def coberturaDirectory = "/cobertura"
 

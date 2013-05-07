@@ -46,6 +46,7 @@ subprojects {
         bootClasspath
         jreBootClasspath
         testBootClasspath
+	provided
     }
 
     dependencies {
@@ -56,11 +57,11 @@ subprojects {
         jreBootClasspath 'jre:rt'
         jreBootClasspath 'jre:jsse'
 
-        compile configurations.bootClasspath
-        compile 'wtk:jsr75_1.0'
-        compile 'wtk:jsr172_1.0'
-        compile 'wtk:jsr177_1.0'
-        compile 'wtk:jsr280_1.0'
+        provided configurations.bootClasspath
+        provided 'wtk:jsr75_1.0'
+        provided 'wtk:jsr172_1.0'
+        provided 'wtk:jsr177_1.0'
+        provided 'wtk:jsr280_1.0'
 
         testCompile "junit:junit:4.11"
         testCompile 'net.sourceforge.cobertura:cobertura:1.9.4.1'
@@ -68,6 +69,21 @@ subprojects {
         testCompile "org.powermock:powermock-api-mockito:1.5"
         testCompile "org.powermock:powermock-module-junit4:1.5"
     }
+
+    // Define a provided scope, as defined here
+    // http://blog.codeaholics.org/2012/emulating-mavens-provided-scope-in-gradle/
+    // The following lines are needed only when we build using the standard java compile
+    // task. For wtk-build we set the classpath manually and thus it's not really needed
+    sourceSets {
+        main.compileClasspath += configurations.provided
+	test {
+	     compileClasspath += configurations.provided
+	     runtimeClasspath += configurations.provided
+	}
+    }
+    // End of compileJava requirements
+    project.tasks['javadoc'].classpath += configurations.provided
+
 
     /**
      * Don't scan for test classes, as there will be an error with JavaME compiled classes
@@ -142,6 +158,7 @@ subprojects {
             }
             classpath {
                 pathElement(path: configurations.compile.asPath)
+                pathElement(path: configurations.provided.asPath)
             }
         }
     }
@@ -191,6 +208,7 @@ subprojects {
             }
             classpath {
                 pathElement(path: configurations.compile.asPath)
+                pathElement(path: configurations.provided.asPath)
             }
             ant.fileSet(dir: sourceSets.main.output.classesDir.toString())
             ant.fileSet(dir: sourceSets.main.output.resourcesDir.toString())

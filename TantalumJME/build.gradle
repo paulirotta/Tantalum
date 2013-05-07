@@ -119,16 +119,13 @@ task createJavadocJar(type: Jar, dependsOn: javadoc) {
 
 artifacts {
     codeCoverageJar createJarInstrumented
-	releaseJar createReleaseJar
+    releaseJar createReleaseJar
     archives createSourcesJar
     archives createJavadocJar
 }
 
 jar {
-	println configurations.compile.collect
-	from configurations.compile.collect { 
-		println it
-		it.isDirectory() ? it : zipTree(it) 
-	}
+    from configurations.compile.collect {	
+    	 it.isDirectory() ? it : zipTree(it)
+    }
 }
-
