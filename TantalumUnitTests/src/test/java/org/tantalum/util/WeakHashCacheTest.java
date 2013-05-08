@@ -26,7 +26,6 @@ package org.tantalum.util;
 
 import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
-import org.tantalum.util.WeakHashCache;
 
 import static org.junit.Assert.*;
 
@@ -155,4 +154,23 @@ public class WeakHashCacheTest extends MockedStaticInitializers {
         }
         assertEquals(length, instance.size());
     }
+
+    final String KEY_CONSTANT = "keykeykey";
+    final String VALUE_CONSTANT = "valvalval";
+    @Test
+    public void testClear() {
+        System.out.println("size");
+        WeakHashCache instance = new WeakHashCache();
+        final int length = 10000;
+        for (int i = 0; i < length; i++) {
+            instance.put(VALUE_CONSTANT + i, "valuevaluevalue" + i);
+        }
+        assertEquals(length, instance.size());
+        instance.clearValues();
+        assertEquals(length, instance.size());
+        for (int i = 0; i < length; i++) {
+            String key = (String) KEY_CONSTANT + i;
+            assertEquals(null, instance.get(key));
+        }
+    }    
 }
