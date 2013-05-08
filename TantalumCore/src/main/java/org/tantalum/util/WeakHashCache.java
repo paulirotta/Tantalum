@@ -125,12 +125,14 @@ public class WeakHashCache {
         if (hash.containsKey(key)) {
             return;
         }
-        hash.put(key, new WeakReference(null));
+        hash.put(key, NULL_WEAK_REFERENCE);
     }
 
     /**
      * Remove the object from the cache
      *
+     * null is permitted- a message will appear in the log
+     * 
      * @param key
      */
     public synchronized void remove(final Object key) {
@@ -138,7 +140,7 @@ public class WeakHashCache {
             hash.remove(key);
         } else {
             //#debug
-            L.i("WeakHashCache", "remove() with null key");
+            L.i(this, "WeakHashCache", "remove() with null key");
         }
     }
 
