@@ -205,4 +205,20 @@ public final class WeakHashCache {
             hash.put(keyCopy[i], NULL_WEAK_REFERENCE);            
         }
     }
+
+    /**
+     * Get all keys in the WeakHashCach
+     * 
+     * @return 
+     */
+    public synchronized Object[] getKeys() {
+        final Object[] keys = new Object[hash.size()];
+        
+        final Enumeration enu = hash.keys();
+        for (int i = 0; i < keys.length; i++) {
+            keys[i] = enu.nextElement();
+        }
+        
+        return keys;
+    } 
 }

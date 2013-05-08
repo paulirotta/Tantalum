@@ -64,7 +64,7 @@ public class StaticCache {
     /*
      * Always access withing a synchronized block
      */
-    private final FlashCache flashCache;
+    protected final FlashCache flashCache;
     /**
      * A heap memory ramCache in the form of a Hashtable from which data can be
      * removed automatically by the virtual machine to free up memory (automatic
@@ -195,7 +195,7 @@ public class StaticCache {
      * We want to use the RAM Hashtable to know what the ramCache contains, even
      * though we do not pre-load from flash all the values
      */
-    private void init() throws FlashDatabaseException {
+    protected void init() throws FlashDatabaseException {
         try {
             final long[] digests = flashCache.getDigests();
             synchronized (ramCache) {

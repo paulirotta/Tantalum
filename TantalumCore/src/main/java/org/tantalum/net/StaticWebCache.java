@@ -24,11 +24,16 @@
  */
 package org.tantalum.net;
 
+import java.io.UnsupportedEncodingException;
+import java.security.DigestException;
+import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.TimeoutException;
 import org.tantalum.storage.DataTypeHandler;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.StaticCache;
+import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 
 /**
@@ -84,8 +89,6 @@ public final class StaticWebCache extends StaticCache {
      */
     public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final DataTypeHandler handler) {
         try {
-
-
             return (StaticWebCache) getWebCache(priority, cacheType, handler, DEFAULT_HTTP_GETTER_FACTORY);
         } catch (Exception e) {
             //#debug
@@ -160,6 +163,71 @@ public final class StaticWebCache extends StaticCache {
 
         this.httpTaskFactory = httpTaskFactory;
     }
+
+    protected void init() throws FlashDatabaseException {
+        super.init();
+
+        //#debug
+        validateEntireCacheAgainstWebServer();
+    }
+
+//#mdebug
+    /**
+     * Read everything from the server, again, and make sure it is byte-for-byte
+     * the same as what we get from asking the same thing from flash memory
+     *
+     * Rather slow, but only done in -debug.jar builds so does not affect
+     * production.
+     *
+     */
+    private void validateEntireCacheAgainstWebServer() throws FlashDatabaseException {
+        final Long[] keys = (Long[]) this.ramCache.getKeys();
+        final Task[] tasks = new Task[keys.length];
+
+        for (int i = 0; i < keys.length; i++) {
+            final String url = this.flashCache.getKey(keys[i].longValue());
+            final HttpGetter getter = new HttpGetter(Task.NORMAL_PRIORITY, url);
+            final Task localGetCacheValidationTask = new Task(Task.HIGH_PRIORITY) {
+                protected Object exec(Object in) {
+                    try {
+                        final byte[] serverValue = (byte[]) in;
+                        final byte[] localValue;
+                        localValue = (byte[]) getAsync(url, Task.HIGH_PRIORITY, StaticWebCache.GET_LOCAL, null).get();
+                        final long localDigest = CryptoUtils.getInstance().toDigest(localValue);
+                        final long serverDigest = CryptoUtils.getInstance().toDigest(serverValue);
+
+                        if (localDigest != serverDigest) {
+                            L.i(this, url, "Server and cache give same values");
+                        } else {
+                            throw new RuntimeException("Invalid cache entry for " + url + ": digest of server bytes(" + serverValue.length + " does not match digest of cache bytes(" + localValue.length);
+                        }
+                    } catch (CancellationException ex) {
+                        L.e(this, "Can not validate", url, ex);
+                    } catch (TimeoutException ex) {
+                        L.e(this, "Can not validate", url, ex);
+                    } catch (DigestException ex) {
+                        L.e(this, "Can not validate", url, ex);
+                    } catch (UnsupportedEncodingException ex) {
+                        L.e(this, "Can not validate", url, ex);
+                    }
+
+                    return in;
+                }
+            }.setClassName("LocalGetCacheValidationTask");
+            getter.chain(localGetCacheValidationTask);
+            getter.fork();
+            tasks[i] = localGetCacheValidationTask;
+        }
+
+        try {
+            Task.joinAll(tasks);
+        } catch (CancellationException ex) {
+            L.e(this, "Can not validate entire cache", this.toString(), ex);
+        } catch (TimeoutException ex) {
+            L.e(this, "Can not validate entire cache", this.toString(), ex);
+        }
+    }
+//#enddebug
 
     /**
      * The simplest and most common way to get is for something that updates the
@@ -248,7 +316,7 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param *      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
+     * @param * * *      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
      * and executed after the getAsync operation.
@@ -293,7 +361,7 @@ public final class StaticWebCache extends StaticCache {
                 getterPriority = preventWebTaskFromUsingFastLane(priority);
                 getTask = getHttpGetter(getterPriority, url, postMessage, nextTask, taskFactory);
                 if (getTask == null) {
-                    nextTask.cancel(false, "StaticWebCache was told by " +taskFactory.getClass().getName() + " not to complete the get operation (null returned): " + url);
+                    nextTask.cancel(false, "StaticWebCache was told by " + taskFactory.getClass().getName() + " not to complete the get operation (null returned): " + url);
                     return null;
                 }
                 break;
@@ -356,6 +424,8 @@ public final class StaticWebCache extends StaticCache {
                     return in;
                 }
             }.setClassName("Prefetch")).fork();
+
+
         }
     }
 
@@ -506,6 +576,8 @@ public final class StaticWebCache extends StaticCache {
             //#debug
             L.i(this, taskFactory.getClass().getName() + " signaled the HttpGetter is no longer needed- aborting", url);
             return httpGetter;
+
+
         }
 
         //#debug
@@ -541,12 +613,13 @@ public final class StaticWebCache extends StaticCache {
                 return out;
             }
         }
-
         final ValidationTask validationTask = new ValidationTask(Task.FASTLANE_PRIORITY);
         httpGetter.chain(validationTask);
         validationTask.chain(nextTask);
 
         return httpGetter;
+
+
     }
 
     /**
