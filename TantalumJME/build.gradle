@@ -55,37 +55,6 @@ configurations {
     releaseJar
 }
 
-/**
- * Run the WTK preprocessor on the sources files, to clean out debug code
- */
-task wtkpreprocess(dependsOn: init) << {
-    file(project.ext.preprocessedSources).mkdirs()
-
-    project.ext.preProcSourceDirectories = ""
-    for (file in sourceSets.main.java.srcDirs) {
-        if (file.exists()) {
-            if (project.ext.preProcSourceDirectories.length() > 0) {
-                project.ext.preProcSourceDirectories += ":"
-            }
-
-            project.ext.preProcSourceDirectories += file.getAbsolutePath()
-        }
-    }
-
-    ant.wtkpreprocess(
-            verbose: true,
-            srcdir: project.ext.preProcSourceDirectories,
-            destdir: project.ext.preprocessedSources
-    )
-}
-
-task wtkprodbuild(dependsOn: wtkpreprocess) << {
-    sourceSets.preprocessed.output.classesDir.mkdirs()
-    sourceSets.preprocessed.output.resourcesDir.mkdirs()
-    project.ext.preprocSourceDirectories = project.ext.convertSourceSetToDirectories(sourceSets.preprocessed.java.srcDirs)
-    project.ext.executeWtkBuild(project.ext.preprocSourceDirectories, sourceSets.preprocessed.output.classesDir)
-}
-
 task compileJava(overwrite: true, dependsOn: wtkbuild) << {
 }
 
