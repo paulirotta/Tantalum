@@ -25,6 +25,7 @@
 package org.tantalum.net.json;
 
 import java.io.UnsupportedEncodingException;
+import org.tantalum.Task;
 import org.tantalum.net.HttpPoster;
 import org.tantalum.util.L;
 
@@ -43,10 +44,27 @@ public abstract class JSONPoster extends HttpPoster {
      * The actual JSON will be provided as input from a previously chained Task.
      *
      * @param url
-     * @param priority  
+     * @param priority
      */
-    public JSONPoster( final int priority, final String url) {
+    public JSONPoster(final int priority, final String url) {
         super(priority, url);
+    }
+
+    /**
+     * Create a Task.NORMAL_PRIORITY JSON poster
+     *
+     * @param url
+     */
+    public JSONPoster(final String url) {
+        this(Task.NORMAL_PRIORITY, url);
+    }
+
+    /**
+     * Create a Task.NORMAL_PRIORITY JSON poster
+     * 
+     */
+    public JSONPoster() {
+        super();
     }
 
     /**

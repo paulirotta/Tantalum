@@ -24,6 +24,7 @@
  */
 package org.tantalum.net.json;
 
+import org.tantalum.Task;
 import org.tantalum.net.HttpGetter;
 import org.tantalum.util.L;
 
@@ -59,6 +60,16 @@ public class JSONGetter extends HttpGetter {
         
         this.jsonModel = jsonModel;
     }
+
+    /**
+     * Create a Task.NORMAL_PRIORITY JSON getter
+     * 
+     * @param jsonModel 
+     */
+    public JSONGetter(final JSONModel jsonModel) {
+        this(Task.NORMAL_PRIORITY, jsonModel);
+    }
+    
 
     /**
      * Execute the update of the JSONModel value on a background Worker thread

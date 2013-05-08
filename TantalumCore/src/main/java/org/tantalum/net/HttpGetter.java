@@ -506,6 +506,14 @@ public class HttpGetter extends Task {
     private int responseCode = HTTP_OPERATION_PENDING;
 
     /**
+     * Create a Task.NORMAL_PRIORITY getter
+     * 
+     */
+    public HttpGetter() {
+        this(Task.NORMAL_PRIORITY);
+    }
+
+    /**
      * Get the byte[] from the URL specified by the input argument when
      * exec(url) is called. This may be chained from a previous chain()ed
      * asynchronous task.
@@ -532,6 +540,16 @@ public class HttpGetter extends Task {
         }
         set(url);
     }
+
+    /**
+     * Create a Task.NORMAL_PRIORITY getter
+     * 
+     * @param url 
+     */
+    public HttpGetter(final String url) {
+        this(Task.NORMAL_PRIORITY, url);
+    }
+    
 
     /**
      * Set the StreamWriter which will provide data in the optional streaming

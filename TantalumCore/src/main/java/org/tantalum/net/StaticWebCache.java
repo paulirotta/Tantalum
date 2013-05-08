@@ -181,18 +181,17 @@ public final class StaticWebCache extends StaticCache {
      *
      */
     private void validateEntireCacheAgainstWebServer() throws FlashDatabaseException {
-        final Long[] keys = (Long[]) this.ramCache.getKeys();
+        final Object[] keys = this.ramCache.getKeys();
         final Task[] tasks = new Task[keys.length];
 
         for (int i = 0; i < keys.length; i++) {
-            final String url = this.flashCache.getKey(keys[i].longValue());
+            final String url = this.flashCache.getKey(((Long) keys[i]).longValue());
             final HttpGetter getter = new HttpGetter(Task.NORMAL_PRIORITY, url);
             final Task localGetCacheValidationTask = new Task(Task.HIGH_PRIORITY) {
                 protected Object exec(Object in) {
                     try {
                         final byte[] serverValue = (byte[]) in;
-                        final byte[] localValue;
-                        localValue = (byte[]) getAsync(url, Task.HIGH_PRIORITY, StaticWebCache.GET_LOCAL, null).get();
+                        final byte[] localValue = flashCache.get(url);
                         final long localDigest = CryptoUtils.getInstance().toDigest(localValue);
                         final long serverDigest = CryptoUtils.getInstance().toDigest(serverValue);
 
@@ -201,9 +200,7 @@ public final class StaticWebCache extends StaticCache {
                         } else {
                             throw new RuntimeException("Invalid cache entry for " + url + ": digest of server bytes(" + serverValue.length + " does not match digest of cache bytes(" + localValue.length);
                         }
-                    } catch (CancellationException ex) {
-                        L.e(this, "Can not validate", url, ex);
-                    } catch (TimeoutException ex) {
+                    } catch (FlashDatabaseException ex) {
                         L.e(this, "Can not validate", url, ex);
                     } catch (DigestException ex) {
                         L.e(this, "Can not validate", url, ex);
@@ -265,6 +262,26 @@ public final class StaticWebCache extends StaticCache {
      */
     public Task getAsync(final String url, final Task chainedTask) {
         return getAsync(url, Task.FASTLANE_PRIORITY, GET_ANYWHERE, chainedTask);
+    }
+    
+    /**
+     * Simple synchronous get.
+     * 
+     * This will block until the result is returned, so only call from inside
+     * a Task or other worker thread. Never call from the UI thread.
+     * 
+     * Unlike getAsync(url, chainedTask), this may hold multiple threads for 
+     * some time depending on cache status. It is thus higher performance for
+     * your app as a whole to use the async request and let chaining sequence
+     * the load across threads.
+     * 
+     * @param url
+     * @return
+     * @throws CancellationException
+     * @throws TimeoutException 
+     */
+    public Object get(final String url) throws CancellationException, TimeoutException {
+        return getAsync(url, null).get();
     }
 
     /**

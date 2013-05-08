@@ -24,6 +24,8 @@
  */
 package org.tantalum.net;
 
+import org.tantalum.Task;
+
 /**
  * HTTP POST a message to a given URL
  *
@@ -56,6 +58,20 @@ public class HttpPoster extends HttpGetter {
         this.url = url;
     }
 
+    /**
+     * Create a Task.NORMAL_PRIORITY poster
+     * 
+     * @param url 
+     */
+    public HttpPoster(final String url) {
+        this(Task.NORMAL_PRIORITY, url);
+    }
+    
+    public HttpPoster() {
+        super();
+    }
+    
+    
     /**
      * Create an HTTP POST operation
      *

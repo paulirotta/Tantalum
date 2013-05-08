@@ -307,6 +307,14 @@ public abstract class Task implements Runnable {
     }
 
     /**
+     * Create a Task of Task.NORMAL_PRIORITY
+     * 
+     */
+    public Task() {
+        this(Task.NORMAL_PRIORITY);
+    }
+
+    /**
      * Create a Task with the specified input value.
      *
      * The default action is for the output value to be the same as the input

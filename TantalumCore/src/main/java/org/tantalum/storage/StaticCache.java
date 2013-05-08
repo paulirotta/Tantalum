@@ -27,8 +27,10 @@ package org.tantalum.storage;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
 import java.util.Enumeration;
+import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.TimeoutException;
 import org.tantalum.util.Comparator;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
@@ -317,6 +319,26 @@ public class StaticCache {
         }
 
         return (new GetLocalTask(priority, key)).chain(nextTask).fork();
+    }
+    
+    /**
+     * Simple synchronous get.
+     * 
+     * This will block until the result is returned, so only call from inside
+     * a Task or other worker thread. Never call from the UI thread.
+     * 
+     * Unlike getAsync(url, chainedTask), this may hold multiple threads for 
+     * some time depending on cache status. It is thus higher performance for
+     * your app as a whole to use the async request and let chaining sequence
+     * the load across threads.
+     * 
+     * @param url
+     * @return
+     * @throws CancellationException
+     * @throws TimeoutException 
+     */
+    public Object get(final String key) throws CancellationException, TimeoutException {
+        return getAsync(key, Task.NORMAL_PRIORITY, null).get();
     }
 
     /**
@@ -680,6 +702,8 @@ public class StaticCache {
         }
 
         return str.toString();
+
+
 
 
     }
