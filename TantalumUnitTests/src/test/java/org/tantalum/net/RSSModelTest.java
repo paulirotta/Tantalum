@@ -22,7 +22,7 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.tests;
+package org.tantalum.net;
 
 import org.junit.Before;
 import org.junit.Test;

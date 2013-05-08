@@ -22,58 +22,59 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.tests;
+package org.tantalum.util;
 
 import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
-import org.tantalum.util.PoolingWeakHashCache;
+import org.tantalum.util.LengthLimitedVector;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 
 /**
- * Unit tests for PoolingWeakHashCache
+ * LengthLimitedVector unit tests
  *
  * @author phou
  */
-public class PoolingWeakHashCacheTest extends MockedStaticInitializers {
+public class LengthLimitedVectorTest extends MockedStaticInitializers {
+
+    private boolean tooLong = false;
 
     /**
-     * Test of testClear method, of class PoolingWeakHashCache.
+     * Test of testAddElement method, of class LengthLimitedVector.
+     *
      */
     @Test
-    public void testClear() {
-        System.out.println("clear");
-        PoolingWeakHashCache instance = new PoolingWeakHashCache();
-        instance.put("key", "value");
-        instance.remove("key");
-        instance.clear();
-        assertNull("Get from empty pool", instance.getFromPool());
+    public void testAddElement() {
+        System.out.println("addElement");
+        LengthLimitedVector instance = new LengthLimitedVector(3) {
+            protected void lengthExceeded(Object extra) {
+                tooLong = true;
+            }
+        };
+        instance.addElement("a");
+        instance.addElement("b");
+        instance.addElement("c");
+        instance.addElement("d");
+        assertEquals("too long test", true, tooLong);
     }
 
     /**
-     * Test of testRemove method, of class PoolingWeakHashCache.
-    @Test
-    public void testRemove() {
-        System.out.println("remove");
-        PoolingWeakHashCache instance = new PoolingWeakHashCache();
-        instance.put("key", "value");
-        instance.remove("key");
-        instance.remove("other key");
-        instance.remove(null);
-    }
-
-    /**
-     * Test of testGetFromPool method, of class PoolingWeakHashCache.
+     * Test of testLengthExceeded method, of class LengthLimitedVector.
+     *
      */
     @Test
-    public void testGetFromPool() {
-        System.out.println("getFromPool");
-        PoolingWeakHashCache instance = new PoolingWeakHashCache();
-        instance.put("key", "value");
-        instance.put("key2", "value2");
-        instance.remove("key");
-        assertNotNull("Get from not-empty pool", instance.getFromPool());
-        assertNull("Pool should be empty", instance.getFromPool());
+    public void testLengthExceeded() {
+        System.out.println("lengthExceeded");
+        LengthLimitedVector instance = new LengthLimitedVector(3) {
+            protected void lengthExceeded(Object o) {
+            }
+        };
+        instance.addElement("a");
+        instance.addElement("b");
+        instance.addElement("c");
+        assertEquals("Full length", 3, instance.size());
+        instance.addElement("d");
+        assertEquals("Max length", 3, instance.size());
+        assertEquals("LRU after length exceeded", "b", instance.firstElement());
     }
 }

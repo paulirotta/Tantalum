@@ -22,7 +22,7 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.tests;
+package org.tantalum;
 
 import org.junit.Test;
 import org.tantalum.*;
@@ -47,7 +47,7 @@ public class TaskTest extends MockedStaticInitializers {
             }
         }.setClassName("TestInnerClassName");
 
-        assertEquals("Inner class name override is correct: " + instance.getClassName(), "org.tantalum.tests.TaskTest$1TestInnerClassName", instance.getClassName());
+        assertEquals("Inner class name override is correct: " + instance.getClassName(), "org.tantalum.TaskTest$1TestInnerClassName", instance.getClassName());
     }
 
     /**

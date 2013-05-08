@@ -81,7 +81,7 @@ public class SortedVectorTest extends MockedStaticInitializers {
     }
 
     @Test
-    public void integerSequenceOrderIsCorrect() {
+    public void integerSequenceOrderIsCorrectTest() {
         Object o_1 = new Integer(10);
         Object o_2 = new Integer(20);
         Object o_3 = new Integer(50);
@@ -103,6 +103,100 @@ public class SortedVectorTest extends MockedStaticInitializers {
         Integer[] expected = {new Integer(10), new Integer(20), new Integer(30), new Integer(40), new Integer(50)};
         for (int i = 0; i < collection.size(); i++) {
             assertEquals("sequence test " + (i + 1), expected[i], (Integer) collection.elementAt(i));
+        }
+    }
+    
+    /**
+     * Test of testInsertElementAt method, of class SortedVector.
+     */
+    @Test
+    public void insertElementAtTest() {
+        System.out.println("insertElementAt");
+        SortedVector instance = new SortedVector(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Integer) o1).intValue() - ((Integer) o2).intValue();
+            }
+        });
+        Object o_1 = null;
+        int index_1 = 0;
+        try {
+            instance.insertElementAt(o_1, index_1);
+        } catch (IllegalArgumentException e) {
+            return;
+        }
+        fail("testInsertElementAt() should throw an exception.");
+    }
+
+    /**
+     * Test of testSetElementAt method, of class SortedVector.
+     */
+    @Test
+    public void setElementAtTest() {
+        System.out.println("setElementAt");
+        SortedVector instance = new SortedVector(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Integer) o1).intValue() - ((Integer) o2).intValue();
+            }
+        });
+        Object o_1 = null;
+        int index_1 = 0;
+        try {
+            instance.setElementAt(o_1, index_1);
+        } catch (IllegalArgumentException e) {
+            return;
+        }
+        fail("testSetElementAt() should throw an exception.");
+    }
+
+    /**
+     * Test of testAddElement method, of class SortedVector.
+     */
+    @Test
+    public void addElementTest() {
+        System.out.println("addElement");
+        SortedVector instance = new SortedVector(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Integer) o1).intValue() - ((Integer) o2).intValue();
+            }
+        });
+        Object o_1 = new Integer(10);
+        Object o_2 = new Integer(1);
+        Object o_3 = new Integer(3);
+        instance.addElement(o_1);
+        instance.addElement(o_2);
+        instance.addElement(o_3);
+        assertEquals("First", o_2, instance.elementAt(0));
+        assertEquals("Second", o_3, instance.elementAt(1));
+        assertEquals("Third", o_1, instance.elementAt(2));
+    }
+
+    /**
+     * Test an error discovered by air-dex to see it does not re-surface
+     * <p/>
+     * http://projects.developer.nokia.com/Tantalum/ticket/10
+     */
+    @Test
+    public void sequenceTest() {
+        System.out.println("testSequence");
+        SortedVector instance = new SortedVector(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Integer) o1).intValue() - ((Integer) o2).intValue();
+            }
+        });
+        Object o_1 = new Integer(10);
+        Object o_2 = new Integer(20);
+        Object o_3 = new Integer(50);
+        Object o_4 = new Integer(40);
+        Object o_5 = new Integer(30);
+        instance.addElement(o_1);
+        instance.addElement(o_2);
+        instance.addElement(o_3);
+        instance.addElement(o_4);
+        instance.addElement(o_5);
+
+        Integer[] expected = {new Integer(10), new Integer(20), new Integer(30), new Integer(40), new Integer(50)};
+        for (int i = 0; i < instance.size(); i++) {
+            assertEquals("sequence test " + (i + 1), expected[i], (Integer) instance.elementAt(i));
         }
     }
 }
