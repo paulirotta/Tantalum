@@ -195,7 +195,7 @@ public final class StaticWebCache extends StaticCache {
                         final long localDigest = CryptoUtils.getInstance().toDigest(localValue);
                         final long serverDigest = CryptoUtils.getInstance().toDigest(serverValue);
 
-                        if (localDigest != serverDigest) {
+                        if (localDigest == serverDigest) {
                             L.i(this, url, "Server and cache give same values");
                         } else {
                             throw new RuntimeException("Invalid cache entry for " + url + ": digest of server bytes(" + serverValue.length + " does not match digest of cache bytes(" + localValue.length);
