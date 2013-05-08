@@ -75,7 +75,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
                 reload(true);
             }
             if (cmdStr.equals("Exit")) {
-                PlatformUtils.getInstance().shutdown(true);
+                PlatformUtils.getInstance().shutdown(true, "Exit pressed");
             }
         } else {
             int selectedIndex = ((List) ae.getSource()).getSelectedIndex();

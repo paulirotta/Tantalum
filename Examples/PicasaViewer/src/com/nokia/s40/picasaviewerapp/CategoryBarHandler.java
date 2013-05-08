@@ -106,7 +106,7 @@ public final class CategoryBarHandler implements ElementListener {
     public void notifyElementSelected(CategoryBar cb, int i) {
         switch (i) {
             case ElementListener.BACK:
-                PlatformUtils.getInstance().shutdown(false);
+                PlatformUtils.getInstance().shutdown(false, "Back button pressed");
                 break;
             case 0:
                 midlet.goFeaturedCanvas();

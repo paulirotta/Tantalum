@@ -63,9 +63,10 @@ public final class DetailsForm extends Form implements CommandListener {
 
     private void openLink() {
         try {
-            boolean needsToClose = this.rssReader.platformRequest(ListForm.getInstance().getDetailsView().getSelectedItem().getLink());
+            final String url = ListForm.getInstance().getDetailsView().getSelectedItem().getLink();
+            final boolean needsToClose = this.rssReader.platformRequest(url);
             if (needsToClose) {
-                PlatformUtils.getInstance().shutdown(false);
+                PlatformUtils.getInstance().shutdown(false, "Phone says need to close to open url: " );
             }
         } catch (ConnectionNotFoundException connectionNotFoundException) {
             //#debug

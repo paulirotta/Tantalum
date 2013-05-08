@@ -61,7 +61,7 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
      */
     protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
         L.i("destroyApp", "unconditional=" + unconditional);
-        PlatformUtils.getInstance().shutdown(unconditional);
+        PlatformUtils.getInstance().shutdown(unconditional, "destroyApp(" + unconditional + ") recevied from phone");
     }
 
     /**
@@ -74,7 +74,7 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
     public void commandAction(Command c, Displayable d) {
         L.i("Displayable commandAction", "command=" + c.getLabel());
         if (c.getCommandType() == Command.EXIT) {
-            PlatformUtils.getInstance().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false, "Command.EXIT command received");
         }
     }
 

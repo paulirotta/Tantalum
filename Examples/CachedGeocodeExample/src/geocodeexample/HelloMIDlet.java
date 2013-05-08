@@ -295,7 +295,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        PlatformUtils.getInstance().shutdown(true);
+        PlatformUtils.getInstance().shutdown(true, "exitMIDlet() called");
     }
 
     /**

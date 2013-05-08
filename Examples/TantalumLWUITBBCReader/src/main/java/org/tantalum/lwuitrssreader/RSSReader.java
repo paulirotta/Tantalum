@@ -88,6 +88,6 @@ public class RSSReader extends MIDlet {
     }
 
     protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
-        PlatformUtils.getInstance().shutdown(unconditional);
+        PlatformUtils.getInstance().shutdown(unconditional, "destroyApp(" + unconditional + ") received from phone");
     }
 }

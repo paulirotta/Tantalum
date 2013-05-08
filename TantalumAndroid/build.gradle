@@ -84,6 +84,9 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 artifacts {
     codeCoverageJar jarInstrumented
     archives releaseJar
+	archives debugJar
     archives sourcesJar
     archives javadocJar
 }
+
+

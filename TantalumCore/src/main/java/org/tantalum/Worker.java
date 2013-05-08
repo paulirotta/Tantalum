@@ -236,7 +236,7 @@ final class Worker extends Thread {
      * orderly shutdown. This is only needed in shutdown(true) which is called
      * for example by the user pressing the red HANGUP button.
      */
-    static void shutdown(final boolean block) {
+    static void shutdown(final boolean block, final String reason) {
         try {
             /*
              * Removed queued tasks which can be removed
@@ -282,7 +282,9 @@ final class Worker extends Thread {
                         }
                     }
                 } finally {
-                    PlatformUtils.getInstance().shutdownComplete("Blocking shutdown ending: shutdownTime=" + (System.currentTimeMillis() - shutdownTimeout));
+                    PlatformUtils.getInstance().shutdownComplete(reason +
+                            " - Blocking shutdown ending: shutdownTime=" +
+                            (System.currentTimeMillis() - shutdownTimeout));
                 }
             }
         } catch (InterruptedException ex) {

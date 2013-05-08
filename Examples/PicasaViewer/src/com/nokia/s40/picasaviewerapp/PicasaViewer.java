@@ -47,7 +47,7 @@ public final class PicasaViewer extends MIDlet {
         } catch (Exception ex) {
             //#debug
             L.e("Can not create FeaturedCanvas", null, ex);
-            PlatformUtils.getInstance().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false, "Can not create FeaturedCanvas: " + ex);
         }
         
         PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
@@ -123,7 +123,7 @@ public final class PicasaViewer extends MIDlet {
     protected void pauseApp() {
     }
 
-    protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
-        PlatformUtils.getInstance().shutdown(unconditional);
+    protected void destroyApp(final boolean unconditional) {
+        PlatformUtils.getInstance().shutdown(unconditional, "destroyApp(" + unconditional + ") received from phone");
     }
 }

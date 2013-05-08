@@ -88,7 +88,7 @@ public final class DetailsView extends View {
         try {
             needsToClose = canvas.getRssReader().platformRequest(url);
             if (needsToClose) {
-                PlatformUtils.getInstance().shutdown(false);
+                PlatformUtils.getInstance().shutdown(false, "Phone says need to close before url will open: " + url);
             }
         } catch (ConnectionNotFoundException ex) {
             //#debug

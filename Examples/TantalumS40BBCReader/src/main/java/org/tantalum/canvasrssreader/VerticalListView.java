@@ -67,7 +67,7 @@ public final class VerticalListView extends RSSListView {
 
     public void commandAction(final Command command, final Displayable d) {
         if (command == exitCommand) {
-            PlatformUtils.getInstance().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false, "Exit command received");
         } else if (command == updateCommand) {
             reloadAsync(true);
         } else if (command == clearCacheCommand) {

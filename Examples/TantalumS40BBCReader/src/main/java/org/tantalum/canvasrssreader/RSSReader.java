@@ -140,7 +140,7 @@ public class RSSReader extends MIDlet implements CommandListener {
         } catch (Exception ex) {
             //#debug
             L.e("Startup exception", "", ex);
-            PlatformUtils.getInstance().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false, "Startup exception: " + ex);
         }
     }
 
@@ -148,6 +148,6 @@ public class RSSReader extends MIDlet implements CommandListener {
     }
 
     protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
-        PlatformUtils.getInstance().shutdown(unconditional);
+        PlatformUtils.getInstance().shutdown(unconditional, "destroyApp(" + unconditional + ") received from phone");
     }
 }

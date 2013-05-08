@@ -34,7 +34,6 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
     public HelloMIDlet() {
     }
 
-
 //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
 //</editor-fold>//GEN-END:|methods|0|
 //<editor-fold defaultstate="collapsed" desc=" Generated Method: initialize ">//GEN-BEGIN:|0-initialize|0|0-preInitialize
@@ -262,7 +261,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        PlatformUtils.getInstance().shutdown(true);
+        PlatformUtils.getInstance().shutdown(false, "exitMIDlet() signal");
     }
 
     /**
@@ -323,5 +322,4 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 
     protected void destroyApp(boolean b) throws MIDletStateChangeException {
     }
-
 }

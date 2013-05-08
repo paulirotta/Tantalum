@@ -56,7 +56,7 @@ public final class FeaturedCanvas extends ImageGridCanvas {
         } else if (c == searchCommand) {
             midlet.goSearchCanvas();
         } else if (c.getCommandType() == Command.EXIT) {
-            PlatformUtils.getInstance().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false, "Exit pressed");
         }
     }
 

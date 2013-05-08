@@ -86,7 +86,7 @@ public final class ListForm extends Form implements CommandListener {
 
     public void commandAction(final Command command, final Displayable d) {
         if (command == exitCommand) {
-            PlatformUtils.getInstance().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false, "Exit command received");
         } else if (command == reloadCommand) {
             final Alert alert = new Alert("Reloading", "Reloading..", null, AlertType.INFO);
             alert.setTimeout(2000);

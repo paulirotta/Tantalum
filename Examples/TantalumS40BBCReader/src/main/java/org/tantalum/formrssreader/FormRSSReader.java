@@ -118,7 +118,7 @@ public class FormRSSReader extends MIDlet implements CommandListener {
     public void pauseApp() {
     }
 
-    protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
-        PlatformUtils.getInstance().shutdown(unconditional);
+    protected void destroyApp(final boolean unconditional) throws MIDletStateChangeException {
+        PlatformUtils.getInstance().shutdown(unconditional, "Phone sent destroyApp(" + unconditional + ")");
     }
 }

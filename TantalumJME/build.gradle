@@ -52,6 +52,7 @@ project.archivesBaseName = 'TantalumJME-debug'
 
 configurations {
     codeCoverageJar
+	releaseJar
 }
 
 /**
@@ -82,7 +83,7 @@ task wtkprodbuild(dependsOn: wtkpreprocess) << {
     sourceSets.preprocessed.output.classesDir.mkdirs()
     sourceSets.preprocessed.output.resourcesDir.mkdirs()
     project.ext.preprocSourceDirectories = project.ext.convertSourceSetToDirectories(sourceSets.preprocessed.java.srcDirs)
-    project.ext.executeWtkBuild(project.ext.preprocSourceDirectories, sourceSets.preprocessed.output.classesDir)
+    project.ext.executeWtkBuild(project.ext.preprocSourceDirectories, 			sourceSets.preprocessed.output.classesDir)
 }
 
 task compileJava(overwrite: true, dependsOn: wtkbuild) << {
@@ -91,35 +92,43 @@ task compileJava(overwrite: true, dependsOn: wtkbuild) << {
 task compilePreprocessedJava(overwrite: true, dependsOn: wtkprodbuild) << {
 }
 
-task releaseJar(type: Jar) {
+task createReleaseJar(type: Jar) {
     baseName = project.ext.releaseArchivesName
     dependsOn compilePreprocessedJava
     from sourceSets.preprocessed.output
 }
 
-task jarInstrumented(type: Jar) {
+task createJarInstrumented(type: Jar) {
     baseName = project.name + '-instrumented'
     dependsOn coberturaInstrumentMain
     from sourceSets.main.output
     from sourceSets.main.cobertura.output
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
+task createSourcesJar(type: Jar, dependsOn: classes) {
     baseName = project.ext.releaseArchivesName
     classifier = 'sources'
     from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
+task createJavadocJar(type: Jar, dependsOn: javadoc) {
     baseName = project.ext.releaseArchivesName
     classifier = 'javadoc'
     from javadoc.destinationDir
 }
 
 artifacts {
-    codeCoverageJar jarInstrumented
-    archives releaseJar
-    archives sourcesJar
-    archives javadocJar
+    codeCoverageJar createJarInstrumented
+	releaseJar createReleaseJar
+    archives createSourcesJar
+    archives createJavadocJar
+}
+
+jar {
+	println configurations.compile.collect
+	from configurations.compile.collect { 
+		println it
+		it.isDirectory() ? it : zipTree(it) 
+	}
 }
 

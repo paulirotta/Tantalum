@@ -263,7 +263,7 @@ public final class PlatformUtils {
      * @param reasonDestroyed
      * @return
      */
-    public boolean shutdownComplete(final String reasonDestroyed) {
+    boolean shutdownComplete(final String reasonDestroyed) {
         synchronized (MUTEX) {
             if (shutdownComplete) {
                 return shutdownComplete;
@@ -428,12 +428,14 @@ public final class PlatformUtils {
      * Task.PRIORITY_SHUTDOWN to be canceled immediately. In any case, all work
      * must finish within 3 seconds or risk being terminated by the phone OS if
      * this is an system-initiated application close.
-     *
+     * 
+     * @param block
+     * @param reason 
      */
-    public void shutdown(final boolean block) {
+    public void shutdown(final boolean block, final String reason) {
         //#debug
-        L.i(this, "Shutdown", "block calling thread up to 3 seconds=" + block);
-        Worker.shutdown(block);
+        L.i(this, "Shutdown", reason + " - block up to 3 seconds=" + block);
+        Worker.shutdown(block, reason);
     }
 
     /**
