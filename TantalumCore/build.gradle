@@ -88,35 +88,35 @@ task compileJava(overwrite: true, dependsOn: wtkbuild) << {
 task compilePreprocessedJava(overwrite: true, dependsOn: wtkprodbuild) << {
 }
 
-task releaseJar(type: Jar) {
+task createReleaseJar(type: Jar) {
     baseName = project.ext.releaseArchivesName
     dependsOn compilePreprocessedJava
     from sourceSets.preprocessed.output
 }
 
-task jarInstrumented(type: Jar) {
+task createInstrumentedJar(type: Jar) {
     baseName = project.name + '-instrumented'
     dependsOn coberturaInstrumentMain
     from sourceSets.main.output
     from sourceSets.main.cobertura.output
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
+task createSourcesJar(type: Jar, dependsOn: classes) {
     baseName = project.ext.releaseArchivesName
     classifier = 'sources'
     from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
+task createJavadocJar(type: Jar, dependsOn: javadoc) {
     baseName = project.ext.releaseArchivesName
     classifier = 'javadoc'
     from javadoc.destinationDir
 }
 
 artifacts {
-    codeCoverageJar jarInstrumented
-    archives releaseJar
-    archives sourcesJar
-    archives javadocJar
+    codeCoverageJar createInstrumentedJar
+    archives createReleaseJar
+    archives createSourcesJar
+    archives createJavadocJar
 }
 
