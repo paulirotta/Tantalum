@@ -32,7 +32,6 @@ import java.util.Vector;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
-import javax.microedition.io.ConnectionNotFoundException;
 
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
@@ -754,10 +753,6 @@ public class HttpGetter extends Task {
             //#debug
             L.e(this, "HttpGetter has illegal argument", url, e);
             throw e;
-        } catch (ConnectionNotFoundException e) {
-            //#debug
-            L.e(this, "Connection not found", url + ", retries=" + retriesRemaining, e);
-            cancel(false, "No internet connection");
         } catch (IOException e) {
             //#debug
             L.e(this, "Retries remaining", url + ", retries=" + retriesRemaining, e);
