@@ -168,7 +168,7 @@ public final class StaticWebCache extends StaticCache {
         super.init();
 
         //#debug
-        validateEntireCacheAgainstWebServer();
+        //validateEntireCacheAgainstWebServer();
     }
 
 //#mdebug
