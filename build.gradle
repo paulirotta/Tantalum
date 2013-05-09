@@ -4,7 +4,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.eriwen:gradle-cobertura-plugin:1.0'
-		classpath files(antennaJar)
+        classpath files(antennaJar)
         classpath 'com.android.tools.build:gradle:0.3'
     }
 }
@@ -46,7 +46,7 @@ subprojects {
         bootClasspath
         jreBootClasspath
         testBootClasspath
-	provided
+        provided
     }
 
     dependencies {
@@ -76,14 +76,13 @@ subprojects {
     // task. For wtk-build we set the classpath manually and thus it's not really needed
     sourceSets {
         main.compileClasspath += configurations.provided
-	test {
-	     compileClasspath += configurations.provided
-	     runtimeClasspath += configurations.provided
-	}
+        test {
+            compileClasspath += configurations.provided
+            runtimeClasspath += configurations.provided
+        }
     }
     // End of compileJava requirements
     project.tasks['javadoc'].classpath += configurations.provided
-
 
     /**
      * Don't scan for test classes, as there will be an error with JavaME compiled classes
