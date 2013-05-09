@@ -25,8 +25,10 @@
 package org.tantalum.formrssreader;
 
 import javax.microedition.lcdui.*;
+import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.TimeoutException;
 import org.tantalum.jme.RMSUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
@@ -132,8 +134,6 @@ public final class ListForm extends Form implements CommandListener {
      * @param forceLoad
      */
     public Task reload(final boolean forceLoad) {
-        final Task uiTask;
-
         if (loading && !forceLoad) {
             //already loading
             return null;
@@ -156,51 +156,26 @@ public final class ListForm extends Form implements CommandListener {
             feedUrl = FormRSSReader.INITIAL_FEED_URL;
         }
 
+        final Task uiTask = new Task(Task.UI_PRIORITY) {
+            protected Object exec(final Object in) {
+                //#debug
+                L.i("start postExecute on force reload", "model length=" + rssModel.size());
+                loading = false;
+                paint();
+                return in;
+            }
+
+            protected void onCanceled(String reason) {
+                //#debug
+                L.i("force reload canceled", "model length=" + rssModel.size());
+                loading = false;
+                paint();
+            }
+        }.setClassName("LoadPainter");
         if (forceLoad) {
-            uiTask = new Task(Task.HIGH_PRIORITY) {
-                protected Object exec(final Object in) {
-                    return in;
-                }
-
-                public void run() {
-                    //#debug
-                    L.i("start postExecute on force reload", "model length=" + rssModel.size());
-                    loading = false;
-                    paint();
-                }
-
-                protected void onCanceled(String reason) {
-                    //#debug
-                    L.i("force reload canceled", "model length=" + rssModel.size());
-                    loading = false;
-                    paint();
-                }
-            }.setClassName("ForceLoadPainter").setRunOnUIThreadWhenFinished(true);
             feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_WEB, uiTask);
         } else {
-            uiTask = new Task(Task.HIGH_PRIORITY) {
-                protected Object exec(final Object in) {
-                    return in;
-                }
-
-                public void run() {
-                    //#debug
-                    L.i("start postExecute on reload", "model length=" + rssModel.size());
-                    loading = false;
-                    paint();
-                }
-
-                public boolean cancel(final boolean mayInterruptIfNeeded) {
-                    //#debug
-                    L.i("reload canceled, not found locally, try again to getAsync from net", "model length=" + rssModel.size());
-                    loading = false;
-                    reload(true);
-                    paint();
-
-                    return false;
-                }
-            }.setClassName("LoadPainter").setRunOnUIThreadWhenFinished(true);
-            feedCache.getAsync(feedUrl, Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
+            feedCache.getAsync(feedUrl, Task.FASTLANE_PRIORITY, StaticWebCache.GET_ANYWHERE, uiTask);
         }
 
         return uiTask;

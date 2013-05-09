@@ -126,13 +126,14 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         String s = new String((byte[]) in);
 
                         try {
-                            JSONObject src = new JSONObject(s);
+                            final JSONObject src = new JSONObject(s);
                             JSONArray inn = src.getJSONArray("Placemark");
                             JSONObject arr = inn.getJSONObject(1);
                             JSONObject d = arr.getJSONObject("Point");
                             JSONArray f = d.getJSONArray("coordinates");
 
                             out = "Lat: " + f.getString(0) + " & Lon: " + f.getString(1);
+                            getLocationStringItem().setText((String) out);
                         } catch (JSONException ex) {
                             L.e("Can not parse JSON", s, ex);
                         }
@@ -140,22 +141,11 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         return out;
                     }
 
-                    public void run() {
-                        try {
-                            // Update UI on the UI thread
-                            HelloMIDlet.this.getLocationStringItem().setText((String) get());
-                        } catch (CancellationException ex) {
-                            L.e(this, "Canceled", "", ex);
-                        } catch (TimeoutException ex) {
-                            L.e(this, "Timeout", "", ex);
-                        }
-                    }
-
                     protected void onCanceled(String reason) {
                         // Update on the UI thread if there is a problem
-                        HelloMIDlet.this.getLocationStringItem().setText("Service not available: " + reason);
+                        getLocationStringItem().setText("Service not available: " + reason);
                     }
-                }.setRunOnUIThreadWhenFinished(true).setClassName("JSONParserAndUITextSetter"));
+                }.setClassName("JSONParserAndUITextSetter"));
 
                 getter.fork(); // Start task on a background Worker thread
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction

@@ -87,6 +87,28 @@ import org.tantalum.util.L;
 public abstract class Task implements Runnable {
 
     /**
+     * Queue the task the system UI thread where it will execute after any
+     * pending system events like touch input.
+     *
+     * This has the ability to be chained before or after other Tasks. You can
+     * use it just like any other Task running on a background thread. I/O,
+     * <code>join()</code>ing other threads and heavy computation loops are
+     * strongly discouraged to keep your UI responsive.Like other
+     * <code>Tasks</code> you can
+     * <code>join()</code> a
+     * <code>UI_PRIORITY</code>
+     * <code>Task</code> from another thread to sequence activities or receive
+     * results.
+     * 
+     * Note that a simpler alternative of alternative of
+     * <code>PlatformUtils.getInstance.runOnUIThread(Runnable)</code>. It works
+     * well and with lower UI thread loading in cases that are stateless, un-
+     * <code>chain()</code>ed, and where a reusable 
+     * <code>Runnable</code> object can implement frequently-occurring display
+     * events.
+     */
+    public static final int UI_PRIORITY = 7;
+    /**
      * Start the task as soon as possible, LIFO with no guaranteed sequence
      * order and higher absolute priority than
      * <code>HIGH_PRIORITY</code>.
@@ -254,39 +276,6 @@ public abstract class Task implements Runnable {
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
     private final int forkPriority; // Access only in synchronized(MUTEX) block
     private final Object MUTEX = new Object();
-    /*
-     * Should we run() this task on the UI thread after successful execution
-     */
-    private boolean runOnUIThreadWhenFinished = false;
-
-    /**
-     * Indicate if spawn to UI thread will be automatically called on this Task
-     * after successful exec()
-     *
-     * The default value is false.
-     *
-     * @return
-     */
-    public boolean isRunOnUIThreadWhenFinished() {
-        synchronized (MUTEX) {
-            return runOnUIThreadWhenFinished;
-        }
-    }
-
-    /**
-     * Tell this task if it should spawn to UI thread to complete an override of
-     * the run() method after successful exec()
-     *
-     * @param runOnUIThreadWhenFinished
-     * @return
-     */
-    public Task setRunOnUIThreadWhenFinished(boolean runOnUIThreadWhenFinished) {
-        synchronized (MUTEX) {
-            this.runOnUIThreadWhenFinished = runOnUIThreadWhenFinished;
-
-            return this;
-        }
-    }
 
     /**
      * Create a Task and specify the priority at which this
@@ -308,7 +297,7 @@ public abstract class Task implements Runnable {
 
     /**
      * Create a Task of Task.NORMAL_PRIORITY
-     * 
+     *
      */
     public Task() {
         this(Task.NORMAL_PRIORITY);
@@ -852,7 +841,6 @@ public abstract class Task implements Runnable {
              */
             out = exec(in);
 
-            final boolean doRun;
             final boolean executionSuccessful;
             final Task t;
             synchronized (MUTEX) {
@@ -860,16 +848,11 @@ public abstract class Task implements Runnable {
                 if (executionSuccessful) {
                     value = out;
                     t = chainedTask;
-                    doRun = this.runOnUIThreadWhenFinished;
                     setStatus(FINISHED);
                 } else {
                     // Task was canceled
                     t = null;
-                    doRun = false;
                 }
-            }
-            if (doRun) {
-                PlatformUtils.getInstance().runOnUiThread(this);
             }
             if (t != null) {
                 //#debug
@@ -896,7 +879,7 @@ public abstract class Task implements Runnable {
      * @param in
      * @return
      * @throws CancellationException
-     * @throws TimeoutException 
+     * @throws TimeoutException
      */
     protected abstract Object exec(Object in) throws CancellationException, TimeoutException;
 
@@ -1208,7 +1191,7 @@ public abstract class Task implements Runnable {
      */
     public String toString(final boolean showChain) {
         final String chain = showChain ? showChain() : "";
-        
+
         synchronized (MUTEX) {
             StringBuffer sb = new StringBuffer(300);
 

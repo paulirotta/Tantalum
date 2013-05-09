@@ -126,6 +126,19 @@ final class Worker extends Thread {
         L.i(task, "Fork", "priority=" + task.getPriorityString());
         synchronized (q) {
             switch (priority) {
+                case Task.UI_PRIORITY:
+                    PlatformUtils.getInstance().runOnUiThread(new Runnable() {
+                        public void run() {
+                            try {
+                                task.executeTask(task.getValue());
+                            } catch (Exception e) {
+                                //#mdebug
+                                L.e(task, "Uncaught Task exception on UI thread", "task=" + task, e);
+                                //#enddebug
+                            }
+                        }
+                    });
+                    break;
                 case Task.FASTLANE_PRIORITY:
                     fastlaneQ.insertElementAt(task, 0);
                     /*
@@ -282,9 +295,9 @@ final class Worker extends Thread {
                         }
                     }
                 } finally {
-                    PlatformUtils.getInstance().shutdownComplete(reason +
-                            " - Blocking shutdown ending: shutdownTime=" +
-                            (System.currentTimeMillis() - shutdownTimeout));
+                    PlatformUtils.getInstance().shutdownComplete(reason
+                            + " - Blocking shutdown ending: shutdownTime="
+                            + (System.currentTimeMillis() - shutdownTimeout));
                 }
             }
         } catch (InterruptedException ex) {
@@ -396,13 +409,13 @@ final class Worker extends Thread {
                 } catch (InterruptedException e) {
                     //#mdebug
                     synchronized (q) {
-                        L.i("Worker interrupted by call to Task.cancel(true, \"blah\"", "Obscure race conditions can do this, but the code is hardened to deal with it and continue smoothly to the next task. task=" + currentTask);
+                        L.i(currentTask, "Worker interrupted by call to Task.cancel(true, \"blah\"", "Obscure race conditions can do this, but the code is hardened to deal with it and continue smoothly to the next task. task=" + currentTask);
                     }
                     //#enddebug
                 } catch (Exception e) {
                     //#mdebug
                     synchronized (q) {
-                        L.e("Uncaught Task exception", "task=" + currentTask, e);
+                        L.e(currentTask, "Uncaught Task exception", "task=" + currentTask, e);
                     }
                     //#enddebug
                 }
@@ -410,7 +423,7 @@ final class Worker extends Thread {
         } catch (Throwable t) {
             //#mdebug
             synchronized (q) {
-                L.e("Fatal worker error", "task=" + currentTask, t);
+                L.e(currentTask, "Fatal worker error", "task=" + currentTask, t);
             }
             //#enddebug
         } finally {

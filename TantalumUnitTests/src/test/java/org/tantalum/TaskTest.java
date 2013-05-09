@@ -759,7 +759,7 @@ public class TaskTest extends MockedStaticInitializers {
                 } catch (Exception e) {
                 }
             }
-        }.setRunOnUIThreadWhenFinished(true);
+        };
         final Task task1b = new Task(Task.FASTLANE_PRIORITY, "3") {
             protected Object exec(Object in) {
                 return (String) in + "4";

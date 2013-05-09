@@ -107,22 +107,19 @@ public class DetailsForm extends Form implements ActionListener {
         addComponent(imgLabel);
 
         imageCache.getAsync(item.getThumbnail(), Task.HIGH_PRIORITY,
-                StaticWebCache.GET_ANYWHERE, new Task(Task.HIGH_PRIORITY) {
-
+                StaticWebCache.GET_ANYWHERE, new Task(Task.UI_PRIORITY) {
             protected Object exec(final Object in) {
-                return in;
-            }
-            
-            public void run() {
                 try {
-                    imgLabel.setIcon((Image) get());
-                    DetailsForm.this.repaint();
+                    imgLabel.setIcon((Image) in);
+                    repaint();
                 } catch (Exception ex) {
                     //#debug
                     L.e("Can not get image for RSSItem", item.getThumbnail(), ex);
                 }
+
+                return in;
             }
-        }.setClassName("RSSItemIconSetter").setRunOnUIThreadWhenFinished(true));
+        }.setClassName("RSSItemIconSetter"));
 
         addLabels(linkLabels);
         setScrollY(0);

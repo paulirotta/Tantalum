@@ -171,12 +171,8 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                 this.locationsCache.getAsync(getGeocodeUrl(
                         this.getAddressTextField().getString().trim().toLowerCase()),
                         Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE,
-                        new Task(Task.FASTLANE_PRIORITY) {
-                    protected Object exec(Object o) {
-                        return o;
-                    }
-
-                    public void run() {
+                        new Task(Task.UI_PRIORITY) {
+                    protected Object exec(final Object in) {
                         try {
                             // UI Thread callback on success
                             HelloMIDlet.this.getLocationStringItem().setText((String) get());
@@ -185,13 +181,15 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         } catch (TimeoutException ex) {
                             L.e(this, "Timeout", "", ex);
                         }
+
+                        return in;
                     }
 
                     protected void onCanceled(String reason) {
                         // UI Thread callback if not already cached and the HTTP GET fails
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
-                }.setRunOnUIThreadWhenFinished(true).setClassName("UITextSetter"));
+                }.setClassName("UITextSetter"));
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction
         }//GEN-END:|7-commandAction|5|7-postCommandAction
         // write post-action user code here
