@@ -54,7 +54,7 @@ import java.util.Hashtable;
  *
  * @author phou
  */
-public final class WeakHashCache {
+public class WeakHashCache {
 
     private final static WeakReference NULL_WEAK_REFERENCE = new WeakReference(null);
     /**
