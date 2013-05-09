@@ -583,8 +583,8 @@ public final class JSONObject {
      * is empty.
      */
     public JSONArray names() {
-        JSONArray ja = new JSONArray();
-        Enumeration keys = keys();
+        final JSONArray ja = new JSONArray();
+        final Enumeration keys = keys();
         while (keys.hasMoreElements()) {
             ja.put(keys.nextElement());
         }
