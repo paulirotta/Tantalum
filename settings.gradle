@@ -3,25 +3,21 @@ include 'TantalumUnitTests'
 include 'TantalumJME'
 //include 'TantalumAndroid'
 
-include 'CachedGeocodeExample'
-include 'GeocodeExample'
+//include 'CachedGeocodeExample'
+//include 'GeocodeExample'
 
 // Change the path for Example projects, as they don't follow standard naming.
 // Example from the Gradle sources
 // https://github.com/gradle/gradle/blob/59c93b5ebd13ac4df3b38df7516ae89064be873d/settings.gradle
 rootProject.children.each {project ->
     if (project.name.endsWith('Example')) {
-        println "Adding child project " + project.name
         String projectDirName = "Examples/" + project.name
         project.projectDir = new File(settingsDir, projectDirName)
         project.buildFileName = "build.gradle"
         assert project.projectDir.isDirectory()
         assert project.buildFile.isFile()
-    } else {
-        println "Skipping project " + project.name + " as it is not an example project"
     }
 }
-
 
 // Can we include these only in the Examples-project?
 

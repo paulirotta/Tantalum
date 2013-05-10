@@ -1,17 +1,3 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath files(antennaJar)
-    }
-}
-// antenna ant tasks
-ant.taskdef(resource: 'antenna.properties') {
-    classpath {
-        pathElement(path: buildscript.configurations.classpath.asPath)
-    }
-}
 // Repositories and inclusions required by the WTK-build and the test execution
 repositories {
     flatDir {
@@ -34,6 +20,7 @@ configurations {
     bootClasspath
     jreBootClasspath
     testBootClasspath
+    releaseCompile
     provided
 }
 
@@ -86,7 +73,14 @@ task init(dependsOn: preverify) << {
 }
 
 project.ext.executeWtkBuild = {
-    sourceDir, destDir ->
+    sourceDir, destDir, release = false ->
+
+    println ""
+    if (release) {
+        println "\n\n\n\nExecuting release build\n\n\n\n"
+    } else {
+        println "\n\n\n\nExecuting debug build\n\n\n\n"
+    }
 
     ant.wtkbuild(
             srcdir: sourceDir,
@@ -100,7 +94,11 @@ project.ext.executeWtkBuild = {
             pathElement(path: configurations.bootClasspath.asPath)
         }
         classpath {
-            pathElement(path: configurations.compile.asPath)
+            if (release) {
+                pathElement(path: configurations.releaseCompile.asPath)
+            } else {
+                pathElement(path: configurations.compile.asPath)
+            }
             pathElement(path: configurations.provided.asPath)
         }
     }
@@ -150,7 +148,11 @@ task wtkpackage << {
             pathElement(path: configurations.bootClasspath.asPath)
         }
         classpath {
-            pathElement(path: configurations.compile.asPath)
+            if (release) {
+                pathElement(path: configurations.releaseCompile.asPath)
+            } else {
+                pathElement(path: configurations.compile.asPath)
+            }
             pathElement(path: configurations.provided.asPath)
         }
         ant.fileSet(dir: sourceSets.main.output.classesDir.toString())
@@ -186,5 +188,5 @@ task wtkprodbuild(dependsOn: wtkpreprocess) << {
     sourceSets.preprocessed.output.classesDir.mkdirs()
     sourceSets.preprocessed.output.resourcesDir.mkdirs()
     project.ext.preprocSourceDirectories = project.ext.convertSourceSetToDirectories(sourceSets.preprocessed.java.srcDirs)
-    project.ext.executeWtkBuild(project.ext.preprocSourceDirectories, sourceSets.preprocessed.output.classesDir)
+    project.ext.executeWtkBuild(project.ext.preprocSourceDirectories, sourceSets.preprocessed.output.classesDir, true)
 }

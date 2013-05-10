@@ -26,6 +26,8 @@ subprojects {
         jreBootClasspath
         testBootClasspath
         provided
+        releaseJar
+        codeCoverageJar
     }
 
     dependencies {
@@ -71,6 +73,89 @@ subprojects {
     ant.taskdef(resource: 'antenna.properties') {
         classpath {
             pathElement(path: buildscript.configurations.classpath.asPath)
+        }
+    }
+
+    project.ext.preprocessedSources = "${buildDir}/preprocessed-sources"
+
+    sourceSets {
+        preprocessed {
+            java {
+                srcDir project.ext.preprocessedSources
+            }
+        }
+    }
+
+    // Run static checks on the library code
+    apply plugin: 'jdepend'
+    apply plugin: 'pmd'
+    apply plugin: 'project-report'
+    apply plugin: 'findbugs'
+
+    // Don't fail the build for static analysis warnings
+    project.findbugs.ignoreFailures = true
+    project.pmd.ignoreFailures = true
+
+    // Enable HTML report generation
+    tasks.withType(FindBugs) {
+        reports.xml.enabled = false
+        reports.html.enabled = true
+    }
+    tasks.withType(Pmd) {
+        reports.xml.enabled = false
+        reports.html.enabled = true
+    }
+
+
+
+    task compileJava(overwrite: true, dependsOn: wtkbuild) << {
+    }
+
+    task compilePreprocessedJava(overwrite: true, dependsOn: wtkprodbuild) << {
+    }
+
+    task createReleaseJar(type: Jar) {
+        dependsOn compilePreprocessedJava
+        from sourceSets.preprocessed.output
+        from {
+            configurations.compile.collect {
+                it.isDirectory() ? it : zipTree(it)
+            }
+        }
+    }
+
+
+    task createJarInstrumented(type: Jar) {
+        dependsOn coberturaInstrumentMain
+        classifier = 'instrumented'
+        from sourceSets.main.output
+        from sourceSets.main.cobertura.output
+    }
+
+    task createSourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    task createJavadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    project.tasks['build'].dependsOn createReleaseJar
+
+    artifacts {
+        codeCoverageJar createJarInstrumented
+        releaseJar createReleaseJar
+        archives createSourcesJar
+        archives createJavadocJar
+    }
+
+    jar {
+        from {
+            configurations.compile.collect {
+                it.isDirectory() ? it : zipTree(it)
+            }
         }
     }
 }
