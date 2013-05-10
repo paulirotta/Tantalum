@@ -99,11 +99,11 @@ public abstract class Task implements Runnable {
      * <code>UI_PRIORITY</code>
      * <code>Task</code> from another thread to sequence activities or receive
      * results.
-     * 
+     *
      * Note that a simpler alternative of alternative of
      * <code>PlatformUtils.getInstance.runOnUIThread(Runnable)</code>. It works
      * well and with lower UI thread loading in cases that are stateless, un-
-     * <code>chain()</code>ed, and where a reusable 
+     * <code>chain()</code>ed, and where a reusable
      * <code>Runnable</code> object can implement frequently-occurring display
      * events.
      */
@@ -434,7 +434,37 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final Task fork() {
-        return Worker.fork(this, getForkPriority());
+        return Worker.fork(this);
+    }
+
+    /**
+     * <code>fork()</code> several tasks as a single atomic operation. This
+     * allows more precise influence on which of several
+     * <code>Task</code>s will begin next.
+     *
+     * When you
+     * <code>fork()</code> one-by-one, the first can start execution before the
+     * last is queued. This may mean for example that there is a race between
+     * how fast you
+     * <code>fork()</code> and which
+     * <code>Task.HIGH_PRIORITY</code> or
+     * <code>Task.FASTLANE_PRIORITY</code>
+     * <code>Task</code> starts next.
+     *
+     * You can address this by precisely sorting your
+     * <code>Task[]</code> in advance and submitting them all at once. They will
+     * then be
+     * <code>fork()</code>ed in sequence. With
+     * <code>Task.NORMAL_PRIORITY</code> that means the first item will begin
+     * executing first. With
+     * <code>Task.FASTLANE_PRIORITY</code> the last item will begin execution
+     * first.
+     *
+     * @param tasks
+     * @return
+     */
+    public static Task[] fork(final Task[] tasks) {
+        return Worker.fork(tasks);
     }
 
     /**

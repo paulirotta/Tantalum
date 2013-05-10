@@ -118,10 +118,11 @@ final class Worker extends Thread {
      * @param task
      * @param priority
      */
-    static Task fork(final Task task, final int priority) {
+    static Task fork(final Task task) {
         if (task.getStatus() != Task.PENDING) {
             throw new IllegalStateException("Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time: " + task);
         }
+        final int priority = task.getForkPriority();
         //#debug
         L.i(task, "Fork", "priority=" + task.getPriorityString());
         synchronized (q) {
@@ -172,6 +173,16 @@ final class Worker extends Thread {
             }
 
             return task;
+        }
+    }
+    
+    static Task[] fork(final Task[] tasks) {
+        synchronized(q) {
+            for (int i = 0; i < tasks.length; i++) {
+                fork(tasks[i]);
+            }
+            
+            return tasks;
         }
     }
 

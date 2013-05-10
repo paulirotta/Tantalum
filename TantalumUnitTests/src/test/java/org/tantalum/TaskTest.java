@@ -25,12 +25,13 @@
 package org.tantalum;
 
 import org.junit.Test;
-import org.tantalum.*;
 import org.tantalum.util.L;
 
 import java.util.Vector;
 
 import static org.junit.Assert.*;
+import org.junit.Before;
+import org.powermock.api.mockito.PowerMockito;
 
 /**
  * Unit tests for the Task class.
@@ -38,6 +39,15 @@ import static org.junit.Assert.*;
  * @author phou
  */
 public class TaskTest extends MockedStaticInitializers {
+    @Before
+    public final void taskTestFixture() {
+        createMocks();
+    }
+
+    private void createMocks() {
+        PowerMockito.mockStatic(L.class);
+//        PowerMockito.mockStatic(MIDlet.class);
+    }
 
     @Test
     public void testAnonInnerClassNameOverride() {

@@ -42,7 +42,6 @@ public class StringUtilsTest extends MockedStaticInitializers {
 
     static final String EXAMPLE_FILE_NAME = "/rss.xml";
 
-
     /**
      * Test of testReadStringFromJAR method, of class StringUtils.
      *
@@ -73,5 +72,4 @@ public class StringUtilsTest extends MockedStaticInitializers {
         assertNotNull(result_1);
         assertEquals(stream.available(), result_1.length);
     }
-
 }
