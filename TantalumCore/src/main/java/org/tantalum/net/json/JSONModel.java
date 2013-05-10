@@ -49,6 +49,19 @@ import org.json.me.JSONObject;
 public class JSONModel {
 
     private JSONObject jsonObject = new JSONObject();
+    
+    public JSONModel() {
+    }
+
+    /**
+     * Create a JSONModel with initial value
+     * 
+     * @param json
+     * @throws JSONException 
+     */
+    public JSONModel(final String json) throws JSONException {
+        setJSON(json);
+    }
 
     /**
      * Update the value of the model
