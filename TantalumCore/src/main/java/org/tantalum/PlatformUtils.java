@@ -195,6 +195,7 @@ public final class PlatformUtils {
                 return true;
             }
         } catch (Throwable t) {
+            //#debug
             System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
         }
         try {
@@ -206,6 +207,7 @@ public final class PlatformUtils {
                 return true;
             }
         } catch (Throwable t) {
+            //#debug
             System.out.println("Can not init JME in setProgram(" + program.getClass().getName() + ") : " + t);
         }
 
