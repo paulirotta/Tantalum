@@ -185,6 +185,13 @@ final class Worker extends Thread {
             return tasks;
         }
     }
+    
+    static void runAtomic(final Runnable runnable) {
+        synchronized (q) {
+            runnable.run();
+        }
+    }
+
 
     /**
      * Take an object out of the pending task queue. If the task has already

@@ -84,7 +84,7 @@ import org.tantalum.util.L;
  *
  * @author phou
  */
-public abstract class Task implements Runnable {
+public abstract class Task {
 
     /**
      * Queue the task the system UI thread where it will execute after any
@@ -275,7 +275,7 @@ public abstract class Task implements Runnable {
      */
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
     private final int forkPriority; // Access only in synchronized(MUTEX) block
-    private final Object MUTEX = new Object();
+    private final Object mutex = new Object();
 
     /**
      * Create a Task and specify the priority at which this
@@ -323,7 +323,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final int getShutdownBehaviour() {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             return shutdownBehaviour;
         }
     }
@@ -346,7 +346,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final Task setShutdownBehaviour(final int shutdownBehaviour) {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
                 throw new IllegalArgumentException(getClassName() + " invalid shutdownBehaviour value: " + shutdownBehaviour);
             }
@@ -366,7 +366,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     final Object getValue() {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             return value;
         }
     }
@@ -417,7 +417,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final Object set(final Object value) {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             if (this.status != Task.PENDING) {
                 throw new IllegalStateException(getClassName() + " can not setValue(), Task value is final after execution: " + this);
             }
@@ -465,6 +465,22 @@ public abstract class Task implements Runnable {
      */
     public static Task[] fork(final Task[] tasks) {
         return Worker.fork(tasks);
+    }
+
+    /**
+     * Perform multiple operations as a single atomic update to the task queues.
+     *
+     * For example, you can pass in a Runnable which calls
+     * <code>StaticWebCache.getAsync()</code> several times to guarantee the order in which
+     * these asynchronous operations start after the Runnable completes.
+     *
+     * Note that until your Runnable completes, no new Task can be fork()ed and
+     * no new Task can start. Thus be careful to do any
+     *
+     * @param runnable
+     */
+    public static void runAtomic(final Runnable runnable) {
+        Worker.runAtomic(runnable);
     }
 
     /**
@@ -540,7 +556,7 @@ public abstract class Task implements Runnable {
             return executeOutOfOrderAfterSuccessfulUnfork();
         }
 
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             //#debug
             L.i(this, "start join(" + timeout + ")", "" + this);
             switch (status) {
@@ -554,7 +570,7 @@ public abstract class Task implements Runnable {
                         L.i(this, "Can not unfork, must be an executing or chained Task. Start join(" + timeout + ")", "" + this);
 
                         try {
-                            MUTEX.wait(timeout);
+                            mutex.wait(timeout);
                         } catch (InterruptedException e) {
                             //#debug
                             L.e(this, "InterruptedException during join(" + timeout + ") wait", "Task will cancel: " + this, e);
@@ -669,7 +685,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final int getStatus() {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             return status;
         }
     }
@@ -680,7 +696,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final String getStatusString() {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             return Task.STATUS_STRINGS[status];
         }
     }
@@ -706,7 +722,7 @@ public abstract class Task implements Runnable {
 
     private void doSetStatus(final int status, final String reason) {
         final Task t;
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             if (this.status == status) {
                 //#debug
                 L.i(this, "State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
@@ -716,7 +732,7 @@ public abstract class Task implements Runnable {
                 throw new IllegalArgumentException("setStatus(" + Task.STATUS_STRINGS[status] + ") not allowed, already FINISHED or CANCELED: " + this);
             }
             this.status = status;
-            MUTEX.notifyAll();
+            mutex.notifyAll();
             t = chainedTask;
             if (status == CANCELED) {
                 /*
@@ -791,7 +807,7 @@ public abstract class Task implements Runnable {
         if (nextTask == this) {
             throw new IllegalArgumentException("Can not chain a task to itself");
         }
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             if (getStatus() > Task.PENDING) {
                 throw new IllegalStateException("Can not chain() to a Task unless it is still PENDING: " + this);
             }
@@ -861,7 +877,7 @@ public abstract class Task implements Runnable {
         Object out = null;
 
         try {
-            synchronized (MUTEX) {
+            synchronized (mutex) {
                 if (status == Task.CANCELED) {
                     throw new IllegalStateException(this.getStatusString() + " state can not be executed: " + this);
                 }
@@ -873,7 +889,7 @@ public abstract class Task implements Runnable {
 
             final boolean executionSuccessful;
             final Task t;
-            synchronized (MUTEX) {
+            synchronized (mutex) {
                 executionSuccessful = status == Task.PENDING;
                 if (executionSuccessful) {
                     value = out;
@@ -938,7 +954,7 @@ public abstract class Task implements Runnable {
      * @return
      */
     public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             if (reason == null) {
                 throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
             }
@@ -1006,21 +1022,11 @@ public abstract class Task implements Runnable {
      * @return
      */
     public final boolean isCanceled() {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             return status == AsyncTask.CANCELED;
         }
     }
 
-    /**
-     * The default implementation of run() does nothing. If you
-     * task.fork(Task.UI) then you should override this method.
-     *
-     * Your overriding run() method probably will want to access and display the
-     * result with getValue()
-     *
-     */
-    public void run() {
-    }
     //#mdebug
     private String anonInnerClassName = null;
 
@@ -1057,7 +1063,7 @@ public abstract class Task implements Runnable {
     public String getClassName() {
         String s = this.getClass().getName();
         //#mdebug
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             if (anonInnerClassName != null) {
                 s += anonInnerClassName;
             }
@@ -1190,7 +1196,7 @@ public abstract class Task implements Runnable {
         final Task previousTask;
         final Task nextTask;
 
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             previousTask = previousTaskInChain;
             nextTask = chainedTask;
         }
@@ -1222,7 +1228,7 @@ public abstract class Task implements Runnable {
     public String toString(final boolean showChain) {
         final String chain = showChain ? showChain() : "";
 
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             StringBuffer sb = new StringBuffer(300);
 
             sb.append("{task=");
