@@ -76,8 +76,16 @@ public abstract class JSONPoster extends HttpPoster {
      * @throws UnsupportedEncodingException if the String can not be converted
      * to UTF-8 on this device
      */
-    public JSONPoster(final int priority, final String url, final String json) throws UnsupportedEncodingException {
-        super(priority, url, json.getBytes("UTF-8"));
+    /**
+     * 
+     * @param priority
+     * @param url
+     * @param json
+     * @param encoding - use "UTF-8" or other as required by the server
+     * @throws UnsupportedEncodingException 
+     */
+    public JSONPoster(final int priority, final String url, final String json, final String encoding) throws UnsupportedEncodingException {
+        super(priority, url, json.getBytes(encoding));
     }
 
     /**
