@@ -75,8 +75,12 @@ public final class PlatformUtils {
      * - Devices to set the maximum baud rate, no parity and hardware CTS flow
      * control and to the same in terminal emulation software such as Putty
      *
-     * With the release build of the Tantalum library, this setting is ignored
-     * and there will not be any log output.
+     * Note that some phones do not support USB serial port connection to the
+     * computer. If your phone does not appear in the Window Device Manager when
+     * connected, use USB logging instead.
+     *
+     * With the platform release build (such as TantalumJME.jar) of the Tantalum
+     * library, this setting is ignored and there will not be any log output.
      */
     public static final int USB_SERIAL_PORT_LOG_MODE = 1;
     /**
@@ -428,9 +432,9 @@ public final class PlatformUtils {
      * Task.PRIORITY_SHUTDOWN to be canceled immediately. In any case, all work
      * must finish within 3 seconds or risk being terminated by the phone OS if
      * this is an system-initiated application close.
-     * 
+     *
      * @param block
-     * @param reason 
+     * @param reason
      */
     public void shutdown(final boolean block, final String reason) {
         //#debug

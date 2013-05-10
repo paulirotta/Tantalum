@@ -28,6 +28,7 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import org.tantalum.PlatformUtils;
+import org.tantalum.jme.TantalumJME;
 
 /**
  * @author vand
@@ -111,7 +112,7 @@ public class FormRSSReader extends MIDlet implements CommandListener {
      * already started and initialize/starts or resumes the MIDlet.
      */
     public void startApp() {
-        PlatformUtils.getInstance().setProgram(this, 4);
+        TantalumJME.start(this);
         switchDisplayable(null, getList());
     }
 

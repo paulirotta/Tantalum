@@ -20,7 +20,7 @@ import org.tantalum.util.L;
 
 import com.nokia.common.picasaviewerapp.PicasaStorage;
 import javax.microedition.midlet.MIDlet;
-import javax.microedition.midlet.MIDletStateChangeException;
+import org.tantalum.jme.TantalumJME;
 
 
 public final class PicasaViewer extends MIDlet {
@@ -32,7 +32,7 @@ public final class PicasaViewer extends MIDlet {
     private CategoryBarHandler categoryBarHandler = null;
 
     public void startApp() {
-        PlatformUtils.getInstance().setProgram(this, 4);
+        TantalumJME.start(this);
 
         try {
             categoryBarHandler = (CategoryBarHandler) Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler").newInstance();

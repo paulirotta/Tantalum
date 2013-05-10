@@ -32,6 +32,7 @@ import com.sun.lwuit.plaf.UIManager;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import org.tantalum.PlatformUtils;
+import org.tantalum.jme.TantalumJME;
 
 /**
  * @author tsaa
@@ -49,7 +50,7 @@ public class RSSReader extends MIDlet {
     public static Font underlinedFont;
 
     public void startApp() {
-        PlatformUtils.getInstance().setProgram(this, 4, PlatformUtils.NORMAL_LOG_MODE);
+        TantalumJME.start(this);
         Display.init(this);
         UIManager.getInstance().setLookAndFeel(new DefaultLookAndFeel());
 

@@ -29,6 +29,7 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.jme.TantalumJME;
 import org.tantalum.util.L;
 
 /**
@@ -121,7 +122,7 @@ public class RSSReader extends MIDlet implements CommandListener {
      */
     public void startApp() {
         try {
-            PlatformUtils.getInstance().setProgram(this, 4, PlatformUtils.NORMAL_LOG_MODE);
+            TantalumJME.start(this);
             final Task reloadTask = getCanvas().getListView().reloadAsync(false);
 //            final Display display = getDisplay();
 //            COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);

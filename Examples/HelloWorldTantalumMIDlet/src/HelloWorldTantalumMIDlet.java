@@ -1,3 +1,4 @@
+
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
@@ -8,6 +9,7 @@ import javax.microedition.lcdui.ItemCommandListener;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import org.tantalum.PlatformUtils;
+import org.tantalum.jme.TantalumJME;
 import org.tantalum.util.L;
 
 public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandListener, ItemCommandListener {
@@ -17,7 +19,6 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
      * than 2 is not allowed and more than 4 probably introduces too much context
      * switching between threads.
      */
-    private static final int NUMBER_OF_WORKER_THREADS = 4;
     private final Form exampleForm = new Form("Example Form");
     private final Command exitCommand = new Command("Exit", Command.EXIT, 0);
 
@@ -26,14 +27,14 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
      * something as the current display item before this routine returns.
      */
     protected void startApp() {
-        PlatformUtils.getInstance().setProgram(this, NUMBER_OF_WORKER_THREADS, PlatformUtils.NORMAL_LOG_MODE);
+        TantalumJME.start(this);
         init();
         Display.getDisplay(this).setCurrent(exampleForm);
     }
 
     /**
      * Initialize the application and first screen
-     * 
+     *
      */
     private void init() {
         L.i("App init", "Started");
@@ -41,7 +42,7 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
         exampleForm.addCommand(exitCommand);
         exampleForm.append("Hello, Tantalum");
     }
- 
+
     /**
      * Most phones including Nokia Series40 do not ever enter the "paused" state
      * so they do not call this.
@@ -67,9 +68,9 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
     /**
      * Commands added to a Form or Canvas appear as menu items on the phone.
      * When the user presses that menu item, this method is called.
-     * 
+     *
      * @param c
-     * @param d 
+     * @param d
      */
     public void commandAction(Command c, Displayable d) {
         L.i("Displayable commandAction", "command=" + c.getLabel());
@@ -80,11 +81,11 @@ public final class HelloWorldTantalumMIDlet extends MIDlet implements CommandLis
 
     /**
      * Form Items use Commands of type Command.ITEM which are handled here.
-     * 
+     *
      * Delete this if you do not use Forms
-     * 
+     *
      * @param c
-     * @param item 
+     * @param item
      */
     public void commandAction(Command c, Item item) {
         L.i("Item commandAction", "command=" + c.getLabel());
