@@ -75,13 +75,6 @@ task init(dependsOn: preverify) << {
 project.ext.executeWtkBuild = {
     sourceDir, destDir, release = false ->
 
-    println ""
-    if (release) {
-        println "\n\n\n\nExecuting release build\n\n\n\n"
-    } else {
-        println "\n\n\n\nExecuting debug build\n\n\n\n"
-    }
-
     ant.wtkbuild(
             srcdir: sourceDir,
             destdir: destDir,
