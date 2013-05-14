@@ -316,8 +316,9 @@ public class StaticCache {
 
     /**
      * Retrieve an object from RAM or RMS storage.
-     * 
-     * You can choose to bypass RAM by setting <code>skipHeap = true</code>
+     *
+     * You can choose to bypass RAM by setting
+     * <code>skipHeap = true</code>
      *
      * @param key
      * @param priority
@@ -418,9 +419,9 @@ public class StaticCache {
      * Store a value to heap and flash memory.
      *
      * Conversion to from byte[] to use form (POJO, Plain Old Java Object)
-     * happens synchronously on the calling thread compare compare this method
-     * returns. If data type conversion may take a long time (XML or JSON
-     * parsing, etc) then avoid calling this method from the UI thread.
+     * happens synchronously on the calling thread. If data type conversion may
+     * take a long time (XML or JSON parsing, etc) then avoid calling this
+     * method from the UI thread.
      *
      * Actual storage to persistent flash storage is done asynchronously on a
      * background worker thread. This is done at high priority to prevent the
@@ -436,6 +437,28 @@ public class StaticCache {
      * @throws FlashDatabaseException
      */
     public Object put(final String key, final byte[] bytes) throws FlashDatabaseException {
+        return put(key, bytes, false);
+    }
+
+    /**
+     * Store a value to heap and flash memory, possibly bypassing any associated
+     * heap memory changes.
+     *
+     * Setting skipHeap=true delays any (possibly slow) process in your custom
+     * DataTypeHandler until load time. Note that any previously-heap-cached
+     * "use form" (POJO, Plain Old Java Object) values already in the heap are
+     * not removed or modified.
+     *
+     * @param key
+     * @param bytes
+     * @param skipHeap - do not store this change to the WeakReference heap
+     * cache. The object will be fetched from flash and annotated at that time
+     * by a custom DataTypeHandler.
+     * @return the byte[] converted to the parsed Object "use form" returned by
+     * this cache's DataTypeHandler
+     * @throws FlashDatabaseException
+     */
+    public Object put(final String key, final byte[] bytes, final boolean skipHeap) throws FlashDatabaseException {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }
