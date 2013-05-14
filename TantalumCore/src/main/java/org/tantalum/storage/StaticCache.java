@@ -311,6 +311,23 @@ public class StaticCache {
      * @return
      */
     public Task getAsync(final String key, int priority, final Task nextTask) {
+        return getAsync(key, priority, nextTask, false);
+    }
+
+    /**
+     * Retrieve an object from RAM or RMS storage.
+     * 
+     * You can choose to bypass RAM by setting <code>skipHeap = true</code>
+     *
+     * @param key
+     * @param priority
+     * @param nextTask
+     * @param skipHeap - set "true" to force re-load from flash and
+     * re-conversion by your custom <code>DataTypeHandler</code>. This may be
+     * useful for example to re-annotate images as they are loaded from cache.
+     * @return
+     */
+    public Task getAsync(final String key, int priority, final Task nextTask, final boolean skipHeap) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
@@ -318,24 +335,24 @@ public class StaticCache {
             priority = Task.FASTLANE_PRIORITY;
         }
 
-        return (new GetLocalTask(priority, key)).chain(nextTask).fork();
+        return (new GetLocalTask(priority, key, skipHeap)).chain(nextTask).fork();
     }
-    
+
     /**
      * Simple synchronous get.
-     * 
-     * This will block until the result is returned, so only call from inside
-     * a Task or other worker thread. Never call from the UI thread.
-     * 
-     * Unlike getAsync(url, chainedTask), this may hold multiple threads for 
+     *
+     * This will block until the result is returned, so only call from inside a
+     * Task or other worker thread. Never call from the UI thread.
+     *
+     * Unlike getAsync(url, chainedTask), this may hold multiple threads for
      * some time depending on cache status. It is thus higher performance for
      * your app as a whole to use the async request and let chaining sequence
      * the load across threads.
-     * 
+     *
      * @param url
      * @return
      * @throws CancellationException
-     * @throws TimeoutException 
+     * @throws TimeoutException
      */
     public Object get(final String key) throws CancellationException, TimeoutException {
         return getAsync(key, Task.NORMAL_PRIORITY, null).get();
@@ -349,11 +366,18 @@ public class StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    protected Object synchronousGet(final String key) throws FlashDatabaseException {
-        Object o = synchronousRAMCacheGet(key);
+    protected Object synchronousGet(final String key, final boolean skipHeap) throws FlashDatabaseException {
+        Object o = null;
 
-        //#debug
-        L.i(this, "Heap get result", "(" + cachePriorityChar + ") " + key + " : " + o);
+        if (!skipHeap) {
+            o = synchronousRAMCacheGet(key);
+            //#mdebug
+            if (o != null) {
+                L.i(this, "Heap get hit", "(" + cachePriorityChar + ") " + key + " : " + o);
+            }
+            //#enddebug
+        }
+
         if (o == null) {
             try {
                 // Load from flash memory
@@ -719,7 +743,9 @@ public class StaticCache {
      * chain() support. You can use this to build your own custom asynchronous
      * background processing Task chain.
      */
-    final public class GetLocalTask extends Task {
+    final protected class GetLocalTask extends Task {
+
+        final boolean skipHeap;
 
         /**
          * Create a new getDigests operation, specifying the url in advance.
@@ -727,8 +753,10 @@ public class StaticCache {
          * @param priority
          * @param key
          */
-        public GetLocalTask(final int priority, final String key) {
+        public GetLocalTask(final int priority, final String key, final boolean skipHeap) {
             super(priority, key);
+
+            this.skipHeap = skipHeap;
         }
 
         /**
@@ -754,7 +782,7 @@ public class StaticCache {
                 return in;
             }
             try {
-                return synchronousGet((String) in);
+                return synchronousGet((String) in, skipHeap);
             } catch (FlashDatabaseException e) {
                 //#debug
                 L.e(this, "Can not exec async get", in.toString(), e);

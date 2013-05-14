@@ -289,7 +289,7 @@ public abstract class Task {
      * @param priority
      */
     public Task(final int priority) {
-        if ((priority < Task.SHUTDOWN) || priority > Task.FASTLANE_PRIORITY) {
+        if ((priority < Task.SHUTDOWN) || priority > Task.UI_PRIORITY) {
             throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
         }
         forkPriority = priority;
@@ -471,8 +471,9 @@ public abstract class Task {
      * Perform multiple operations as a single atomic update to the task queues.
      *
      * For example, you can pass in a Runnable which calls
-     * <code>StaticWebCache.getAsync()</code> several times to guarantee the order in which
-     * these asynchronous operations start after the Runnable completes.
+     * <code>StaticWebCache.getAsync()</code> several times to guarantee the
+     * order in which these asynchronous operations start after the Runnable
+     * completes.
      *
      * Note that until your Runnable completes, no new Task can be fork()ed and
      * no new Task can start. Thus be careful to do any
@@ -1026,7 +1027,6 @@ public abstract class Task {
             return status == AsyncTask.CANCELED;
         }
     }
-
     //#mdebug
     private String anonInnerClassName = null;
 
@@ -1149,8 +1149,10 @@ public abstract class Task {
             synchronized (tasksToFork) {
                 for (int i = 0; i < tasksToFork.size(); i++) {
                     final Task t = (Task) tasksToFork.elementAt(i);
-                    sb.append(t.getClassName());
-                    sb.append(" ");
+                    if (t instanceof Task) {
+                        sb.append(t.getClassName());
+                        sb.append(" ");
+                    }
                 }
             }
 
@@ -1159,7 +1161,7 @@ public abstract class Task {
         //#enddebug
     }
     //#mdebug
-    private static String[] PRIORITY_STRINGS = {"PRIORITY_NOT_SET", "SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "FASTLANE_PRIORITY"};
+    private static String[] PRIORITY_STRINGS = {"PRIORITY_NOT_SET", "SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "FASTLANE_PRIORITY", "UI_PRIORITY"};
 
     String getPriorityString() {
         return PRIORITY_STRINGS[getForkPriority()];

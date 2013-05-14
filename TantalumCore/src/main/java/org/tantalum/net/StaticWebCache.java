@@ -57,18 +57,46 @@ public final class StaticWebCache extends StaticCache {
     public static final HttpTaskFactory DEFAULT_HTTP_GETTER_FACTORY = new HttpTaskFactory();
     private final HttpTaskFactory httpTaskFactory;
     /**
-     * Get from the local cache only- do not request from a web server
+     * Get from the local flash memory cache only. Force a re-load from flash
+     * even if there is a previously converted to "use form" (POJO, Plain Old
+     * Java Object) in the <code>WeakReference</code> heap cache.
+     *
+     * Use this if you have added a custom
+     * <code>DataTypeHandler</code> to force re-conversion through your
+     * <code>DataTypeHandler</code>. It is useful for example to update
+     * annotations to an Image at load time.
      */
-    public static final int GET_LOCAL = 0;
+    public static final int GET_LOCAL_SKIP_HEAP = 0;
     /**
-     * Get from the local cache if available, otherwise GET from a web server
+     * Get from the local heap or (on heap miss) flash memory cache only- do not
+     * request from a web server
+     *
+     * If there is a hit the the WeakReference heap cache, this is returned
+     * instead of re-fetching from flash memory.
      */
-    public static final int GET_ANYWHERE = 1;
+    public static final int GET_LOCAL = 1;
+    /**
+     * Get from the local flash cache if available, otherwise get from a web
+     * server.
+     *
+     * By skipping the Heap cache "use form" (Plain Old Java Object, POJO
+     * cache), you force a re-load through your own custom
+     * <code>DataTypeHandler</code> which may process the data. You might for
+     * example find this useful if you have a custom
+     * <code>ImageTypeHandler</code> which adds markup to images on load.
+     */
+    public static final int GET_ANYWHERE_SKIP_HEAP = 2;
+    /**
+     * Get from the local cache if available, otherwise get from a web server
+     */
+    public static final int GET_ANYWHERE = 3;
     /**
      * GET from the web, overriding and replacing any value currently stored in
      * the local cache
      */
-    public static final int GET_WEB = 2;
+    public static final int GET_WEB = 4;
+    //#debug
+    private static final String[] GET_TYPES = {"GET_LOCAL_SKIP_HEAP", "GET_LOCAL", "GET_ANYWHERE_SKIP_HEAP", "GET_ANYWHERE", "GET_WEB"};
 
     /**
      * Get existing or create a new local cache of a web service.
@@ -263,22 +291,22 @@ public final class StaticWebCache extends StaticCache {
     public Task getAsync(final String url, final Task chainedTask) {
         return getAsync(url, Task.FASTLANE_PRIORITY, GET_ANYWHERE, chainedTask);
     }
-    
+
     /**
      * Simple synchronous get.
-     * 
-     * This will block until the result is returned, so only call from inside
-     * a Task or other worker thread. Never call from the UI thread.
-     * 
-     * Unlike getAsync(url, chainedTask), this may hold multiple threads for 
+     *
+     * This will block until the result is returned, so only call from inside a
+     * Task or other worker thread. Never call from the UI thread.
+     *
+     * Unlike getAsync(url, chainedTask), this may hold multiple threads for
      * some time depending on cache status. It is thus higher performance for
      * your app as a whole to use the async request and let chaining sequence
      * the load across threads.
-     * 
+     *
      * @param url
      * @return
      * @throws CancellationException
-     * @throws TimeoutException 
+     * @throws TimeoutException
      */
     public Object get(final String url) throws CancellationException, TimeoutException {
         return getAsync(url, null).get();
@@ -333,7 +361,8 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param * * *      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
+     * @param * * * * * * * *
+     * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
      * and executed after the getAsync operation.
@@ -355,26 +384,22 @@ public final class StaticWebCache extends StaticCache {
         final int getterPriority;
 
         //#debug
-        L.i("StaticWebCache getType=" + getType + " : " + nextTask, "key=" + url);
+        L.i(this, "getAsync getType=" + GET_TYPES[getType] + " priority=" + priority + "key=" + url, "nextTask=" + nextTask);
         switch (getType) {
             case GET_LOCAL:
-                //#debug
-                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_LOCAL)", url);
+            case GET_LOCAL_SKIP_HEAP:
                 getterPriority = allowLocalCacheReadToUseFastlane(priority);
-                getTask = new StaticCache.GetLocalTask(getterPriority, url);
+                getTask = new StaticCache.GetLocalTask(getterPriority, url, getType == GET_LOCAL_SKIP_HEAP);
                 getTask.chain(nextTask);
                 break;
 
             case GET_ANYWHERE:
-                //#debug
-                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_ANYWHERE)", url);
+            case GET_ANYWHERE_SKIP_HEAP:
                 getterPriority = allowLocalCacheReadToUseFastlane(priority);
-                getTask = new StaticWebCache.GetAnywhereTask(getterPriority, url, postMessage, nextTask, taskFactory);
+                getTask = new StaticWebCache.GetAnywhereTask(getterPriority, url, postMessage, nextTask, taskFactory, getType == GET_ANYWHERE_SKIP_HEAP);
                 break;
 
             case GET_WEB:
-                //#debug
-                L.i("Begin StaticWebCache(" + cachePriorityChar + ").getAsync(GET_WEB)", url);
                 getterPriority = preventWebTaskFromUsingFastLane(priority);
                 getTask = getHttpGetter(getterPriority, url, postMessage, nextTask, taskFactory);
                 if (getTask == null) {
@@ -491,6 +516,7 @@ public final class StaticWebCache extends StaticCache {
         final byte[] postMessage;
         final Task nextTask;
         final StaticWebCache.HttpTaskFactory taskFactory;
+        final boolean skipHeap;
 
         /**
          * Create a
@@ -515,13 +541,14 @@ public final class StaticWebCache extends StaticCache {
          * @param cachePriorityChar
          * @param postMessage
          */
-        private GetAnywhereTask(final int priority, final String key, final byte[] postMessage, final Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory) {
+        private GetAnywhereTask(final int priority, final String key, final byte[] postMessage, final Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory, final boolean skipHeap) {
             super(priority, key);
 
             this.postMessage = postMessage;
             this.priority = priority;
             this.nextTask = nextTask;
             this.taskFactory = taskFactory;
+            this.skipHeap = skipHeap;
         }
 
         protected Object exec(final Object in) {
@@ -530,13 +557,13 @@ public final class StaticWebCache extends StaticCache {
             if (in == null || !(in instanceof String)) {
                 //#debug
                 L.i(this, "ERROR", "Must receive a String url, but got " + (in == null ? "null" : in.toString()));
-                cancel(false, this.getClassName() + " got bad input: " + in);
+                cancel(false, getClassName() + " got bad input: " + in);
             } else {
                 //#debug
                 L.i(this, "get", (String) in);
                 try {
                     final String url = (String) in;
-                    out = synchronousGet(url);
+                    out = synchronousGet(url, skipHeap);
                     if (out == null) {
                         //#debug
                         L.i(this, "Not found locally, get from the web", (String) in);
