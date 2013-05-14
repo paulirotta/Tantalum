@@ -3,8 +3,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.eriwen:gradle-cobertura-plugin:1.0'
-        classpath 'com.android.tools.build:gradle:0.3'
+        classpath 'com.eriwen:gradle-cobertura-plugin:1.1.0'
+//        classpath 'com.android.tools.build:gradle:0.3'
         classpath files(antennaJar)
     }
 }
@@ -19,7 +19,7 @@ subprojects {
     apply from: rootProject.projectDir.toString() + '/wtkbuild.gradle'
     apply plugin: 'java'
     apply plugin: 'cobertura'
-    apply plugin: 'eclipse'
+
 
     configurations {
         bootClasspath
@@ -38,6 +38,7 @@ subprojects {
         testCompile "org.powermock:powermock-module-junit4:1.5"
     }
 
+    def preprocessedSourceDirectory = "$buildDir/preprocessed-sources/main"
     // Define a provided scope, as defined here
     // http://blog.codeaholics.org/2012/emulating-mavens-provided-scope-in-gradle/
     // The following lines are needed only when we build using the standard java compile
@@ -48,6 +49,14 @@ subprojects {
             compileClasspath += configurations.provided
             runtimeClasspath += configurations.provided
         }
+
+        preprocessed {
+            java {
+                preprocessedSourceDirectory
+            }
+
+        }
+
     }
     // End of compileJava requirements
     project.tasks['javadoc'].classpath += configurations.provided
@@ -76,54 +85,98 @@ subprojects {
         }
     }
 
-    project.ext.preprocessedSources = "${buildDir}/preprocessed-sources"
-
     sourceSets {
         preprocessed {
             java {
-                srcDir project.ext.preprocessedSources
+                srcDir preprocessedSourceDirectory
+            }
+        }
+    }
+    apply plugin: 'jdepend'
+    apply plugin: 'pmd'
+    apply plugin: 'project-report'
+    apply plugin: 'findbugs'
+
+    // Don't fail the build for static analysis warnings
+    project.findbugs.ignoreFailures = true
+    project.pmd.ignoreFailures = true
+
+    // Enable HTML report generation
+    tasks.withType(FindBugs) {
+        reports.xml.enabled = false
+        reports.html.enabled = true
+    }
+    tasks.withType(Pmd) {
+        reports.xml.enabled = false
+        reports.html.enabled = true
+    }
+
+
+    task createSourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    task createJavadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    jar {
+        from {
+            configurations.compile.collect {
+                it.isDirectory() ? it : zipTree(it)
             }
         }
     }
 
-    // Run static checks on the library code
-    if (project.name != 'TantalumUnitTests' && project.name != 'TantalumCore' ) {
-        apply plugin: 'jdepend'
-        apply plugin: 'pmd'
-        apply plugin: 'project-report'
-        apply plugin: 'findbugs'
+    /**
+     * Dummy preprocessor task, that currently just copies the source files to another directory.
+     * This task will have to do, until we can integrate a non-JME-dependent preprocessor into
+     * the build script
+     */
+    task preprocessSources(overwrite: true) << {
+        file(preprocessedSourceDirectory).mkdirs()
 
-        // Don't fail the build for static analysis warnings
-        project.findbugs.ignoreFailures = true
-        project.pmd.ignoreFailures = true
-
-        // Enable HTML report generation
-        tasks.withType(FindBugs) {
-            reports.xml.enabled = false
-            reports.html.enabled = true
+        project.ext.preProcSourceDirectories = ""
+        for (dir in sourceSets.main.java.srcDirs) {
+            if (dir.exists()) {
+                copy {
+                    from dir.getAbsolutePath()
+                    into preprocessedSourceDirectory
+                }
+            }
         }
-        tasks.withType(Pmd) {
-            reports.xml.enabled = false
-            reports.html.enabled = true
-        }
+    }
 
+
+    task createReleaseJar(type: Jar) {
+        dependsOn compilePreprocessedJava
+        from sourceSets.preprocessed.output
+        from {
+            configurations.compile.collect {
+                it.isDirectory() ? it : zipTree(it)
+            }
+        }
+    }
+
+    compilePreprocessedJava.dependsOn preprocessSources
+    build.dependsOn createReleaseJar
+
+    artifacts {
+        releaseJar createReleaseJar
+        archives createSourcesJar
+        archives createJavadocJar
+    }
+
+    // Separate configuration for the WTK-build projects
+    if (project.name != 'TantalumUnitTests' && project.name != 'TantalumCore') {
 
         task compileJava(overwrite: true, dependsOn: wtkbuild) << {
         }
 
-        task compilePreprocessedJava(overwrite: true, dependsOn: wtkprodbuild) << {
+        task compilePreprocessedJava(overwrite: true, dependsOn: preprocessSources) << {
         }
-
-        task createReleaseJar(type: Jar) {
-            dependsOn compilePreprocessedJava
-            from sourceSets.preprocessed.output
-            from {
-                configurations.compile.collect {
-                    it.isDirectory() ? it : zipTree(it)
-                }
-            }
-        }
-
 
         task createJarInstrumented(type: Jar) {
             dependsOn coberturaInstrumentMain
@@ -132,31 +185,10 @@ subprojects {
             from sourceSets.main.cobertura.output
         }
 
-        task createSourcesJar(type: Jar, dependsOn: classes) {
-            classifier = 'sources'
-            from sourceSets.main.allSource
-        }
-
-        task createJavadocJar(type: Jar, dependsOn: javadoc) {
-            classifier = 'javadoc'
-            from javadoc.destinationDir
-        }
-
         project.tasks['build'].dependsOn createReleaseJar
 
         artifacts {
             codeCoverageJar createJarInstrumented
-            releaseJar createReleaseJar
-            archives createSourcesJar
-            archives createJavadocJar
-        }
-
-        jar {
-            from {
-                configurations.compile.collect {
-                    it.isDirectory() ? it : zipTree(it)
-                }
-            }
         }
     }
 }

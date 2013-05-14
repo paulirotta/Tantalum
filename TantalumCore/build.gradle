@@ -1,19 +1,38 @@
 /**
  * TantalumCore/build.gradle
  *
- * Builds the TantalumCore-project, and generates two jar files
+ * Builds the TantalumCore-project, and generates four jar files
  *
- * Tantalum.jar contains preprocessed classes without logging and other debug code
+ * TantalumCore.jar contains preprocessed classes without logging and other debug code
  *
- *  TantalumCore-debug.jar contains the compiled code from the original sources
+ * TantalumCore-debug.jar contains the compiled code from the original sources
  *
- * The project contains an additional config, called 'codeCoverageJar', which
- * packages and exposes the cobertura-instrumented classes as a jar file.
- * This jar file is being used by the J2SE-project to execute the unit tests
- * and generate the coverage report.
+ * TantalumCore-source.jar contains the original sources
+ *
+ * TantalumCore-javadoc.jar contains the generated javadoc for the project
+ *
  */
+compileJava {
+    sourceCompatibility = '1.3'
+    targetCompatibility = '1.3'
 
-// Use this as the name for the generated jars
+    options.encoding = 'UTF-8'
+    // Enable this to be strict about warnings, and fail the build if there are any
+//    options.compilerArgs = ['-Xlint', '-Xlint:-serial', '-Xlint:-path']
+}
+
+compileTestJava {
+    sourceCompatibility = '1.6'
+    targetCompatibility = '1.6'
+
+    options.encoding = 'UTF-8'
+//    options.compilerArgs = ['-Xlint', '-Xlint:-serial', '-Xlint:-path']
+}
+
+test {
+    maxParallelForks = 4
+    forkEvery = 1000
+}
 
 project.ext.releaseArchivesName = 'TantalumCore'
 project.archivesBaseName = 'TantalumCore-debug'
@@ -21,5 +40,4 @@ project.archivesBaseName = 'TantalumCore-debug'
 project.tasks['createReleaseJar'].baseName = project.ext.releaseArchivesName
 project.tasks['createJavadocJar'].baseName = project.ext.releaseArchivesName
 project.tasks['createSourcesJar'].baseName = project.ext.releaseArchivesName
-project.tasks['createJarInstrumented'].baseName = project.ext.releaseArchivesName
 
