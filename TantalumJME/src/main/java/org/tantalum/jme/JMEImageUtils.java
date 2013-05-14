@@ -463,8 +463,8 @@ public final class JMEImageUtils {
      * Gets a source image along with new size for it and resizes it to fit
      * within max dimensions.
      *
-     * @param inputImageARGB - ARGB image
-     * @param outputImageARGB - ARGB image buffer, can be the same as
+     * @param in - ARGB image
+     * @param out - ARGB image buffer, can be the same as
      * inputImageARGB and runs faster that way
      * @param srcW - source image width
      * @param srcH - source image height
@@ -472,8 +472,8 @@ public final class JMEImageUtils {
      * @param h - final image height
      * @param preserveAspectRatio
      */
-    private static void pureDownscale(final int[] inputImageARGB,
-            final int[] outputImageARGB, final int srcW, final int srcH,
+    private static void pureDownscale(final int[] in,
+            final int[] out, final int srcW, final int srcH,
             final int w, final int h, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / w);
         final int[] lut = new int[predictedCount << 8];
@@ -508,14 +508,14 @@ public final class JMEImageUtils {
                     // now loop from srcX to srcX2 and add up the values for
                     // each channel
                     do {
-                        final int argb = inputImageARGB[srcX + srcRowStartIndex];
+                        final int argb = in[srcX + srcRowStartIndex];
                         a += (argb & ALPHA) >>> 24;
                         r += argb & RED;
                         g += argb & GREEN;
                         b += argb & BLUE;
                         ++srcX; // move on to the next pixel
                     } while (srcX <= srcX2
-                            && srcX + srcRowStartIndex < inputImageARGB.length);
+                            && srcX + srcRowStartIndex < in.length);
 
                     // average out the channel values
                     // recreate color from the averaged channels and place it
@@ -524,14 +524,14 @@ public final class JMEImageUtils {
                     g >>>= 8;
                     final int count = srcX - initialSrcX;
                     if (count == predictedCount) {
-                        inputImageARGB[destX + destRowStartIndex] = (lut[a] << 24)
+                        in[destX + destRowStartIndex] = (lut[a] << 24)
                                 | (lut[r] << 16) | (lut[g] << 8) | lut[b];
                     } else {
                         a /= count;
                         r /= count;
                         g /= count;
                         b /= count;
-                        inputImageARGB[destX + destRowStartIndex] = ((a << 24)
+                        in[destX + destRowStartIndex] = ((a << 24)
                                 | (r << 16) | (g << 8) | b);
                     }
                 }
@@ -572,28 +572,28 @@ public final class JMEImageUtils {
                 // now loop from srcY to srcY2 and add up the values for each
                 // channel
                 do {
-                    final int argb = inputImageARGB[destX + srcY * w];
+                    final int argb = in[destX + srcY * w];
                     a += (argb & ALPHA) >>> 24;
                     r += argb & RED;
                     g += argb & GREEN;
                     b += argb & BLUE;
                     ++srcY; // move on to the next pixel
                 } while (srcY <= srcY2
-                        && destX + srcY * w < inputImageARGB.length);
+                        && destX + srcY * w < in.length);
 
                 // average out the channel values
                 r >>>= 16;
                 g >>>= 8;
                 final int count = srcY - initialSrcY;
                 if (count == predictedCount2) {
-                    outputImageARGB[destX + destY * w] = (lut2[a] << 24)
+                    out[destX + destY * w] = (lut2[a] << 24)
                             | (lut2[r] << 16) | (lut2[g] << 8) | lut2[b];
                 } else {
                     a /= count;
                     r /= count;
                     g /= count;
                     b /= count;
-                    outputImageARGB[destX + destY * w] = (a << 24) | (r << 16)
+                    out[destX + destY * w] = (a << 24) | (r << 16)
                             | (g << 8) | b;
                 }
             }
@@ -738,8 +738,8 @@ public final class JMEImageUtils {
      * Additive blending shrinkImage, 8 bit accuracy. Slightly faster because
      * Alpha is not calculated.
      *
-     * @param inputImageRGB - Opaque RGB image
-     * @param outputImageRGB - Opaque RGB output image buffer, can be the same
+     * @param in - Opaque RGB image
+     * @param out - Opaque RGB output image buffer, can be the same
      * as inputImageRGB and runs faster that way
      * @param srcW - source image width
      * @param srcH - source image height
@@ -747,8 +747,8 @@ public final class JMEImageUtils {
      * @param h - final image height
      * @param preserveAspectRatio
      */
-    private static void pureOpaqueDownscale(final int[] inputImageRGB,
-            final int[] outputImageRGB, final int srcW, final int srcH,
+    private static void pureOpaqueDownscale(final int[] in,
+            final int[] out, final int srcW, final int srcH,
             final int w, final int h, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / w);
         final int[] lut = new int[predictedCount << 8];
@@ -782,13 +782,13 @@ public final class JMEImageUtils {
                     // now loop from srcX to srcX2 and add up the values for
                     // each channel
                     do {
-                        final int rgb = inputImageRGB[srcRowStartIndex + srcX];
+                        final int rgb = in[srcRowStartIndex + srcX];
                         r += rgb & RED;
                         g += rgb & GREEN;
                         b += rgb & BLUE;
                         ++srcX; // move on to the next pixel
                     } while (srcX <= srcX2
-                            && srcRowStartIndex + srcX < inputImageRGB.length);
+                            && srcRowStartIndex + srcX < in.length);
 
                     // average out the channel values
                     // recreate color from the averaged channels and place it
@@ -797,13 +797,13 @@ public final class JMEImageUtils {
                     g >>>= 8;
                     final int count = srcX - initialSrcX;
                     if (count == predictedCount) {
-                        inputImageRGB[destX + destRowStartIndex] = (lut[r] << 16)
+                        in[destX + destRowStartIndex] = (lut[r] << 16)
                                 | (lut[g] << 8) | lut[b];
                     } else {
                         r /= count;
                         g /= count;
                         b /= count;
-                        inputImageRGB[destX + destRowStartIndex] = (r << 16)
+                        in[destX + destRowStartIndex] = (r << 16)
                                 | (g << 8) | b;
                     }
                 }
@@ -844,26 +844,26 @@ public final class JMEImageUtils {
                 // now loop from srcY to srcY2 and add up the values for each
                 // channel
                 do {
-                    final int argb = inputImageRGB[columnStart + destX];
+                    final int argb = in[columnStart + destX];
                     r += argb & RED;
                     g += argb & GREEN;
                     b += argb & BLUE;
                     ++srcY; // move on to the next pixel
                 } while (srcY <= srcY2
-                        && columnStart + destX < inputImageRGB.length);
+                        && columnStart + destX < in.length);
 
                 // average out the channel values
                 r >>>= 16;
                 g >>>= 8;
                 final int count = srcY - initialSrcY;
                 if (count == predictedCount2) {
-                    outputImageRGB[destX + destY * w] = (lut2[r] << 16)
+                    out[destX + destY * w] = (lut2[r] << 16)
                             | (lut2[g] << 8) | lut2[b];
                 } else {
                     r /= count;
                     g /= count;
                     b /= count;
-                    outputImageRGB[destX + destY * w] = (r << 16) | (g << 8)
+                    out[destX + destY * w] = (r << 16) | (g << 8)
                             | b;
                 }
             }
