@@ -364,13 +364,13 @@ public final class StaticWebCache extends StaticCache {
         L.i(this, "getAsync getType=" + GET_TYPES[getType] + " priority=" + priority + "key=" + url, "nextTask=" + nextTask);
         switch (getType) {
             case GET_LOCAL:
-                getterPriority = allowLocalCacheReadToUseFastlane(priority);
+                getterPriority = boostHighPriorityToFastlane(priority);
                 getTask = new StaticCache.GetLocalTask(getterPriority, url, skipHeap);
                 getTask.chain(nextTask);
                 break;
 
             case GET_ANYWHERE:
-                getterPriority = allowLocalCacheReadToUseFastlane(priority);
+                getterPriority = boostHighPriorityToFastlane(priority);
                 getTask = new StaticWebCache.GetAnywhereTask(getterPriority, url, postMessage, nextTask, taskFactory, skipHeap);
                 break;
 
@@ -388,21 +388,6 @@ public final class StaticWebCache extends StaticCache {
         }
 
         return getTask.fork();
-    }
-
-    /**
-     * Local flash read should be fast- allow it into the FASTLANE so it can
-     * bump past a (possible large number of blocking) HTTP operations.
-     *
-     * @param priority
-     * @return
-     */
-    private int allowLocalCacheReadToUseFastlane(final int priority) {
-        if (priority == Task.HIGH_PRIORITY) {
-            return Task.FASTLANE_PRIORITY;
-        }
-
-        return priority;
     }
 
     /**

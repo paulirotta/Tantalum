@@ -315,6 +315,21 @@ public class StaticCache {
     }
 
     /**
+     * Local flash read should be fast- allow it into the FASTLANE so it can
+     * bump past a (possible large number of blocking) HTTP operations.
+     *
+     * @param priority
+     * @return
+     */
+    protected int boostHighPriorityToFastlane(final int priority) {
+        if (priority == Task.HIGH_PRIORITY) {
+            return Task.FASTLANE_PRIORITY;
+        }
+
+        return priority;
+    }
+
+    /**
      * Retrieve an object from RAM or RMS storage.
      *
      * You can choose to bypass RAM by setting
@@ -332,9 +347,7 @@ public class StaticCache {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
-        if (priority == Task.HIGH_PRIORITY) {
-            priority = Task.FASTLANE_PRIORITY;
-        }
+        priority = boostHighPriorityToFastlane(priority);
 
         return (new GetLocalTask(priority, key, skipHeap)).chain(nextTask).fork();
     }
