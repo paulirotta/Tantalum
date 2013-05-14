@@ -12,6 +12,22 @@
  * This jar file is being used by the J2SE-project to execute the unit tests
  * and generate the coverage report.
  */
+// Set up the antenna ant tasks
+buildscript {
+    dependencies {
+        classpath files('lib/antenna-bin-1.2.1-beta.jar')
+    }
+}
+
+// antenna ant tasks
+ant.taskdef(resource: 'antenna.properties') {
+    classpath {
+        pathElement(path: buildscript.configurations.classpath.asPath)
+    }
+}
+apply from: 'wtkbuild.gradle'
+
+// Define project dependencies
 dependencies {
     compile project(path: ':TantalumCore')
     releaseCompile project(path: ':TantalumCore', configuration: 'releaseJar')
