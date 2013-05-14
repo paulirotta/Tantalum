@@ -23,6 +23,8 @@ build/
 .nb-gradle/
 
 # eclipse 
-
 .classpath
 
+# Idea
+.idea
+*.iml
