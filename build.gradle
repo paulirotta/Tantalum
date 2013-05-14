@@ -87,7 +87,7 @@ subprojects {
     }
 
     // Run static checks on the library code
-    if (project.name != 'TantalumUnitTests') {
+    if (project.name != 'TantalumUnitTests' && project.name != 'TantalumCore' ) {
         apply plugin: 'jdepend'
         apply plugin: 'pmd'
         apply plugin: 'project-report'
