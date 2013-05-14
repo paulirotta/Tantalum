@@ -28,7 +28,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSModel;
-import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.CacheView;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 import org.xml.sax.SAXException;
@@ -46,7 +46,7 @@ public abstract class RSSListView extends View {
     public RSSListView(final RSSReaderCanvas canvas) {
         super(canvas);
 
-        feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
+        feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
             public Object convertToUseForm(final Object key, byte[] bytes) {
                 try {
                     rssModel.setXML(bytes);

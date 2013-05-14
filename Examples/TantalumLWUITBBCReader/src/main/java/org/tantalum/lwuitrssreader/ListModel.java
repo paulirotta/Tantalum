@@ -27,7 +27,7 @@ package org.tantalum.lwuitrssreader;
 import com.sun.lwuit.events.DataChangedListener;
 import com.sun.lwuit.list.DefaultListModel;
 import org.tantalum.net.xml.RSSModel;
-import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.CacheView;
 import org.tantalum.util.L;
 import org.xml.sax.SAXException;
 
@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
  *
  * @author tsaa
  */
-public class ListModel extends DefaultListModel implements DataChangedListener, DataTypeHandler {
+public class ListModel extends DefaultListModel implements DataChangedListener, CacheView {
 
     private ListForm listForm;
     private final LiveUpdateRSSModel rssModel = new LiveUpdateRSSModel(60);

@@ -15,7 +15,7 @@ import org.json.me.JSONObject;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
-import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.CacheView;
 import org.tantalum.storage.ImageTypeHandler;
 import org.tantalum.util.L;
 
@@ -104,7 +104,7 @@ public class PicasaStorage {
      * Class for converting the JSON response in to a Vector of
      * PicasaImageObject-objects. The vector is saved by Tantalum.
      */
-    private static class PicasaJSONDataTypeHandler implements DataTypeHandler {
+    private static class PicasaJSONDataTypeHandler implements CacheView {
 
         public Object convertToUseForm(final Object key, byte[] bytes) {
             JSONObject o;

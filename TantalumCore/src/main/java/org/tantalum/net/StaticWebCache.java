@@ -30,7 +30,7 @@ import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.TimeoutException;
-import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.CacheView;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.StaticCache;
 import org.tantalum.util.CryptoUtils;
@@ -93,7 +93,7 @@ public final class StaticWebCache extends StaticCache {
      * @param handler
      * @return
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final DataTypeHandler handler) {
+    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView handler) {
         try {
             return (StaticWebCache) getWebCache(priority, cacheType, handler, DEFAULT_HTTP_GETTER_FACTORY);
         } catch (Exception e) {
@@ -110,7 +110,7 @@ public final class StaticWebCache extends StaticCache {
      * @param handler
      * @return
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final DataTypeHandler handler) {
+    public static synchronized StaticWebCache getWebCache(final char priority, final CacheView handler) {
         return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, handler);
     }
 
@@ -133,7 +133,7 @@ public final class StaticWebCache extends StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
+    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView handler, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
         StaticWebCache c = (StaticWebCache) getExistingCache(priority, handler, httpTaskFactory, StaticWebCache.class);
 
         if (c == null) {
@@ -164,7 +164,7 @@ public final class StaticWebCache extends StaticCache {
      * @param httpTaskFactory
      * @throws FlashDatabaseException
      */
-    private StaticWebCache(final char priority, final int cacheType, final DataTypeHandler handler, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
+    private StaticWebCache(final char priority, final int cacheType, final CacheView handler, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
         super(priority, cacheType, handler);
 
         this.httpTaskFactory = httpTaskFactory;
@@ -344,8 +344,8 @@ public final class StaticWebCache extends StaticCache {
      * requests. If null, the default StaticWebCache.HttpTaskFactory specified
      * when you create this StaticWebCache will be used.
      * @param skipHeap - Set true if you have added a custom
-     * <code>DataTypeHandler</code> and you want to force re-conversion through
-     * your <code>DataTypeHandler</code>. It is useful for example to update
+     * <code>CacheView</code> and you want to force re-conversion through
+     * your <code>CacheView</code>. It is useful for example to update
      * annotations to an Image at load time.
      *
      * @return a new Task containing the result, or null if the
@@ -734,7 +734,7 @@ public final class StaticWebCache extends StaticCache {
      * @param taskFactory
      * @return
      */
-    protected boolean equals(final char priority, final DataTypeHandler handler, final Object taskFactory) {
+    protected boolean equals(final char priority, final CacheView handler, final Object taskFactory) {
         return this.cachePriorityChar == priority && this.handler.equals(handler) && this.httpTaskFactory.equals(taskFactory);
     }
 }

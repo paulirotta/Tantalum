@@ -22,25 +22,30 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.lwuitrssreader;
-
-import com.sun.lwuit.Image;
-import org.tantalum.storage.CacheView;
-import org.tantalum.util.L;
+package org.tantalum.storage;
 
 /**
- *
+ * Each StaticCache has a handler which handles conversions from network and RMS
+ * binary form into the form used in memory and the cache. For example, image
+ * format decompression or XML parsing.
+ * 
  * @author phou
  */
-public final class LWUITImageTypeHandler implements CacheView {
-
-    public Object convertToUseForm(final Object key, final byte[] bytes) {
-        try {
-            return Image.createImage(bytes, 0, bytes.length);
-        } catch (Exception e) {
-            L.e("Error converting bytes to LWUIT image", bytes == null ? "" : "" + bytes.length, e);
-        }
-
-        return null;
-    }
+public interface CacheView {
+    
+    /**
+     * Shift from binary to in-memory usable form. This may increase or decrease
+     * the total heap memory load, but in both cases it allows the RAM version
+     * to be rapidly returned without re-parsing the binary data.
+     * 
+     * Every StaticCache must be assigned a CacheView
+     * 
+     * @param key - an parameter which may optionally help with some implementations
+     * of <code>CacheView</code> and aids in debug messages if something
+     * goes wrong at runtime.
+     * @param bytes - the bytes received from the network or stored in a
+     * <code>StaticCache</code> for persistence.
+     * @return 
+     */
+    public Object convertToUseForm(Object key, byte[] bytes);
 }

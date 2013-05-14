@@ -6,7 +6,7 @@ import org.json.me.JSONObject;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
-import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.CacheView;
 import org.tantalum.util.L;
 
 import javax.microedition.lcdui.*;
@@ -46,7 +46,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
      * least-recently-used local data. If that data is requested again, it will
      * be requested from the web server.
      */
-    private final StaticWebCache locationsCache = StaticWebCache.getWebCache('0', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
+    private final StaticWebCache locationsCache = StaticWebCache.getWebCache('0', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
         /**
          * This method converts the JSON byte[] received from the web service,
          * or stored in local flash memory, into an object we can use in the

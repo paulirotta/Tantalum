@@ -26,7 +26,7 @@ package org.tantalum.storage;
 
 
 /**
- * This DataTypeHandler for use with a StaticCache converts from compressed
+ * This CacheView for use with a StaticCache converts from compressed
  * byte[] format (JPG, PNG, etc) to the platform-specific Image class.
  *
  * Call PlatformUtils.getImageTypeHandler() to receive the implementation
@@ -43,7 +43,7 @@ package org.tantalum.storage;
  *
  * @author phou
  */
-public abstract class ImageTypeHandler implements DataTypeHandler {
+public abstract class ImageTypeHandler implements CacheView {
 
     /**
      * This value, used by default, means no bounding box is specified and the
@@ -84,7 +84,7 @@ public abstract class ImageTypeHandler implements DataTypeHandler {
      * Set the scaling algorithm to be used. Choose from among the public
      * constants in ImageUtils. If you want to use native or other scaling
      * not included in Tantalum, you should extend
-     * DataTypeHandler directly rather than modify the cross-platform
+     * CacheView directly rather than modify the cross-platform
      * ImageTypeHandler.
      *
      * @param algorithm

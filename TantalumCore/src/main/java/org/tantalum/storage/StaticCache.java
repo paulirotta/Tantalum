@@ -103,7 +103,7 @@ public class StaticCache {
      * stateless and thread safe so it can be run on several threads and
      * possibly multiple cores at the same time.
      */
-    protected final DataTypeHandler handler;
+    protected final CacheView handler;
     /*
      *  For testing and performance comparison
      * 
@@ -122,7 +122,7 @@ public class StaticCache {
      * @param clas
      * @return
      */
-    protected static StaticCache getExistingCache(final char priority, final DataTypeHandler handler, final Object taskFactory, final Class clas) {
+    protected static StaticCache getExistingCache(final char priority, final CacheView handler, final Object taskFactory, final Class clas) {
         synchronized (caches) {
             for (int i = 0; i < caches.size(); i++) {
                 final StaticCache c = (StaticCache) caches.elementAt(i);
@@ -151,7 +151,7 @@ public class StaticCache {
      *
      * You will getDigests IllegalArgumentException if you call this multiple
      * times for the same cache cachePriorityChar but with a different (not
-     * .equals()) DataTypeHandler.
+     * .equals()) CacheView.
      *
      * @param priority
      * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
@@ -160,7 +160,7 @@ public class StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public static StaticCache getCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
+    public static StaticCache getCache(final char priority, final int cacheType, final CacheView handler) throws FlashDatabaseException {
         synchronized (caches) {
             StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
 
@@ -181,7 +181,7 @@ public class StaticCache {
      * @param handler
      * @throws FlashDatabaseException
      */
-    protected StaticCache(final char priority, final int cacheType, final DataTypeHandler handler) throws FlashDatabaseException {
+    protected StaticCache(final char priority, final int cacheType, final CacheView handler) throws FlashDatabaseException {
         if (priority < '0') {
             throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
@@ -324,7 +324,7 @@ public class StaticCache {
      * @param priority
      * @param nextTask
      * @param skipHeap - set "true" to force re-load from flash and
-     * re-conversion by your custom <code>DataTypeHandler</code>. This may be
+     * re-conversion by your custom <code>CacheView</code>. This may be
      * useful for example to re-annotate images as they are loaded from cache.
      * @return
      */
@@ -433,7 +433,7 @@ public class StaticCache {
      * @param key
      * @param bytes
      * @return the byte[] converted to the parsed Object "use form" returned by
-     * this cache's DataTypeHandler
+     * this cache's CacheView
      * @throws FlashDatabaseException
      */
     public Object put(final String key, final byte[] bytes) throws FlashDatabaseException {
@@ -445,7 +445,7 @@ public class StaticCache {
      * heap memory changes.
      *
      * Setting skipHeap=true delays any (possibly slow) process in your custom
-     * DataTypeHandler until load time. Note that any previously-heap-cached
+     * CacheView until load time. Note that any previously-heap-cached
      * "use form" (POJO, Plain Old Java Object) values already in the heap are
      * not removed or modified.
      *
@@ -453,9 +453,9 @@ public class StaticCache {
      * @param bytes
      * @param skipHeap - do not store this change to the WeakReference heap
      * cache. The object will be fetched from flash and annotated at that time
-     * by a custom DataTypeHandler.
+     * by a custom CacheView.
      * @return the byte[] converted to the parsed Object "use form" returned by
-     * this cache's DataTypeHandler
+     * this cache's CacheView
      * @throws FlashDatabaseException
      */
     public Object put(final String key, final byte[] bytes, final boolean skipHeap) throws FlashDatabaseException {
@@ -643,7 +643,7 @@ public class StaticCache {
     }
 
     /**
-     * Note that if the conversion in the DataTypeHandler changes due to
+     * Note that if the conversion in the CacheView changes due to
      * application logic requirements, you can at any time use this to force
      * as-needed re-conversion. This affects queued conversions but does not
      * affect conversions already in progress. Therefore you may want to chain()
@@ -722,7 +722,7 @@ public class StaticCache {
      *
      * @return
      */
-    public DataTypeHandler getHandler() {
+    public CacheView getHandler() {
         return handler;
     }
 
@@ -826,7 +826,7 @@ public class StaticCache {
      *
      * @return
      */
-    protected boolean equals(final char priority, final DataTypeHandler handler, final Object taskFactory) {
+    protected boolean equals(final char priority, final CacheView handler, final Object taskFactory) {
         return this.cachePriorityChar == priority && this.handler.equals(handler);
     }
 }

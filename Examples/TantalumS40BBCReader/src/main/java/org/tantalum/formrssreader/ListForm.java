@@ -33,7 +33,7 @@ import org.tantalum.jme.RMSUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.net.xml.RSSModel;
-import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.CacheView;
 import org.tantalum.util.L;
 
 /**
@@ -45,7 +45,7 @@ public final class ListForm extends Form implements CommandListener {
     private static ListForm instance;
     private final FormRSSReader rssReader;
     private final DetailsForm detailsView;
-    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
+    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
         public Object convertToUseForm(final Object key, final byte[] bytes) {
             try {
                 rssModel.removeAllElements();
