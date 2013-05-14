@@ -43,7 +43,7 @@ package org.tantalum.storage;
  *
  * @author phou
  */
-public abstract class ImageTypeHandler implements CacheView {
+public abstract class ImageCacheView implements CacheView {
 
     /**
      * This value, used by default, means no bounding box is specified and the
@@ -85,7 +85,7 @@ public abstract class ImageTypeHandler implements CacheView {
      * constants in ImageUtils. If you want to use native or other scaling
      * not included in Tantalum, you should extend
      * CacheView directly rather than modify the cross-platform
-     * ImageTypeHandler.
+     * ImageCacheView.
      *
      * @param algorithm
      */

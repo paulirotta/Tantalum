@@ -39,7 +39,7 @@ import org.tantalum.PlatformUtils.HttpConn;
 import org.tantalum.PlatformAdapter;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
-import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
 import org.tantalum.util.StringUtils;
 
@@ -108,7 +108,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         ((MIDlet) PlatformUtils.getInstance().getProgram()).notifyDestroyed();
     }
 
-    public ImageTypeHandler getImageTypeHandler() {
+    public ImageCacheView getImageTypeHandler() {
         return new JMEImageTypeHandler();
     }
 

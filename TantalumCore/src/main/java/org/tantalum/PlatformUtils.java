@@ -32,7 +32,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
-import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
 
 /**
@@ -356,7 +356,7 @@ public final class PlatformUtils {
      *
      * @return
      */
-    public ImageTypeHandler getImageTypeHandler() {
+    public ImageCacheView getImageTypeHandler() {
         return platformAdapter.getImageTypeHandler();
     }
 

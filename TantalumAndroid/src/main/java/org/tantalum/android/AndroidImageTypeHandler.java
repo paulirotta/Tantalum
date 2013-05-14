@@ -26,7 +26,7 @@ package org.tantalum.android;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
 
 /**
@@ -35,7 +35,7 @@ import org.tantalum.util.L;
  *
  * @author tsaa
  */
-public final class AndroidImageTypeHandler extends ImageTypeHandler {
+public final class AndroidImageTypeHandler extends ImageCacheView {
 
     @Override
     public Object convertToUseForm(final Object key, final byte[] bytes) {

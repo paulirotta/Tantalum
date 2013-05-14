@@ -90,12 +90,12 @@ public final class StaticWebCache extends StaticCache {
      *
      * @param priority
      * @param cacheType
-     * @param handler
+     * @param defaultCacheView
      * @return
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView handler) {
+    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView) {
         try {
-            return (StaticWebCache) getWebCache(priority, cacheType, handler, DEFAULT_HTTP_GETTER_FACTORY);
+            return (StaticWebCache) getWebCache(priority, cacheType, cacheView, DEFAULT_HTTP_GETTER_FACTORY);
         } catch (Exception e) {
             //#debug
             L.e("Can not create StaticWebCache", "" + priority, e);
@@ -107,11 +107,11 @@ public final class StaticWebCache extends StaticCache {
      * Return a cache of default type PlatformUtils.PHONE_DATABASE_CACHE.
      *
      * @param priority
-     * @param handler
+     * @param defaultCacheView
      * @return
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final CacheView handler) {
-        return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, handler);
+    public static synchronized StaticWebCache getWebCache(final char priority, final CacheView cacheView) {
+        return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, cacheView);
     }
 
     /**
@@ -119,7 +119,7 @@ public final class StaticWebCache extends StaticCache {
      *
      * @param priority
      * @param cacheType
-     * @param handler - an object for converting from the byte[] format returned
+     * @param defaultCacheView - an object for converting from the byte[] format returned
      * by the web server or stored in local flash memory into Object form. The
      * most common handlers use cases return something like a String, JSONModel,
      * XMLModel or Image.
@@ -133,11 +133,11 @@ public final class StaticWebCache extends StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView handler, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
-        StaticWebCache c = (StaticWebCache) getExistingCache(priority, handler, httpTaskFactory, StaticWebCache.class);
+    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
+        StaticWebCache c = (StaticWebCache) getExistingCache(priority, cacheView, httpTaskFactory, StaticWebCache.class);
 
         if (c == null) {
-            c = new StaticWebCache(priority, cacheType, handler, httpTaskFactory);
+            c = new StaticWebCache(priority, cacheType, cacheView, httpTaskFactory);
             caches.addElement(c);
         }
 
@@ -151,7 +151,7 @@ public final class StaticWebCache extends StaticCache {
      *
      * @param cachePriorityChar
      * @param cacheType
-     * @param handler
+     * @param defaultCacheView
      * @param httpTaskFactory
      * @throws DigestException
      * @throws UnsupportedEncodingException
@@ -160,18 +160,14 @@ public final class StaticWebCache extends StaticCache {
      *
      * @param cachePriorityChar
      * @param cacheType
-     * @param handler
+     * @param defaultCacheView
      * @param httpTaskFactory
      * @throws FlashDatabaseException
      */
-    private StaticWebCache(final char priority, final int cacheType, final CacheView handler, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
-        super(priority, cacheType, handler);
+    private StaticWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
+        super(priority, cacheType, cacheView);
 
         this.httpTaskFactory = httpTaskFactory;
-    }
-
-    protected void init() throws FlashDatabaseException {
-        super.init();
 
         //#debug
         //validateEntireCacheAgainstWebServer();
@@ -445,8 +441,6 @@ public final class StaticWebCache extends StaticCache {
                     return in;
                 }
             }.setClassName("Prefetch")).fork();
-
-
         }
     }
 
@@ -730,11 +724,11 @@ public final class StaticWebCache extends StaticCache {
      * StaticWebCache.getCache() with the same parameters
      *
      * @param priority
-     * @param handler
+     * @param defaultCacheView
      * @param taskFactory
      * @return
      */
-    protected boolean equals(final char priority, final CacheView handler, final Object taskFactory) {
-        return this.cachePriorityChar == priority && this.handler.equals(handler) && this.httpTaskFactory.equals(taskFactory);
+    protected boolean equals(final char priority, final CacheView cacheView, final Object taskFactory) {
+        return this.cachePriorityChar == priority && this.defaultCacheView.equals(cacheView) && this.httpTaskFactory.equals(taskFactory);
     }
 }

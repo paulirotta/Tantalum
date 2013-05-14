@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.util.Vector;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
-import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
 
 /**
@@ -99,7 +99,7 @@ public interface PlatformAdapter {
      *
      * @return
      */
-    public ImageTypeHandler getImageTypeHandler();
+    public ImageCacheView getImageTypeHandler();
 
     /**
      * Vibrate the phone

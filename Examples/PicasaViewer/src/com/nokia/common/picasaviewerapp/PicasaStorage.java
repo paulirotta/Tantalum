@@ -16,7 +16,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.storage.CacheView;
-import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
 
 /**
@@ -53,7 +53,7 @@ public class PicasaStorage {
     public static synchronized void init(final int width) {
 
         if (feedCache == null) {
-            final ImageTypeHandler imageTypeHandler = PlatformUtils.getInstance().getImageTypeHandler();
+            final ImageCacheView imageTypeHandler = PlatformUtils.getInstance().getImageTypeHandler();
 
             screenWidth = width;
             if (screenWidth < 256) {

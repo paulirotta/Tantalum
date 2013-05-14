@@ -103,7 +103,7 @@ public class StaticCache {
      * stateless and thread safe so it can be run on several threads and
      * possibly multiple cores at the same time.
      */
-    protected final CacheView handler;
+    protected final CacheView defaultCacheView;
     /*
      *  For testing and performance comparison
      * 
@@ -117,12 +117,12 @@ public class StaticCache {
      *
      * @param priority
      * @param priority
-     * @param handler
+     * @param defaultCacheView
      * @param taskFactory
      * @param clas
      * @return
      */
-    protected static StaticCache getExistingCache(final char priority, final CacheView handler, final Object taskFactory, final Class clas) {
+    protected static StaticCache getExistingCache(final char priority, final CacheView cacheView, final Object taskFactory, final Class clas) {
         synchronized (caches) {
             for (int i = 0; i < caches.size(); i++) {
                 final StaticCache c = (StaticCache) caches.elementAt(i);
@@ -131,7 +131,7 @@ public class StaticCache {
                     if (c.getClass() != clas) {
                         throw new IllegalArgumentException("You can not create a StaticCache and a StaticWebCache with the same priority: " + priority);
                     }
-                    if (c.equals(priority, handler, taskFactory)) {
+                    if (c.equals(priority, cacheView, taskFactory)) {
                         throw new IllegalArgumentException("A cache with priority=" + priority + " already exists, but DataTypeHandler and/or HttpTaskFactory are now equal to your factory request");
                     }
 
@@ -155,17 +155,17 @@ public class StaticCache {
      *
      * @param priority
      * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
-     * @param handler - a routine to convert from byte[] to Object form when
+     * @param defaultCacheView - a routine to convert from byte[] to Object form when
      * loading into the RAM ramCache.
      * @return
      * @throws FlashDatabaseException
      */
-    public static StaticCache getCache(final char priority, final int cacheType, final CacheView handler) throws FlashDatabaseException {
+    public static StaticCache getCache(final char priority, final int cacheType, final CacheView cacheView) throws FlashDatabaseException {
         synchronized (caches) {
-            StaticCache c = getExistingCache(priority, handler, null, StaticCache.class);
+            StaticCache c = getExistingCache(priority, cacheView, null, StaticCache.class);
 
             if (c == null) {
-                c = new StaticCache(priority, cacheType, handler);
+                c = new StaticCache(priority, cacheType, cacheView);
                 caches.addElement(c);
             }
 
@@ -178,15 +178,15 @@ public class StaticCache {
      *
      * @param priority
      * @param cacheType
-     * @param handler
+     * @param defaultCacheView
      * @throws FlashDatabaseException
      */
-    protected StaticCache(final char priority, final int cacheType, final CacheView handler) throws FlashDatabaseException {
+    protected StaticCache(final char priority, final int cacheType, final CacheView defaultCacheView) throws FlashDatabaseException {
         if (priority < '0') {
             throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
         this.cachePriorityChar = priority;
-        this.handler = handler;
+        this.defaultCacheView = defaultCacheView;
         flashCache = PlatformUtils.getInstance().getFlashCache(priority, cacheType);
         init();
     }
@@ -197,7 +197,7 @@ public class StaticCache {
      * We want to use the RAM Hashtable to know what the ramCache contains, even
      * though we do not pre-load from flash all the values
      */
-    protected void init() throws FlashDatabaseException {
+    private void init() throws FlashDatabaseException {
         try {
             final long[] digests = flashCache.getDigests();
             synchronized (ramCache) {
@@ -260,7 +260,7 @@ public class StaticCache {
         L.i(this, "Start to convert", key + " bytes length=" + bytes.length);
         final long startTime = System.currentTimeMillis();
         //#enddebug
-        final Object o = handler.convertToUseForm(key, bytes);
+        final Object o = defaultCacheView.convertToUseForm(key, bytes);
 
         final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
         synchronized (ramCache) {
@@ -717,13 +717,13 @@ public class StaticCache {
     }
 
     /**
-     * Provide the handler which this caches uses for converting between
+     * Provide the defaultCacheView which this caches uses for converting between
      * in-memory and binary formats
      *
      * @return
      */
-    public CacheView getHandler() {
-        return handler;
+    public CacheView getDefaultCacheView() {
+        return defaultCacheView;
     }
 
 //#mdebug
@@ -820,13 +820,13 @@ public class StaticCache {
      * StaticCache.getCache() with the same parameters
      *
      * @param priority
-     * @param handler
+     * @param defaultCacheView
      * @param taskFactory - always null. The parameter exists for polymorphic
      * equivalency with the overriding StaticWebCache implementation.
      *
      * @return
      */
     protected boolean equals(final char priority, final CacheView handler, final Object taskFactory) {
-        return this.cachePriorityChar == priority && this.handler.equals(handler);
+        return this.cachePriorityChar == priority && this.defaultCacheView.equals(handler);
     }
 }

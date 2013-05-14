@@ -39,7 +39,7 @@ import java.util.Vector;
 import org.tantalum.PlatformUtils;
 import org.tantalum.PlatformUtils.HttpConn;
 import org.tantalum.storage.FlashCache;
-import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
 import org.tantalum.util.StringUtils;
 
@@ -141,7 +141,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
     }
 
     @Override
-    public ImageTypeHandler getImageTypeHandler() {
+    public ImageCacheView getImageTypeHandler() {
         return new AndroidImageTypeHandler();
     }
 
