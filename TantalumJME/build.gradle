@@ -12,8 +12,6 @@
  * This jar file is being used by the J2SE-project to execute the unit tests
  * and generate the coverage report.
  */
-//project.ext.preprocessedSources = "${buildDir}/preprocessed-sources"
-
 dependencies {
     compile project(path: ':TantalumCore')
     releaseCompile project(path: ':TantalumCore', configuration: 'releaseJar')
@@ -21,6 +19,26 @@ dependencies {
 
 project.ext.releaseArchivesName = 'TantalumJME'
 project.archivesBaseName = project.ext.releaseArchivesName + '-debug'
+
+
+task compileJava(overwrite: true, dependsOn: wtkbuild) << {
+}
+
+task compilePreprocessedJava(overwrite: true, dependsOn: wtkpreprocess) << {
+}
+
+task createJarInstrumented(type: Jar) {
+    dependsOn coberturaInstrumentMain
+    classifier = 'instrumented'
+    from sourceSets.main.output
+    from sourceSets.main.cobertura.output
+}
+
+project.tasks['build'].dependsOn createReleaseJar
+
+artifacts {
+    codeCoverageJar createJarInstrumented
+}
 
 project.tasks['createReleaseJar'].baseName = project.ext.releaseArchivesName
 project.tasks['createJavadocJar'].baseName = project.ext.releaseArchivesName

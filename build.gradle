@@ -38,7 +38,7 @@ subprojects {
         testCompile "org.powermock:powermock-module-junit4:1.5"
     }
 
-    def preprocessedSourceDirectory = "$buildDir/preprocessed-sources/main"
+    project.ext.preprocessedSources = "$buildDir/preprocessed-sources/main"
     // Define a provided scope, as defined here
     // http://blog.codeaholics.org/2012/emulating-mavens-provided-scope-in-gradle/
     // The following lines are needed only when we build using the standard java compile
@@ -52,7 +52,7 @@ subprojects {
 
         preprocessed {
             java {
-                preprocessedSourceDirectory
+                project.ext.preprocessedSources
             }
 
         }
@@ -111,6 +111,24 @@ subprojects {
         reports.html.enabled = true
     }
 
+    compileJava {
+        sourceCompatibility = '1.3'
+        targetCompatibility = '1.3'
+
+        options.encoding = 'UTF-8'
+        // Enable this to be strict about warnings, and fail the build if there are any
+//    options.compilerArgs = ['-Xlint', '-Xlint:-serial', '-Xlint:-path']
+    }
+
+    compileTestJava {
+        sourceCompatibility = '1.6'
+        targetCompatibility = '1.6'
+
+        options.encoding = 'UTF-8'
+//    options.compilerArgs = ['-Xlint', '-Xlint:-serial', '-Xlint:-path']
+    }
+
+
 
     task createSourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
@@ -136,14 +154,13 @@ subprojects {
      * the build script
      */
     task preprocessSources(overwrite: true) << {
-        file(preprocessedSourceDirectory).mkdirs()
+        file(project.ext.preprocessedSources).mkdirs()
 
-        project.ext.preProcSourceDirectories = ""
         for (dir in sourceSets.main.java.srcDirs) {
             if (dir.exists()) {
                 copy {
                     from dir.getAbsolutePath()
-                    into preprocessedSourceDirectory
+                    into project.ext.preprocessedSources
                 }
             }
         }
@@ -167,28 +184,5 @@ subprojects {
         releaseJar createReleaseJar
         archives createSourcesJar
         archives createJavadocJar
-    }
-
-    // Separate configuration for the WTK-build projects
-    if (project.name != 'TantalumUnitTests' && project.name != 'TantalumCore') {
-
-        task compileJava(overwrite: true, dependsOn: wtkbuild) << {
-        }
-
-        task compilePreprocessedJava(overwrite: true, dependsOn: preprocessSources) << {
-        }
-
-        task createJarInstrumented(type: Jar) {
-            dependsOn coberturaInstrumentMain
-            classifier = 'instrumented'
-            from sourceSets.main.output
-            from sourceSets.main.cobertura.output
-        }
-
-        project.tasks['build'].dependsOn createReleaseJar
-
-        artifacts {
-            codeCoverageJar createJarInstrumented
-        }
     }
 }
