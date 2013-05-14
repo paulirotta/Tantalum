@@ -222,12 +222,13 @@ public final class JMEImageUtils {
             case ONE_POINT_PICK:
                 while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
                     JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
-                            srcH >>= 1);
-                    srcW >>= 1;
+                            srcH);
+                    srcW /= 2;
+                    srcH /= 2;
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
                     JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
-                            srcH >> 1);
+                            srcH);
                     break;
                 }
             case BASIC_ONE_POINT_PICK:
@@ -235,14 +236,15 @@ public final class JMEImageUtils {
                         srcH, maxW, maxH);
                 break;
             case FIVE_POINT_BLEND:
-                while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
+                while (srcW / 2 > maxW && srcH / 2 > maxH) {
                     JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
-                            srcH >>= 1);
-                    srcW >>= 1;
+                            srcH);
+                    srcH /= 2;
+                    srcW /= 2;
                 }
-                if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-                    JMEImageUtils.half(inputImageARGB, outputImageARGB, maxW,
-                            maxH);
+                if (srcW / 2 == maxW && srcH / 2 == maxH) {
+                    JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
+                            srcH);
                     break;
                 }
                 JMEImageUtils.fivePointSampleDownscale(inputImageARGB,
@@ -314,24 +316,35 @@ public final class JMEImageUtils {
      *
      * 4 pixels are combined into 1 with 6 bit accuracy.
      *
-     * @param imageARGB
+     * @param in
      * @param srcW
      * @return
      */
-    private static void half(final int[] imageARGB, final int[] outputARGB,
-            final int srcW, final int h) {
-        final int w = srcW >> 1;
+    private static void half(final int[] in, final int[] out,
+            final int srcW, final int srcH) {
         int z = 0;
 
-        for (int y = 0; y < h; y++) {
-            int sourceImagePixelIndex = (y << 1) * srcW;
-            for (int x = 0; x < w; x++) {
-                int e = (imageARGB[sourceImagePixelIndex++] >>> 2) & M2;
-                e += (imageARGB[sourceImagePixelIndex--] >>> 2) & M2;
+        if (in == null) {
+            throw new IllegalArgumentException("Half a source image, but source array is null");
+        }
+        if (out == null) {
+            throw new IllegalArgumentException("Half a source image, but destination array is null");
+        }
+        if (in.length < srcW * srcH) {
+            throw new IllegalArgumentException("Half a source image, but source array is less than data dimensions: " + in.length + " < " + srcW + "*" + srcH);
+        }
+        if (out.length < (srcW / 2) * (srcH / 2)) {
+            throw new IllegalArgumentException("Half a source image, but destination array is less than data dimensions: " + out.length + " < " + srcW / 2 + "*" + srcH / 2);
+        }
+
+        for (int y = 0; y < srcH - 1; y += 2) {
+            int sourceImagePixelIndex = y * srcW;
+            for (int x = 0; x < srcW - 1; x += 2) {
+                int e = (in[sourceImagePixelIndex++] >>> 2) & M2;
+                e += (in[sourceImagePixelIndex--] >>> 2) & M2;
                 sourceImagePixelIndex += srcW;
-                e += (imageARGB[sourceImagePixelIndex++] >>> 2) & M2;
-                outputARGB[z++] = e
-                        + ((imageARGB[sourceImagePixelIndex++] >>> 2) & M2);
+                e += (in[sourceImagePixelIndex++] >>> 2) & M2;
+                out[z++] = e + ((in[sourceImagePixelIndex++] >>> 2) & M2);
                 sourceImagePixelIndex -= srcW;
             }
         }
@@ -342,15 +355,28 @@ public final class JMEImageUtils {
      * algorithm and tests. A weighted "X" is slid across the source image to
      * generate destination pixels.
      *
-     * @param inputImageARGB
+     * @param in
      * @param srcW
      * @param srcH
      * @param w
      * @param h
      */
-    private static void fivePointSampleDownscale(final int[] inputImageARGB,
-            final int[] outputImageARGB, final int srcW, final int srcH,
+    private static void fivePointSampleDownscale(final int[] in,
+            final int[] out, final int srcW, final int srcH,
             final int w, final int h) {
+        if (in == null) {
+            throw new IllegalArgumentException("Five point downsample a source image, but source array is null");
+        }
+        if (out == null) {
+            throw new IllegalArgumentException("Five point downsample a source image, but destination array is null");
+        }
+        if (in.length < srcW * srcH) {
+            throw new IllegalArgumentException("Five point downsample a source image, but source array is less than image dimensions: " + in.length + " < " + srcW + "*" + srcH);
+        }
+        if (out.length < w * h) {
+            throw new IllegalArgumentException("Five point downsample a source image, but destination array is less than destination image dimensions: " + out.length + " < " + w + "*" + h);
+        }
+
         final int dxFP = toFixedPoint(srcW / (float) (w + 2));
         final int dyFP = toFixedPoint(srcH / (float) (h + 2));
         int z = 0;
@@ -359,13 +385,13 @@ public final class JMEImageUtils {
             final int rowstart = 1 + srcW + (srcW * fixedPointToInt(y * dyFP));
             for (int x = 0; x < w; x++) {
                 int i = rowstart + fixedPointToInt(x * dxFP);
-                int e = inputImageARGB[i--] >>> 1 & M1;
+                int e = in[i--] >>> 1 & M1;
                 i -= srcW;
-                e += (inputImageARGB[i++] >>> 3 & M3);
-                e += (inputImageARGB[++i] >>> 3 & M3);
+                e += (in[i++] >>> 3 & M3);
+                e += (in[++i] >>> 3 & M3);
                 i += srcW << 1;
-                e += inputImageARGB[i--] >>> 3 & M3;
-                outputImageARGB[z++] = e + (inputImageARGB[--i] >>> 3 & M3);
+                e += in[i--] >>> 3 & M3;
+                out[z++] = e + (in[--i] >>> 3 & M3);
             }
         }
     }

@@ -21,6 +21,7 @@ public final class JMEFontUtils {
 
     private static final Hashtable instances = new Hashtable();
     private final Hashtable charWidth = new Hashtable();
+    private static final String SPACE_CHARS = " .-/;:";
     /**
      * The Font which this instance operates on
      */
@@ -199,12 +200,14 @@ public final class JMEFontUtils {
      * @param useKerning
      * @return
      */
-    public Vector splitToLines(final Vector vector, final String text, final int maxWidth, final boolean useKerning) {
+    public Vector splitToLines(final Vector vector, String text, final int maxWidth, final boolean useKerning) {
+        text = text.trim();
         int lastSpace = 0;
-        char character;
+        
         for (int i = 0; i < text.length(); i++) {
-            character = text.charAt(i);
-            if (character == ' ' || character == '-') {
+            final char character = text.charAt(i);
+            
+            if (SPACE_CHARS.indexOf(character) >= 0) {
                 lastSpace = i;
             }
             final int width;
@@ -214,11 +217,14 @@ public final class JMEFontUtils {
                 width = stringWidth(text.substring(0, i));
             }
             if (width > maxWidth) {
+                if (lastSpace == 0) {
+                    lastSpace = i > 0 ? i - 1 : i; // Force split very long words into lines
+                }
                 vector.addElement(text.substring(0, lastSpace + 1).trim());
                 return splitToLines(vector, text.substring(lastSpace + 1), maxWidth, useKerning);
             }
         }
-        vector.addElement(text.trim());
+        vector.addElement(text);
 
         return vector;
     }
