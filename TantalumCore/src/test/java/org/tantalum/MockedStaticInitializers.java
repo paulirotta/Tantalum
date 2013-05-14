@@ -33,8 +33,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.tantalum.util.L;
 import org.tantalum.util.SystemOutLogger;
 
-import javax.microedition.lcdui.Font;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -57,7 +55,7 @@ import static org.mockito.Mockito.when;
  * @author Kai Inkinen <kai.inkinen@futurice.com>
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({L.class, PlatformUtils.class, Font.class})
+@PrepareForTest({L.class, PlatformUtils.class})
 @SuppressStaticInitializationFor(
         {"org.tantalum.util.L",
                 "org.tantalum.PlatformUtils",
