@@ -1,5 +1,4 @@
 include 'TantalumCore'
-include 'TantalumUnitTests'
 include 'TantalumJME'
 //include 'TantalumAndroid'
 
