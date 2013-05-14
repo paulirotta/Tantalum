@@ -119,6 +119,8 @@ public final class DetailsView extends View {
         g.setFont(RSSReaderCanvas.FONT_TITLE);
         g.setColor(RSSReader.COLOR_HIGHLIGHTED_FOREGROUND);
         final Vector lines = titleFontUtils.splitToLines(item.getTitle(), width - 2 * RSSReaderCanvas.MARGIN);
+        //#debug
+        L.i(this, "Split title to " + lines.size() + " lines", item.getTitle());
         curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_TITLE.getHeight(), lines);
 
         if (!canvas.isPortrait()) {
@@ -133,6 +135,8 @@ public final class DetailsView extends View {
         g.setFont(RSSReaderCanvas.FONT_DESCRIPTION);
         final Vector lines2 = descriptionFontUtils.splitToLines(item.getDescription(), width - 2 * RSSReaderCanvas.MARGIN);
         curY = renderLines(g, x, curY, RSSReaderCanvas.FONT_DESCRIPTION.getHeight(), lines2);
+        //#debug
+        L.i(this, "Split description to " + lines2.size() + " lines", item.getDescription());
 
         curY += RSSReaderCanvas.FONT_DESCRIPTION.getHeight();
 
@@ -142,7 +146,7 @@ public final class DetailsView extends View {
                 image = (Image) imageCache.synchronousRAMCacheGet(url);
             } catch (FlashDatabaseException ex) {
                 //#debug
-                L.e("Can not get image", url, ex);
+                L.e(this, "Can not get image", url, ex);
             }
             if (image != null) {
                 currentIcon = image;
