@@ -18,6 +18,6 @@ For additional setup details, see:
 For a good cross-platform sample project, see:
    http://projects.developer.nokia.com/picasa_viewer
 
-"!https://travis-ci.org/TantalumMobile/Tantalum.png!":https://travis-ci.org/TantalumMobile/Tantalum?branch=java_se_build
+[![Build Status](https://travis-ci.org/TantalumMobile/Tantalum.png)](https://travis-ci.org/TantalumMobile/Tantalum)
 
 
