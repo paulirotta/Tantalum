@@ -6,57 +6,25 @@
  * TantalumJME.jar contains preprocessed classes without logging and other debug code
  *
  * TantalumJME-debug.jar contains the compiled code from the original sources
- *
- * The project contains an additional config, called 'codeCoverageJar', which
- * packages and exposes the cobertura-instrumented classes as a jar file.
- * This jar file is being used by the J2SE-project to execute the unit tests
- * and generate the coverage report.
  */
-// Set up the antenna ant tasks
-buildscript {
-    dependencies {
-        classpath files('lib/antenna-bin-1.2.1-beta.jar')
-    }
-}
-
-// antenna ant tasks
-ant.taskdef(resource: 'antenna.properties') {
-    classpath {
-        pathElement(path: buildscript.configurations.classpath.asPath)
-    }
-}
-apply from: 'wtkbuild.gradle'
 
 // Define project dependencies
 dependencies {
+    provided 'org.microemu:microemulator:2.0.4'
+    provided 'org.microemu:microemu-jsr-75:2.0.4'
+
     compile project(path: ':TantalumCore')
-    releaseCompile project(path: ':TantalumCore', configuration: 'releaseJar')
+
+    preprocessedCompile project(path: ':TantalumCore', configuration: 'releaseJar')
+
+    testCompile project(path: ':TantalumCore', configuration: 'testJar')
 }
 
 project.ext.releaseArchivesName = 'TantalumJME'
 project.archivesBaseName = project.ext.releaseArchivesName + '-debug'
 
-
-task compileJava(overwrite: true, dependsOn: wtkbuild) << {
-}
-
-task compilePreprocessedJava(overwrite: true, dependsOn: wtkpreprocess) << {
-}
-
-task createJarInstrumented(type: Jar) {
-    dependsOn coberturaInstrumentMain
-    classifier = 'instrumented'
-    from sourceSets.main.output
-    from sourceSets.main.cobertura.output
-}
-
 project.tasks['build'].dependsOn createReleaseJar
-
-artifacts {
-    codeCoverageJar createJarInstrumented
-}
 
 project.tasks['createReleaseJar'].baseName = project.ext.releaseArchivesName
 project.tasks['createJavadocJar'].baseName = project.ext.releaseArchivesName
 project.tasks['createSourcesJar'].baseName = project.ext.releaseArchivesName
-project.tasks['createJarInstrumented'].baseName = project.ext.releaseArchivesName

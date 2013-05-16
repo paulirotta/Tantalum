@@ -23,4 +23,5 @@ project.archivesBaseName = 'TantalumCore-debug'
 project.tasks['createReleaseJar'].baseName = project.ext.releaseArchivesName
 project.tasks['createJavadocJar'].baseName = project.ext.releaseArchivesName
 project.tasks['createSourcesJar'].baseName = project.ext.releaseArchivesName
+project.tasks['createTestJar'].baseName = project.ext.releaseArchivesName
 

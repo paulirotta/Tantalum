@@ -24,7 +24,7 @@ subprojects {
         testBootClasspath
         provided
         releaseJar
-        codeCoverageJar
+        testJar
     }
 
     dependencies {
@@ -61,20 +61,12 @@ subprojects {
     /**
      * Don't scan for test classes, as there will be an error with JavaME compiled classes
      */
-    tasks.withType(Test) {
-        scanForTestClasses = false
-        include "**/*Test.class" // whatever Ant pattern matches the test class files
-    }
-
-    project.ext.target = buildDir.toString()
-
-//
-//    buildscript {
-//        dependencies {
-//            classpath files(rootDir.absolutePath + "/" + antennaJar)
-//        }
+//    tasks.withType(Test) {
+//        scanForTestClasses = false
+//        include "**/*Test.class" // whatever Ant pattern matches the test class files
 //    }
 
+    project.ext.target = buildDir.toString()
 
     sourceSets {
         preprocessed {
@@ -157,6 +149,11 @@ subprojects {
         }
     }
 
+    task createTestJar(type: Jar) {
+        dependsOn compileTestJava
+        from sourceSets.test.output
+        classifier = 'tests'
+    }
 
     task createReleaseJar(type: Jar) {
         dependsOn compilePreprocessedJava
@@ -173,6 +170,7 @@ subprojects {
 
     artifacts {
         releaseJar createReleaseJar
+        testJar createTestJar
         archives createSourcesJar
         archives createJavadocJar
     }
