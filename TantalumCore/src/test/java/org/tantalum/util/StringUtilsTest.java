@@ -16,6 +16,8 @@ import org.tantalum.MockedStaticInitializers;
  */
 public class StringUtilsTest extends MockedStaticInitializers {
 
+    static final String EXAMPLE_FILE_NAME = "/rss.xml";
+
     int[] intTest1 = {0xFF, 0x00};
     int[] intTest2 = {0xCD, 0x1A};
     byte[] byteTest1 = new byte[intTest1.length];
@@ -54,6 +56,40 @@ public class StringUtilsTest extends MockedStaticInitializers {
     public void urlEncodeSymbols() throws IOException {
         assertEquals("%24+%26+%3C+%3E+%3F+%3B+%23+%3A+%3D+%2C+%22+%27+%7E+%2B+%25", StringUtils.urlEncode("$ & < > ? ; # : = , \" ' ~ + %"));
     }
+
+
+
+    /**
+     * Test of testReadStringFromJAR method, of class StringUtils.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testReadStringFromJAR() throws Exception {
+        String name_1 = "/test.txt";
+        String expResult_1 = "Hello, this is test text";
+        String result_1 = StringUtils.readStringFromJAR(name_1);
+        assertEquals(expResult_1, result_1);
+    }
+
+    /**
+     * Test of testReadBytesFromJAR method, of class StringUtils.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testReadBytesFromJAR() throws Exception {
+        //ClassLoader classLoader = this.getClass()
+        // JSE classloader to verify the length of the file, rather than using a magic number
+        InputStream stream = getClass().getResourceAsStream(EXAMPLE_FILE_NAME);
+
+        assertNotNull("Could not read example file from classpath", stream);
+
+        byte[] result_1 = StringUtils.readBytesFromJAR(EXAMPLE_FILE_NAME);
+        assertNotNull(result_1);
+        assertEquals(stream.available(), result_1.length);
+    }
+
     
 //    @Test
 //    public void urlEncodeTraditionalChinese() throws IOException {
