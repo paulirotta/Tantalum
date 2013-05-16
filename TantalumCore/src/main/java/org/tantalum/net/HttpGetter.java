@@ -37,6 +37,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.RollingAverage;
 
 /**
  * GET something from a URL on the Worker thread
@@ -59,9 +60,6 @@ import org.tantalum.util.L;
  * @author pahought
  */
 public class HttpGetter extends Task {
-    /*
-     * HTTP Method constants
-     */
 
     /**
      * HTTP GET is the default operation
@@ -465,7 +463,7 @@ public class HttpGetter extends Task {
      * code. By doing so you are effectively freezing any temporary downstream
      * activity and thereby boosting the CPU cycles available for your activity.
      */
-    public static final Object NET_MUTEX = new Object();
+//    public static final Object NET_MUTEX = new Object();
     /**
      * The HTTP server has not yet been contacted, so no response code is yet
      * available
@@ -473,6 +471,13 @@ public class HttpGetter extends Task {
     public static final int HTTP_OPERATION_PENDING = -1;
     private static final int HTTP_GET_RETRIES = 3;
     private static final int HTTP_RETRY_DELAY = 5000; // 5 seconds
+    /**
+     * The rolling average of how long it takes the server to respond with the
+     * first response body byte to an HTTP request. This will shift up and down
+     * slowly based on the servers and data network you use. It is in some cases
+     * useful as a performance tuning parameter.
+     */
+    public static final RollingAverage averageResponseDelayMillis = new RollingAverage(10, 700.0f);
     /**
      * How many more times will we try to re-connect after a 5 second delay
      * before giving up. This aids in working with low quality networks and
@@ -503,10 +508,15 @@ public class HttpGetter extends Task {
     private volatile StreamReader streamReader = null;
     // Always access in a synchronized(HttpGetter.this) block
     private int responseCode = HTTP_OPERATION_PENDING;
+    private volatile long startTime = 0;
+    
+    public long getStartTime() {
+        return startTime;
+    }
 
     /**
      * Create a Task.NORMAL_PRIORITY getter
-     * 
+     *
      */
     public HttpGetter() {
         this(Task.NORMAL_PRIORITY);
@@ -521,7 +531,7 @@ public class HttpGetter extends Task {
      */
     public HttpGetter(final int priority) {
         super(priority);
-        
+
         setShutdownBehaviour(Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN);
     }
 
@@ -533,7 +543,7 @@ public class HttpGetter extends Task {
      */
     public HttpGetter(final int priority, final String url) {
         this(priority);
-        
+
         if (url == null) {
             throw new IllegalArgumentException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
         }
@@ -542,13 +552,12 @@ public class HttpGetter extends Task {
 
     /**
      * Create a Task.NORMAL_PRIORITY getter
-     * 
-     * @param url 
+     *
+     * @param url
      */
     public HttpGetter(final String url) {
         this(Task.NORMAL_PRIORITY, url);
     }
-    
 
     /**
      * Set the StreamWriter which will provide data in the optional streaming
@@ -663,6 +672,7 @@ public class HttpGetter extends Task {
     public Object exec(final Object in) {
         Object out = null;
 
+        startTime = System.currentTimeMillis();
         if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
             final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
             //#debug
@@ -724,6 +734,7 @@ public class HttpGetter extends Task {
             // Response headers length estimation
             addDownstreamDataCount(downstreamDataHeaderLength);
 
+            long endTime = Long.MAX_VALUE;
             if (length == 0) {
                 //#debug
                 L.i(this, "Exec", "No response. Stream is null, or length is 0");
@@ -731,12 +742,17 @@ public class HttpGetter extends Task {
                 cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
             } else if (length > 0) {
                 final byte[] bytes = new byte[(int) length];
-                readBytesFixedLength(url, inputStream, bytes);
+                endTime = readBytesFixedLength(url, inputStream, bytes);
                 out = bytes;
             } else {
                 bos = new ByteArrayOutputStream(16384);
-                readBytesVariableLength(inputStream, bos);
+                endTime = readBytesVariableLength(inputStream, bos);
                 out = bos.toByteArray();
+            }
+            if (endTime != Long.MAX_VALUE) {
+                HttpGetter.averageResponseDelayMillis.update((float) (endTime - startTime));
+                //#debug
+                L.i(this, "Average HTTP response time", "" + HttpGetter.averageResponseDelayMillis.value());
             }
 
             if (out != null) {
@@ -809,25 +825,29 @@ public class HttpGetter extends Task {
         return out;
     }
 
-    private void readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
+    private long readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
         int totalBytesRead = 0;
+        long endTime = Long.MAX_VALUE;
 
         while (totalBytesRead < bytes.length) {
             final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
             if (b >= 0) {
+                endTime = System.currentTimeMillis();
                 bytes[totalBytesRead++] = (byte) b;
-                synchronized (NET_MUTEX) {
+//                synchronized (NET_MUTEX) {
                     final int br = inputStream.read(bytes, totalBytesRead, bytes.length - totalBytesRead);
                     if (br >= 0) {
                         totalBytesRead += br;
                     } else {
                         prematureEOF(url, totalBytesRead, bytes.length);
                     }
-                }
+//                }
             } else {
                 prematureEOF(url, totalBytesRead, bytes.length);
             }
         }
+        
+        return endTime;
     }
 
     private void prematureEOF(final String url, final int bytesRead, final int length) throws IOException {
@@ -836,22 +856,27 @@ public class HttpGetter extends Task {
         throw new IOException(getClassName() + " recieved EOF before content_length exceeded");
     }
 
-    private void readBytesVariableLength(final InputStream inputStream, final OutputStream bos) throws IOException {
+    private long readBytesVariableLength(final InputStream inputStream, final OutputStream bos) throws IOException {
         final byte[] readBuffer = new byte[16384];
+        long endTime = Long.MAX_VALUE;
+        
         while (true) {
             final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
             if (b < 0) {
                 break;
             }
+            endTime = System.currentTimeMillis();
             bos.write(b);
-            synchronized (NET_MUTEX) {
+//            synchronized (NET_MUTEX) {
                 final int bytesRead = inputStream.read(readBuffer);
                 if (bytesRead < 0) {
                     break;
                 }
                 bos.write(readBuffer, 0, bytesRead);
-            }
+//            }
         }
+        
+        return endTime;
     }
 
     /**
