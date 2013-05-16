@@ -5,10 +5,13 @@
 package org.tantalum.util;
 
 import java.io.IOException;
-import static org.junit.Assert.assertEquals;
+import java.io.InputStream;
+
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
+
 
 /**
  *
