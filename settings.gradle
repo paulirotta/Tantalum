@@ -1,7 +1,5 @@
 include 'TantalumCore'
-if (System.getenv('JAVA_ME_HOME')) {
-    include 'TantalumJME'
-}
+include 'TantalumJME'
 //include 'TantalumAndroid'
 
 //include 'CachedGeocodeExample'
