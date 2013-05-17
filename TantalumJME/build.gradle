@@ -18,6 +18,16 @@ dependencies {
     releaseCompile project(path: ':TantalumCore', configuration: 'release')
 
     testCompile project(path: ':TantalumCore', configuration: 'testJar')
+    testCompile 'org.microemu:microemulator:2.0.4'
+    testCompile 'org.microemu:microemu-jsr-75:2.0.4'
+
+}
+
+sourceSets {
+    test {
+        compileClasspath += configurations.provided
+        runtimeClasspath += configurations.provided
+    }
 }
 
 project.ext.releaseArchivesName = 'TantalumJME'
