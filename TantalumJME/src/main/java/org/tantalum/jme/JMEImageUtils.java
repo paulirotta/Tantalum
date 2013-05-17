@@ -222,12 +222,13 @@ public final class JMEImageUtils {
             case ONE_POINT_PICK:
                 while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
                     JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
-                            srcH >>= 1);
-                    srcW >>= 1;
+                            srcH);
+                    srcW /= 2;
+                    srcH /= 2;
                 }
                 if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
                     JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
-                            srcH >> 1);
+                            srcH);
                     break;
                 }
             case BASIC_ONE_POINT_PICK:
@@ -235,14 +236,15 @@ public final class JMEImageUtils {
                         srcH, maxW, maxH);
                 break;
             case FIVE_POINT_BLEND:
-                while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
+                while (srcW / 2 > maxW && srcH / 2 > maxH) {
                     JMEImageUtils.half(inputImageARGB, inputImageARGB, srcW,
-                            srcH >>= 1);
-                    srcW >>= 1;
+                            srcH);
+                    srcH /= 2;
+                    srcW /= 2;
                 }
-                if (srcW >> 1 == maxW && srcH >> 1 == maxH) {
-                    JMEImageUtils.half(inputImageARGB, outputImageARGB, maxW,
-                            maxH);
+                if (srcW / 2 == maxW && srcH / 2 == maxH) {
+                    JMEImageUtils.half(inputImageARGB, outputImageARGB, srcW,
+                            srcH);
                     break;
                 }
                 JMEImageUtils.fivePointSampleDownscale(inputImageARGB,
@@ -314,24 +316,35 @@ public final class JMEImageUtils {
      *
      * 4 pixels are combined into 1 with 6 bit accuracy.
      *
-     * @param imageARGB
+     * @param in
      * @param srcW
      * @return
      */
-    private static void half(final int[] imageARGB, final int[] outputARGB,
-            final int srcW, final int h) {
-        final int w = srcW >> 1;
+    private static void half(final int[] in, final int[] out,
+            final int srcW, final int srcH) {
         int z = 0;
 
-        for (int y = 0; y < h; y++) {
-            int sourceImagePixelIndex = (y << 1) * srcW;
-            for (int x = 0; x < w; x++) {
-                int e = (imageARGB[sourceImagePixelIndex++] >>> 2) & M2;
-                e += (imageARGB[sourceImagePixelIndex--] >>> 2) & M2;
+        if (in == null) {
+            throw new IllegalArgumentException("Half a source image, but source array is null");
+        }
+        if (out == null) {
+            throw new IllegalArgumentException("Half a source image, but destination array is null");
+        }
+        if (in.length < srcW * srcH) {
+            throw new IllegalArgumentException("Half a source image, but source array is less than data dimensions: " + in.length + " < " + srcW + "*" + srcH);
+        }
+        if (out.length < (srcW / 2) * (srcH / 2)) {
+            throw new IllegalArgumentException("Half a source image, but destination array is less than data dimensions: " + out.length + " < " + srcW / 2 + "*" + srcH / 2);
+        }
+
+        for (int y = 0; y < srcH - 1; y += 2) {
+            int sourceImagePixelIndex = y * srcW;
+            for (int x = 0; x < srcW - 1; x += 2) {
+                int e = (in[sourceImagePixelIndex++] >>> 2) & M2;
+                e += (in[sourceImagePixelIndex--] >>> 2) & M2;
                 sourceImagePixelIndex += srcW;
-                e += (imageARGB[sourceImagePixelIndex++] >>> 2) & M2;
-                outputARGB[z++] = e
-                        + ((imageARGB[sourceImagePixelIndex++] >>> 2) & M2);
+                e += (in[sourceImagePixelIndex++] >>> 2) & M2;
+                out[z++] = e + ((in[sourceImagePixelIndex++] >>> 2) & M2);
                 sourceImagePixelIndex -= srcW;
             }
         }
@@ -342,15 +355,28 @@ public final class JMEImageUtils {
      * algorithm and tests. A weighted "X" is slid across the source image to
      * generate destination pixels.
      *
-     * @param inputImageARGB
+     * @param in
      * @param srcW
      * @param srcH
      * @param w
      * @param h
      */
-    private static void fivePointSampleDownscale(final int[] inputImageARGB,
-            final int[] outputImageARGB, final int srcW, final int srcH,
+    private static void fivePointSampleDownscale(final int[] in,
+            final int[] out, final int srcW, final int srcH,
             final int w, final int h) {
+        if (in == null) {
+            throw new IllegalArgumentException("Five point downsample a source image, but source array is null");
+        }
+        if (out == null) {
+            throw new IllegalArgumentException("Five point downsample a source image, but destination array is null");
+        }
+        if (in.length < srcW * srcH) {
+            throw new IllegalArgumentException("Five point downsample a source image, but source array is less than image dimensions: " + in.length + " < " + srcW + "*" + srcH);
+        }
+        if (out.length < w * h) {
+            throw new IllegalArgumentException("Five point downsample a source image, but destination array is less than destination image dimensions: " + out.length + " < " + w + "*" + h);
+        }
+
         final int dxFP = toFixedPoint(srcW / (float) (w + 2));
         final int dyFP = toFixedPoint(srcH / (float) (h + 2));
         int z = 0;
@@ -359,13 +385,13 @@ public final class JMEImageUtils {
             final int rowstart = 1 + srcW + (srcW * fixedPointToInt(y * dyFP));
             for (int x = 0; x < w; x++) {
                 int i = rowstart + fixedPointToInt(x * dxFP);
-                int e = inputImageARGB[i--] >>> 1 & M1;
+                int e = in[i--] >>> 1 & M1;
                 i -= srcW;
-                e += (inputImageARGB[i++] >>> 3 & M3);
-                e += (inputImageARGB[++i] >>> 3 & M3);
+                e += (in[i++] >>> 3 & M3);
+                e += (in[++i] >>> 3 & M3);
                 i += srcW << 1;
-                e += inputImageARGB[i--] >>> 3 & M3;
-                outputImageARGB[z++] = e + (inputImageARGB[--i] >>> 3 & M3);
+                e += in[i--] >>> 3 & M3;
+                out[z++] = e + (in[--i] >>> 3 & M3);
             }
         }
     }
@@ -437,8 +463,8 @@ public final class JMEImageUtils {
      * Gets a source image along with new size for it and resizes it to fit
      * within max dimensions.
      *
-     * @param inputImageARGB - ARGB image
-     * @param outputImageARGB - ARGB image buffer, can be the same as
+     * @param in - ARGB image
+     * @param out - ARGB image buffer, can be the same as
      * inputImageARGB and runs faster that way
      * @param srcW - source image width
      * @param srcH - source image height
@@ -446,8 +472,8 @@ public final class JMEImageUtils {
      * @param h - final image height
      * @param preserveAspectRatio
      */
-    private static void pureDownscale(final int[] inputImageARGB,
-            final int[] outputImageARGB, final int srcW, final int srcH,
+    private static void pureDownscale(final int[] in,
+            final int[] out, final int srcW, final int srcH,
             final int w, final int h, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / w);
         final int[] lut = new int[predictedCount << 8];
@@ -482,14 +508,14 @@ public final class JMEImageUtils {
                     // now loop from srcX to srcX2 and add up the values for
                     // each channel
                     do {
-                        final int argb = inputImageARGB[srcX + srcRowStartIndex];
+                        final int argb = in[srcX + srcRowStartIndex];
                         a += (argb & ALPHA) >>> 24;
                         r += argb & RED;
                         g += argb & GREEN;
                         b += argb & BLUE;
                         ++srcX; // move on to the next pixel
                     } while (srcX <= srcX2
-                            && srcX + srcRowStartIndex < inputImageARGB.length);
+                            && srcX + srcRowStartIndex < in.length);
 
                     // average out the channel values
                     // recreate color from the averaged channels and place it
@@ -498,14 +524,14 @@ public final class JMEImageUtils {
                     g >>>= 8;
                     final int count = srcX - initialSrcX;
                     if (count == predictedCount) {
-                        inputImageARGB[destX + destRowStartIndex] = (lut[a] << 24)
+                        in[destX + destRowStartIndex] = (lut[a] << 24)
                                 | (lut[r] << 16) | (lut[g] << 8) | lut[b];
                     } else {
                         a /= count;
                         r /= count;
                         g /= count;
                         b /= count;
-                        inputImageARGB[destX + destRowStartIndex] = ((a << 24)
+                        in[destX + destRowStartIndex] = ((a << 24)
                                 | (r << 16) | (g << 8) | b);
                     }
                 }
@@ -546,28 +572,28 @@ public final class JMEImageUtils {
                 // now loop from srcY to srcY2 and add up the values for each
                 // channel
                 do {
-                    final int argb = inputImageARGB[destX + srcY * w];
+                    final int argb = in[destX + srcY * w];
                     a += (argb & ALPHA) >>> 24;
                     r += argb & RED;
                     g += argb & GREEN;
                     b += argb & BLUE;
                     ++srcY; // move on to the next pixel
                 } while (srcY <= srcY2
-                        && destX + srcY * w < inputImageARGB.length);
+                        && destX + srcY * w < in.length);
 
                 // average out the channel values
                 r >>>= 16;
                 g >>>= 8;
                 final int count = srcY - initialSrcY;
                 if (count == predictedCount2) {
-                    outputImageARGB[destX + destY * w] = (lut2[a] << 24)
+                    out[destX + destY * w] = (lut2[a] << 24)
                             | (lut2[r] << 16) | (lut2[g] << 8) | lut2[b];
                 } else {
                     a /= count;
                     r /= count;
                     g /= count;
                     b /= count;
-                    outputImageARGB[destX + destY * w] = (a << 24) | (r << 16)
+                    out[destX + destY * w] = (a << 24) | (r << 16)
                             | (g << 8) | b;
                 }
             }
@@ -712,8 +738,8 @@ public final class JMEImageUtils {
      * Additive blending shrinkImage, 8 bit accuracy. Slightly faster because
      * Alpha is not calculated.
      *
-     * @param inputImageRGB - Opaque RGB image
-     * @param outputImageRGB - Opaque RGB output image buffer, can be the same
+     * @param in - Opaque RGB image
+     * @param out - Opaque RGB output image buffer, can be the same
      * as inputImageRGB and runs faster that way
      * @param srcW - source image width
      * @param srcH - source image height
@@ -721,8 +747,8 @@ public final class JMEImageUtils {
      * @param h - final image height
      * @param preserveAspectRatio
      */
-    private static void pureOpaqueDownscale(final int[] inputImageRGB,
-            final int[] outputImageRGB, final int srcW, final int srcH,
+    private static void pureOpaqueDownscale(final int[] in,
+            final int[] out, final int srcW, final int srcH,
             final int w, final int h, final boolean preserveAspectRatio) {
         final int predictedCount = 1 + (srcW / w);
         final int[] lut = new int[predictedCount << 8];
@@ -756,13 +782,13 @@ public final class JMEImageUtils {
                     // now loop from srcX to srcX2 and add up the values for
                     // each channel
                     do {
-                        final int rgb = inputImageRGB[srcRowStartIndex + srcX];
+                        final int rgb = in[srcRowStartIndex + srcX];
                         r += rgb & RED;
                         g += rgb & GREEN;
                         b += rgb & BLUE;
                         ++srcX; // move on to the next pixel
                     } while (srcX <= srcX2
-                            && srcRowStartIndex + srcX < inputImageRGB.length);
+                            && srcRowStartIndex + srcX < in.length);
 
                     // average out the channel values
                     // recreate color from the averaged channels and place it
@@ -771,13 +797,13 @@ public final class JMEImageUtils {
                     g >>>= 8;
                     final int count = srcX - initialSrcX;
                     if (count == predictedCount) {
-                        inputImageRGB[destX + destRowStartIndex] = (lut[r] << 16)
+                        in[destX + destRowStartIndex] = (lut[r] << 16)
                                 | (lut[g] << 8) | lut[b];
                     } else {
                         r /= count;
                         g /= count;
                         b /= count;
-                        inputImageRGB[destX + destRowStartIndex] = (r << 16)
+                        in[destX + destRowStartIndex] = (r << 16)
                                 | (g << 8) | b;
                     }
                 }
@@ -818,26 +844,26 @@ public final class JMEImageUtils {
                 // now loop from srcY to srcY2 and add up the values for each
                 // channel
                 do {
-                    final int argb = inputImageRGB[columnStart + destX];
+                    final int argb = in[columnStart + destX];
                     r += argb & RED;
                     g += argb & GREEN;
                     b += argb & BLUE;
                     ++srcY; // move on to the next pixel
                 } while (srcY <= srcY2
-                        && columnStart + destX < inputImageRGB.length);
+                        && columnStart + destX < in.length);
 
                 // average out the channel values
                 r >>>= 16;
                 g >>>= 8;
                 final int count = srcY - initialSrcY;
                 if (count == predictedCount2) {
-                    outputImageRGB[destX + destY * w] = (lut2[r] << 16)
+                    out[destX + destY * w] = (lut2[r] << 16)
                             | (lut2[g] << 8) | lut2[b];
                 } else {
                     r /= count;
                     g /= count;
                     b /= count;
-                    outputImageRGB[destX + destY * w] = (r << 16) | (g << 8)
+                    out[destX + destY * w] = (r << 16) | (g << 8)
                             | b;
                 }
             }

@@ -124,13 +124,13 @@ public class RSSReader extends MIDlet implements CommandListener {
         try {
             TantalumJME.start(this);
             final Task reloadTask = getCanvas().getListView().reloadAsync(false);
-//            final Display display = getDisplay();
-//            COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
-//            COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
-//            COLOR_FOREGROUND = display.getColor(Display.COLOR_FOREGROUND);
-//            COLOR_HIGHLIGHTED_FOREGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
-//            COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
-//            COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
+            final Display display = getDisplay();
+            COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
+            COLOR_HIGHLIGHTED_BACKGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_BACKGROUND);
+            COLOR_FOREGROUND = display.getColor(Display.COLOR_FOREGROUND);
+            COLOR_HIGHLIGHTED_FOREGROUND = display.getColor(Display.COLOR_HIGHLIGHTED_FOREGROUND);
+            COLOR_BORDER = display.getColor(Display.COLOR_BORDER);
+            COLOR_HIGHLIGHTED_BORDER = display.getColor(Display.COLOR_HIGHLIGHTED_BORDER);
             try {
                 reloadTask.join(200);
             } catch (Exception ex) {

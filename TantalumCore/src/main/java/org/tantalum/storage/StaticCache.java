@@ -155,8 +155,8 @@ public class StaticCache {
      *
      * @param priority
      * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
-     * @param defaultCacheView - a routine to convert from byte[] to Object form when
-     * loading into the RAM ramCache.
+     * @param defaultCacheView - a routine to convert from byte[] to Object form
+     * when loading into the RAM ramCache.
      * @return
      * @throws FlashDatabaseException
      */
@@ -339,8 +339,8 @@ public class StaticCache {
      * @param priority
      * @param nextTask
      * @param skipHeap - set "true" to force re-load from flash and
-     * re-conversion by your custom <code>CacheView</code>. This may be
-     * useful for example to re-annotate images as they are loaded from cache.
+     * re-conversion by your custom <code>CacheView</code>. This may be useful
+     * for example to re-annotate images as they are loaded from cache.
      * @return
      */
     public Task getAsync(final String key, int priority, final Task nextTask, final boolean skipHeap) {
@@ -458,9 +458,9 @@ public class StaticCache {
      * heap memory changes.
      *
      * Setting skipHeap=true delays any (possibly slow) process in your custom
-     * CacheView until load time. Note that any previously-heap-cached
-     * "use form" (POJO, Plain Old Java Object) values already in the heap are
-     * not removed or modified.
+     * CacheView until load time. Note that any previously-heap-cached "use
+     * form" (POJO, Plain Old Java Object) values already in the heap are not
+     * removed or modified.
      *
      * @param key
      * @param bytes
@@ -656,33 +656,19 @@ public class StaticCache {
     }
 
     /**
-     * Note that if the conversion in the CacheView changes due to
-     * application logic requirements, you can at any time use this to force
-     * as-needed re-conversion. This affects queued conversions but does not
-     * affect conversions already in progress. Therefore you may want to chain()
-     * to the Task returned and continue your code after this clear completes
-     * after other queued tasks.
+     * Remove from memory all
      *
-     * @param chainedTask
-     * @return
+     * Note that you should change your CacheView logic before calling this
+     * method. Any queued requests currently in-flight will reflect the new
+     * CacheView transformation immediately after calling this method.
+     *
      */
-    public Task clearHeapAsync(final Task chainedTask) {
-        final Task task = new Task(Task.SERIAL_PRIORITY) {
-            protected Object exec(final Object in) {
-                synchronized (ramCache) {
-                    //#debug
-                    L.i(this, "Heap cache clear start", "" + cachePriorityChar);
-                    accessOrder.removeAllElements();
-                    ramCache.clearValues();
-                    //#debug
-                    L.i(this, "Heap cached cleared", "" + cachePriorityChar);
-
-                    return in;
-                }
-            }
-        }.setClassName("ClearHeapAsync").chain(chainedTask);
-
-        return task.fork();
+    public void clearHeap() {
+        synchronized (ramCache) {
+            //#debug
+            L.i(this, "Heap cache clear", "" + cachePriorityChar);
+            ramCache.clearValues();
+        }
     }
 
     /**
@@ -730,8 +716,8 @@ public class StaticCache {
     }
 
     /**
-     * Provide the defaultCacheView which this caches uses for converting between
-     * in-memory and binary formats
+     * Provide the defaultCacheView which this caches uses for converting
+     * between in-memory and binary formats
      *
      * @return
      */

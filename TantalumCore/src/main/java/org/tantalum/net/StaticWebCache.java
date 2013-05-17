@@ -35,6 +35,7 @@ import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.StaticCache;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.RollingAverage;
 
 /**
  * A cache of remote http contents backed by local flash memory storage
@@ -75,6 +76,8 @@ public final class StaticWebCache extends StaticCache {
     public static final int GET_WEB = 2;
     //#debug
     private static final String[] GET_TYPES = {"GET_LOCAL", "GET_ANYWHERE", "GET_WEB"};
+    private volatile Task currentHttpGetTask = null;
+    private volatile long currentHttpGetTaskPredictedEndTime = 0;
 
     /**
      * Get existing or create a new local cache of a web service.
@@ -119,10 +122,10 @@ public final class StaticWebCache extends StaticCache {
      *
      * @param priority
      * @param cacheType
-     * @param defaultCacheView - an object for converting from the byte[] format returned
-     * by the web server or stored in local flash memory into Object form. The
-     * most common handlers use cases return something like a String, JSONModel,
-     * XMLModel or Image.
+     * @param defaultCacheView - an object for converting from the byte[] format
+     * returned by the web server or stored in local flash memory into Object
+     * form. The most common handlers use cases return something like a String,
+     * JSONModel, XMLModel or Image.
      * @param httpTaskFactory - A custom override of
      * <code>StaticWebCache.HttpTaskFactory</code>. A common need for this is
      * changing this default data validation behavior behavior if the HTTP
@@ -331,7 +334,7 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param * * * * * * * * *
+     * @param * * * * * * * * * * * * * * * * * *
      *      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
@@ -340,7 +343,7 @@ public final class StaticWebCache extends StaticCache {
      * requests. If null, the default StaticWebCache.HttpTaskFactory specified
      * when you create this StaticWebCache will be used.
      * @param skipHeap - Set true if you have added a custom
-     * <code>CacheView</code> and you want to force re-conversion through
+     * <code>CacheView</code> and you want to force re-conversion through * *
      * your <code>CacheView</code>. It is useful for example to update
      * annotations to an Image at load time.
      *
@@ -634,6 +637,43 @@ public final class StaticWebCache extends StaticCache {
     public static class HttpTaskFactory {
 
         /**
+         * Tell the task factory if it should delay concurrent downloads such
+         * that the data comes in to this cache over the network one item at a
+         * time. This may increase throughput, but more importantly it may
+         * improve user experience (UX) on slow network. Delays are self-tuning
+         * based on current network conditions.
+         */
+        public volatile boolean getSequencerEnabled = false;
+        /**
+         * A measure of how long on average the last 10 HTTP operations to fetch
+         * from the server have taken. If the get sequencer is enabled, this is
+         * used internally to sequence HTTP operations such that both network
+         * contention is minimized. If the get sequencer is disabled, this
+         * network speed measurement is not taken. This is most useful on 2G
+         * networks but may also increase response time in a heavily loaded or
+         * otherwise poorly performing 3G network.
+         */
+        public final RollingAverage averageGetTimeMillis = new RollingAverage(10, 700.0f);
+
+        private final class TimerEndTask extends Task {
+
+            final HttpGetter httpGetter;
+
+            TimerEndTask(final HttpGetter httpGetter) {
+                super(Task.FASTLANE_PRIORITY);
+                this.httpGetter = httpGetter;
+            }
+
+            protected Object exec(final Object in) {
+                averageGetTimeMillis.update((float) (System.currentTimeMillis() - httpGetter.getStartTime()));
+                //#debug
+                L.i(this, "Average cache HTTP response time", "" + averageGetTimeMillis.value());
+
+                return in;
+            }
+        }
+
+        /**
          * Get an HTTP task, possibly with modified headers. Although this is
          * usually an HttpGetter, in could be an HttpPoster.
          *
@@ -650,15 +690,21 @@ public final class StaticWebCache extends StaticCache {
             if (url == null) {
                 throw new IllegalArgumentException("HttpTaskFactory was asked to make an HttpGetter for a null url");
             }
+            final HttpGetter httpGetter;
             if (postMessage == null) {
                 //#debug
                 L.i(this, "Generating a new HttpGetter", url);
-                return new HttpGetter(priority, url);
+                httpGetter = new HttpGetter(priority, url);
             } else {
                 //#debug
                 L.i(this, "Generating a new HttpPoster", url + " postDataLength=" + postMessage.length + " priority=" + priority);
-                return new HttpPoster(priority, url, postMessage);
+                httpGetter = new HttpPoster(priority, url, postMessage);
             }
+            if (getSequencerEnabled) {
+                httpGetter.chain(new TimerEndTask(httpGetter));
+            }
+
+            return httpGetter;
         }
 
         /**
