@@ -76,6 +76,8 @@ public final class StaticWebCache extends StaticCache {
     public static final int GET_WEB = 2;
     //#debug
     private static final String[] GET_TYPES = {"GET_LOCAL", "GET_ANYWHERE", "GET_WEB"};
+    private volatile Task currentHttpGetTask = null;
+    private volatile long currentHttpGetTaskPredictedEndTime = 0;
 
     /**
      * Get existing or create a new local cache of a web service.
@@ -641,7 +643,7 @@ public final class StaticWebCache extends StaticCache {
          * improve user experience (UX) on slow network. Delays are self-tuning
          * based on current network conditions.
          */
-        public volatile boolean getSequencerEnabled = true;
+        public volatile boolean getSequencerEnabled = false;
         /**
          * A measure of how long on average the last 10 HTTP operations to fetch
          * from the server have taken. If the get sequencer is enabled, this is
@@ -658,6 +660,7 @@ public final class StaticWebCache extends StaticCache {
             final HttpGetter httpGetter;
 
             TimerEndTask(final HttpGetter httpGetter) {
+                super(Task.FASTLANE_PRIORITY);
                 this.httpGetter = httpGetter;
             }
 
