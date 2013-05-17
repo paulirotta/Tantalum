@@ -15,7 +15,7 @@ dependencies {
 
     compile project(path: ':TantalumCore')
 
-    preprocessedCompile project(path: ':TantalumCore', configuration: 'releaseJar')
+    releaseCompile project(path: ':TantalumCore', configuration: 'release')
 
     testCompile project(path: ':TantalumCore', configuration: 'testJar')
 }

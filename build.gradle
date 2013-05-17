@@ -23,7 +23,7 @@ subprojects {
         jreBootClasspath
         testBootClasspath
         provided
-        releaseJar
+        release
         testJar
     }
 
@@ -42,14 +42,16 @@ subprojects {
     // task. For wtk-build we set the classpath manually and thus it's not really needed
     sourceSets {
         main.compileClasspath += configurations.provided
+        release.compileClasspath += configurations.provided
+
         test {
             compileClasspath += configurations.provided
             runtimeClasspath += configurations.provided
         }
 
-        preprocessed {
+        release {
             java {
-                project.ext.preprocessedSources
+                srcDir project.ext.preprocessedSources
             }
 
         }
@@ -58,23 +60,6 @@ subprojects {
     // End of compileJava requirements
     project.tasks['javadoc'].classpath += configurations.provided
 
-    /**
-     * Don't scan for test classes, as there will be an error with JavaME compiled classes
-     */
-//    tasks.withType(Test) {
-//        scanForTestClasses = false
-//        include "**/*Test.class" // whatever Ant pattern matches the test class files
-//    }
-
-    project.ext.target = buildDir.toString()
-
-    sourceSets {
-        preprocessed {
-            java {
-                srcDir preprocessedSourceDirectory
-            }
-        }
-    }
     apply plugin: 'jdepend'
     apply plugin: 'pmd'
     apply plugin: 'project-report'
@@ -110,8 +95,6 @@ subprojects {
         options.encoding = 'UTF-8'
 //    options.compilerArgs = ['-Xlint', '-Xlint:-serial', '-Xlint:-path']
     }
-
-
 
     task createSourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
@@ -156,8 +139,8 @@ subprojects {
     }
 
     task createReleaseJar(type: Jar) {
-        dependsOn compilePreprocessedJava
-        from sourceSets.preprocessed.output
+        dependsOn compileReleaseJava
+        from sourceSets.release.output
         from {
             configurations.compile.collect {
                 it.isDirectory() ? it : zipTree(it)
@@ -165,11 +148,11 @@ subprojects {
         }
     }
 
-    compilePreprocessedJava.dependsOn preprocessSources
+    compileReleaseJava.dependsOn preprocessSources
     build.dependsOn createReleaseJar
 
     artifacts {
-        releaseJar createReleaseJar
+        release createReleaseJar
         testJar createTestJar
         archives createSourcesJar
         archives createJavadocJar
