@@ -65,14 +65,14 @@ public class HttpGetterTest extends MockedStaticInitializers {
      * toString()
      */
     @Test
-    public void illegalArgumentExceptionThrownWhenNonStringKey() {
+    public void illegalArgumentExceptionThrownWhenNonStringKey() throws InterruptedException {
         getter.exec(new Object());
         assertTrue("Getter was not correctly cancelled for non-String url", cancelCalled);
     }
 
     //FIXME
     //@Test
-    public void responseCodesIn400RangeAreConsideredBad() throws IOException {
+    public void responseCodesIn400RangeAreConsideredBad() throws IOException, InterruptedException {
         final String url = "http://github.com/TantalumMobile";
 
         /*
@@ -99,7 +99,7 @@ public class HttpGetterTest extends MockedStaticInitializers {
 
     //FIXME
     //@Test
-    public void responseCodesIn300RangeAreConsideredBad() throws IOException {
+    public void responseCodesIn300RangeAreConsideredBad() throws IOException, InterruptedException {
         final String url = "http://github.com/TantalumMobile";
 
         /*

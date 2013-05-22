@@ -118,6 +118,12 @@ public class HttpPoster extends HttpGetter {
         return this;
     }
 
+    /**
+     * Execute the POST operation
+     * 
+     * @param in
+     * @return
+     */
     public Object exec(final Object in) {
         if (isChainInputPostData) {
             setPostData((byte[]) in);

@@ -875,7 +875,7 @@ public abstract class Task {
      * @return
      */
     final Object executeTask(final Object in) {
-        Object out = null;
+        Object out;
 
         try {
             synchronized (mutex) {
@@ -927,8 +927,9 @@ public abstract class Task {
      * @return
      * @throws CancellationException
      * @throws TimeoutException
+     * @throws InterruptedException 
      */
-    protected abstract Object exec(Object in) throws CancellationException, TimeoutException;
+    protected abstract Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException;
 
     /**
      * Cancel execution of this Task
