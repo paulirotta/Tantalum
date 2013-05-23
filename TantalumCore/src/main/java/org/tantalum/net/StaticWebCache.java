@@ -76,8 +76,6 @@ public final class StaticWebCache extends StaticCache {
     public static final int GET_WEB = 2;
     //#debug
     private static final String[] GET_TYPES = {"GET_LOCAL", "GET_ANYWHERE", "GET_WEB"};
-    private volatile Task currentHttpGetTask = null;
-    private volatile long currentHttpGetTaskPredictedEndTime = 0;
 
     /**
      * Get existing or create a new local cache of a web service.
