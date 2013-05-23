@@ -49,7 +49,7 @@ final class Worker extends Thread {
      * for such writes, we need to start doing them before there is a risk of
      * OutOfMemory from serialQ length growth.
      */
-    private static final int MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST = 20;
+    private static final int MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST = 10;
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */

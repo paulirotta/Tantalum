@@ -15,6 +15,8 @@ public final class RollingAverage {
     private float average;
     private final int windowLength;
     private int window;
+    private float upperBound = Float.POSITIVE_INFINITY;
+    private float lowerBound = Float.NEGATIVE_INFINITY;
 
     /**
      * Create a new rolling average filter. This will slowly track
@@ -34,6 +36,32 @@ public final class RollingAverage {
 
         this.windowLength = windowLength;
         reset(initialValue);
+    }
+
+    /**
+     * The average is hard limited to never be more than an optional upper value
+     * 
+     * @param upperBound 
+     */
+    public void setUpperBound(final float upperBound) {
+        if (upperBound < lowerBound) {
+            throw new IllegalArgumentException("Upper bound " + upperBound + " must be greater than lower bound " + lowerBound);
+        }
+        
+        this.upperBound = upperBound;
+    }
+
+    /**
+     * The average is hard limited to never be less than an optional lower value
+     * 
+     * @param lowerBound 
+     */
+    public void setLowerBound(final float lowerBound) {
+        if (upperBound < lowerBound) {
+            throw new IllegalArgumentException("Lower bound " + lowerBound + " must be less than upper bound " + upperBound);
+        }
+
+        this.lowerBound = lowerBound;
     }
 
     /**
@@ -64,6 +92,8 @@ public final class RollingAverage {
      */
     public float update(final float value) {
         average = (average * window + value) / ++window;
+        average = Math.max(average, lowerBound);
+        average = Math.min(average, upperBound);
 
         if (window == windowLength) {
             window--;

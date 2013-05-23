@@ -542,6 +542,11 @@ public class HttpGetter extends Task {
     private int responseCode = HTTP_OPERATION_PENDING;
     private volatile long startTime = 0;
 
+    static {
+        HttpGetter.averageBaud.setLowerBound(HttpGetter.THRESHOLD_BAUD / 10);
+        HttpGetter.averageResponseDelayMillis.setUpperBound(5000.0f);
+    }
+
     /**
      * Create a Task.NORMAL_PRIORITY getter
      *
@@ -587,7 +592,15 @@ public class HttpGetter extends Task {
         this(Task.NORMAL_PRIORITY, url);
     }
 
-    private static void staggerHeaderStartTime() throws InterruptedException {
+    /**
+     * On a 2G-speed network, this method will block the calling thread up to
+     * several seconds until the next HTTP operation can begin.
+     *
+     * On a fast network, this will not delay the calling thread.
+     *
+     * @throws InterruptedException
+     */
+    public static void staggerHeaderStartTime() throws InterruptedException {
         long t = System.currentTimeMillis();
         long t2;
         boolean staggerStartMode;
@@ -598,28 +611,28 @@ public class HttpGetter extends Task {
             t = System.currentTimeMillis();
         }
         if (staggerStartMode) {
-            nextHeaderStartTime = t + (((int) HttpGetter.averageResponseDelayMillis.value()) * 8) / 7;
+            nextHeaderStartTime = t + (((int) HttpGetter.averageResponseDelayMillis.value()) * 7) / 8;
         }
     }
 
     private static void staggerBodyStartTime(final int bytesToGet) throws InterruptedException {
-        long t = System.currentTimeMillis();
-        long t2;
-        boolean staggerStartMode;
-        while ((staggerStartMode = (HttpGetter.averageBaud.value() < THRESHOLD_BAUD)) && (t2 = nextBodyStartTime) > t) {
-            //#debug
-            L.i("Body get stagger delay", (t2 - t) + "ms");
-            Thread.sleep(t2 - t);
-            t = System.currentTimeMillis();
-        }
-        if (staggerStartMode) {
-            /*
-             * The following calculation should use 8 bits per byte, but we use 7
-             * which means we can overlap a bit and start reading slightly early
-             * to compensate for net connection speed jitter and reduce the liklihood
-             * of any dead time between connection reads */
-            nextBodyStartTime = t + (((int) HttpGetter.averageBaud.value()) * 7 * bytesToGet) / 1000;
-        }
+//        long t = System.currentTimeMillis();
+//        long t2;
+//        boolean staggerStartMode;
+//        while ((staggerStartMode = (HttpGetter.averageBaud.value() < THRESHOLD_BAUD)) && (t2 = nextBodyStartTime) > t) {
+//            //#debug
+//            L.i("Body get stagger delay", (t2 - t) + "ms");
+//            Thread.sleep(t2 - t);
+//            t = System.currentTimeMillis();
+//        }
+//        if (staggerStartMode) {
+//            /*
+//             * The following calculation should use 8 bits per byte, but we use 7
+//             * which means we can overlap a bit and start reading slightly early
+//             * to compensate for net connection speed jitter and reduce the liklihood
+//             * of any dead time between connection reads */
+//            nextBodyStartTime = t + (((int) HttpGetter.averageBaud.value()) * 7 * bytesToGet) / 1000;
+//        }
     }
 
     /**
@@ -825,9 +838,10 @@ public class HttpGetter extends Task {
                 out = bos.toByteArray();
             }
             if (firstByteTime != Long.MAX_VALUE) {
-                HttpGetter.averageResponseDelayMillis.update((float) (firstByteTime - startTime));
+                final long responseTime = firstByteTime - startTime;
+                HttpGetter.averageResponseDelayMillis.update(responseTime);
                 //#debug
-                L.i(this, "Average HTTP header response time", "" + HttpGetter.averageResponseDelayMillis.value());
+                L.i(this, "Average HTTP header response time", HttpGetter.averageResponseDelayMillis.value() + " current=" + responseTime);
             }
             final long lastByteTime = System.currentTimeMillis();
             final float baud;
