@@ -27,7 +27,9 @@ package org.tantalum.storage;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
 import java.util.Vector;
+import org.tantalum.CancellationException;
 import org.tantalum.Task;
+import org.tantalum.TimeoutException;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.StringUtils;
@@ -40,9 +42,10 @@ import org.tantalum.util.StringUtils;
  * @author phou
  */
 public abstract class FlashCache {
+
     /**
      * An application-unique local identifier for the cache
-     * 
+     *
      * Uniqueness is not internally checked or enforced. StaticCache does this,
      * so be aware that you should cooperate with StaticCache if used for other
      * purposes.
@@ -137,7 +140,7 @@ public abstract class FlashCache {
      *
      * @param digest
      * @return
-     * @throws DigestException 
+     * @throws DigestException
      * @throws FlashDatabaseException
      */
     public abstract byte[] get(long digest) throws DigestException, FlashDatabaseException;
@@ -194,4 +197,41 @@ public abstract class FlashCache {
      *
      */
     public abstract void clear();
+
+    /**
+     * Find out how many bytes of space are available on the cache's storage
+     * medium (phone or memory card)
+     *
+     * @return
+     * @throws FlashDatabaseException
+     */
+    public abstract long getFreespace() throws FlashDatabaseException;
+
+    /**
+     * Run finalization tasks and then close all cache resources
+     *
+     * This this FlashCache is part of a StaticCache, this will be called
+     * automatically on shutdown. Otherwise you may need to call this yourself
+     * by queuing a Task.SHUTDOWN_PRIORITY task.
+     */
+    public void close() throws FlashDatabaseException {
+        final Task[] t;
+        synchronized (shutdownTasks) {
+            t = new Task[shutdownTasks.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = (Task) shutdownTasks.elementAt(i);
+                t[i].fork();
+            }
+            shutdownTasks.removeAllElements();
+        }
+        try {
+            Task.joinAll(t);
+        } catch (CancellationException ex) {
+            //#debug
+            L.e(this, "Canceled", "Cache shutdown tasks not completed", ex);
+        } catch (TimeoutException ex) {
+            //#debug
+            L.e(this, "Timeout", "Cache shutdown tasks not completed", ex);
+        }
+    }
 }

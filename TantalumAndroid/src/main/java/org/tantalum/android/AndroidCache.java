@@ -29,6 +29,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
+import android.os.StatFs;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
 import org.tantalum.Task;
@@ -120,16 +122,6 @@ public final class AndroidCache extends FlashCache {
                 }
             }
         };
-        (new Task(Task.SHUTDOWN) {
-            public Object exec(final Object in2) {
-                if (db != null) {
-                    db.close();
-                }
-                db = null;
-
-                return in2;
-            }
-        }.setClassName("CloseOnShutdown")).fork();
     }
 
     /**
@@ -156,7 +148,6 @@ public final class AndroidCache extends FlashCache {
 //            onCreate(db);
 //        }
 //    }
-
     /**
      * Get the stored byte[] associated with the specified key
      *
@@ -372,6 +363,25 @@ public final class AndroidCache extends FlashCache {
     public void clear() {
         synchronized (MUTEX) {
             db.execSQL(CLEAR_TABLE);
+        }
+    }
+
+    @Override
+    public long getFreespace() {
+        final StatFs stat = new StatFs(Environment.getDataDirectory().getPath());
+
+        return (long) stat.getBlockSize() * (long) stat.getBlockCount();
+    }
+
+    @Override
+    public void close() throws FlashDatabaseException {
+        synchronized (MUTEX) {
+            if (db != null) {
+                super.close();
+                
+                db.close();
+            }
+            db = null;
         }
     }
 }

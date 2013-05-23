@@ -63,10 +63,10 @@ public class StaticCache {
             return ((StaticCache) o1).cachePriorityChar - ((StaticCache) o2).cachePriorityChar;
         }
     });
-    /*
-     * Always access withing a synchronized block
+    /**
+     * The underlying platform-specific cache implementation
      */
-    protected final FlashCache flashCache;
+    public final FlashCache flashCache;
     /**
      * A heap memory ramCache in the form of a Hashtable from which data can be
      * removed automatically by the virtual machine to free up memory (automatic
@@ -210,11 +210,25 @@ public class StaticCache {
             L.e(this, "Can not load keys to RAM during init() cache", "cache priority=" + cachePriorityChar, ex);
             throw new FlashDatabaseException("Can not load cache keys during init for cache '" + cachePriorityChar + "' : " + ex);
         }
+        (new Task(Task.SHUTDOWN) {
+            protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
+                try {
+                    //#debug
+                    L.i(this, "Closing FlashCache on shutdown", this.toString());
+                    flashCache.close();
+                } catch (FlashDatabaseException ex) {
+                    //#debug
+                    L.e(this, "Problem closing FlashCache on shutdown", this.toString(), ex);
+                }
+
+                return in;
+            }
+        }).setClassName("StaticCacheShutdown").fork();
     }
 
 //#mdebug    
     /**
-     * Turn off persistent local storage' use for read and write to see what
+     * Turn off persistent local storage use for read and write to see what
      * happens to the application performance. This is most useful for
      * StaticWebCache but may be useful in other test cases.
      *
@@ -255,7 +269,7 @@ public class StaticCache {
      * @throws DigestException
      * @throws UnsupportedEncodingException
      */
-    protected Object convertAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
+    private Object convertAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
         //#mdebug
         L.i(this, "Start to convert", key + " bytes length=" + bytes.length);
         final long startTime = System.currentTimeMillis();
@@ -290,7 +304,7 @@ public class StaticCache {
                 if (o != null) {
                     //#debug            
                     L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
-                    this.accessOrder.addElement(key);
+                    accessOrder.addElement(key);
                 }
 
                 return o;
@@ -381,18 +395,18 @@ public class StaticCache {
      * @throws FlashDatabaseException
      */
     protected Object synchronousGet(final String key, final boolean skipHeap) throws FlashDatabaseException {
-        Object o = null;
+        Object useForm = null;
 
         if (!skipHeap) {
-            o = synchronousRAMCacheGet(key);
+            useForm = synchronousRAMCacheGet(key);
             //#mdebug
-            if (o != null) {
-                L.i(this, "Heap get hit", "(" + cachePriorityChar + ") " + key + " : " + o);
+            if (useForm != null) {
+                L.i(this, "Heap get hit", "(" + cachePriorityChar + ") " + key + " : " + useForm);
             }
             //#enddebug
         }
 
-        if (o == null) {
+        if (useForm == null) {
             try {
                 // Load from flash memory
                 final byte[] bytes;
@@ -408,11 +422,11 @@ public class StaticCache {
                 //#debug
                 L.i(this, "Flash get result", "(" + cachePriorityChar + ") key=" + key + " byteLength=" + (bytes != null ? ("" + bytes.length) : "<null>"));
                 if (bytes != null) {
-                    o = convertAndPutToHeapCache(key, bytes);
+                    useForm = convertAndPutToHeapCache(key, bytes);
                     //#debug
-                    L.i(this, "Flash get converted result", "(" + cachePriorityChar + ") " + key + " : " + o);
+                    L.i(this, "Flash get converted result", "(" + cachePriorityChar + ") " + key + " : " + useForm);
                 } else {
-                    o = null;
+                    useForm = null;
                 }
             } catch (DigestException e) {
                 //#debug
@@ -425,7 +439,7 @@ public class StaticCache {
             }
         }
 
-        return o;
+        return useForm;
     }
 
     /**
@@ -564,7 +578,7 @@ public class StaticCache {
      * @param minSpaceToClear - in bytes
      * @return true if the requested amount of space has been cleared
      */
-    private static void clearSpace(final int minSpaceToClear) throws FlashFullException, FlashDatabaseException, DigestException {
+    public static void clearSpace(final int minSpaceToClear) throws FlashFullException, FlashDatabaseException, DigestException {
         int spaceCleared = 0;
 
         //#debug
@@ -748,10 +762,6 @@ public class StaticCache {
         }
 
         return str.toString();
-
-
-
-
     }
 //#enddebug
 

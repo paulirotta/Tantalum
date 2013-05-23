@@ -16,9 +16,6 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotOpenException;
-import org.tantalum.CancellationException;
-import org.tantalum.Task;
-import org.tantalum.TimeoutException;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
@@ -56,61 +53,6 @@ public class RMSFastCache extends FlashCache {
         valueRS = RMSUtils.getInstance().getRecordStore(getValueRSName(), true);
         final int numberOfKeys = keyRS.getNumRecords();
         indexHash = new Hashtable(numberOfKeys);
-
-        final Task launchShutdownTasksOnShutdown = new Task(Task.SHUTDOWN) {
-            protected Object exec(final Object in) {
-                final Task[] t;
-                synchronized (shutdownTasks) {
-                    t = new Task[shutdownTasks.size()];
-                    for (int i = 0; i < t.length; i++) {
-                        t[i] = (Task) shutdownTasks.elementAt(i);
-                        t[i].fork();
-                    }
-                }
-                try {
-                    Task.joinAll(t);
-                } catch (CancellationException ex) {
-                    //#debug
-                    L.e(this, "Canceled", "Cache shutdown tasks not completed", ex);
-                } catch (TimeoutException ex) {
-                    //#debug
-                    L.e(this, "Timeout", "Cache shutdown tasks not completed", ex);
-                }
-
-                return in;
-            }
-        }.setClassName("LaunchShutdownTasksOnShutdown");
-
-        final Task closeAfterShutdownTasksComplete = new Task(Task.SHUTDOWN) {
-            protected Object exec(Object in) {
-                synchronized (MUTEX) {
-                    //#debug
-                    L.i("Closing Cache", "" + priority);
-                    try {
-                        valueRS.closeRecordStore();
-                    } catch (Exception ex) {
-                        //#debug
-                        L.e("Problem closing valueRS", getValueRSName(), ex);
-                    }
-                    try {
-                        keyRS.closeRecordStore();
-                    } catch (Exception ex) {
-                        //#debug
-                        L.e("Problem closing keyRS", getKeyRSName(), ex);
-                    }
-
-                    return in;
-                }
-            }
-
-            protected void onCanceled(final String reason) {
-                exec(null);
-            }
-        }.setClassName("CloseAfterShutdownTasksComplete");
-
-        launchShutdownTasksOnShutdown.chain(closeAfterShutdownTasksComplete);
-        launchShutdownTasksOnShutdown.fork();
-
         initIndex(numberOfKeys);
     }
 
@@ -309,7 +251,7 @@ public class RMSFastCache extends FlashCache {
         L.i(this, "HASHTABLE", sb.toString());
     }
 //#enddebug
-    
+
     /**
      * During startup, read into in-memory accelerator Hashtable and check
      * integrity of each key record.
@@ -716,6 +658,33 @@ public class RMSFastCache extends FlashCache {
             } catch (RecordStoreException ex) {
                 //#debug
                 L.e("Can not clear RMS keys", "aborting", ex);
+            }
+        }
+    }
+
+    public long getFreespace() throws FlashDatabaseException {
+        try {
+            return valueRS.getSizeAvailable();
+        } catch (RecordStoreNotOpenException ex) {
+            //#debug
+            L.e(this, "Can not get freespace", this.toString(), ex);
+            throw new FlashDatabaseException("Can not get freespace: " + ex);
+        }
+    }
+
+    public void close() throws FlashDatabaseException {
+        synchronized (MUTEX) {
+            try {
+                super.close();
+                
+                try {
+                    valueRS.closeRecordStore();
+                } finally {
+                    keyRS.closeRecordStore();
+                }
+            } catch (RecordStoreException ex) {
+                L.e(this, "RMS close exception", this.toString(), ex);
+                throw new FlashDatabaseException("RMS close exception: " + ex);
             }
         }
     }
