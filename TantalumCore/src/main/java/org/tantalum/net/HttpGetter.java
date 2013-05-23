@@ -598,6 +598,14 @@ public class HttpGetter extends Task {
      *
      * On a fast network, this will not delay the calling thread.
      *
+     * The HttpGetter will call this for you at the start of Task exec() to
+     * reduce network contention. You may also want to call as part of your loop
+     * that creates multiple HTTP GET operations such as fetching images. You
+     * can in this way delay the decision to actually fetch a resource and not
+     * do so if the data is not needed several seconds later. This is also
+     * useful to reduce the number of worker threads being held in a header wait
+     * state by HttpGetter Tasks.
+     *
      * @throws InterruptedException
      */
     public static void staggerHeaderStartTime() throws InterruptedException {
@@ -613,26 +621,6 @@ public class HttpGetter extends Task {
         if (staggerStartMode) {
             nextHeaderStartTime = t + (((int) HttpGetter.averageResponseDelayMillis.value()) * 7) / 8;
         }
-    }
-
-    private static void staggerBodyStartTime(final int bytesToGet) throws InterruptedException {
-//        long t = System.currentTimeMillis();
-//        long t2;
-//        boolean staggerStartMode;
-//        while ((staggerStartMode = (HttpGetter.averageBaud.value() < THRESHOLD_BAUD)) && (t2 = nextBodyStartTime) > t) {
-//            //#debug
-//            L.i("Body get stagger delay", (t2 - t) + "ms");
-//            Thread.sleep(t2 - t);
-//            t = System.currentTimeMillis();
-//        }
-//        if (staggerStartMode) {
-//            /*
-//             * The following calculation should use 8 bits per byte, but we use 7
-//             * which means we can overlap a bit and start reading slightly early
-//             * to compensate for net connection speed jitter and reduce the liklihood
-//             * of any dead time between connection reads */
-//            nextBodyStartTime = t + (((int) HttpGetter.averageBaud.value()) * 7 * bytesToGet) / 1000;
-//        }
     }
 
     /**
@@ -828,7 +816,6 @@ public class HttpGetter extends Task {
             } else if (length > httpConn.getMaxLengthSupportedAsBlockOperation()) {
                 cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
             } else if (length > 0) {
-                staggerBodyStartTime(length);
                 final byte[] bytes = new byte[length];
                 firstByteTime = readBytesFixedLength(url, inputStream, bytes);
                 out = bytes;
