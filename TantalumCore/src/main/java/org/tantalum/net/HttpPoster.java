@@ -124,7 +124,7 @@ public class HttpPoster extends HttpGetter {
      * @param in
      * @return
      */
-    public Object exec(final Object in) {
+    public Object exec(final Object in) throws InterruptedException {
         if (isChainInputPostData) {
             setPostData((byte[]) in);
 

@@ -466,12 +466,50 @@ public class HttpGetter extends Task {
     private static final int HTTP_GET_RETRIES = 3;
     private static final int HTTP_RETRY_DELAY = 5000; // 5 seconds
     /**
+     * Connections slower than this drop into single file load with header
+     * pre-wind to increase interface responsiveness to each HTTP action as seen
+     * alone and decrease phone thread context switching.
+     *
+     * Note that due to measurement error this is not a real baud rate, but the
+     * rate at which data can be pulled from the network buffers. If phone
+     * network buffering associated with the first packets were removed from the
+     * measure, the actual baud rate over the air would be slower than this.
+     */
+    public static final float THRESHOLD_BAUD = 128000f;
+    /**
      * The rolling average of how long it takes the server to respond with the
      * first response body byte to an HTTP request. This will shift up and down
      * slowly based on the servers and data network you use. It is in some cases
      * useful as a performance tuning parameter.
      */
     public static final RollingAverage averageResponseDelayMillis = new RollingAverage(10, 700.0f);
+    /**
+     * bits per second realized by a each connection. When multiple connections
+     * are reading simultaneously this will be lower than the total bits per
+     * second of the phone's downlink. It is used in conjunction with
+     * THRESHOLD_BAUD to determine if we should switch to serial reading with
+     * header pre-wind to help UX by decreasing the user's perceived response
+     * time per HTTP GET.
+     *
+     * We start the app with the assumption we are on a slow connection by
+     * quickly adapt if the data arrives quickly. Note that since the
+     * measurement is continuous and realized we do not make assumptions based
+     * on whether the user or phone think they are on a fast WIFI connection or
+     * not. Changing network connections or network connection real speeds
+     * should result in a change of mode within a few HTTP operations if
+     * appropriate.
+     */
+    public static final RollingAverage averageBaud = new RollingAverage(10, THRESHOLD_BAUD / 2);
+    /**
+     * At what time earliest can the next HTTP request to a server can begin
+     * when in slow connection mode
+     */
+    private static volatile long nextHeaderStartTime = 0;
+    /**
+     * At what time earliest can the next HTTP body read operation can begin
+     * when in slow connection mode
+     */
+    private static volatile long nextBodyStartTime = 0;
     /**
      * How many more times will we try to re-connect after a 5 second delay
      * before giving up. This aids in working with low quality networks and
@@ -503,10 +541,6 @@ public class HttpGetter extends Task {
     // Always access in a synchronized(HttpGetter.this) block
     private int responseCode = HTTP_OPERATION_PENDING;
     private volatile long startTime = 0;
-
-    public long getStartTime() {
-        return startTime;
-    }
 
     /**
      * Create a Task.NORMAL_PRIORITY getter
@@ -551,6 +585,50 @@ public class HttpGetter extends Task {
      */
     public HttpGetter(final String url) {
         this(Task.NORMAL_PRIORITY, url);
+    }
+
+    private static void staggerHeaderStartTime() throws InterruptedException {
+        long t = System.currentTimeMillis();
+        long t2;
+        boolean staggerStartMode;
+        while ((staggerStartMode = (HttpGetter.averageBaud.value() < THRESHOLD_BAUD)) && (t2 = nextHeaderStartTime) > t) {
+            //#debug
+            L.i("Header get stagger delay", (t2 - t) + "ms");
+            Thread.sleep(t2 - t);
+            t = System.currentTimeMillis();
+        }
+        if (staggerStartMode) {
+            nextHeaderStartTime = t + (((int) HttpGetter.averageResponseDelayMillis.value()) * 8) / 7;
+        }
+    }
+
+    private static void staggerBodyStartTime(final int bytesToGet) throws InterruptedException {
+        long t = System.currentTimeMillis();
+        long t2;
+        boolean staggerStartMode;
+        while ((staggerStartMode = (HttpGetter.averageBaud.value() < THRESHOLD_BAUD)) && (t2 = nextBodyStartTime) > t) {
+            //#debug
+            L.i("Body get stagger delay", (t2 - t) + "ms");
+            Thread.sleep(t2 - t);
+            t = System.currentTimeMillis();
+        }
+        if (staggerStartMode) {
+            /*
+             * The following calculation should use 8 bits per byte, but we use 7
+             * which means we can overlap a bit and start reading slightly early
+             * to compensate for net connection speed jitter and reduce the liklihood
+             * of any dead time between connection reads */
+            nextBodyStartTime = t + (((int) HttpGetter.averageBaud.value()) * 7 * bytesToGet) / 1000;
+        }
+    }
+
+    /**
+     * Get the time at which the HTTP network connection started
+     *
+     * @return
+     */
+    public long getStartTime() {
+        return startTime;
     }
 
     /**
@@ -664,8 +742,9 @@ public class HttpGetter extends Task {
      * @param in
      * @return
      */
-    public Object exec(final Object in) {
-        Object out = null;
+    public Object exec(final Object in) throws InterruptedException {
+        staggerHeaderStartTime();
+        byte[] out = null;
 
         startTime = System.currentTimeMillis();
         if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
@@ -718,7 +797,7 @@ public class HttpGetter extends Task {
                 addUpstreamDataCount(((String) requestPropertyValues.elementAt(i)).length());
             }
 
-            final long length = httpConn.getLength();
+            final int length = (int) httpConn.getLength();
             final int downstreamDataHeaderLength;
             synchronized (this) {
                 responseCode = httpConn.getResponseCode();
@@ -729,26 +808,41 @@ public class HttpGetter extends Task {
             // Response headers length estimation
             addDownstreamDataCount(downstreamDataHeaderLength);
 
+            long firstByteTime = Long.MAX_VALUE;
             if (length == 0) {
                 //#debug
                 L.i(this, "Exec", "No response. Stream is null, or length is 0");
             } else if (length > httpConn.getMaxLengthSupportedAsBlockOperation()) {
                 cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
             } else if (length > 0) {
-                final byte[] bytes = new byte[(int) length];
-                readBytesFixedLength(url, inputStream, bytes);
+                staggerBodyStartTime(length);
+                final byte[] bytes = new byte[length];
+                firstByteTime = readBytesFixedLength(url, inputStream, bytes);
                 out = bytes;
             } else {
                 bos = new ByteArrayOutputStream(OUTPUT_BUFFER_INITIAL_LENGTH);
-                readBytesVariableLength(inputStream, bos);
+                firstByteTime = readBytesVariableLength(inputStream, bos);
                 out = bos.toByteArray();
             }
-            HttpGetter.averageResponseDelayMillis.update((float) (System.currentTimeMillis() - startTime));
+            if (firstByteTime != Long.MAX_VALUE) {
+                HttpGetter.averageResponseDelayMillis.update((float) (firstByteTime - startTime));
+                //#debug
+                L.i(this, "Average HTTP header response time", "" + HttpGetter.averageResponseDelayMillis.value());
+            }
+            final long lastByteTime = System.currentTimeMillis();
+            final float baud;
+            final int dataLength = ((byte[]) out).length;
+            if (dataLength > 0 && lastByteTime > firstByteTime) {
+                baud = (dataLength * 8 * 1000) / ((int) (lastByteTime - firstByteTime));
+            } else {
+                baud = THRESHOLD_BAUD * 2;
+            }
+            HttpGetter.averageBaud.update(baud);
             //#debug
-            L.i(this, "Average HTTP response time", "" + HttpGetter.averageResponseDelayMillis.value());
+            L.i(this, "Average HTTP body read baud", HttpGetter.averageBaud.value() + " current=" + baud);
 
             if (out != null) {
-                addDownstreamDataCount(((byte[]) out).length);
+                addDownstreamDataCount(dataLength);
                 //#debug
                 L.i(this, "End read", "url=" + url + " bytes=" + ((byte[]) out).length);
             }
@@ -800,7 +894,7 @@ public class HttpGetter extends Task {
                 } catch (InterruptedException ex) {
                     cancel(false, "Interrupted HttpGetter while sleeping between retries: " + this);
                 }
-                out = exec(url);
+                out = (byte[]) exec(url);
             } else if (!success) {
                 //#debug
                 L.i("HTTP GET FAILED, cancel() of task and any chained Tasks", this.toString());
@@ -818,13 +912,14 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Read an exact number of bytes specified in the header Content-Length field
-     * 
+     * Read an exact number of bytes specified in the header Content-Length
+     * field
+     *
      * @param url
      * @param inputStream
      * @param bytes
      * @return time of first byte received
-     * @throws IOException 
+     * @throws IOException
      */
     private long readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
         long firstByteReceivedTime = Long.MAX_VALUE;
@@ -862,12 +957,13 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Read an unknown length field because the server did not specify how long the result is
-     * 
+     * Read an unknown length field because the server did not specify how long
+     * the result is
+     *
      * @param inputStream
      * @param bos
      * @return time of first byte received
-     * @throws IOException 
+     * @throws IOException
      */
     private long readBytesVariableLength(final InputStream inputStream, final OutputStream bos) throws IOException {
         final byte[] readBuffer = new byte[READ_BUFFER_LENGTH];
@@ -885,7 +981,7 @@ public class HttpGetter extends Task {
             }
             bos.write(readBuffer, 0, bytesRead);
         }
-        
+
         return firstByteReceivedTime;
     }
 
