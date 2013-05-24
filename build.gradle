@@ -1,11 +1,18 @@
 buildscript {
     repositories {
         mavenCentral()
+        maven {
+          url uri('file:../gradle_preprocessor/epo')
+        }
     }
     dependencies {
         classpath 'com.eriwen:gradle-cobertura-plugin:1.1.0'
+        // This is a local repository, so we can rely on SNAPSHOT-releases. Once this is an online dep, we must have a fixed version
+        classpath 'org.inkinen:gradle-preprocessor-plugin:0.1-SNAPSHOT'
     }
 }
+// We need to explicitly import the implementation class. This should not be required?
+import org.inkinen.PreprocessorTask
 
 allprojects {
     repositories {
@@ -16,7 +23,7 @@ allprojects {
 subprojects {
     apply plugin: 'java'
     apply plugin: 'cobertura'
-
+    apply plugin: 'preprocessor'
 
     configurations {
         bootClasspath
@@ -132,22 +139,9 @@ subprojects {
         }
     }
 
-    /**
-     * Dummy preprocessor task, that currently just copies the source files to another directory.
-     * This task will have to do, until we can integrate a non-JME-dependent preprocessor into
-     * the build script
-     */
-    task preprocessSources(overwrite: true) << {
-        file(project.ext.preprocessedSources).mkdirs()
-
-        for (dir in sourceSets.main.java.srcDirs) {
-            if (dir.exists()) {
-                copy {
-                    from dir.getAbsolutePath()
-                    into project.ext.preprocessedSources
-                }
-            }
-        }
+    task preprocessSources(overwrite: true, type: PreprocessorTask) {
+         source = sourceSets.main.java.srcDirs
+         destination = new File(project.ext.preprocessedSources)
     }
 
     task createTestJar(type: Jar) {
