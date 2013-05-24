@@ -2,7 +2,7 @@ buildscript {
     repositories {
         mavenCentral()
         maven {
-          url uri('file:../gradle_preprocessor/epo')
+          url uri('file:repository')
         }
     }
     dependencies {
