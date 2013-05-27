@@ -187,10 +187,9 @@ public abstract class FlashCache {
      * Return a list of all keys for objects stored in persistent memory
      *
      * @return
-     * @throws DigestException
      * @throws FlashDatabaseException
      */
-    public abstract long[] getDigests() throws DigestException, FlashDatabaseException;
+    public abstract long[] getDigests() throws FlashDatabaseException;
 
     /**
      * Remove all items from this flash cache

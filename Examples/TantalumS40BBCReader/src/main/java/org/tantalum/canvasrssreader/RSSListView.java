@@ -24,8 +24,10 @@
  */
 package org.tantalum.canvasrssreader;
 
+import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.TimeoutException;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSModel;
 import org.tantalum.storage.CacheView;
@@ -38,6 +40,7 @@ import org.xml.sax.SAXException;
  * @author phou
  */
 public abstract class RSSListView extends View {
+
     protected final Object MUTEX = new Object();
     static boolean prefetchImages = false;
     protected final RSSListView.LiveUpdateRSSModel rssModel = new RSSListView.LiveUpdateRSSModel();
@@ -64,14 +67,29 @@ public abstract class RSSListView extends View {
     }
 
     protected void clearCache() {
-        feedCache.clearAsync(new Task(Task.FASTLANE_PRIORITY) {
-            protected Object exec(final Object in) {
-                reloadAsync(true);
+        try {
+            final Task imageClearTask = DetailsView.imageCache.clearAsync(null);
 
-                return in;
-            }
-        }.setClassName("ClearCache"));
-        DetailsView.imageCache.clearAsync(null);
+            feedCache.clearAsync(new Task(Task.FASTLANE_PRIORITY) {
+                protected Object exec(final Object in) {
+                    try {
+                        imageClearTask.join();
+                        reloadAsync(true);
+                    } catch (CancellationException ex) {
+                        //#debug
+                        L.e(this, "Can not clear cache", null, ex);
+                    } catch (TimeoutException ex) {
+                        //#debug
+                        L.e(this, "Can not clear cache", null, ex);
+                    }
+
+                    return in;
+                }
+            }.setClassName("ClearCache"));
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e(this, "Can not clear cache", null, ex);
+        }
     }
 
     /**

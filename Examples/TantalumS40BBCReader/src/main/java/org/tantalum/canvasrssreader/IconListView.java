@@ -221,7 +221,7 @@ public final class IconListView extends RSSListView {
         }
     }
 
-    protected void doClearCache() {
+    protected void clearCache() {
         super.clearCache();
         synchronized (MUTEX) {
             icons.clear();

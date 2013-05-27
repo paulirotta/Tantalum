@@ -198,17 +198,18 @@ public class StaticCache {
      * though we do not pre-load from flash all the values
      */
     private void init() throws FlashDatabaseException {
+        final long[] digests;
         try {
-            final long[] digests = flashCache.getDigests();
-            synchronized (ramCache) {
-                for (int i = 0; i < digests.length; i++) {
-                    ramCache.markContains(new Long(digests[i]));
-                }
-            }
-        } catch (Exception ex) {
+            digests = flashCache.getDigests();
+        } catch (FlashDatabaseException ex) {
             //#debug
             L.e(this, "Can not load keys to RAM during init() cache", "cache priority=" + cachePriorityChar, ex);
             throw new FlashDatabaseException("Can not load cache keys during init for cache '" + cachePriorityChar + "' : " + ex);
+        }
+        synchronized (ramCache) {
+            for (int i = 0; i < digests.length; i++) {
+                ramCache.markContains(new Long(digests[i]));
+            }
         }
         (new Task(Task.SHUTDOWN) {
             protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
@@ -640,19 +641,22 @@ public class StaticCache {
                 //#debug
                 L.i("Cache remove (from RAM and RMS)", Long.toString(digest, 16));
             }
-        } catch (Exception e) {
+        } catch (FlashDatabaseException e) {
             //#debug
             L.e("Couldn't remove object from cache", Long.toString(digest, 16), e);
         }
     }
 
     /**
-     * Remove all elements from this ramCache
+     * Remove all elements currently contained in this cache
      *
      * @param nextTask
-     * @return
+     * @return a Task with completes the clear operation in the background. To
+     * ensure the entire clear is complete, you can join() this Task.
+     * @throws DigestException
+     * @throws FlashDatabaseException
      */
-    public Task clearAsync(final Task nextTask) throws DigestException, FlashDatabaseException {
+    public Task clearAsync(final Task nextTask) throws FlashDatabaseException {
         final long[] digests = flashCache.getDigests();
         final Task task = new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
