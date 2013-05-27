@@ -332,7 +332,7 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param * * * * * * * * * * * * * * * * * *
+     * @param * * * * * * * * * * * * * * * * * * *
      *      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
@@ -516,12 +516,12 @@ public final class StaticWebCache extends StaticCache {
             if (in == null || !(in instanceof String)) {
                 //#debug
                 L.i(this, "ERROR", "Must receive a String url, but got " + (in == null ? "null" : in.toString()));
-                cancel(false, getClassName() + " got bad input: " + in);
+                cancel(false, getClassName() + " got bad url: " + in);
             } else {
-                //#debug
-                L.i(this, "get", (String) in);
                 try {
                     final String url = (String) in;
+                    //#debug
+                    L.i(this, "get", url);
                     out = synchronousGet(url, skipHeap);
                     if (out == null) {
                         //#debug

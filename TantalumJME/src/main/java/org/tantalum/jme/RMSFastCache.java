@@ -38,7 +38,7 @@ public class RMSFastCache extends FlashCache {
     static final char RECORD_HASH_PREFIX = '_';
     private final RecordStore keyRS;
     private final RecordStore valueRS;
-    private final Object MUTEX = new Object();
+    private final Object mutex = new Object();
     /*
      * The Integer index of each key record in the hashtable
      * 
@@ -308,7 +308,7 @@ public class RMSFastCache extends FlashCache {
     private void indexHashPut(final long digest, final int keyRecordId, final int valueRecordId) {
         final Long l = toIndexHash(keyRecordId, valueRecordId);
 
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             indexHash.put(new Long(digest), l);
         }
     }
@@ -321,7 +321,7 @@ public class RMSFastCache extends FlashCache {
      * @return
      */
     private Long indexHashGet(final long digest) {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             return (Long) indexHash.get(new Long(digest));
         }
     }
@@ -336,7 +336,7 @@ public class RMSFastCache extends FlashCache {
      * @throws UnsupportedEncodingException
      */
     public String getKey(final long digest) throws FlashDatabaseException {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             final Long keyAndValueIndexes = indexHashGet(digest);
 
             if (keyAndValueIndexes == null) {
@@ -467,7 +467,7 @@ public class RMSFastCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public byte[] get(final long digest) throws FlashDatabaseException {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             final Long hashValue = ((Long) indexHash.get(new Long(digest)));
 
             if (hashValue != null) {
@@ -501,7 +501,7 @@ public class RMSFastCache extends FlashCache {
             throw new IllegalArgumentException("You attempted to put null data to the cache");
         }
 
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             try {
                 final long digest = CryptoUtils.getInstance().toDigest(key);
                 final Long indexEntry = indexHashGet(digest);
@@ -545,7 +545,7 @@ public class RMSFastCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public void removeData(final long digest) throws FlashDatabaseException {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             try {
                 final Long indexEntry = indexHashGet(digest);
 
@@ -568,7 +568,7 @@ public class RMSFastCache extends FlashCache {
      * @throws FlashDatabaseException
      */
     public long[] getDigests() throws FlashDatabaseException {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             final long[] digests = new long[indexHash.size()];
             final Enumeration enu = indexHash.keys();
 
@@ -593,7 +593,7 @@ public class RMSFastCache extends FlashCache {
         RecordEnumeration recordEnum = null;
 
         try {
-            synchronized (MUTEX) {
+            synchronized (mutex) {
                 recordEnum = recordStore.enumerateRecords(null, null, false);
                 //#debug
                 int i = 0;
@@ -643,7 +643,7 @@ public class RMSFastCache extends FlashCache {
      *
      */
     public void clear() {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             //#debug
             L.i("Clearing RMSFastCache", "" + priority);
             indexHash.clear();
@@ -673,7 +673,7 @@ public class RMSFastCache extends FlashCache {
     }
 
     public void close() throws FlashDatabaseException {
-        synchronized (MUTEX) {
+        synchronized (mutex) {
             try {
                 super.close();
                 

@@ -274,7 +274,7 @@ public abstract class Task {
      * will have cancel() called to notify that they will not execute.
      */
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
-    private final int forkPriority; // Access only in synchronized(MUTEX) block
+    private final int forkPriority;
     private final Object mutex = new Object();
 
     /**
@@ -733,7 +733,6 @@ public abstract class Task {
                 throw new IllegalArgumentException("setStatus(" + Task.STATUS_STRINGS[status] + ") not allowed, already FINISHED or CANCELED: " + this);
             }
             this.status = status;
-            mutex.notifyAll();
             t = chainedTask;
             if (status == CANCELED) {
                 /*
@@ -742,6 +741,7 @@ public abstract class Task {
                  */
                 chainedTask = null;
             }
+            mutex.notifyAll();
         }
 
         if (status == CANCELED) {

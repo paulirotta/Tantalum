@@ -66,7 +66,7 @@ public class StaticCache {
     /**
      * The underlying platform-specific cache implementation
      */
-    public final FlashCache flashCache;
+    protected final FlashCache flashCache;
     /**
      * A heap memory ramCache in the form of a Hashtable from which data can be
      * removed automatically by the virtual machine to free up memory (automatic
@@ -739,6 +739,17 @@ public class StaticCache {
         return defaultCacheView;
     }
 
+    /**
+     * Get the free space available on the flash file system of the device
+     * (phone, memory card) containing this cache persistent storage.
+     *
+     * @return number of bytes available
+     * @throws FlashDatabaseException
+     */
+    public long getFreespace() throws FlashDatabaseException {
+        return flashCache.getFreespace();
+    }
+
 //#mdebug
     /**
      * For debugging use
@@ -760,6 +771,8 @@ public class StaticCache {
                 str.append("\n");
             }
         }
+        str.append("FlashCache: ");
+        str.append(flashCache.toString());
 
         return str.toString();
     }
