@@ -710,15 +710,6 @@ public class StaticCache {
     }
 
     /**
-     * The number of items in the ramCache
-     *
-     * @return
-     */
-    public int getSize() {
-        return this.ramCache.size();
-    }
-
-    /**
      * The relative cachePriorityChar used for allocating RMS space between
      * multiple caches. Higher cachePriorityChar caches synchronousRAMCacheGet
      * more space.
@@ -751,7 +742,7 @@ public class StaticCache {
         str.append("StaticCache --- priority: ");
         str.append(cachePriorityChar);
         str.append(" size: ");
-        str.append(getSize());
+        str.append(size());
         str.append("\n");
 
         synchronized (accessOrder) {
