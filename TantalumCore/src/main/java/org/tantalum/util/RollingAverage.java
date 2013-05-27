@@ -30,7 +30,7 @@ public final class RollingAverage {
         if (windowLength < 2) {
             throw new IllegalArgumentException("RollingAverage window length must be at least 2: " + windowLength);
         }
-        if (initialValue == Float.NaN) {
+        if (Float.isNaN(initialValue)) {
             throw new IllegalArgumentException("RollingAverage initial value must be a rational float: " + initialValue);
         }
 
