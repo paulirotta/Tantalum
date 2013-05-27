@@ -57,52 +57,40 @@ import org.tantalum.util.L;
  * <code>get</code> method returns a value if one can be found, and throws an
  * exception if one cannot be found. An
  * <code>opt</code> method returns a default value instead of throwing an
- * exception, and so is useful for obtaining optional values.
- * <p>
- * The generic
+ * exception, and so is useful for obtaining optional values. <p> The generic
  * <code>get()</code> and
  * <code>opt()</code> methods return an object, which you can cast or query for
  * type. There are also typed
  * <code>get</code> and
- * <code>opt</code> methods that do type checking and type coersion for you.
- * <p>
+ * <code>opt</code> methods that do type checking and type coersion for you. <p>
  * The
  * <code>put</code> methods adds values to an object. For example,
  * <pre>
  *     myString = new JSONObject().put("JSON", "Hello, World!").toString();</pre>
  * produces the string
- * <code>{"JSON": "Hello, World"}</code>.
- * <p>
- * The texts produced by the
+ * <code>{"JSON": "Hello, World"}</code>. <p> The texts produced by the
  * <code>toString</code> methods strictly conform to the JSON sysntax rules. The
- * constructors are more forgiving in the texts they will accept:
- * <ul>
- * <li>An extra
+ * constructors are more forgiving in the texts they will accept: <ul> <li>An
+ * extra
  * <code>,</code>&nbsp;<small>(comma)</small> may appear just before the closing
- * brace.</li>
- * <li>Strings may be quoted with
- * <code>'</code>&nbsp;<small>(single quote)</small>.</li>
- * <li>Strings do not need to be quoted at all if they do not begin with a quote
- * or single quote, and if they do not contain leading or trailing spaces, and
- * if they do not contain any of these characters:
+ * brace.</li> <li>Strings may be quoted with
+ * <code>'</code>&nbsp;<small>(single quote)</small>.</li> <li>Strings do not
+ * need to be quoted at all if they do not begin with a quote or single quote,
+ * and if they do not contain leading or trailing spaces, and if they do not
+ * contain any of these characters:
  * <code>{ } [ ] / \ : , = ; #</code> and if they do not look like numbers and
  * if they are not the reserved words
  * <code>true</code>,
  * <code>false</code>, or
- * <code>null</code>.</li>
- * <li>Keys can be followed by
+ * <code>null</code>.</li> <li>Keys can be followed by
  * <code>=</code> or
  * <code>=></code> as well as by
- * <code>:</code>.</li>
- * <li>Values can be followed by
+ * <code>:</code>.</li> <li>Values can be followed by
  * <code>;</code> <small>(semicolon)</small> as well as by
- * <code>,</code> <small>(comma)</small>.</li>
- * <li>Numbers may have the
+ * <code>,</code> <small>(comma)</small>.</li> <li>Numbers may have the
  * <code>0-</code> <small>(octal)</small> or
- * <code>0x-</code> <small>(hex)</small> prefix.</li>
- * <li>Comments written in the slashshlash, slashstar, and hash conventions will
- * be ignored.</li>
- * </ul>
+ * <code>0x-</code> <small>(hex)</small> prefix.</li> <li>Comments written in
+ * the slashshlash, slashstar, and hash conventions will be ignored.</li> </ul>
  *
  * @author JSON.org
  * @version 2
@@ -929,8 +917,9 @@ public final class JSONObject {
      * right places. A backslash will be inserted within </, allowing JSON text
      * to be delivered in HTML. In JSON text, a string cannot contain a control
      * character or an unescaped quote or backslash. @param string A String
-     * @param string @return A String correctly formatted for insertion in a
-     * JSON text.
+     *
+     * @param string
+     * @return A String correctly formatted for insertion in a JSON text.
      */
     public static String quote(final String string) {
         if (string == null || string.length() == 0) {
@@ -1046,9 +1035,8 @@ public final class JSONObject {
     /**
      * Make a JSON text of this JSONObject. For compactness, no whitespace is
      * added. If this would not result in a syntactically correct JSON text,
-     * then null will be returned instead.
-     * <p>
-     * Warning: This method assumes that the data structure is acyclical.
+     * then null will be returned instead. <p> Warning: This method assumes that
+     * the data structure is acyclical.
      *
      * @return a printable, displayable, portable, transmittable representation
      * of the object, beginning with <code>{</code>&nbsp;<small>(left
@@ -1080,9 +1068,8 @@ public final class JSONObject {
     }
 
     /**
-     * Make a prettyprinted JSON text of this JSONObject.
-     * <p>
-     * Warning: This method assumes that the data structure is acyclical.
+     * Make a prettyprinted JSON text of this JSONObject. <p> Warning: This
+     * method assumes that the data structure is acyclical.
      *
      * @param indentFactor The number of spaces to add to each level of
      * indentation.
@@ -1097,9 +1084,8 @@ public final class JSONObject {
     }
 
     /**
-     * Make a prettyprinted JSON text of this JSONObject.
-     * <p>
-     * Warning: This method assumes that the data structure is acyclical.
+     * Make a prettyprinted JSON text of this JSONObject. <p> Warning: This
+     * method assumes that the data structure is acyclical.
      *
      * @param indentFactor The number of spaces to add to each level of
      * indentation.
@@ -1157,9 +1143,8 @@ public final class JSONObject {
      * value.toJSONString() method, then that method will be used to produce the
      * JSON text. The method is required to produce a strictly conforming text.
      * If the object does not contain a toJSONString method (which is the most
-     * common case), then a text will be produced by the rules.
-     * <p>
-     * Warning: This method assumes that the data structure is acyclical.
+     * common case), then a text will be produced by the rules. <p> Warning:
+     * This method assumes that the data structure is acyclical.
      *
      * @param value The value to be serialized.
      * @return a printable, displayable, transmittable representation of the
@@ -1173,18 +1158,15 @@ public final class JSONObject {
         }
 
         if (value instanceof JSONString) {
-            final Object o;
+            final String jsonString;
             try {
-                o = ((JSONString) value).toJSONString();
+                jsonString = ((JSONString) value).toJSONString();
             } catch (Exception e) {
                 //#debug
                 L.e("JSONObject.valueToString()", "Can not convert", e);
                 throw new JSONException(e);
             }
-            if (o instanceof String) {
-                return (String) o;
-            }
-            throw new JSONException("Bad value from toJSONString: " + o);
+            return (String) jsonString;
         }
         if (value instanceof Float || value instanceof Double
                 || value instanceof Byte || value instanceof Short
@@ -1199,9 +1181,8 @@ public final class JSONObject {
     }
 
     /**
-     * Make a prettyprinted JSON text of an object value.
-     * <p>
-     * Warning: This method assumes that the data structure is acyclical.
+     * Make a prettyprinted JSON text of an object value. <p> Warning: This
+     * method assumes that the data structure is acyclical.
      *
      * @param value The value to be serialized.
      * @param indentFactor The number of spaces to add to each level of
@@ -1243,9 +1224,8 @@ public final class JSONObject {
 
     /**
      * Write the contents of the JSONObject as JSON text to a writer. For
-     * compactness, no whitespace is added.
-     * <p>
-     * Warning: This method assumes that the data structure is acyclical.
+     * compactness, no whitespace is added. <p> Warning: This method assumes
+     * that the data structure is acyclical.
      *
      * @param writer
      * @return
