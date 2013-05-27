@@ -648,17 +648,21 @@ public class StaticCache {
     }
 
     /**
-     * Remove all elements currently contained in this cache
+     * Remove all elements contained in this cache at the moment this method is
+     * called.
+     *
+     * To ensure the entire cache clear is complete before proceeding, you can
+     * join() the Task returned.
      *
      * @param nextTask
-     * @return a Task with completes the clear operation in the background. To
-     * ensure the entire clear is complete, you can join() this Task.
+     * @return a Task with completes the clear operation in the background.
      * @throws DigestException
      * @throws FlashDatabaseException
      */
     public Task clearAsync(final Task nextTask) throws FlashDatabaseException {
         final long[] digests = flashCache.getDigests();
-        final Task task = new Task(Task.SERIAL_PRIORITY) {
+
+        return new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
                 //#debug
                 L.i("Start Cache Clear", "ID=" + cachePriorityChar);
@@ -669,9 +673,7 @@ public class StaticCache {
                 L.i("Cache cleared", "ID=" + cachePriorityChar);
                 return in;
             }
-        }.setClassName("ClearAsync");
-
-        return task.chain(nextTask).fork();
+        }.setClassName("ClearAsync").chain(nextTask).fork();
     }
 
     /**
