@@ -652,16 +652,17 @@ public class StaticCache {
      * @param nextTask
      * @return
      */
-    public Task clearAsync(final Task nextTask) {
+    public Task clearAsync(final Task nextTask) throws DigestException, FlashDatabaseException {
+        final long[] digests = flashCache.getDigests();
         final Task task = new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
                 //#debug
                 L.i("Start Cache Clear", "ID=" + cachePriorityChar);
-                accessOrder.removeAllElements();
-                flashCache.clear();
+                for (int i = 0; i < digests.length; i++) {
+                    remove(digests[i]);
+                }
                 //#debug
                 L.i("Cache cleared", "ID=" + cachePriorityChar);
-
                 return in;
             }
         }.setClassName("ClearAsync");
@@ -710,15 +711,6 @@ public class StaticCache {
     }
 
     /**
-     * The number of items in the ramCache
-     *
-     * @return
-     */
-    public int getSize() {
-        return this.ramCache.size();
-    }
-
-    /**
      * The relative cachePriorityChar used for allocating RMS space between
      * multiple caches. Higher cachePriorityChar caches synchronousRAMCacheGet
      * more space.
@@ -762,7 +754,7 @@ public class StaticCache {
         str.append("StaticCache --- priority: ");
         str.append(cachePriorityChar);
         str.append(" size: ");
-        str.append(getSize());
+        str.append(size());
         str.append("\n");
 
         synchronized (accessOrder) {

@@ -425,9 +425,10 @@ public final class JMEImageUtils {
      * @param i
      * @return
      */
-    private static int toFixedPoint(final int i) {
-        return i << FP_SHIFT;
-    }
+    // FIXME: Not being used
+//    private static int toFixedPoint(final int i) {
+//        return i << FP_SHIFT;
+//    }
 
     /**
      *

@@ -832,7 +832,10 @@ public class HttpGetter extends Task {
             }
             final long lastByteTime = System.currentTimeMillis();
             final float baud;
-            final int dataLength = ((byte[]) out).length;
+            int dataLength = 0;
+            if (out != null) {
+                dataLength = out.length;
+            }
             if (dataLength > 0 && lastByteTime > firstByteTime) {
                 baud = (dataLength * 8 * 1000) / ((int) (lastByteTime - firstByteTime));
             } else {
@@ -898,8 +901,8 @@ public class HttpGetter extends Task {
                 out = (byte[]) exec(url);
             } else if (!success) {
                 //#debug
-                L.i("HTTP GET FAILED, cancel() of task and any chained Tasks", this.toString());
-                cancel(false, "HttpGetter failed response code and header check: " + this.toString());
+                L.i("HTTP GET FAILED, cancel() of task and any chained Tasks", (this != null ? this.toString() : "null"));
+                cancel(false, "HttpGetter failed response code and header check: " + this);
             }
             //#debug
             L.i(this, "End", url + " status=" + getStatus() + " out=" + out);
