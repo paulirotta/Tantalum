@@ -493,6 +493,7 @@ public class StaticCache {
         if (bytes == null || bytes.length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
+        final Object previousUseForm = this.ramCache.get(key);
         final Object useForm;
         //#debug
         L.i(this, "put", "key=" + key + " byteLength=" + bytes.length);
@@ -506,6 +507,11 @@ public class StaticCache {
             //#debug
             L.e("Can not putAync", key, ex);
             throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+        }
+        if (useForm.equals(previousUseForm)) {
+            //#debug
+            L.i("Ignoring trivial re-put() of the same key-value pair", key);
+            return useForm;
         }
 
 //#mdebug        
@@ -685,11 +691,9 @@ public class StaticCache {
      *
      */
     public void clearHeap() {
-        synchronized (ramCache) {
-            //#debug
-            L.i(this, "Heap cache clear", "" + cachePriorityChar);
-            ramCache.clearValues();
-        }
+        //#debug
+        L.i(this, "Heap cache clear", "" + cachePriorityChar);
+        ramCache.clearValues();
     }
 
     /**

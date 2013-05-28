@@ -62,7 +62,7 @@ final class Worker extends Thread {
      */
     private final Vector serialQ = new Vector();
     private static final Vector fastlaneQ = new Vector();
-    private static final Vector backgroundQ = new Vector();
+    private static final Vector idleQ = new Vector();
     private static final Vector shutdownQ = new Vector();
     private static int currentlyIdleCount = 0;
     private static int runState = RUNNING;
@@ -161,7 +161,7 @@ final class Worker extends Thread {
                     q.notifyAll();
                     break;
                 case Task.IDLE_PRIORITY:
-                    backgroundQ.addElement(task);
+                    idleQ.addElement(task);
                     q.notifyAll();
                     break;
                 case Task.SHUTDOWN:
@@ -210,7 +210,7 @@ final class Worker extends Thread {
                 success = fastlaneQ.removeElement(task);
             }
             if (!success) {
-                success = backgroundQ.removeElement(task);
+                success = idleQ.removeElement(task);
             }
         }
         //#debug
@@ -277,7 +277,7 @@ final class Worker extends Thread {
                 dequeueOrCancelOnShutdown(fastlaneQ);
                 Worker.dequeueOrCancelOnShutdown(workers[0].serialQ);
                 dequeueOrCancelOnShutdown(q);
-                dequeueOrCancelOnShutdown(backgroundQ);
+                dequeueOrCancelOnShutdown(idleQ);
                 q.notifyAll();
             }
             /*
@@ -488,17 +488,17 @@ final class Worker extends Thread {
                 }
             } else if (!serialQ.isEmpty()) {
                 getSerialTask();
-            } else if (allWorkersIdleExceptThisOne() && backgroundQ.size() > 0) {
-                getBackgroundTask();
+            } else if (allWorkersIdleExceptThisOne() && idleQ.size() > 0) {
+                getIdleTask();
             }
         }
     }
 
-    private void getBackgroundTask() {
+    private void getIdleTask() {
         try {
-            currentTask = (Task) backgroundQ.firstElement();
+            currentTask = (Task) idleQ.firstElement();
         } finally {
-            backgroundQ.removeElementAt(0);
+            idleQ.removeElementAt(0);
         }
     }
 
@@ -523,7 +523,7 @@ final class Worker extends Thread {
         sb.append(" shutdownQ.size()=");
         sb.append(Worker.shutdownQ.size());
         sb.append(" lowPriorityQ.size()=");
-        sb.append(Worker.backgroundQ.size());
+        sb.append(Worker.idleQ.size());
 
         for (int i = 0; i < workers.length; i++) {
             final Worker w = workers[i];
@@ -568,9 +568,9 @@ final class Worker extends Thread {
                 sb.append('Q');
                 sb.append(Worker.q.size());
             }
-            if (!backgroundQ.isEmpty()) {
+            if (!idleQ.isEmpty()) {
                 sb.append('B');
-                sb.append(Worker.backgroundQ.size());
+                sb.append(Worker.idleQ.size());
             }
             for (int i = 0; i < n; i++) {
                 final Worker w = Worker.workers[i];
