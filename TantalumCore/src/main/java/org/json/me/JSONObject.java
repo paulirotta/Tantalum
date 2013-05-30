@@ -356,7 +356,8 @@ public final class JSONObject {
      * @throws JSONException if the key is not found.
      */
     public Object get(final String key) throws JSONException {
-        Object o = opt(key);
+        final Object o = opt(key);
+        
         if (o == null) {
             throw new JSONException("JSONObject[" + quote(key)
                     + "] not found.");
