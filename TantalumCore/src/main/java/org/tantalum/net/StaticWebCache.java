@@ -169,9 +169,6 @@ public final class StaticWebCache extends StaticCache {
         super(priority, cacheType, cacheView);
 
         this.httpTaskFactory = httpTaskFactory;
-
-        //#debug
-        //validateEntireCacheAgainstWebServer();
     }
 
 //#mdebug
@@ -179,11 +176,17 @@ public final class StaticWebCache extends StaticCache {
      * Read everything from the server, again, and make sure it is byte-for-byte
      * the same as what we get from asking the same thing from flash memory
      *
-     * Rather slow, but only done in -debug.jar builds so does not affect
-     * production.
+     * This is a sanity-check test method to confirm if your local copy of a web
+     * service is identical to the current state of that web service. It runs
+     * synchronously and slowly depending on your network speed and cache size,
+     * so it is not recommended as part of your normal production runtime build.
      *
+     * Rather slow, especially on a phone, but only done in -debug.jar builds so
+     * does not affect production speed. Note also that you can call
+     * StaticCache.setFlashCacheEnabled(false) for similar sanity checks which
+     * run in a slow "always get from the server" mode.
      */
-    private void validateEntireCacheAgainstWebServer() throws FlashDatabaseException {
+    public void validateEntireCacheAgainstWebServer() throws FlashDatabaseException {
         final Object[] keys = this.ramCache.getKeys();
         final Task[] tasks = new Task[keys.length];
 
@@ -332,7 +335,7 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param * * * * * * * * * * * * * * * * * * *
+     * @param * * * * * * * * * * * * * * * * * * * * *
      *      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned

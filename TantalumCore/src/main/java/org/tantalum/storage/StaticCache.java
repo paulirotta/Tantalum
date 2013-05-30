@@ -229,6 +229,9 @@ public class StaticCache {
 
 //#mdebug    
     /**
+     * This is a debug and performance testing switch. It is recommended that
+     * you leave this in the default "enabled" state for your production build.
+     *
      * Turn off persistent local storage use for read and write to see what
      * happens to the application performance. This is most useful for
      * StaticWebCache but may be useful in other test cases.
