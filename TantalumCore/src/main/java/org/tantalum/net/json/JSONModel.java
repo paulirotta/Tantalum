@@ -26,6 +26,7 @@ package org.tantalum.net.json;
 
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
+import org.tantalum.util.L;
 
 /**
  * A data model (as in MVC) that keeps the data in JSON format
@@ -70,6 +71,9 @@ public class JSONModel {
      * @throws JSONException
      */
     public synchronized void setJSON(final String json) throws JSONException {
+        if (json == null) {
+            throw new IllegalArgumentException("Can not setJSON(null): " + this);
+        }
         jsonObject = new JSONObject(json);
     }
 
