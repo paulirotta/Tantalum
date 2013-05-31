@@ -16,6 +16,7 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotOpenException;
+import org.tantalum.PlatformUtils;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
@@ -73,8 +74,15 @@ public class RMSFastCache extends FlashCache {
     private void initIndex(final int numberOfKeys) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException, DigestException, UnsupportedEncodingException {
         /*
          * All value records not pointed to by an entry in the keyRS
+         * 
+         * currentRecordKeyAsInteger -> keyIndexBytes(4bytes:string where 4bytes is int index of valueRS and string is url)
          */
         final Hashtable keyRMSIndexHash = new Hashtable(numberOfKeys * 5 / 4);
+        /*
+         * Hash of all valueRM index numbers for fast "contains"
+         * 
+         * value -> value
+         */
         final Hashtable valueIntegers = new Hashtable(numberOfKeys * 5 / 4);
         initReadValueIntegers(valueIntegers);
 
@@ -96,6 +104,30 @@ public class RMSFastCache extends FlashCache {
         }
         initDeleteUnreferencedValues(referencedValueIntegers, valueIntegers);
         initDeleteIndexEntriesPointingToNonexistantValues(keyRMSIndexHash, valueIntegers);
+        //#mdebug
+        // Validate that no two keys have the same value
+        Hashtable copy = new Hashtable();
+        
+        Enumeration enumeration = indexHash.elements();
+        while (enumeration.hasMoreElements()) {
+            final Object dummyObject = new Object();
+            Object theValue = enumeration.nextElement();
+            if (copy.containsKey(theValue)) {
+                // Here we have duplicate value in the indexHash
+                L.i(this, "Duplicate value in indexHash. Two distinct keys point to equal value ", toKeyIndex((Long) theValue) + "-" + toValueIndex((Long) theValue));
+                dumpHash(copy);
+                PlatformUtils.getInstance().shutdown(true, "RMS is inconsistent");
+            }
+            
+            copy.put(theValue, dummyObject);
+        }
+        
+        if (copy.size() != indexHash.size()) {
+            // We have a problem
+            
+        }
+        
+        //#enddebug
     }
 
     /**
@@ -111,8 +143,8 @@ public class RMSFastCache extends FlashCache {
         forEachRecord(valueRS, new RecordTask() {
             void exec() {
                 //#debug
-                L.i(this, "initReadValueIntegers", "" + keyIndex);
-                final Integer valueIndex = new Integer(keyIndex);
+                L.i(this, "initReadValueIntegers", "" + currentRecordTaskKeyIndex);
+                final Integer valueIndex = new Integer(currentRecordTaskKeyIndex);
                 valueIntegers.put(valueIndex, valueIndex);
             }
         });
@@ -261,35 +293,52 @@ public class RMSFastCache extends FlashCache {
      * @throws RecordStoreNotOpenException
      * @throws InvalidRecordIDException
      */
-    private void initReadIndexRecords(final Hashtable keyRMSIndexHash,
-            final Vector referencedValueIntegers) throws RecordStoreNotOpenException {
+    private void initReadIndexRecords(final Hashtable initTimeToKeyRMSIndexHash,
+            final Vector initTimeReferencedValueIntegers) throws RecordStoreNotOpenException {
+        //#mdebug
+        final Hashtable duplicateIndexStringHash = new Hashtable();
+        final Hashtable duplicateIndexValueHash = new Hashtable();
+        final Object AN_OBJECT_THAT_SAVES_MEMORY = new Object();
+        //#enddebug
+        
         forEachRecord(keyRS, new RecordTask() {
             void exec() {
                 try {
-                    final byte[] keyIndexBytes = keyRS.getRecord(keyIndex);
+                    final byte[] keyIndexBytes = keyRS.getRecord(currentRecordTaskKeyIndex);
                     final String key = toStringKey(keyIndexBytes); // Decode to check integrity
-                    final Integer keyRecordInteger = new Integer(keyIndex);
+                    final Integer currentRecordKeyAsInteger = new Integer(currentRecordTaskKeyIndex);
                     final int valueRecordId = toValueIndex(keyIndexBytes);
-                    final Integer valueRecordInteger = new Integer(valueRecordId);
+                    final Integer valueRecordIdAsInteger = new Integer(valueRecordId);
 
-                    //#debug
-                    L.i(this, "initReadIndexRecords", "key(" + keyIndex + ")=" + key + " (" + Long.toString(CryptoUtils.getInstance().toDigest(key), 16) + ") -> value(" + valueRecordId + ")");
-                    keyRMSIndexHash.put(keyRecordInteger, keyIndexBytes);
-                    referencedValueIntegers.addElement(valueRecordInteger);
+                    //#mdebug
+                    L.i(this, "initReadIndexRecords", "key(" + currentRecordTaskKeyIndex + ")=" + key + " (" + Long.toString(CryptoUtils.getInstance().toDigest(key), 16) + ") -> value(" + valueRecordId + ")");
+                    final String s = toStringKey(keyIndexBytes);
+                    final Integer v = new Integer(toValueIndex(keyIndexBytes));
+                    if (duplicateIndexStringHash.containsKey(s)) {
+                        L.i(this, "WARNING: duplicate keyRS key entries found, should be fixed in next phase of init", s + " - " + v + " at keyRMS index " + currentRecordTaskKeyIndex);
+                    }
+                    if (duplicateIndexValueHash.containsKey(v)) {
+                        L.i(this, "WARNING: duplicate keyRS key entries pointing to the same valueRS position found, should be fixed in next phase of init", s + " - " + v + " at keyRMS index " + currentRecordTaskKeyIndex);
+                    }
+                    duplicateIndexStringHash.put(s, AN_OBJECT_THAT_SAVES_MEMORY);
+                    duplicateIndexValueHash.put(v, AN_OBJECT_THAT_SAVES_MEMORY);
+                    //#enddebug
+                    initTimeToKeyRMSIndexHash.put(currentRecordKeyAsInteger, keyIndexBytes);
+                    initTimeReferencedValueIntegers.addElement(valueRecordIdAsInteger);
                 } catch (Exception e) {
                     //#debug
-                    L.e("Can not read index entry, deleting", "" + keyIndex, e);
+                    L.e("Can not read index entry, deleting", "" + currentRecordTaskKeyIndex, e);
                     try {
-                        keyRS.deleteRecord(keyIndex);
+                        keyRS.deleteRecord(currentRecordTaskKeyIndex);
                     } catch (RecordStoreNotOpenException ex) {
                         //#debug
-                        L.e(this, "Can not delete unreadable index entry", "keyIndex=" + keyIndex, e);
+                        L.e(this, "Can not delete unreadable index entry", "keyIndex=" + currentRecordTaskKeyIndex, e);
                     } catch (InvalidRecordIDException ex) {
                         //#debug
-                        L.e(this, "Can not delete unreadable index entry", "keyIndex=" + keyIndex, e);
+                        L.e(this, "Can not delete unreadable index entry", "keyIndex=" + currentRecordTaskKeyIndex, e);
                     } catch (RecordStoreException ex) {
                         //#debug
-                        L.e(this, "Can not delete unreadable index entry", "keyIndex=" + keyIndex, e);
+                        L.e(this, "Can not delete unreadable index entry", "keyIndex=" + currentRecordTaskKeyIndex, e);
                     }
                 }
             }
@@ -448,6 +497,7 @@ public class RMSFastCache extends FlashCache {
      * extracted
      */
     private int toValueIndex(final byte[] indexBytes) {
+        //TODO Write sanity check unit tests, most significant bit
         int i = indexBytes[0] & 0xFF;
         i <<= 8;
         i |= indexBytes[1] & 0xFF;
@@ -550,6 +600,7 @@ public class RMSFastCache extends FlashCache {
                 final Long indexEntry = indexHashGet(digest);
 
                 if (indexEntry != null) {
+                    indexHash.remove(new Long(digest));
                     final int valueRecordId = toValueIndex(indexEntry);
                     final int keyRecordId = toKeyIndex(indexEntry);
                     valueRS.deleteRecord(valueRecordId);
@@ -628,10 +679,10 @@ public class RMSFastCache extends FlashCache {
         forEachRecord(recordStore, new RecordTask() {
             void exec() {
                 try {
-                    recordStore.deleteRecord(keyIndex);
+                    recordStore.deleteRecord(currentRecordTaskKeyIndex);
                 } catch (Exception e) {
                     //#debug
-                    L.e("Can not clear rms", "" + keyIndex, e);
+                    L.e("Can not clear rms", "" + currentRecordTaskKeyIndex, e);
                 }
             }
         });
@@ -676,7 +727,7 @@ public class RMSFastCache extends FlashCache {
         synchronized (mutex) {
             try {
                 super.close();
-                
+
                 try {
                     valueRS.closeRecordStore();
                 } finally {
@@ -695,10 +746,10 @@ public class RMSFastCache extends FlashCache {
      */
     private static abstract class RecordTask {
 
-        public int keyIndex;
+        public int currentRecordTaskKeyIndex;
 
         final void exec(final int recordIndex) {
-            this.keyIndex = recordIndex;
+            this.currentRecordTaskKeyIndex = recordIndex;
             exec();
         }
 
