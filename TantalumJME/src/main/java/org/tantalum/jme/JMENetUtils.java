@@ -5,7 +5,7 @@
 package org.tantalum.jme;
 
 /**
- * Occasionally-useful networking utilities
+ * Useful networking utilities, for Nokia phones only.
  *
  * @author phou
  */
@@ -66,7 +66,13 @@ public final class JMENetUtils {
         PACKET_DATA_PAN,
         PACKET_DATA_WLAN};
 
-    public static final int getCurrentDataNetwork() {
+    /**
+     * Return an integer constant indicating the type of data network the phone
+     * is attached to.
+     *
+     * @return
+     */
+    public static int getCurrentDataNetwork() {
         final String s = System.getProperty("com.nokia.network.access");
         int state = PACKET_DATA_UNKNOWN;
 
@@ -76,10 +82,10 @@ public final class JMENetUtils {
                 break;
             }
         }
-        
+
         return state;
     }
-    
+
     private static boolean equals(final String s1, final String s2) {
         if (s1 == null && s2 == null) {
             return true;

@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Utility methods for String operations such as extracting a String from the
@@ -100,9 +101,13 @@ public class StringUtils {
      *
      * @param s Text that is to be encoded.
      * @return The encoded string.
-     * @throws IOException  
+     * @throws IOException
      */
     public static String urlEncode(final String s) throws IOException {
+        if (s == null) {
+            throw new IllegalArgumentException("Can not urlEncode null string");
+        }
+
         final ByteArrayInputStream bIn;
         final StringBuffer ret = new StringBuffer((s.length() * 5) / 4); //return value
         {
@@ -142,6 +147,48 @@ public class StringUtils {
     }
 
     /**
+     * Decodes a UTF-8 string where certain characters are replace by their
+     * ASCII code counterpart. E.g. for space "%20".
+     *
+     * @param s
+     * @return
+     * @throws UnsupportedEncodingException
+     * @throws IOException
+     */
+    public static String urlDecode(final String s) throws UnsupportedEncodingException, IOException {
+        if (s == null) {
+            throw new IllegalArgumentException("Can not urlDecode null string");
+        }
+        final int n = s.length();
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(n * 2);
+
+        for (int i = 0; i < n; i++) {
+            final int c = (int) s.charAt(i);
+
+            if (c == '+') {
+                out.write(' ');
+            } else if (c == '%') {
+                final int c1 = Character.digit(s.charAt(++i), 16);
+                if (c1 < 128) {
+                    out.write((char) c1);
+                } else {
+                    final int c2 = Character.digit(s.charAt(++i), 16);
+                    if (c1 < 224) {
+                        out.write(new String("" + (char) ((c1 << 4) | c2)).getBytes("UTF-8"));
+                    } else {
+                        final int c3 = Character.digit(s.charAt(++i), 16);
+                        out.write(new String("" + (char) ((c3 << 8) | (c2 << 4) | c3)).getBytes("UTF-8"));
+                    }
+                }
+            } else {
+                out.write(c);
+            }
+        }
+
+        return new String(out.toByteArray(), "UTF-8");
+    }
+
+    /**
      * Appends integer as a hex formatted string to buffer.
      *
      * @param i Value that should be appended
@@ -160,9 +207,9 @@ public class StringUtils {
 
     /**
      * Return a string of the form "0FCC" with two characters per byte
-     * 
+     *
      * @param bytes
-     * @return 
+     * @return
      */
     public static String toHex(final byte[] bytes) {
         final StringBuffer sb = new StringBuffer(bytes.length);
