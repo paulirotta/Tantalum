@@ -143,7 +143,7 @@ public final class RMSUtils {
 
         final String s = sb.toString();
         //#debug
-        L.i("digest to rms cache key", StringUtils.toHex(digest) + " -> " + s);
+        L.i("digest to rms cache key", StringUtils.byteArrayToHexString(digest) + " -> " + s);
 
         return s;
     }

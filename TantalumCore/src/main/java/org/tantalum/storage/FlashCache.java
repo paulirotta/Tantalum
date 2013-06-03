@@ -130,7 +130,7 @@ public abstract class FlashCache {
         }
 
         //#debug
-        L.i(this, "get(" + key + ")", "digest=" + StringUtils.toHex(CryptoUtils.getInstance().longToBytes(digest)));
+        L.i(this, "get(" + key + ")", "digest=" + StringUtils.byteArrayToHexString(CryptoUtils.getInstance().longToBytes(digest)));
 
         return get(digest);
     }

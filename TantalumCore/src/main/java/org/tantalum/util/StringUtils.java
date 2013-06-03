@@ -206,18 +206,69 @@ public class StringUtils {
     }
 
     /**
+     * Decode any string that is encoded using hesStringToString()
+     * 
+     * @param s
+     * @return
+     * @throws UnsupportedEncodingException 
+     */
+    public static String hexStringToString(final String s) throws UnsupportedEncodingException {
+        final byte[] bytes = hexStringToByteArray(s);
+
+        return new String(bytes, "UTF-8");
+    }
+
+    /**
+     * Encode any string as hex digits in a String that can be included for
+     * example in JSON, regardless of other encodings of the string.
+     *
+     * @param s
+     * @return
+     * @throws UnsupportedEncodingException
+     */
+    public static String stringToHexString(final String s) throws UnsupportedEncodingException {
+        final byte[] bytes = s.getBytes("UTF-8");
+
+        return byteArrayToHexString(bytes);
+    }
+
+    /**
      * Return a string of the form "0FCC" with two characters per byte
      *
      * @param bytes
      * @return
      */
-    public static String toHex(final byte[] bytes) {
-        final StringBuffer sb = new StringBuffer(bytes.length);
+    public static String byteArrayToHexString(final byte[] bytes) {
+        final StringBuffer sb = new StringBuffer(bytes.length*2);
 
         for (int i = 0; i < bytes.length; i++) {
             appendHex(bytes[i], sb);
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Return a byte array from a string of the form "0FCC" with strictly two
+     * bytes per character in the string
+     *
+     * @param s
+     * @return
+     */
+    public static byte[] hexStringToByteArray(final String s) {
+        final int n = s.length();
+        if (n % 2 != 0) {
+            throw new IllegalArgumentException("Input string must be an even length and encoded by byteArrayToHexString(s), but input length is " + n);
+        }
+        final byte[] bytes = new byte[n/2];
+        
+        int k = 0;
+        for (int i = 0; i < n; i += 2) {
+            final String substring = s.substring(i, i + 2);
+            final int j = Integer.parseInt(substring, 16);
+            bytes[k++] = (byte) j;
+        }
+
+        return bytes;
     }
 }

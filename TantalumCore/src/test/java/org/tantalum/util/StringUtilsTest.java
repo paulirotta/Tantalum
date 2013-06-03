@@ -6,9 +6,11 @@ package org.tantalum.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
 
@@ -39,15 +41,65 @@ public class StringUtilsTest extends MockedStaticInitializers {
         }
         System.out.println();
     }
+    
+    final String sampleAsHex = "FF00EC11";
+    final byte[] sampleAsBytes = {(byte) 0xFF, (byte) 0x00, (byte) 0xEC, (byte) 0x11 };
+    @Test
+    public void sampleBytesToHexString() {
+        assertArrayEquals(sampleAsBytes, StringUtils.hexStringToByteArray(sampleAsHex));
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void hexStringChecksForWrongLengthInput() {
+        StringUtils.hexStringToByteArray("0");
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void illegalCharsInHexStringFirstPosition() {
+        StringUtils.hexStringToByteArray("QF");
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void illegalCharsInHexStringSecondPosition() {
+        StringUtils.hexStringToByteArray("FZ");
+    }
+    
+    @Test
+    public void sampleHexStringAsBytes() {
+        assertEquals(sampleAsHex, StringUtils.byteArrayToHexString(sampleAsBytes));
+    }
+
+    final String roundTripConversionTest = "\"\nGoodies ¥ƏĲɞʬ ΔЩԈբא بठः ↯∰✈Ⱡあヅ ﷻﺺ 㿜";
+    @Test
+    public void toHexAndBack() throws UnsupportedEncodingException {
+        System.out.println("toHexAndBack");
+        System.out.println("before hexencode: " + roundTripConversionTest);
+        System.out.println("as hexencode: " + StringUtils.stringToHexString(roundTripConversionTest));
+        System.out.println("after hexencode-decode: " + StringUtils.hexStringToString(StringUtils.stringToHexString(roundTripConversionTest)));
+        
+        assertEquals(roundTripConversionTest, StringUtils.hexStringToString(StringUtils.stringToHexString(roundTripConversionTest)));
+    }
+
+    //FIXME Paul
+    @Ignore
+    @Test
+    public void uuencodeAndBack() throws UnsupportedEncodingException, IOException {
+        System.out.println("toHexAndBack");
+        System.out.println("before uuencode: " + roundTripConversionTest);
+        System.out.println("as uuencode: " + StringUtils.urlEncode(roundTripConversionTest));
+        System.out.println("after urlencode-urldecode: " + StringUtils.urlDecode(StringUtils.urlEncode(roundTripConversionTest)));
+        
+        assertEquals(roundTripConversionTest, StringUtils.urlDecode(StringUtils.urlEncode(roundTripConversionTest)));
+    }
 
     @Test
     public void toHexTestFF00() {
-        assertEquals("FF00", StringUtils.toHex(byteTest1));
+        assertEquals("FF00", StringUtils.byteArrayToHexString(byteTest1));
     }
 
     @Test
     public void toHexTestCD1A() {
-        assertEquals("CD1A", StringUtils.toHex(byteTest2));
+        assertEquals("CD1A", StringUtils.byteArrayToHexString(byteTest2));
     }
     
     @Test
