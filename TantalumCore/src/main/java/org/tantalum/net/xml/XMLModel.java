@@ -26,6 +26,7 @@ package org.tantalum.net.xml;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import javax.xml.parsers.SAXParserFactory;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
@@ -99,8 +100,13 @@ public abstract class XMLModel extends DefaultHandler {
                 //#debug
                 L.i(this, "End XML parse", "elapsedTime=" + (System.currentTimeMillis() - t) + "ms");
             } catch (SAXException t) {
-                //#debug
-                L.e("SAX Parse error", new String(xml), t);
+                //#mdebug
+                try {
+                    L.e("SAX Parse error", new String(xml, "UTF-8"), t);
+                } catch (UnsupportedEncodingException ex) {
+                    ex.printStackTrace();
+                }
+                //#enddebug
                 throw t;
             } catch (Throwable t) {
                 //#debug

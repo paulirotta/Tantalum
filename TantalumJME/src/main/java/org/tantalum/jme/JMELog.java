@@ -119,7 +119,7 @@ public class JMELog extends L {
 
         if (uri != null) {
             writer = new JMELog.LogWriter(uri, serialPortMode);
-            new Thread(writer).start();
+            new Thread(writer, "Log").start();
         }
 
         return writer;

@@ -85,7 +85,8 @@ public class StringUtils {
     }
 
     /**
-     * Return a String object stored as a file in the JAR package
+     * Return a String object stored as a file in the JAR package using the
+     * phone's default String encoding.
      *
      * @param name
      * @return
@@ -93,6 +94,19 @@ public class StringUtils {
      */
     public static String readStringFromJAR(final String name) throws IOException {
         return new String(readBytesFromJAR(name));
+    }
+
+    /**
+     * Return a String object stored as a file in the JAR package
+     *
+     * @param name
+     * @param encoding such as "UTF-8"
+     * @return
+     * @throws IOException
+     * @throws UnsupportedEncodingException
+     */
+    public static String readStringFromJAR(final String name, final String encoding) throws IOException, UnsupportedEncodingException {
+        return new String(readBytesFromJAR(name), encoding);
     }
 
     /**
@@ -160,32 +174,40 @@ public class StringUtils {
             throw new IllegalArgumentException("Can not urlDecode null string");
         }
         final int n = s.length();
-        final ByteArrayOutputStream out = new ByteArrayOutputStream(n * 2);
+        final StringBuffer sb = new StringBuffer(n * 2);
+//        final ByteArrayOutputStream byteOut = new ByteArrayOutputStream(n * 2);
+//        final DataOutputStream out = new DataOutputStream(byteOut);
 
         for (int i = 0; i < n; i++) {
-            final int c = (int) s.charAt(i);
+            final char c = s.charAt(i);
 
             if (c == '+') {
-                out.write(' ');
+                sb.append(' ');
             } else if (c == '%') {
-                final int c1 = Character.digit(s.charAt(++i), 16);
-                if (c1 < 128) {
-                    out.write((char) c1);
+                final int first = Integer.parseInt(s.substring(++i, i++ + 2), 16);
+                if (first < 128) {
+                    sb.append(Character.toChars(first));
                 } else {
-                    final int c2 = Character.digit(s.charAt(++i), 16);
-                    if (c1 < 224) {
-                        out.write(new String("" + (char) ((c1 << 4) | c2)).getBytes("UTF-8"));
+                    if (s.charAt(i) != '%') {
+                        throw new IllegalArgumentException("urlDecode expected second '%' at position " + i + " : " + s);
+                    }
+                    final int second = Integer.parseInt(s.substring(++i, i++ + 2), 16);
+                    if (second < 224) {
+                        sb.append(Character.toChars(((first << 8) | second) & 0xFFFF));
                     } else {
-                        final int c3 = Character.digit(s.charAt(++i), 16);
-                        out.write(new String("" + (char) ((c3 << 8) | (c2 << 4) | c3)).getBytes("UTF-8"));
+                        if (s.charAt(i) != '%') {
+                            throw new IllegalArgumentException("urlDecode expected third '%' at position " + i + " : " + s);
+                        }
+                        final int third = Integer.parseInt(s.substring(++i, i++ + 2), 16);
+                        sb.append(Character.toChars(((first << 16) | (second << 8) | third) & 0xFFFFFF));
                     }
                 }
             } else {
-                out.write(c);
+                sb.append(c);
             }
         }
 
-        return new String(out.toByteArray(), "UTF-8");
+        return sb.toString();
     }
 
     /**
@@ -207,10 +229,10 @@ public class StringUtils {
 
     /**
      * Decode any string that is encoded using hesStringToString()
-     * 
+     *
      * @param s
      * @return
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
     public static String hexStringToString(final String s) throws UnsupportedEncodingException {
         final byte[] bytes = hexStringToByteArray(s);
@@ -239,7 +261,7 @@ public class StringUtils {
      * @return
      */
     public static String byteArrayToHexString(final byte[] bytes) {
-        final StringBuffer sb = new StringBuffer(bytes.length*2);
+        final StringBuffer sb = new StringBuffer(bytes.length * 2);
 
         for (int i = 0; i < bytes.length; i++) {
             appendHex(bytes[i], sb);
@@ -260,8 +282,8 @@ public class StringUtils {
         if (n % 2 != 0) {
             throw new IllegalArgumentException("Input string must be an even length and encoded by byteArrayToHexString(s), but input length is " + n);
         }
-        final byte[] bytes = new byte[n/2];
-        
+        final byte[] bytes = new byte[n / 2];
+
         int k = 0;
         for (int i = 0; i < n; i += 2) {
             final String substring = s.substring(i, i + 2);
