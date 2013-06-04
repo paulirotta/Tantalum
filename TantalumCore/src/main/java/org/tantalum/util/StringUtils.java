@@ -188,18 +188,26 @@ public class StringUtils {
                 if (first < 128) {
                     sb.append(Character.toChars(first));
                 } else {
-                    if (s.charAt(i) != '%') {
-                        throw new IllegalArgumentException("urlDecode expected second '%' at position " + i + " : " + s);
+                    if (s.charAt(++i) != '%') {
+                        throw new IllegalArgumentException("urlDecode expected second '%' at position " + i + " but was '" + s.charAt(i) + "' : " + s);
                     }
                     final int second = Integer.parseInt(s.substring(++i, i++ + 2), 16);
-                    if (second < 224) {
-                        sb.append(Character.toChars(((first << 8) | second) & 0xFFFF));
+                    if (first < 224) {
+                        sb.append(Character.toChars(((first << 8) | second) & 0x1F3F));
                     } else {
-                        if (s.charAt(i) != '%') {
-                            throw new IllegalArgumentException("urlDecode expected third '%' at position " + i + " : " + s);
+                        if (s.charAt(++i) != '%') {
+                            throw new IllegalArgumentException("urlDecode expected third '%' at position " + i + " but was '" + s.charAt(i) + "'" + s);
                         }
                         final int third = Integer.parseInt(s.substring(++i, i++ + 2), 16);
-                        sb.append(Character.toChars(((first << 16) | (second << 8) | third) & 0xFFFFFF));
+                        if (first < 240) {
+                            sb.append(Character.toChars(((first << 16) | (second << 8) | third) & 0x0F3F3F));
+                        } else {
+                            if (s.charAt(++i) != '%') {
+                                throw new IllegalArgumentException("urlDecode expected fourth '%' at position " + i + " but was '" + s.charAt(i) + "'" + s);
+                            }
+                            final int fourth = Integer.parseInt(s.substring(++i, i++ + 2), 16);
+                            sb.append(Character.toChars(((first << 24) | (second << 16) | (third << 8) | fourth) & 0x043F3F3F));
+                        }
                     }
                 }
             } else {

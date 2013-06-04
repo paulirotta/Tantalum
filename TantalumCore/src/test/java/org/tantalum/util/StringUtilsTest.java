@@ -69,8 +69,8 @@ public class StringUtilsTest extends MockedStaticInitializers {
         assertEquals(sampleAsHex, StringUtils.byteArrayToHexString(sampleAsBytes));
     }
 
-    final String roundTripConversionTest = "  \"\nGoodies ¥ƏĲɞʬ ΔЩԈբא بठः ↯∰✈Ⱡあヅ ﷻﺺ 㿜";
-    final String urlDecodeConversionTest = "%20%20%5C%22%5CnGoodies%20%C2%A5%C6%8F%C4%B2%C9%9E%CA%AC%20%CE%94%D0%A9%D4%88%D5%A2%D7%90%20%D8%A8%E0%A4%A0%E0%A4%83%20%E2%86%AF%E2%88%B0%E2%9C%88%E2%B1%A0%E3%81%82%E3%83%85%20%EF%B7%BB%EF%BA%BA%20%E3%BF%9C";
+    final String roundTripConversionTest = "  Goodies ¥ƏĲɞʬ ΔЩԈբא بठः ↯∰✈Ⱡあヅ ﷻﺺ 㿜";
+    final String urlDecodeConversionTest = "%20%20Goodies%20%C2%A5%C6%8F%C4%B2%C9%9E%CA%AC%20%CE%94%D0%A9%D4%88%D5%A2%D7%90%20%D8%A8%E0%A4%A0%E0%A4%83%20%E2%86%AF%E2%88%B0%E2%9C%88%E2%B1%A0%E3%81%82%E3%83%85%20%EF%B7%BB%EF%BA%BA%20%E3%BF%9C";
     @Test
     public void toHexAndBack() throws UnsupportedEncodingException {
         System.out.println("toHexAndBack");
