@@ -193,7 +193,7 @@ public class StringUtils {
                 final int first = Integer.parseInt(s1, 16);
 
                 if (first < 128) {
-                    sb.append(Character.toChars(first));
+                    sb.append((char) first);
                 } else {
                     if (s.charAt(++i) != '%') {
                         throw new IllegalArgumentException("urlDecode expected second '%' at position " + i + " but was '" + s.charAt(i) + "' : " + s);
