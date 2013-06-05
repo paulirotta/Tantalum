@@ -73,8 +73,6 @@ public class RSSModelTest extends MockedStaticInitializers {
         fail("Should not attempt to parse null RSS");
     }
 
-    // FIXME: On Windows with JME 3.2 the test fails with a missing class exception:
-    // General exception java.util.MissingResourceException: Can't find bundle for base name com.sun.org.apache.xerces.internal.impl.msg.XMLMessages, locale en_US
     @Test(expected = SAXException.class)
     public void dontAllowOneByteInput() throws SAXException {
         instance.setXML(new byte[1]);
