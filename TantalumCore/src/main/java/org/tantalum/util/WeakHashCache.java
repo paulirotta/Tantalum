@@ -31,8 +31,9 @@ import java.util.Hashtable;
 /**
  * This is a hashtable which acts as a heap memory cache using WeakReference.
  *
- * <code>Hashtable</code> is not thread safe, but <code>WeakHashCache</code> is synchronized and
- * thread safe. Like <code>Vector</code>, you can externally synchronize on it.
+ * <code>Hashtable</code> is not thread safe, but
+ * <code>WeakHashCache</code> is synchronized and thread safe. Like
+ * <code>Vector</code>, you can externally synchronize on it.
  *
  * Objects in the hashtable are not held in memory, they may be garbage
  * collected at any time, in which case the calling routine must do something
@@ -79,7 +80,7 @@ public class WeakHashCache {
         if (reference == null) {
             return null;
         }
-        
+
         return reference.get();
     }
 
@@ -131,17 +132,20 @@ public class WeakHashCache {
     /**
      * Remove the object from the cache
      *
-     * null is permitted- a message will appear in the log
-     * 
+     * null is permitted- a warning message will appear in the log in case this
+     * was unintentional
+     *
      * @param key
+     * @return true if the key was found and removed
      */
-    public synchronized void remove(final Object key) {
+    public synchronized boolean remove(final Object key) {
         if (key != null) {
-            hash.remove(key);
-        } else {
-            //#debug
-            L.i(this, "WeakHashCache", "remove() with null key");
+            return hash.remove(key) != null;
         }
+
+        //#debug
+        L.i(this, "WeakHashCache", "remove() with null key");
+        return false;
     }
 
     /**
@@ -202,23 +206,23 @@ public class WeakHashCache {
         }
         hash.clear();
         for (i = 0; i < keyCopy.length; i++) {
-            hash.put(keyCopy[i], NULL_WEAK_REFERENCE);            
+            hash.put(keyCopy[i], NULL_WEAK_REFERENCE);
         }
     }
 
     /**
      * Get all keys in the WeakHashCach
-     * 
-     * @return 
+     *
+     * @return
      */
     public synchronized Object[] getKeys() {
         final Object[] keys = new Object[hash.size()];
-        
+
         final Enumeration enu = hash.keys();
         for (int i = 0; i < keys.length; i++) {
             keys[i] = enu.nextElement();
         }
-        
+
         return keys;
-    } 
+    }
 }

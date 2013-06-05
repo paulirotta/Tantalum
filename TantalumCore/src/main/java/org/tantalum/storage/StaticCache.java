@@ -64,9 +64,15 @@ public class StaticCache {
         }
     });
     /**
-     * The underlying platform-specific cache implementation
+     * The underlying platform-specific cache implementation. You can perform
+     * some relatively-uncommon direct requests about the cache contents here.
+     *
+     * Note that you should not directly make any changes to cache contents or
+     * you risk leaving the cache in an internally inconsistent state. Make
+     * changes using methods in the StaticCache and StaticWebCache classes
+     * instead.
      */
-    protected final FlashCache flashCache;
+    public final FlashCache flashCache;
     /**
      * A heap memory ramCache in the form of a Hashtable from which data can be
      * removed automatically by the virtual machine to free up memory (automatic
@@ -637,9 +643,11 @@ public class StaticCache {
      *
      * @param digest
      */
-    protected void remove(final long digest) {
-        try {
-            if (containsDigest(digest)) {
+    public boolean remove(final long digest) {
+        final boolean removed = containsDigest(digest);
+
+        if (removed) {
+            try {
                 final Long l = new Long(digest);
 
                 synchronized (ramCache) {
@@ -649,11 +657,13 @@ public class StaticCache {
                 flashCache.removeData(digest);
                 //#debug
                 L.i("Cache remove (from RAM and RMS)", Long.toString(digest, 16));
+            } catch (FlashDatabaseException e) {
+                //#debug
+                L.e("Couldn't remove object from cache", Long.toString(digest, 16), e);
             }
-        } catch (FlashDatabaseException e) {
-            //#debug
-            L.e("Couldn't remove object from cache", Long.toString(digest, 16), e);
         }
+
+        return removed;
     }
 
     /**

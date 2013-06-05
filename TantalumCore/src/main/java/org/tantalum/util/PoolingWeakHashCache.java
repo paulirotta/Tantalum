@@ -53,24 +53,30 @@ public class PoolingWeakHashCache extends WeakHashCache {
      * possible re-use to minimize heap memory thrash.
      *
      * @param key
+     * @return true if removed. The WeakReference may have expired, so this does
+     * not necessarily mean that the current pool size increases by one.
      */
-    public void remove(final Object key) {
+    public boolean remove(final Object key) {
         synchronized (hash) {
+            boolean removed = false;
+
             if (key == null) {
                 //#debug
                 L.i("PoolingWeakHashCache", "remove() with null key");
-                return;
-            }
-            final WeakReference wr = (WeakReference) hash.get(key);
+            } else {
+                final WeakReference wr = (WeakReference) hash.get(key);
 
-            if (wr != null) {
-                hash.remove(key);
-                if (wr.get() != null) {
-                    //#debug
-                    L.i("Adding to pool", key.toString());
-                    pool.addElement(wr);
+                if (wr != null) {
+                    removed = hash.remove(key) != null;
+                    if (wr.get() != null) {
+                        //#debug
+                        L.i("Adding to pool", key.toString());
+                        pool.addElement(wr);
+                    }
                 }
             }
+
+            return removed;
         }
     }
 
