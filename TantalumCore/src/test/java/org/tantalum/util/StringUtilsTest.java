@@ -92,10 +92,19 @@ public class StringUtilsTest extends MockedStaticInitializers {
         assertEquals(roundTripConversionTest, StringUtils.urlDecode(StringUtils.urlEncode(roundTripConversionTest)));
     }
 
-    @Ignore
     @Test
     public void uudecode() throws UnsupportedEncodingException, IOException {
         assertEquals(roundTripConversionTest, StringUtils.urlDecode(urlDecodeConversionTest));
+    }
+
+    final String oneChar = "㿜";
+    final String oneCharEncoded = "%E3%BF%9C";
+    @Test
+    public void uudecodeOneChar() throws UnsupportedEncodingException, IOException {
+        System.out.println("oneChar " + oneChar + " - " + Integer.toHexString(oneChar.charAt(0)) + " - " + Integer.toBinaryString(oneChar.charAt(0)));
+        char decoded = StringUtils.urlDecode(oneCharEncoded).charAt(0);
+        System.out.println("decoded - " + Integer.toHexString(decoded) + " - " + Integer.toBinaryString(decoded));
+        assertEquals(oneChar, StringUtils.urlDecode(oneCharEncoded));
     }
 
     @Test
