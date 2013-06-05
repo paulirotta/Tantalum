@@ -9,13 +9,13 @@
 package com.nokia.s40.picasaviewerapp;
 
 import java.io.IOException;
-import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+import org.tantalum.Task;
 
 import org.tantalum.util.L;
 
@@ -28,7 +28,6 @@ public abstract class GestureCanvas extends Canvas implements CommandListener {
 
     protected static final int SPIN_SPEED = 100; // ms per animation frame
     protected static Image backIcon;
-    public static final Timer spinTimer = new Timer();
     private static TimerTask spinTimerTask = null; // Access within synchronized blocks only
     protected int friction = GestureHandler.FRAME_ANIMATOR_FRICTION_LOW;
     protected final PicasaViewer midlet;
@@ -207,7 +206,7 @@ public abstract class GestureCanvas extends Canvas implements CommandListener {
                     repaint();
                 }
             };
-            spinTimer.scheduleAtFixedRate(spinTimerTask, SPIN_SPEED, SPIN_SPEED);
+            Task.getTimer().scheduleAtFixedRate(spinTimerTask, SPIN_SPEED, SPIN_SPEED);
         }
     }
 

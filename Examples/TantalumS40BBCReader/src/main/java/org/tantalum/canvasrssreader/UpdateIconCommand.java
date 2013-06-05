@@ -27,11 +27,11 @@ package org.tantalum.canvasrssreader;
 import com.nokia.mid.ui.DirectUtils;
 import com.nokia.mid.ui.IconCommand;
 import com.nokia.mid.ui.orientation.Orientation;
-import java.util.Timer;
 import java.util.TimerTask;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+import org.tantalum.Task;
 import org.tantalum.util.L;
 
 /**
@@ -42,7 +42,7 @@ public class UpdateIconCommand extends IconCommand {
 
     static Image image = null;
     private Graphics g;
-    private Timer animationTimer;
+    private TimerTask animationTimerTask;
     private double angle;
     private int startDot;
     private static final int WIDTH = 36;
@@ -75,23 +75,22 @@ public class UpdateIconCommand extends IconCommand {
     }
 
     public void startAnimation() {
-        if (animationTimer == null) {
+        if (animationTimerTask == null) {
             g.setColor(0xff000000);
             g.fillRect(0, 0, WIDTH, HEIGHT);
-            animationTimer = new Timer();
-            animationTimer.schedule(new TimerTask() {
-
+            animationTimerTask = new TimerTask() {
                 public void run() {
                     drawSpinner();
                 }
-            }, 0, 100);
+            };
+            Task.getTimer().schedule(animationTimerTask, 0, 100);
         }
     }
 
     public void stopAnimation() {
-        if (animationTimer != null) {
-            animationTimer.cancel();
-            animationTimer = null;
+        if (animationTimerTask != null) {
+            animationTimerTask.cancel();
+            animationTimerTask = null;
             g.setColor(0x000000);
             g.fillRect(0, 0, WIDTH, HEIGHT);
             g.drawImage(image, (int) XC, (int) YC, Graphics.HCENTER | Graphics.VCENTER);
