@@ -113,6 +113,9 @@ public class StringUtils {
      * Encodes a string so that certain characters are replace by their ASCII
      * code counterpart. E.g. for space "%20".
      *
+     * UTF-8 up to 3 bytes per character is supported. 4 byte Unicode characters
+     * are not supported.
+     *
      * @param s Text that is to be encoded.
      * @return The encoded string.
      * @throws IOException
@@ -121,9 +124,12 @@ public class StringUtils {
         if (s == null) {
             throw new IllegalArgumentException("Can not urlEncode null string");
         }
+        if (s.length() == 0) {
+            return s;
+        }
 
         final ByteArrayInputStream bIn;
-        final StringBuffer ret = new StringBuffer((s.length() * 5) / 4); //return value
+        final StringBuffer sb = new StringBuffer((s.length() * 5) / 4); //return value
         {
             final ByteArrayOutputStream bOut = new ByteArrayOutputStream((s.length() * 3) / 2);
             final DataOutputStream dOut = new DataOutputStream(bOut);
@@ -131,38 +137,39 @@ public class StringUtils {
             bIn = new ByteArrayInputStream(bOut.toByteArray());
             dOut.close();
         }
-        //TODO Why this initial read hack?
+        bIn.read(); // Initial bytes unicode read hack
         bIn.read();
-        bIn.read();
-        int c = bIn.read();
-        while (c >= 0) {
-            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '-'
+        int c;
+        while ((c = bIn.read()) >= 0) {
+            if (c == ' ') {
+                sb.append('+');
+            } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '-'
                     || c == '*' || c == '_') {
-                ret.append((char) c);
-            } else if (c == ' ') {
-                ret.append('+');
+                sb.append((char) c);
             } else {
-                if (c < 128) {
-                    appendTaggedHex(c, ret);
-                } else if (c < 224) {
-                    appendTaggedHex(c, ret);
-                    appendTaggedHex(bIn.read(), ret);
-                } else if (c < 240) {
-                    appendTaggedHex(c, ret);
-                    appendTaggedHex(bIn.read(), ret);
-                    appendTaggedHex(bIn.read(), ret);
+                appendTaggedHex(c, sb);
+                if (c >= 128) {
+                    appendTaggedHex(bIn.read(), sb);
+                    if (c >= 224) {
+                        appendTaggedHex(bIn.read(), sb);
+                        // Java UTF-8 encoding modifies the standard- it is not so easy to encode 4-byte UTF-8 characters
+//                        if (c >= 240) {
+//                            appendTaggedHex(bIn.read(), sb);
+//                        }
+                    }
                 }
             }
-            c = bIn.read();
         }
-        bIn.close();
 
-        return ret.toString();
+        return sb.toString();
     }
 
     /**
      * Decodes a UTF-8 string where certain characters are replace by their
      * ASCII code counterpart. E.g. for space "%20".
+     *
+     * The full UTF-8 including 4 bytes per character is supported. Note that
+     * the fonts on your phone may not support these extended characters.
      *
      * @param s
      * @return
@@ -175,8 +182,6 @@ public class StringUtils {
         }
         final int n = s.length();
         final StringBuffer sb = new StringBuffer(n * 2);
-//        final ByteArrayOutputStream byteOut = new ByteArrayOutputStream(n * 2);
-//        final DataOutputStream out = new DataOutputStream(byteOut);
 
         for (int i = 0; i < n; i++) {
             final char c = s.charAt(i);
@@ -186,7 +191,7 @@ public class StringUtils {
             } else if (c == '%') {
                 final String s1 = s.substring(++i, i++ + 2);
                 final int first = Integer.parseInt(s1, 16);
-                System.out.println("first %" + s1 + " - " + Integer.toHexString(first) + " - " + Integer.toBinaryString(first));
+
                 if (first < 128) {
                     sb.append(Character.toChars(first));
                 } else {
@@ -196,12 +201,11 @@ public class StringUtils {
                     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     final String s2 = s.substring(++i, i++ + 2);
                     final int second = Integer.parseInt(s2, 16);
+
                     bos.write(first);
                     bos.write(second);
                     System.out.println("second %" + s2 + " - " + Integer.toHexString(second) + " - " + Integer.toBinaryString(second));
                     if (first < 224) {
-                        final int combined = ((first << 8) | second) & 0xFFFF;
-                        System.out.println("all2 %" + s1 + s2 + " - " + Integer.toHexString(combined) + " - " + Integer.toBinaryString(combined));
                         sb.append(bos.toString("UTF-8"));
                     } else {
                         if (s.charAt(++i) != '%') {
@@ -209,11 +213,9 @@ public class StringUtils {
                         }
                         final String s3 = s.substring(++i, i++ + 2);
                         final int third = Integer.parseInt(s3, 16);
+
                         bos.write(third);
-                        System.out.println("third %" + s3 + " - " + Integer.toHexString(third) + " - " + Integer.toBinaryString(third));
                         if (first < 240) {
-                            final int combined = ((first << 16) | (second << 8) | third) & 0xFFFFFF;
-                            System.out.println("all3 %" + s1 + s2 + s3 + " - " + Integer.toHexString(combined) + " - " + Integer.toBinaryString(combined));
                             sb.append(bos.toString("UTF-8"));
                         } else {
                             if (s.charAt(++i) != '%') {
@@ -221,10 +223,8 @@ public class StringUtils {
                             }
                             final String s4 = s.substring(++i, i++ + 2);
                             final int fourth = Integer.parseInt(s4, 16);
+
                             bos.write(fourth);
-                            System.out.println("fourth %" + s4 + " - " + Integer.toHexString(fourth) + " - " + Integer.toBinaryString(fourth));
-                            final int combined = ((first << 24) | (second << 16) | (third << 8) | fourth) & 0xFFFFFFFF;
-                            System.out.println("all4 %" + s1 + s2 + s3 + s4 + " - " + Integer.toHexString(combined) + " - " + Integer.toBinaryString(combined));
                             sb.append(bos.toString("UTF-8"));
                         }
                     }

@@ -81,7 +81,6 @@ public class StringUtilsTest extends MockedStaticInitializers {
         assertEquals(roundTripConversionTest, StringUtils.hexStringToString(StringUtils.stringToHexString(roundTripConversionTest)));
     }
 
-    @Ignore
     @Test
     public void uuencodeAndBack() throws UnsupportedEncodingException, IOException {
         System.out.println("toUUcodeAndBack");
@@ -105,6 +104,64 @@ public class StringUtilsTest extends MockedStaticInitializers {
         char decoded = StringUtils.urlDecode(oneCharEncoded).charAt(0);
         System.out.println("decoded - " + Integer.toHexString(decoded) + " - " + Integer.toBinaryString(decoded));
         assertEquals(oneChar, StringUtils.urlDecode(oneCharEncoded));
+    }
+    
+    final byte[] fourByteArray = {(byte) 0xF0, (byte) 0xA4, (byte) 0xAD, (byte) 0xA2};
+    final String fourByteEncoded = "%F0%A4%AD%A2";
+    @Test
+    public void fourByteDecode() throws UnsupportedEncodingException, IOException {
+        String fourByteString = new String(fourByteArray, "UTF-8");
+        assertEquals(fourByteString, StringUtils.urlDecode(fourByteEncoded));
+    }
+
+    // Java internally modifies 4-byte UTF-8 format away from the standard. Doing this would require some extra work.
+    @Ignore
+    @Test
+    public void fourByteEncode() throws UnsupportedEncodingException, IOException {
+        String fourByteString = new String(fourByteArray, "UTF-8");
+        assertEquals(fourByteEncoded, StringUtils.urlEncode(fourByteString));
+    }
+    
+    final byte[] threeByteArray = {(byte) 0xE2, (byte) 0x82, (byte) 0xAC};
+    final String threeByteEncoded = "%E2%82%AC";
+    @Test
+    public void threeByteDecode() throws UnsupportedEncodingException, IOException {
+        String fourByteString = new String(threeByteArray, "UTF-8");
+        assertEquals(fourByteString, StringUtils.urlDecode(threeByteEncoded));
+    }
+
+    @Test
+    public void threeByteEncode() throws UnsupportedEncodingException, IOException {
+        String threeByteString = new String(threeByteArray, "UTF-8");
+        assertEquals(threeByteEncoded, StringUtils.urlEncode(threeByteString));
+    }
+    
+    final byte[] twoByteArray = {(byte) 0xC2, (byte) 0xA2};
+    final String twoByteEncoded = "%C2%A2";
+    @Test
+    public void twoByteDecode() throws UnsupportedEncodingException, IOException {
+        String twoByteString = new String(twoByteArray, "UTF-8");
+        assertEquals(twoByteString, StringUtils.urlDecode(twoByteEncoded));
+    }
+
+    @Test
+    public void twoByteEncode() throws UnsupportedEncodingException, IOException {
+        String twoByteString = new String(twoByteArray, "UTF-8");
+        assertEquals(twoByteEncoded, StringUtils.urlEncode(twoByteString));
+    }
+    
+    final byte[] oneByteArray = {(byte) 0x10};
+    final String oneByteEncoded = "%10";
+    @Test
+    public void oneByteDecode() throws UnsupportedEncodingException, IOException {
+        String oneByteString = new String(oneByteArray, "UTF-8");
+        assertEquals(oneByteString, StringUtils.urlDecode(oneByteEncoded));
+    }
+
+    @Test
+    public void oneByteEncode() throws UnsupportedEncodingException, IOException {
+        String oneByteString = new String(oneByteArray, "UTF-8");
+        assertEquals(oneByteEncoded, StringUtils.urlEncode(oneByteString));
     }
 
     @Test
