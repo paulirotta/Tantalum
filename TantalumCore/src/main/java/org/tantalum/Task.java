@@ -24,6 +24,7 @@
  */
 package org.tantalum;
 
+import java.util.Timer;
 import java.util.Vector;
 import org.tantalum.util.L;
 
@@ -278,6 +279,16 @@ public abstract class Task {
     private final Object mutex = new Object();
 
     /**
+     * Init on first request. Many apps will not use this extra thread, and this
+     * inner class is not loaded until first reference. Class loading is
+     * thread-safe, so this is proper thread-safe lazy instantiation.
+     */
+    private static class TimerHolder {
+
+        static Timer timer = new Timer();
+    }
+
+    /**
      * Create a Task and specify the priority at which this
      * <code>Task</code> should be forked within a chain if the previous
      * <code>Task</code> completes normally.
@@ -315,6 +326,16 @@ public abstract class Task {
     public Task(final int priority, final Object initialValue) {
         this(priority);
         set(initialValue);
+    }
+
+    /**
+     * Return a general use Timer thread singleton. Note that the Timer thread
+     * is not created unless you call this method.
+     *
+     * @return
+     */
+    public static Timer getTimer() {
+        return TimerHolder.timer;
     }
 
     /**
@@ -927,7 +948,7 @@ public abstract class Task {
      * @return
      * @throws CancellationException
      * @throws TimeoutException
-     * @throws InterruptedException 
+     * @throws InterruptedException
      */
     protected abstract Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException;
 
