@@ -33,7 +33,6 @@ import android.os.Environment;
 import android.os.StatFs;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
-import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
@@ -102,7 +101,7 @@ public final class AndroidCache extends FlashCache {
      *
      * @param priority
      */
-    public AndroidCache(final char priority) {
+    public AndroidCache(final char priority, final FlashCache.StartupTask startupTask) {
         super(priority);
 
         helper = new SQLiteOpenHelper(context, databaseName, null, DB_VERSION) {
@@ -110,7 +109,6 @@ public final class AndroidCache extends FlashCache {
             public void onCreate(final SQLiteDatabase sqld) {
                 synchronized (MUTEX) {
                     sqld.execSQL(CREATE_TABLE);
-                    db = sqld;
                 }
             }
 
@@ -121,33 +119,34 @@ public final class AndroidCache extends FlashCache {
                     sqld.execSQL(CREATE_TABLE);
                 }
             }
+
+            @Override
+            public SQLiteDatabase getWritableDatabase() {
+                final SQLiteDatabase db = super.getWritableDatabase();
+
+                if (startupTask != null) {
+                    try {
+                        final long[] digests = getDigests();
+                        
+                        for (int i = 0; i < digests.length; i++) {
+                            final String key = getKey(digests[i]);
+                            
+                            if (key != null) {
+                                startupTask.execForEachKey(AndroidCache.this, key);
+                            }
+                        }
+                    } catch (FlashDatabaseException ex) {
+                        L.e("Can not furn startupTask on database init", startupTask.toString(), ex);
+                    } catch (DigestException ex) {
+                        L.e("Can not furn startupTask on database init", startupTask.toString(), ex);
+                    }
+                }
+
+                return db;
+            }
         };
     }
 
-    /**
-     * Execute SQL to create the database
-     *
-     * @param db
-     */
-//    public void onCreate(final SQLiteDatabase db) {
-//        synchronized (MUTEX) {
-//            db.execSQL(CREATE_TABLE);
-//        }
-//    }
-//
-//    /**
-//     * Execute SQL to update the database
-//     *
-//     * @param db
-//     * @param oldVersion
-//     * @param newVersion
-//     */
-//    public void onUpgrade(final SQLiteDatabase db, final int oldVersion, final int newVersion) {
-//        synchronized (MUTEX) {
-//            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-//            onCreate(db);
-//        }
-//    }
     /**
      * Get the stored byte[] associated with the specified key
      *
@@ -378,7 +377,7 @@ public final class AndroidCache extends FlashCache {
         synchronized (MUTEX) {
             if (db != null) {
                 super.close();
-                
+
                 db.close();
             }
             db = null;

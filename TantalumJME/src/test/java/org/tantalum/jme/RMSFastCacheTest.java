@@ -21,8 +21,6 @@ import javax.microedition.rms.RecordComparator;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordFilter;
 import javax.microedition.rms.RecordStoreException;
-import javax.microedition.rms.RecordStoreFullException;
-import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 /**
  * @author phou
@@ -42,7 +40,7 @@ public class RMSFastCacheTest extends MockedStaticInitializers {
     public final void httpGetterTestFixture() throws Exception {
         createMocks();
         if (rmsFastCache == null) {
-            rmsFastCache = new RMSFastCache('0');
+            rmsFastCache = new RMSFastCache('0', null);
         }
     }
 

@@ -1,6 +1,7 @@
 package org.tantalum;
 
 import javax.microedition.midlet.MIDlet;
+import org.tantalum.jme.TantalumJME;
 
 /**
  *
@@ -10,7 +11,7 @@ public class DummyMidlet extends MIDlet {
 
     @Override
     protected void startApp() {
-        PlatformUtils.getInstance().setProgram(this, 4, PlatformUtils.NORMAL_LOG_MODE);
+        TantalumJME.start(this, 4, PlatformUtils.NORMAL_LOG_MODE);
     }
 
     @Override
@@ -19,6 +20,6 @@ public class DummyMidlet extends MIDlet {
 
     @Override
     protected void destroyApp(final boolean unconditional) {
-        PlatformUtils.getInstance().shutdown(unconditional, "destroyApp(" + unconditional + ") received from phone");
+        TantalumJME.stop("DummyMidlet end");
     }
 }

@@ -30,6 +30,8 @@ import javax.microedition.midlet.MIDletStateChangeException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.jme.TantalumJME;
+import org.tantalum.net.StaticWebCache;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -39,6 +41,7 @@ public class RSSReader extends MIDlet implements CommandListener {
 
     // This is read from the JAD-file
     public static final String INITIAL_FEED_URL = "http://feeds.bbci.co.uk/news/rss.xml";
+    public static StaticWebCache imageCache = null;
     private RSSReaderCanvas canvas;
     private Displayable currentDisplayable;
     public static int COLOR_BACKGROUND;
@@ -86,7 +89,7 @@ public class RSSReader extends MIDlet implements CommandListener {
      *
      * @return the initialized component instance
      */
-    public RSSReaderCanvas getCanvas() {
+    public RSSReaderCanvas getCanvas() throws FlashDatabaseException {
         if (canvas == null) {
             canvas = new RSSReaderCanvas(this);
         }
@@ -123,6 +126,7 @@ public class RSSReader extends MIDlet implements CommandListener {
     public void startApp() {
         try {
             TantalumJME.start(this);
+            imageCache = org.tantalum.net.StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler(), null, null);
             final Task reloadTask = getCanvas().getListView().reloadAsync(false);
             final Display display = getDisplay();
             COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);

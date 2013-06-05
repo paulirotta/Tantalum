@@ -127,10 +127,11 @@ public interface PlatformAdapter {
      *
      * @param priority
      * @param cacheType
+     * @param startupTask
      * @return the existing or new cache
      * @throws FlashDatabaseException 
      */
-    public FlashCache getFlashCache(char priority, int cacheType) throws FlashDatabaseException;
+    public FlashCache getFlashCache(char priority, int cacheType, FlashCache.StartupTask startupTask) throws FlashDatabaseException;
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform

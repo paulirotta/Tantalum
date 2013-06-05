@@ -35,6 +35,7 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import org.tantalum.PlatformUtils;
+import org.tantalum.storage.FlashDatabaseException;
 
 /**
  * A scrollable grid if pictures from the news feed. Click to open an article.
@@ -58,7 +59,7 @@ public final class IconListView extends RSSListView {
     private boolean animationRunning = false;
     private static boolean iconSupport = false;
 
-    public IconListView(final RSSReaderCanvas canvas) {
+    public IconListView(final RSSReaderCanvas canvas) throws FlashDatabaseException {
         super(canvas);
 
 //        try {
@@ -164,7 +165,7 @@ public final class IconListView extends RSSListView {
                                 //#debug
                                 L.i("Trivial thumbnail link in RSS feed", item.getTitle());
                             } else {
-                                DetailsView.imageCache.getAsync(item.getThumbnail(),
+                                canvas.imageCache.getAsync(item.getThumbnail(),
                                         Task.HIGH_PRIORITY,
                                         StaticWebCache.GET_ANYWHERE,
                                         new Task(Task.FASTLANE_PRIORITY) {

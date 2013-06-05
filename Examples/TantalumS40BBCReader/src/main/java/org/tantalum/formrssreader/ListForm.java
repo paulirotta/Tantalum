@@ -25,15 +25,14 @@
 package org.tantalum.formrssreader;
 
 import javax.microedition.lcdui.*;
-import org.tantalum.CancellationException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.TimeoutException;
 import org.tantalum.jme.RMSUtils;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.net.xml.RSSModel;
 import org.tantalum.storage.CacheView;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -45,20 +44,7 @@ public final class ListForm extends Form implements CommandListener {
     private static ListForm instance;
     private final FormRSSReader rssReader;
     private final DetailsForm detailsView;
-    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
-        public Object convertToUseForm(final Object key, final byte[] bytes) {
-            try {
-                rssModel.removeAllElements();
-                rssModel.setXML(bytes);
-
-                return rssModel;
-            } catch (Exception e) {
-                //#debug
-                L.i("Error parsing XML", rssModel.toString());
-                return null;
-            }
-        }
-    });
+    private final StaticWebCache feedCache;
     private final RSSModel rssModel = new RSSModel(40);
     public static final Font FONT_TITLE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
@@ -69,8 +55,22 @@ public final class ListForm extends Form implements CommandListener {
     private final Command reloadCommand = new Command("Reload", Command.OK, 0);
     private final Command settingsCommand = new Command("Settings", Command.SCREEN, 1);
 
-    public ListForm(FormRSSReader rssReader, String title) {
+    public ListForm(FormRSSReader rssReader, String title) throws FlashDatabaseException {
         super(title);
+        this.feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
+            public Object convertToUseForm(final Object key, final byte[] bytes) {
+                try {
+                    rssModel.removeAllElements();
+                    rssModel.setXML(bytes);
+
+                    return rssModel;
+                } catch (Exception e) {
+                    //#debug
+                    L.i("Error parsing XML", rssModel.toString());
+                    return null;
+                }
+            }
+        }, null, null);
 
         //#debug
         L.i("Start start thread reload", "");

@@ -31,6 +31,7 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import org.tantalum.PlatformUtils;
 import org.tantalum.net.xml.RSSItem;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -50,7 +51,7 @@ public final class VerticalListView extends RSSListView {
     private RSSItem[] modelCopy = null;
     protected final PoolingWeakImageHashCache renderCache = new PoolingWeakImageHashCache();
 
-    public VerticalListView(final RSSReaderCanvas canvas) {
+    public VerticalListView(final RSSReaderCanvas canvas) throws FlashDatabaseException {
         super(canvas);
 
 //        try {

@@ -163,15 +163,16 @@ public class StaticCache {
      * @param cacheType a constant such at PlatformUtils.PHONE_DATABASE_CACHE
      * @param defaultCacheView - a routine to convert from byte[] to Object form
      * when loading into the RAM ramCache.
+     * @param startupTask if provided will be run on every entry in the cache
      * @return
-     * @throws FlashDatabaseException
+     * @throws FlashDatabaseException 
      */
-    public static StaticCache getCache(final char priority, final int cacheType, final CacheView cacheView) throws FlashDatabaseException {
+    public static StaticCache getCache(final char priority, final int cacheType, final CacheView cacheView, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
         synchronized (caches) {
             StaticCache c = getExistingCache(priority, cacheView, null, StaticCache.class);
 
             if (c == null) {
-                c = new StaticCache(priority, cacheType, cacheView);
+                c = new StaticCache(priority, cacheType, cacheView, startupTask);
                 caches.addElement(c);
             }
 
@@ -185,15 +186,16 @@ public class StaticCache {
      * @param priority
      * @param cacheType
      * @param defaultCacheView
-     * @throws FlashDatabaseException
+     * @param startupTask
+     * @throws FlashDatabaseException 
      */
-    protected StaticCache(final char priority, final int cacheType, final CacheView defaultCacheView) throws FlashDatabaseException {
+    protected StaticCache(final char priority, final int cacheType, final CacheView defaultCacheView, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
         if (priority < '0') {
             throw new IllegalArgumentException("Priority=" + priority + " is invalid, must be '0' or higher");
         }
         this.cachePriorityChar = priority;
         this.defaultCacheView = defaultCacheView;
-        flashCache = PlatformUtils.getInstance().getFlashCache(priority, cacheType);
+        flashCache = PlatformUtils.getInstance().getFlashCache(priority, cacheType, startupTask);
         init();
     }
 
@@ -202,6 +204,8 @@ public class StaticCache {
      *
      * We want to use the RAM Hashtable to know what the ramCache contains, even
      * though we do not pre-load from flash all the values
+     * 
+     * @throws FlashDatabaseException 
      */
     private void init() throws FlashDatabaseException {
         final long[] digests;

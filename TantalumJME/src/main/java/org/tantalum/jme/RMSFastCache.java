@@ -47,14 +47,14 @@ public class RMSFastCache extends FlashCache {
      */
     private final Hashtable indexHash;
 
-    public RMSFastCache(final char priority) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException, NoSuchAlgorithmException, InvalidRecordIDException, DigestException, UnsupportedEncodingException {
+    public RMSFastCache(final char priority, final FlashCache.StartupTask startupTask) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException, NoSuchAlgorithmException, InvalidRecordIDException, DigestException, UnsupportedEncodingException {
         super(priority);
 
         keyRS = RMSUtils.getInstance().getRecordStore(getKeyRSName(), true);
         valueRS = RMSUtils.getInstance().getRecordStore(getValueRSName(), true);
         final int numberOfKeys = keyRS.getNumRecords();
         indexHash = new Hashtable(numberOfKeys);
-        initIndex(numberOfKeys);
+        initIndex(numberOfKeys, startupTask);
     }
 
     /**
@@ -64,14 +64,15 @@ public class RMSFastCache extends FlashCache {
      * have occurred due to irregular (too fast to write everything) application
      * close.
      *
-     * @param hashTableSize
+     * @param numberOfKeys
+     * @param startupTask
      * @throws RecordStoreNotOpenException
      * @throws InvalidRecordIDException
      * @throws RecordStoreException
      * @throws DigestException
-     * @throws UnsupportedEncodingException
+     * @throws UnsupportedEncodingException 
      */
-    private void initIndex(final int numberOfKeys) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException, DigestException, UnsupportedEncodingException {
+    private void initIndex(final int numberOfKeys, final FlashCache.StartupTask startupTask) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException, DigestException, UnsupportedEncodingException {
         /*
          * All value records not pointed to by an entry in the keyRS
          * 
@@ -91,7 +92,7 @@ public class RMSFastCache extends FlashCache {
 
         final Vector referencedValueIntegers = new Vector(numberOfKeys);
 
-        initReadIndexRecords(keyRMSIndexHash, referencedValueIntegers);
+        initReadIndexRecords(keyRMSIndexHash, referencedValueIntegers, startupTask);
 
         //#debug
         dumpHash(keyRMSIndexHash);
@@ -100,7 +101,7 @@ public class RMSFastCache extends FlashCache {
         if (multiplyReferencedValuesFound) {
             keyRMSIndexHash.clear();
             referencedValueIntegers.removeAllElements();
-            initReadIndexRecords(keyRMSIndexHash, referencedValueIntegers);
+            initReadIndexRecords(keyRMSIndexHash, referencedValueIntegers, null);
         }
         initDeleteUnreferencedValues(referencedValueIntegers, valueIntegers);
         initDeleteIndexEntriesPointingToNonexistantValues(keyRMSIndexHash, valueIntegers);
@@ -124,9 +125,10 @@ public class RMSFastCache extends FlashCache {
         
         if (copy.size() != indexHash.size()) {
             // We have a problem
-            
-        }
-        
+                L.i(this, "Size mismatch in indexHash", copy.size() + " != " + indexHash.size());
+                dumpHash(copy);
+                PlatformUtils.getInstance().shutdown(true, "RMS size mismatch, is inconsistent");
+        }        
         //#enddebug
     }
 
@@ -294,7 +296,7 @@ public class RMSFastCache extends FlashCache {
      * @throws InvalidRecordIDException
      */
     private void initReadIndexRecords(final Hashtable initTimeToKeyRMSIndexHash,
-            final Vector initTimeReferencedValueIntegers) throws RecordStoreNotOpenException {
+            final Vector initTimeReferencedValueIntegers, final FlashCache.StartupTask startupTask) throws RecordStoreNotOpenException {
         //#mdebug
         final Hashtable duplicateIndexStringHash = new Hashtable();
         final Hashtable duplicateIndexValueHash = new Hashtable();
@@ -325,7 +327,10 @@ public class RMSFastCache extends FlashCache {
                     //#enddebug
                     initTimeToKeyRMSIndexHash.put(currentRecordKeyAsInteger, keyIndexBytes);
                     initTimeReferencedValueIntegers.addElement(valueRecordIdAsInteger);
-                } catch (Exception e) {
+                    
+                    // Run startup task
+                    startupTask.execForEachKey(RMSFastCache.this, key);
+                } catch (final Exception e) {
                     //#debug
                     L.e("Can not read index entry, deleting", "" + currentRecordTaskKeyIndex, e);
                     try {

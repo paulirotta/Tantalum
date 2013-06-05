@@ -16,6 +16,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.storage.CacheView;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
 
@@ -50,8 +51,7 @@ public class PicasaStorage {
      * used to determine how large images should be.
      *
      */
-    public static synchronized void init(final int width) {
-
+    public static synchronized void init(final int width) throws FlashDatabaseException {
         if (feedCache == null) {
             final ImageCacheView imageTypeHandler = PlatformUtils.getInstance().getImageTypeHandler();
 
@@ -64,8 +64,8 @@ public class PicasaStorage {
                 imageSize = 720; //Picasa size for "fullsize" images
             }
             imageTypeHandler.setMaxSize(width, width);
-            imageCache = StaticWebCache.getWebCache('4', PlatformUtils.PHONE_DATABASE_CACHE, imageTypeHandler);
-            feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new PicasaJSONDataTypeHandler());
+            imageCache = StaticWebCache.getWebCache('4', PlatformUtils.PHONE_DATABASE_CACHE, imageTypeHandler, null, null);
+            feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new PicasaJSONDataTypeHandler(), null, null);
 
             thumbSize = imageSide + "c"; // c is for cropped, ensures image proportions
 

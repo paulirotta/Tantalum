@@ -28,6 +28,7 @@ import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.*;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
+import org.tantalum.canvasrssreader.RSSReader;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
 import org.tantalum.storage.FlashDatabaseException;
@@ -41,7 +42,6 @@ public final class DetailsForm extends Form implements CommandListener {
 
     private final FormRSSReader rssReader;
     private RSSItem selectedItem;
-    private static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler());
     private final Command openLinkCommand = new Command("Open link", Command.OK, 0);
     private final Command backCommand = new Command("Back", Command.BACK, 0);
 
@@ -106,7 +106,7 @@ public final class DetailsForm extends Form implements CommandListener {
         if (currentSelectedItem.getThumbnail() != null) {
             Image image = null;
             try {
-                image = (Image) imageCache.synchronousRAMCacheGet(currentSelectedItem.getThumbnail());
+                image = (Image) RSSReader.imageCache.synchronousRAMCacheGet(currentSelectedItem.getThumbnail());
             } catch (FlashDatabaseException ex) {
                 //#debug
                 L.e("Can not get image", currentSelectedItem.getThumbnail(), ex);
@@ -116,7 +116,7 @@ public final class DetailsForm extends Form implements CommandListener {
             } else if (!currentSelectedItem.isLoadingImage()) {
                 //request the thumbnail image, if not already loading
                 currentSelectedItem.setLoadingImage(true);
-                imageCache.getAsync(currentSelectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.HIGH_PRIORITY) {
+                RSSReader.imageCache.getAsync(currentSelectedItem.getThumbnail(), Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new Task(Task.HIGH_PRIORITY) {
                     protected Object exec(final Object in) {
                         //#debug
                         L.i("IMAGE DEBUG", currentSelectedItem.getThumbnail());
@@ -132,7 +132,7 @@ public final class DetailsForm extends Form implements CommandListener {
 
     public void appendImageItem() {
         try {
-            final Image image = (Image) imageCache.synchronousRAMCacheGet(selectedItem.getThumbnail());
+            final Image image = (Image) RSSReader.imageCache.synchronousRAMCacheGet(selectedItem.getThumbnail());
             final ImageItem imageItem = new ImageItem(null, image, Item.LAYOUT_CENTER, "");
             this.append(imageItem);
         } catch (FlashDatabaseException ex) {

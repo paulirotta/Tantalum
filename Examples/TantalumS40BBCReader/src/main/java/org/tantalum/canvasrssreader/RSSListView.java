@@ -46,7 +46,7 @@ public abstract class RSSListView extends View {
     protected final RSSListView.LiveUpdateRSSModel rssModel = new RSSListView.LiveUpdateRSSModel();
     protected final StaticWebCache feedCache;
 
-    public RSSListView(final RSSReaderCanvas canvas) {
+    public RSSListView(final RSSReaderCanvas canvas) throws FlashDatabaseException {
         super(canvas);
 
         feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
@@ -63,12 +63,12 @@ public abstract class RSSListView extends View {
                     return null;
                 }
             }
-        });
+        }, null, null);
     }
 
     protected void clearCache() {
         try {
-            final Task imageClearTask = DetailsView.imageCache.clearAsync(null);
+            final Task imageClearTask = canvas.imageCache.clearAsync(null);
 
             feedCache.clearAsync(new Task(Task.FASTLANE_PRIORITY) {
                 protected Object exec(final Object in) {
@@ -148,7 +148,7 @@ public abstract class RSSListView extends View {
                 if (items.size() < maxLength) {
                     if (prefetchImages) {
                         try {
-                            DetailsView.imageCache.prefetch(currentItem.getThumbnail());
+                            canvas.imageCache.prefetch(currentItem.getThumbnail());
                         } catch (FlashDatabaseException ex) {
                             //#debug
                             L.e("Can not get prefetch image", currentItem.getThumbnail(), ex);

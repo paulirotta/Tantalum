@@ -33,6 +33,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
+import org.tantalum.storage.FlashDatabaseException;
 
 /**
  * @author tsaa
@@ -44,12 +45,13 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
     static final Command exitCommand = new Command("Exit");
     private final ListModel listModel = new ListModel(this);
     public final List list = new List(listModel);
-    private final StaticWebCache feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, listModel);
+    private final StaticWebCache feedCache;
     private RSSReader midlet;
     private boolean isReloading = false;
 
-    public ListForm(String title, RSSReader midlet) {
+    public ListForm(String title, RSSReader midlet) throws FlashDatabaseException {
         super(title);
+        this.feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, listModel, null, null);
         this.midlet = midlet;
         list.addActionListener(this);
 

@@ -233,4 +233,23 @@ public abstract class FlashCache {
             L.e(this, "Timeout", "Cache shutdown tasks not completed", ex);
         }
     }
+    
+    /**
+     * An action you would like to perform on every cache entry at application start
+     * 
+     */
+    public interface StartupTask {
+
+        /**
+         * An operation you would like to run for each key in the cache at start
+         * time.
+         *
+         * This is run during startup initialization when the cache is walked to
+         * check integrity. You can use it to perform your own cache validation
+         * and expiration tasks at application start.
+         *
+         * @param key
+         */
+        public abstract void execForEachKey(FlashCache flashCache, String key) throws DigestException, FlashDatabaseException;
+    }
 }

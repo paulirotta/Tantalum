@@ -343,8 +343,8 @@ public final class PlatformUtils {
      * @return the new or existing cache object
      * @throws FlashDatabaseException
      */
-    public FlashCache getFlashCache(final char priority, final int cacheType) throws FlashDatabaseException {
-        return platformAdapter.getFlashCache(priority, cacheType);
+    public FlashCache getFlashCache(final char priority, final int cacheType, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
+        return platformAdapter.getFlashCache(priority, cacheType, startupTask);
     }
 
     /**

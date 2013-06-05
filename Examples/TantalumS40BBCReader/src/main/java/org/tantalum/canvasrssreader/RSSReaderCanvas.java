@@ -33,7 +33,10 @@ import com.nokia.mid.ui.gestures.GestureRegistrationManager;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
+import org.tantalum.PlatformUtils;
+import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -53,15 +56,18 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
     public static final Font FONT_DESCRIPTION = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final Font FONT_DATE = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     public static final int MARGIN = FONT_TITLE.getHeight() / 2;
+    public final StaticWebCache imageCache;
 
     /**
      * Constructor for RSSReaderCanvas
      *
      * @param rssReader
      */
-    public RSSReaderCanvas(RSSReader rssReader) {
+    public RSSReaderCanvas(RSSReader rssReader) throws FlashDatabaseException {
         super();
         this.rssReader = rssReader;
+
+        imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler(), null, null);
 
         //listView = new VerticalListView(this);
         listView = new IconListView(this);

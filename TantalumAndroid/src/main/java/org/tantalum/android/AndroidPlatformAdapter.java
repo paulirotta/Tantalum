@@ -130,10 +130,10 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
     }
 
     @Override
-    public FlashCache getFlashCache(final char priority, final int cacheType) {
+    public FlashCache getFlashCache(final char priority, final int cacheType, final FlashCache.StartupTask startupTask) {
         switch (cacheType) {
             case PlatformUtils.PHONE_DATABASE_CACHE:
-                return new AndroidCache(priority);
+                return new AndroidCache(priority, startupTask);
 
             default:
                 throw new IllegalArgumentException("Unsupported cache type " + cacheType + ": only PlatformAdapter.PHONE_DATABASE_CACHE is supported at this time");

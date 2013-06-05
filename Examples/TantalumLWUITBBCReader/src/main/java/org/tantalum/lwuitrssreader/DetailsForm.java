@@ -36,6 +36,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.net.xml.RSSItem;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
 
 /**
@@ -53,12 +54,14 @@ public class DetailsForm extends Form implements ActionListener {
     private Vector linkLabels;
     private RSSReader midlet;
     private RSSItem current;
-    private static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, new LWUITImageTypeHandler());
+    private final StaticWebCache imageCache;
 
-    public DetailsForm(String title, RSSReader midlet) {
+    public DetailsForm(String title, RSSReader midlet) throws FlashDatabaseException {
         super(title);
+        
+        this.imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, new LWUITImageTypeHandler(), null, null);
+        
         this.midlet = midlet;
-        setScrollableY(true);
         pubDateLabel = new Label("");
 
         pubDateLabel.getStyle().setFont(RSSReader.italicFont);

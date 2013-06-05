@@ -7,8 +7,6 @@ import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.tantalum.MockedStaticInitializers;
-import javax.microedition.lcdui.*;
-import java.awt.*;
 import java.util.Vector;
 import javax.microedition.lcdui.Font;
 import static org.mockito.Mockito.*;

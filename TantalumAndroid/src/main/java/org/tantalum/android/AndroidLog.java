@@ -25,6 +25,7 @@
 package org.tantalum.android;
 
 import android.util.Log;
+import java.util.logging.Level;
 import org.tantalum.util.L;
 
 /**
@@ -54,7 +55,7 @@ public final class AndroidLog extends L {
         if (t == null) {
             Log.i(LOG_TANTALUM, stringBuffer.toString());
         } else {
-            Log.e(LOG_TANTALUM, stringBuffer.toString());//, t);
+            Log.e(LOG_TANTALUM, stringBuffer.toString(), t);
         }
     }
 

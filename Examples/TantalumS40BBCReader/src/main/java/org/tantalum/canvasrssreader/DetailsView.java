@@ -44,8 +44,6 @@ import org.tantalum.util.L;
  * @author ssaa
  */
 public final class DetailsView extends View {
-
-    public static final StaticWebCache imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler());
     private static final JMEFontUtils titleFontUtils = JMEFontUtils.getFontUtils(RSSReaderCanvas.FONT_TITLE, "...");
     private static final JMEFontUtils descriptionFontUtils = JMEFontUtils.getFontUtils(RSSReaderCanvas.FONT_DESCRIPTION, "...");
 
@@ -61,7 +59,7 @@ public final class DetailsView extends View {
     private Image image; // Most recently used image (hard link prevents WeakReference gc)
     private int x = 0;
 
-    public DetailsView(final RSSReaderCanvas canvas) {
+    public DetailsView(final RSSReaderCanvas canvas) throws FlashDatabaseException {
         super(canvas);
     }
 
@@ -143,7 +141,7 @@ public final class DetailsView extends View {
         final String url = item.getThumbnail();
         if (url != null) {
             try {
-                image = (Image) imageCache.synchronousRAMCacheGet(url);
+                image = (Image) canvas.imageCache.synchronousRAMCacheGet(url);
             } catch (FlashDatabaseException ex) {
                 //#debug
                 L.e(this, "Can not get image", url, ex);
@@ -159,7 +157,7 @@ public final class DetailsView extends View {
             } else if (!item.isLoadingImage()) {
                 // Not already loading image, so request it
                 item.setLoadingImage(true);
-                imageCache.getAsync(item.getThumbnail(),
+                canvas.imageCache.getAsync(item.getThumbnail(),
                         Task.FASTLANE_PRIORITY,
                         StaticWebCache.GET_ANYWHERE,
                         new Task(Task.FASTLANE_PRIORITY) {
@@ -219,7 +217,7 @@ public final class DetailsView extends View {
         this.leftItem = leftItem;
         this.rightItem = rightItem;
         if (leftItem != null) {
-            imageCache.getAsync(leftItem.getThumbnail(),
+            canvas.imageCache.getAsync(leftItem.getThumbnail(),
                     Task.HIGH_PRIORITY,
                     StaticWebCache.GET_ANYWHERE,
                     new Task(Task.FASTLANE_PRIORITY) {
@@ -233,7 +231,7 @@ public final class DetailsView extends View {
             }.setClassName("LeftIcon"));
         }
         if (rightItem != null) {
-            imageCache.getAsync(rightItem.getThumbnail(),
+            canvas.imageCache.getAsync(rightItem.getThumbnail(),
                     Task.HIGH_PRIORITY,
                     StaticWebCache.GET_WEB,
                     new Task(Task.FASTLANE_PRIORITY) {

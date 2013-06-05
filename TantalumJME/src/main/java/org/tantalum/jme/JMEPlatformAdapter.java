@@ -112,12 +112,12 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         return new JMEImageTypeHandler();
     }
 
-    public FlashCache getFlashCache(final char priority, final int cacheType) throws FlashDatabaseException {
+    public FlashCache getFlashCache(final char priority, final int cacheType, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
         switch (cacheType) {
             case PlatformUtils.PHONE_DATABASE_CACHE:
                 try {
                     //                return new RMSCache(priority);
-                    return new RMSFastCache(priority);
+                    return new RMSFastCache(priority, startupTask);
                 } catch (Exception e) {
                     //#debug
                     L.e("Can not create flash cache", "" + priority, e);

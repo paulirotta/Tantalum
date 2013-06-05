@@ -31,6 +31,8 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.TimeoutException;
 import org.tantalum.storage.CacheView;
+import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.FlashCache.StartupTask;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.StaticCache;
 import org.tantalum.util.CryptoUtils;
@@ -94,25 +96,25 @@ public final class StaticWebCache extends StaticCache {
      * @param defaultCacheView
      * @return
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView) {
-        try {
-            return (StaticWebCache) getWebCache(priority, cacheType, cacheView, DEFAULT_HTTP_GETTER_FACTORY);
-        } catch (Exception e) {
-            //#debug
-            L.e("Can not create StaticWebCache", "" + priority, e);
-            return null;
-        }
-    }
+//    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView) {
+//        try {
+//            return (StaticWebCache) getWebCache(priority, cacheType, cacheView, DEFAULT_HTTP_GETTER_FACTORY);
+//        } catch (Exception e) {
+//            //#debug
+//            L.e("Can not create StaticWebCache", "" + priority, e);
+//            return null;
+//        }
+//    }
 
     /**
-     * Return a cache of default type PlatformUtils.PHONE_DATABASE_CACHE.
+     * Return a cache of default type PlatformUtils.PHONE_DATABASE_CACHE. The cache is created if it does not already exist.
      *
      * @param priority
      * @param defaultCacheView
      * @return
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final CacheView cacheView) {
-        return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, cacheView);
+    public static synchronized StaticWebCache getWebCache(final char priority, final CacheView cacheView) throws FlashDatabaseException {
+        return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, cacheView, DEFAULT_HTTP_GETTER_FACTORY, null);
     }
 
     /**
@@ -130,15 +132,15 @@ public final class StaticWebCache extends StaticCache {
      * server you are caching does not return an HTTP header error code but
      * rather gives an unexpected response body that you need to watch for
      * before deciding to cache the response.
-     *
+     * @param startupTask - an action to perform on each key found in the cache as part of initialization
      * @return
-     * @throws FlashDatabaseException
+     * @throws FlashDatabaseException 
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
+    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
         StaticWebCache c = (StaticWebCache) getExistingCache(priority, cacheView, httpTaskFactory, StaticWebCache.class);
 
         if (c == null) {
-            c = new StaticWebCache(priority, cacheType, cacheView, httpTaskFactory);
+            c = new StaticWebCache(priority, cacheType, cacheView, httpTaskFactory, startupTask);
             caches.addElement(c);
         }
 
@@ -150,23 +152,15 @@ public final class StaticWebCache extends StaticCache {
      * creating the HttpGetter or HttpPoster that will be used to getAsync
      * cache-miss items from the web.
      *
-     * @param cachePriorityChar
+     * @param priority
      * @param cacheType
-     * @param defaultCacheView
+     * @param cacheView
      * @param httpTaskFactory
-     * @throws DigestException
-     * @throws UnsupportedEncodingException
+     * @param startupTask
+     * @throws FlashDatabaseException 
      */
-    /**
-     *
-     * @param cachePriorityChar
-     * @param cacheType
-     * @param defaultCacheView
-     * @param httpTaskFactory
-     * @throws FlashDatabaseException
-     */
-    private StaticWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory) throws FlashDatabaseException {
-        super(priority, cacheType, cacheView);
+    private StaticWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory, final StartupTask startupTask) throws FlashDatabaseException {
+        super(priority, cacheType, cacheView, startupTask);
 
         this.httpTaskFactory = httpTaskFactory;
     }
