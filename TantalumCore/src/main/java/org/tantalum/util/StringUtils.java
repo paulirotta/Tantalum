@@ -206,7 +206,7 @@ public class StringUtils {
                     bos.write(second);
                     System.out.println("second %" + s2 + " - " + Integer.toHexString(second) + " - " + Integer.toBinaryString(second));
                     if (first < 224) {
-                        sb.append(bos.toString("UTF-8"));
+                        sb.append(new String(bos.toByteArray(), "UTF-8"));
                     } else {
                         if (s.charAt(++i) != '%') {
                             throw new IllegalArgumentException("urlDecode expected third '%' at position " + i + " but was '" + s.charAt(i) + "'" + s);
@@ -216,7 +216,7 @@ public class StringUtils {
 
                         bos.write(third);
                         if (first < 240) {
-                            sb.append(bos.toString("UTF-8"));
+                            sb.append(new String(bos.toByteArray(), "UTF-8"));
                         } else {
                             if (s.charAt(++i) != '%') {
                                 throw new IllegalArgumentException("urlDecode expected fourth '%' at position " + i + " but was '" + s.charAt(i) + "'" + s);
@@ -225,7 +225,7 @@ public class StringUtils {
                             final int fourth = Integer.parseInt(s4, 16);
 
                             bos.write(fourth);
-                            sb.append(bos.toString("UTF-8"));
+                            sb.append(new String(bos.toByteArray(), "UTF-8"));
                         }
                     }
                 }
