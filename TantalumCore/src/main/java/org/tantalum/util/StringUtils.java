@@ -184,29 +184,48 @@ public class StringUtils {
             if (c == '+') {
                 sb.append(' ');
             } else if (c == '%') {
-                final int first = Integer.parseInt(s.substring(++i, i++ + 2), 16);
+                final String s1 = s.substring(++i, i++ + 2);
+                final int first = Integer.parseInt(s1, 16);
+                System.out.println("first %" + s1 + " - " + Integer.toHexString(first) + " - " + Integer.toBinaryString(first));
                 if (first < 128) {
                     sb.append(Character.toChars(first));
                 } else {
                     if (s.charAt(++i) != '%') {
                         throw new IllegalArgumentException("urlDecode expected second '%' at position " + i + " but was '" + s.charAt(i) + "' : " + s);
                     }
-                    final int second = Integer.parseInt(s.substring(++i, i++ + 2), 16);
+                    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    final String s2 = s.substring(++i, i++ + 2);
+                    final int second = Integer.parseInt(s2, 16);
+                    bos.write(first);
+                    bos.write(second);
+                    System.out.println("second %" + s2 + " - " + Integer.toHexString(second) + " - " + Integer.toBinaryString(second));
                     if (first < 224) {
-                        sb.append(Character.toChars(((first << 8) | second) & 0x1F3F));
+                        final int combined = ((first << 8) | second) & 0xFFFF;
+                        System.out.println("all2 %" + s1 + s2 + " - " + Integer.toHexString(combined) + " - " + Integer.toBinaryString(combined));
+                        sb.append(bos.toString("UTF-8"));
                     } else {
                         if (s.charAt(++i) != '%') {
                             throw new IllegalArgumentException("urlDecode expected third '%' at position " + i + " but was '" + s.charAt(i) + "'" + s);
                         }
-                        final int third = Integer.parseInt(s.substring(++i, i++ + 2), 16);
+                        final String s3 = s.substring(++i, i++ + 2);
+                        final int third = Integer.parseInt(s3, 16);
+                        bos.write(third);
+                        System.out.println("third %" + s3 + " - " + Integer.toHexString(third) + " - " + Integer.toBinaryString(third));
                         if (first < 240) {
-                            sb.append(Character.toChars(((first << 16) | (second << 8) | third) & 0x0F3F3F));
+                            final int combined = ((first << 16) | (second << 8) | third) & 0xFFFFFF;
+                            System.out.println("all3 %" + s1 + s2 + s3 + " - " + Integer.toHexString(combined) + " - " + Integer.toBinaryString(combined));
+                            sb.append(bos.toString("UTF-8"));
                         } else {
                             if (s.charAt(++i) != '%') {
                                 throw new IllegalArgumentException("urlDecode expected fourth '%' at position " + i + " but was '" + s.charAt(i) + "'" + s);
                             }
-                            final int fourth = Integer.parseInt(s.substring(++i, i++ + 2), 16);
-                            sb.append(Character.toChars(((first << 24) | (second << 16) | (third << 8) | fourth) & 0x043F3F3F));
+                            final String s4 = s.substring(++i, i++ + 2);
+                            final int fourth = Integer.parseInt(s4, 16);
+                            bos.write(fourth);
+                            System.out.println("fourth %" + s4 + " - " + Integer.toHexString(fourth) + " - " + Integer.toBinaryString(fourth));
+                            final int combined = ((first << 24) | (second << 16) | (third << 8) | fourth) & 0xFFFFFFFF;
+                            System.out.println("all4 %" + s1 + s2 + s3 + s4 + " - " + Integer.toHexString(combined) + " - " + Integer.toBinaryString(combined));
+                            sb.append(bos.toString("UTF-8"));
                         }
                     }
                 }

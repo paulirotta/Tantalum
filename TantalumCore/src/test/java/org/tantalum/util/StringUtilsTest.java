@@ -101,7 +101,7 @@ public class StringUtilsTest extends MockedStaticInitializers {
     final String oneCharEncoded = "%E3%BF%9C";
     @Test
     public void uudecodeOneChar() throws UnsupportedEncodingException, IOException {
-        System.out.println("oneChar " + oneChar + " - " + Integer.toHexString(oneChar.charAt(0)) + " - " + Integer.toBinaryString(oneChar.charAt(0)));
+        System.out.println("oneChar " + oneChar + " - length=" + oneChar.length() + " - " + Integer.toHexString(oneChar.charAt(0)) + " - " + Integer.toBinaryString(oneChar.charAt(0)));
         char decoded = StringUtils.urlDecode(oneCharEncoded).charAt(0);
         System.out.println("decoded - " + Integer.toHexString(decoded) + " - " + Integer.toBinaryString(decoded));
         assertEquals(oneChar, StringUtils.urlDecode(oneCharEncoded));
