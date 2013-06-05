@@ -37,6 +37,7 @@ import java.util.Vector;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
 import static org.mockito.Mockito.*;
 import org.tantalum.Task;
 
@@ -70,8 +71,8 @@ public class HttpGetterTest extends MockedStaticInitializers {
         assertTrue("Getter was not correctly cancelled for non-String url", cancelCalled);
     }
 
-    //FIXME
-    //@Test
+    @Ignore
+    @Test
     public void responseCodesIn400RangeAreConsideredBad() throws IOException, InterruptedException {
         final String url = "http://github.com/TantalumMobile";
 
@@ -97,8 +98,8 @@ public class HttpGetterTest extends MockedStaticInitializers {
         assertTrue("Task was not correctly cancelled after error", cancelCalled);
     }
 
-    //FIXME
-    //@Test
+    @Ignore
+    @Test
     public void responseCodesIn300RangeAreConsideredBad() throws IOException, InterruptedException {
         final String url = "http://github.com/TantalumMobile";
 

@@ -31,6 +31,7 @@ import java.util.Vector;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.powermock.api.mockito.PowerMockito;
 
 /**
@@ -486,7 +487,8 @@ public class TaskTest extends MockedStaticInitializers {
     /**
      * Test of testOnCanceled method, of class Task.
      */
-    //@Test
+    @Ignore
+    @Test
     public void onCanceledTest() {
         System.out.println("onCanceled");
         final Vector v = new Vector();

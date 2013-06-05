@@ -27,7 +27,6 @@ package org.tantalum.net.xml;
 import org.junit.Before;
 import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
-import org.tantalum.net.xml.RSSModel;
 import org.tantalum.util.StringUtils;
 import org.xml.sax.SAXException;
 
@@ -35,6 +34,7 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import org.junit.Ignore;
 
 /**
  * Unit tests for RSSModel
@@ -75,10 +75,8 @@ public class RSSModelTest extends MockedStaticInitializers {
 
     // FIXME: On Windows with JME 3.2 the test fails with a missing class exception:
     // General exception java.util.MissingResourceException: Can't find bundle for base name com.sun.org.apache.xerces.internal.impl.msg.XMLMessages, locale en_US
-    //@Test(expected = SAXException.class)
+    @Test(expected = SAXException.class)
     public void dontAllowOneByteInput() throws SAXException {
         instance.setXML(new byte[1]);
-        fail("Should not handle 1 byte RSS");
-
     }
 }
