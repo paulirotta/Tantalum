@@ -327,9 +327,11 @@ public class RMSFastCache extends FlashCache {
                     //#enddebug
                     initTimeToKeyRMSIndexHash.put(currentRecordKeyAsInteger, keyIndexBytes);
                     initTimeReferencedValueIntegers.addElement(valueRecordIdAsInteger);
-                    
+
                     // Run startup task
-                    startupTask.execForEachKey(RMSFastCache.this, key);
+                    if (startupTask == null) {
+                        startupTask.execForEachKey(RMSFastCache.this, key);
+                    }
                 } catch (final Exception e) {
                     //#debug
                     L.e("Can not read index entry, deleting", "" + currentRecordTaskKeyIndex, e);
