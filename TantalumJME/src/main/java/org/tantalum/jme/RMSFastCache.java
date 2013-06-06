@@ -329,7 +329,7 @@ public class RMSFastCache extends FlashCache {
                     initTimeReferencedValueIntegers.addElement(valueRecordIdAsInteger);
 
                     // Run startup task
-                    if (startupTask == null) {
+                    if (startupTask != null) {
                         startupTask.execForEachKey(RMSFastCache.this, key);
                     }
                 } catch (final Exception e) {
