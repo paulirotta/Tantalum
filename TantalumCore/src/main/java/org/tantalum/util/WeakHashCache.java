@@ -212,7 +212,7 @@ public class WeakHashCache {
             final Object o = this.get(key);
 
             if (o == null) {
-                purgeList.add(key);
+                purgeList.addElement(key);
             }
         }
         final int n = purgeList.size();

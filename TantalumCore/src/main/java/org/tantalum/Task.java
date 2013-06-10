@@ -88,6 +88,19 @@ import org.tantalum.util.L;
 public abstract class Task {
 
     /**
+     * Start the task immediately on a dedicated Thread. The Thread expires
+     * after the Task completes.
+     *
+     * This is relatively expansive for performance. It can be useful in cases
+     * such as multimedia when the Task make take a long time to complete. It
+     * can also be useful if for best user experience (UX) the Task should start
+     * immediately regardless of current load.
+     *
+     * Note that you must be careful to limit the number of simultaneous threads
+     * which result or application performance and stability may drop.
+     */
+    public static final int DEDICATED_THREAD_PRIORITY = 8;
+    /**
      * Queue the task the system UI thread where it will execute after any
      * pending system events like touch input.
      *
@@ -1158,8 +1171,15 @@ public abstract class Task {
         protected void onCanceled(final String reason) {
             //#debug
             L.i(this, "onCanceled(" + reason + ")", "" + this);
-            for (int i = 0; i < tasksToFork.size(); i++) {
-                ((Task) tasksToFork.elementAt(i)).cancel(false, "Previous task in chain was canceled, then the chain split");
+
+            final Task[] tasks;
+            synchronized (tasksToFork) {
+                tasks = new Task[tasksToFork.size()];
+
+                tasksToFork.copyInto(tasks);
+            }
+            for (int i = 0; i < tasks.length; i++) {
+                tasks[i].cancel(false, "Previous task in chain was canceled, then the chain split");
             }
         }
 

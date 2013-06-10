@@ -49,7 +49,7 @@ final class Worker extends Thread {
      * for such writes, we need to start doing them before there is a risk of
      * OutOfMemory from serialQ length growth.
      */
-    private static final int MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST = 10;
+    private static final int MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST = 5;
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
@@ -127,15 +127,26 @@ final class Worker extends Thread {
         L.i(task, "Fork", "priority=" + task.getPriorityString());
         synchronized (q) {
             switch (priority) {
+                case Task.DEDICATED_THREAD_PRIORITY:
+                    new Thread(new Runnable() {
+                        public void run() {
+                            try {
+                                task.executeTask(task.getValue());
+                            } catch (Exception e) {
+                                //mdebug
+                                L.e(task, "Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, e);
+                            }
+                        }
+                    }, "" + task.getClassName()).start();
+                    break;
                 case Task.UI_PRIORITY:
                     PlatformUtils.getInstance().runOnUiThread(new Runnable() {
                         public void run() {
                             try {
                                 task.executeTask(task.getValue());
                             } catch (Exception e) {
-                                //#mdebug
+                                //#debug
                                 L.e(task, "Uncaught Task exception on UI thread", "task=" + task, e);
-                                //#enddebug
                             }
                         }
                     });
@@ -175,23 +186,22 @@ final class Worker extends Thread {
             return task;
         }
     }
-    
+
     static Task[] fork(final Task[] tasks) {
-        synchronized(q) {
+        synchronized (q) {
             for (int i = 0; i < tasks.length; i++) {
                 fork(tasks[i]);
             }
-            
+
             return tasks;
         }
     }
-    
+
     static void runAtomic(final Runnable runnable) {
         synchronized (q) {
             runnable.run();
         }
     }
-
 
     /**
      * Take an object out of the pending task queue. If the task has already
