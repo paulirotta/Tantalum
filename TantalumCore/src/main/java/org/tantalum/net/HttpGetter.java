@@ -1186,10 +1186,10 @@ public class HttpGetter extends Task {
             final int newNetActivityState = getCurrentNetActivityState();
 
             if (netActivityState != newNetActivityState) {
-                final NetActivityListener[] listeners = (NetActivityListener[]) netActivityListenerDelegate.getAllListeners();
+                final Object[] listeners = netActivityListenerDelegate.getAllListeners();
 
                 for (int i = 0; i < listeners.length; i++) {
-                    listeners[i].netActivityStateChanged(netActivityState, newNetActivityState);
+                    ((NetActivityListener) listeners[i]).netActivityStateChanged(netActivityState, newNetActivityState);
                 }
 
                 netActivityState = newNetActivityState;

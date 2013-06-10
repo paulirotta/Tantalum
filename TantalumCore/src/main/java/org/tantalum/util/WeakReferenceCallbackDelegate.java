@@ -6,6 +6,7 @@ package org.tantalum.util;
 
 import java.lang.ref.WeakReference;
 import java.util.Vector;
+import org.tantalum.net.HttpGetter.NetActivityListener;
 
 /**
  * A callback pattern implementation that uses WeakReference to avoid any
