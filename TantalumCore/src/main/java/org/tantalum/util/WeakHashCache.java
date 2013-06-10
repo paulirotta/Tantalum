@@ -27,6 +27,7 @@ package org.tantalum.util;
 import java.lang.ref.WeakReference;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * This is a hashtable which acts as a heap memory cache using WeakReference.
@@ -189,6 +190,38 @@ public class WeakHashCache {
      */
     public synchronized void clear() {
         hash.clear();
+    }
+
+    /**
+     * Remove from the list all elements for which the WeakReference has
+     * expired.
+     *
+     * Note that this is not done automatically, it is only done when you call
+     * this routine. This allows you to keep using contains() on the
+     * WeakHashCache without concern the response will be affected by reference
+     * expiry.
+     *
+     * @return the number of items removed
+     */
+    public synchronized int purgeExpiredWeakReferences() {
+        final Enumeration keys = hash.keys();
+        final Vector purgeList = new Vector();
+
+        while (keys.hasMoreElements()) {
+            final Object key = keys.nextElement();
+            final Object o = this.get(key);
+
+            if (o == null) {
+                purgeList.add(key);
+            }
+        }
+        final int n = purgeList.size();
+
+        for (int i = 0; i < n; i++) {
+            remove(purgeList.elementAt(i));
+        }
+
+        return n;
     }
 
     /**

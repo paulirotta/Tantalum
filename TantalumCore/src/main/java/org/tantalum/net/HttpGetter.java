@@ -32,12 +32,15 @@ import java.util.Vector;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
+import java.util.TimerTask;
 
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.RollingAverage;
+import org.tantalum.util.WeakHashCache;
+import org.tantalum.util.WeakReferenceCallbackDelegate;
 
 /**
  * GET something from a URL on the Worker thread
@@ -483,6 +486,7 @@ public class HttpGetter extends Task {
      * useful as a performance tuning parameter.
      */
     public static final RollingAverage averageResponseDelayMillis = new RollingAverage(10, 700.0f);
+    private static final WeakReferenceCallbackDelegate netActivityListenerDelegate = new WeakReferenceCallbackDelegate(NetActivityListener.class);
     /**
      * bits per second realized by a each connection. When multiple connections
      * are reading simultaneously this will be lower than the total bits per
@@ -757,6 +761,8 @@ public class HttpGetter extends Task {
         }
 
         final String url = keyIncludingPostDataHashtoUrl((String) in);
+        final Integer netActivityKey = new Integer(url.hashCode());
+        HttpGetter.networkActivity(netActivityKey); // Notify listeners, net is in use
 
         //#debug
         L.i(this, "Start", url);
@@ -815,13 +821,13 @@ public class HttpGetter extends Task {
                 L.i(this, "Exec", "No response. Stream is null, or length is 0");
             } else if (length > httpConn.getMaxLengthSupportedAsBlockOperation()) {
                 cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
-            } else if (length > 0) {
+            } else if (length > 0 && HttpGetter.netActivityListenerDelegate.isEmpty()) {
                 final byte[] bytes = new byte[length];
                 firstByteTime = readBytesFixedLength(url, inputStream, bytes);
                 out = bytes;
             } else {
                 bos = new ByteArrayOutputStream(OUTPUT_BUFFER_INITIAL_LENGTH);
-                firstByteTime = readBytesVariableLength(inputStream, bos);
+                firstByteTime = readBytesVariableLength(inputStream, bos, netActivityKey);
                 out = bos.toByteArray();
             }
             if (firstByteTime != Long.MAX_VALUE) {
@@ -906,6 +912,7 @@ public class HttpGetter extends Task {
             }
             //#debug
             L.i(this, "End", url + " status=" + getStatus() + " out=" + out);
+            HttpGetter.endNetworkActivity(netActivityKey); // Notify listeners, net is in use
         }
 
         if (!success) {
@@ -969,7 +976,7 @@ public class HttpGetter extends Task {
      * @return time of first byte received
      * @throws IOException
      */
-    private long readBytesVariableLength(final InputStream inputStream, final OutputStream bos) throws IOException {
+    private long readBytesVariableLength(final InputStream inputStream, final OutputStream bos, final Integer netActivityKey) throws IOException {
         final byte[] readBuffer = new byte[READ_BUFFER_LENGTH];
 
         final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
@@ -978,8 +985,10 @@ public class HttpGetter extends Task {
         }
         bos.write(b);
         final long firstByteReceivedTime = System.currentTimeMillis();
+        HttpGetter.networkActivity(netActivityKey);
         while (true) {
             final int bytesRead = inputStream.read(readBuffer);
+            HttpGetter.networkActivity(netActivityKey);
             if (bytesRead < 0) {
                 break;
             }
@@ -1145,4 +1154,236 @@ public class HttpGetter extends Task {
         return sb.toString();
     }
     //#enddebug
+
+    /**
+     * Register to start receiving notifications of network activity
+     *
+     * @param listener
+     */
+    public static void registerNetActivityListener(final NetActivityListener listener) {
+        HttpGetter.netActivityListenerDelegate.registerListener(listener);
+    }
+
+    /**
+     * Unregister to stop receiving notifications of network activity
+     *
+     * @param listener
+     */
+    public static void unregisterNetActivityListener(final NetActivityListener listener) {
+        HttpGetter.netActivityListenerDelegate.unregisterListener(listener);
+    }
+    private static volatile int netActivityState = NetActivityListener.INACTIVE; // Compare to the last notification to see if state is new
+    private static volatile int netActivityListnerStallTimeout = 5000; // ms
+    private static volatile int netActivityListnerInactiveTimeout = 30000; // ms
+    private static volatile long nextNetStallTimeout = 0; // ms, when should we transition to NetActivityListener.STALLED state unless something changes in the meantime
+    private static volatile long nextNetInactiveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
+    private static volatile TimerTask netActivityStallTimerTask = null;
+    private static volatile TimerTask netActivityInactiveTimerTask = null;
+    private static final WeakHashCache networkActivityActorsHash = new WeakHashCache();
+    private static final Runnable uiThreadNetworkStateChange = new Runnable() {
+        public void run() {
+            // Detect current state. If changed, notify listeners
+            final int newNetActivityState = getCurrentNetActivityState();
+
+            if (netActivityState != newNetActivityState) {
+                final NetActivityListener[] listeners = (NetActivityListener[]) netActivityListenerDelegate.getAllListeners();
+
+                for (int i = 0; i < listeners.length; i++) {
+                    listeners[i].netActivityStateChanged(netActivityState, newNetActivityState);
+                }
+
+                netActivityState = newNetActivityState;
+            }
+        }
+    };
+
+    private static int getCurrentNetActivityState() {
+        networkActivityActorsHash.purgeExpiredWeakReferences();
+        final long t;
+
+        if (networkActivityActorsHash.size() == 0 || (t = System.currentTimeMillis()) >= nextNetInactiveTimeout) {
+            return NetActivityListener.INACTIVE;
+        }
+
+        if (t >= nextNetStallTimeout) {
+            return NetActivityListener.STALLED;
+        }
+
+        return NetActivityListener.ACTIVE;
+    }
+
+    /**
+     * Check in 5 sec if the net state has changed
+     *
+     * @param deltaT
+     */
+    private static void conditionalStartStallTimer(final long deltaT) {
+        if (netActivityStallTimerTask == null) {
+            final TimerTask tt = new TimerTask() {
+                public void run() {
+                    netActivityStallTimerTask = null;
+                    final long t = System.currentTimeMillis();
+                    final long t2 = nextNetStallTimeout;
+
+                    if (t >= t2) {
+                        // Update possible state change to stalled
+                        PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+                    } else {
+                        // Net was active. Test again at the revised stall time
+                        conditionalStartStallTimer(t2 - t);
+                    }
+                }
+            };
+            netActivityStallTimerTask = tt;
+            Task.getTimer().schedule(tt, deltaT);
+        }
+    }
+
+    /**
+     * Check in 30 sec if the net state has changed
+     *
+     * @param deltaT
+     */
+    private static void conditionalStartInactiveTimer(final long deltaT) {
+        if (netActivityInactiveTimerTask == null) {
+            final TimerTask tt = new TimerTask() {
+                public void run() {
+                    netActivityInactiveTimerTask = null;
+                    final long t = System.currentTimeMillis();
+                    final long t2 = nextNetInactiveTimeout;
+
+                    if (t >= t2) {
+                        // Update possible state change to inactive
+                        PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+                    } else {
+                        // Net was active. Test again at the revised inactive time
+                        conditionalStartInactiveTimer(t2 - t);
+                    }
+                }
+            };
+            netActivityInactiveTimerTask = tt;
+            Task.getTimer().schedule(tt, deltaT);
+        }
+    }
+
+    /**
+     * Indicate that the network is active at this moment. Tantalum code will
+     * automatically call this for you, but if you also use own network code you
+     * can call this periodically in your network loop to keep the listeners
+     * informed.
+     *
+     * If the network was previously STALLED or INACTIVE,
+     * <code>NetActivityListener</code>s will be notified the network is
+     * entering
+     * <code>NetActivityListener.ACTIVE</code> state.
+     *
+     * If no calls to this made before the 5 second timeout,
+     * <code>NetActivityListener</code>s will be notified the network is
+     * entering
+     * <code>NetActivityListener.STALLED</code> state.
+     *
+     * From the STALLED state, if no calls to this made before the 30 second
+     * timeout,
+     * <code>NetActivityListener</code>s will be notified the network is
+     * entering
+     * <code>NetActivityListener.INACTIVE</code> state.
+     *
+     * @param key identifies this source of network activity and should be
+     * highly likely to be unique such as <code>new
+     * Integer(this.hashCode()</code>
+     */
+    public static void networkActivity(final Integer key) {
+        if (!networkActivityActorsHash.containsKey(key)) {
+            networkActivityActorsHash.put(key, key);
+        }
+        final long t = System.currentTimeMillis();
+        nextNetStallTimeout = t + netActivityListnerStallTimeout;
+        conditionalStartStallTimer(netActivityListnerStallTimeout);
+        nextNetInactiveTimeout = t + netActivityListnerInactiveTimeout;
+        conditionalStartInactiveTimer(netActivityListnerInactiveTimeout);
+
+        if (netActivityState != NetActivityListener.ACTIVE) {
+            // Update possible state change to inactive
+            PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+        }
+    }
+
+    /**
+     * Indicate that the network activity is finished.
+     *
+     * If this is the last current network activity, or if for some other reason
+     * you fail to call this method before the timeout period is reached, all
+     * <code>NetActivityListener</code>s will be notified
+     *
+     * @param key identifies this source of network activity and should be
+     * highly likely to be unique such as <code>new
+     * Integer(this.hashCode()</code>
+     */
+    public static void endNetworkActivity(final Integer key) {
+        networkActivityActorsHash.remove(key);
+
+        if (networkActivityActorsHash.size() == 0) {
+            // Update possible state change to inactive
+            PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+        }
+    }
+
+    /**
+     * Override the default 5 second stall and 30 second INACTIVE no net
+     * activity timeouts. This alters how quickly all
+     * <code>NetActivityListener</code>s are notified that a network is not
+     * receiving expected data.
+     *
+     * @param stallTimeoutInMilliseconds - time without net activity before
+     * entering STALLED state. The default is 5000.
+     * @param inactiveTimeoutInMilliseconds - time without net activity before
+     * entering INACTIVE state. The default is 30000.
+     */
+    public static void setNetActivityListenerTimeouts(final int stallTimeoutInMilliseconds, final int inactiveTimeoutInMilliseconds) {
+        netActivityListnerStallTimeout = stallTimeoutInMilliseconds;
+        netActivityListnerInactiveTimeout = inactiveTimeoutInMilliseconds;
+    }
+
+    /**
+     * Implement this the NetActivityListener to be notified about the network
+     * state. This is useful for adding user notification such as a spinner
+     * icon.
+     *
+     * These notifications will always arrive on the User Interface thread.
+     */
+    public static interface NetActivityListener {
+
+        /**
+         * The data network is not in use
+         */
+        public static final int INACTIVE = 0;
+        /**
+         * New network data has been requested or received within the last 5
+         * seconds
+         */
+        public static final int ACTIVE = 1;
+        /**
+         * One or more requests have been made, but no network data has been
+         * received during the last 5 seconds
+         */
+        public static final int STALLED = 2;
+
+        /**
+         * An update received on the UI thread indicating changes in network
+         * activity level.
+         *
+         * <pre>Example use cases (previousState -> newState):
+         *    INACTIVE -> ACTIVE  : show net spinner
+         *    -> INACTIVE : hide net spinner
+         *    -> STALLED : pause net spinner (stop moving to show net is slow)
+         *    STALLED -> ACTIVE : resume moving net spinner</pre>
+         *
+         * This allows you to animate your network activity display (often a
+         * pinner) on screen using your own timing loop.
+         *
+         * @param previousState
+         * @param newState
+         */
+        public void netActivityStateChanged(final int previousState, final int newState);
+    }
 }
