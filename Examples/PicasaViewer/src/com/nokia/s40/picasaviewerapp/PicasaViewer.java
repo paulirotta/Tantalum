@@ -21,6 +21,7 @@ import org.tantalum.util.L;
 import com.nokia.common.picasaviewerapp.PicasaStorage;
 import javax.microedition.midlet.MIDlet;
 import org.tantalum.jme.TantalumJME;
+import org.tantalum.storage.FlashDatabaseException;
 
 
 public final class PicasaViewer extends MIDlet {
@@ -49,8 +50,12 @@ public final class PicasaViewer extends MIDlet {
             L.e("Can not create FeaturedCanvas", null, ex);
             PlatformUtils.getInstance().shutdown(false, "Can not create FeaturedCanvas: " + ex);
         }
-        
-        PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
+        try {
+            PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e("Can not init flash storage", null, ex);
+        }
         try {
             featuredView.loadFeed(null, StaticWebCache.GET_ANYWHERE).fork(); //.join(200);
         } catch (Exception ex) {
