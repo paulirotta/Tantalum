@@ -495,7 +495,7 @@ public final class StaticWebCache extends StaticCache {
                     out = synchronousGet(url, skipHeap);
                     if (out == null) {
                         //#debug
-                        L.i(this, "Not found locally, get from the web", (String) in);
+                        L.i(this, "Not found locally, get from the web", url);
                         final Task httpGetter = getHttpGetter(preventWebTaskFromUsingFastLane(priority), url, postMessage, nextTask, taskFactory, skipHeap);
                         if (httpGetter == null) {
                             cancel(false, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter: " + url);
