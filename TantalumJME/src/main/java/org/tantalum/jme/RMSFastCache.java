@@ -42,6 +42,7 @@ public class RMSFastCache extends FlashCache {
      * Always access within a synchronized(MUTEX) block
      */
     private final Hashtable indexHash;
+    private final org.tantalum.jme.RMSKeyUtils RMSKeyUtils = new org.tantalum.jme.RMSKeyUtils();
 
     public RMSFastCache(final char priority, final FlashCache.StartupTask startupTask) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException, NoSuchAlgorithmException, InvalidRecordIDException, DigestException, UnsupportedEncodingException {
         super(priority);
@@ -111,7 +112,7 @@ public class RMSFastCache extends FlashCache {
             Object theValue = enumeration.nextElement();
             if (copy.containsKey(theValue)) {
                 // Here we have duplicate value in the indexHash
-                L.i(this, "Duplicate value in indexHash. Two distinct keys point to equal value ", toKeyIndex((Long) theValue) + "-" + toValueIndex((Long) theValue));
+                L.i(this, "Duplicate value in indexHash. Two distinct keys point to equal value ", RMSKeyUtils.toKeyIndex((Long) theValue) + "-" + RMSKeyUtils.toValueIndex((Long) theValue));
                 dumpHash(copy);
                 PlatformUtils.getInstance().shutdown(true, "RMS is inconsistent");
             }
@@ -217,13 +218,13 @@ public class RMSFastCache extends FlashCache {
         while (indexEntries.hasMoreElements()) {
             final Integer keyRecordInteger = (Integer) indexEntries.nextElement();
             final byte[] indexEntryBytes = (byte[]) keyRMSIndexHash.get(keyRecordInteger);
-            final int valueRecordId = toValueIndex(indexEntryBytes);
+            final int valueRecordId = RMSKeyUtils.toValueIndex(indexEntryBytes);
             final Integer valueRecordInteger = new Integer(valueRecordId);
             String key = null;
             long digest = 0;
             boolean error = false;
             try {
-                key = toStringKey(indexEntryBytes);
+                key = RMSKeyUtils.toStringKey(indexEntryBytes);
                 digest = CryptoUtils.getInstance().toDigest(key);
             } catch (DigestException ex) {
                 //#debug
@@ -264,10 +265,10 @@ public class RMSFastCache extends FlashCache {
             if (o instanceof byte[]) {
                 final byte[] bytes = (byte[]) o;
                 sb.append("(");
-                sb.append(toValueIndex(bytes));
+                sb.append(RMSKeyUtils.toValueIndex(bytes));
                 sb.append(", ");
                 try {
-                    sb.append(toStringKey(bytes));
+                    sb.append(RMSKeyUtils.toStringKey(bytes));
                 } catch (UnsupportedEncodingException ex) {
                     sb.append(ex);
                 }
@@ -302,15 +303,15 @@ public class RMSFastCache extends FlashCache {
             void exec() {
                 try {
                     final byte[] keyIndexBytes = keyRS.getRecord(currentRecordTaskKeyIndex);
-                    final String key = toStringKey(keyIndexBytes); // Decode to check integrity
+                    final String key = RMSKeyUtils.toStringKey(keyIndexBytes); // Decode to check integrity
                     final Integer currentRecordKeyAsInteger = new Integer(currentRecordTaskKeyIndex);
-                    final int valueRecordId = toValueIndex(keyIndexBytes);
+                    final int valueRecordId = RMSKeyUtils.toValueIndex(keyIndexBytes);
                     final Integer valueRecordIdAsInteger = new Integer(valueRecordId);
 
                     //#mdebug
                     L.i(this, "initReadIndexRecords", "key(" + currentRecordTaskKeyIndex + ")=" + key + " (" + Long.toString(CryptoUtils.getInstance().toDigest(key), 16) + ") -> value(" + valueRecordId + ")");
-                    final String s = toStringKey(keyIndexBytes);
-                    final Integer v = new Integer(toValueIndex(keyIndexBytes));
+                    final String s = RMSKeyUtils.toStringKey(keyIndexBytes);
+                    final Integer v = new Integer(RMSKeyUtils.toValueIndex(keyIndexBytes));
                     if (duplicateIndexStringHash.containsKey(s)) {
                         L.i(this, "WARNING: duplicate keyRS key entries found, should be fixed in next phase of init", s + " - " + v + " at keyRMS index " + currentRecordTaskKeyIndex);
                     }
@@ -357,7 +358,7 @@ public class RMSFastCache extends FlashCache {
      * @throws UnsupportedEncodingException
      */
     private void indexHashPut(final long digest, final int keyRecordId, final int valueRecordId) {
-        final Long l = toIndexHash(keyRecordId, valueRecordId);
+        final Long l = RMSKeyUtils.toIndexHash(keyRecordId, valueRecordId);
 
         synchronized (mutex) {
             indexHash.put(new Long(digest), l);
@@ -394,50 +395,16 @@ public class RMSFastCache extends FlashCache {
                 return null;
             }
 
-            final int keyIndex = toKeyIndex(keyAndValueIndexes);
+            final int keyIndex = RMSKeyUtils.toKeyIndex(keyAndValueIndexes);
             try {
                 final byte[] indexBytes = keyRS.getRecord(keyIndex);
-                return toStringKey(indexBytes);
+                return RMSKeyUtils.toStringKey(indexBytes);
             } catch (RecordStoreException e) {
                 throw new FlashDatabaseException("Error converting toString(digest): " + e);
             } catch (UnsupportedEncodingException e) {
                 throw new FlashDatabaseException("Error converting toString(digest): " + e);
             }
         }
-    }
-
-    /**
-     * Combine two 4 byte integers into one Long object for indexHash storage
-     *
-     * @param keyIndex
-     * @param valueIndex
-     * @return keyIndex and valueIndex coded into a single Long object to keep
-     * in memory as a Hashtable value
-     */
-    private Long toIndexHash(final int keyIndex, final int valueIndex) {
-        return new Long(((long) keyIndex << 32) | valueIndex);
-    }
-
-    /**
-     * Extract the index into the key RMS from Long value stored in the
-     * hashtable
-     *
-     * @param hashValue
-     * @return record number in keyRMS
-     */
-    private int toKeyIndex(final Long hashValue) {
-        return (int) ((hashValue.longValue() >>> 32) & 0xFFFF);
-    }
-
-    /**
-     * Extract the index into the value RMS from Long value stored in the
-     * hashtable
-     *
-     * @param hashValue
-     * @return record number in valueRMS
-     */
-    private int toValueIndex(final Long hashValue) {
-        return (int) (hashValue.longValue() & 0xFFFF);
     }
 
     /**
@@ -482,36 +449,6 @@ public class RMSFastCache extends FlashCache {
     }
 
     /**
-     * The string part extracted from the byte[] stored in the keyRMS
-     *
-     * @param indexBytes
-     * @return the key used to add a value to the cache
-     */
-    private String toStringKey(final byte[] indexBytes) throws UnsupportedEncodingException {
-        return new String(indexBytes, 4, indexBytes.length - 4, "UTF-8");
-    }
-
-    /**
-     * The int part extracted from the byte[] stored in the keyRMS
-     *
-     * @param indexBytes
-     * @return the valueRMS index from which the associated value can be
-     * extracted
-     */
-    private int toValueIndex(final byte[] indexBytes) {
-        //TODO Write sanity check unit tests, most significant bit
-        int i = indexBytes[0] & 0xFF;
-        i <<= 8;
-        i |= indexBytes[1] & 0xFF;
-        i <<= 8;
-        i |= indexBytes[2] & 0xFF;
-        i <<= 8;
-        i |= indexBytes[3] & 0xFF;
-
-        return i;
-    }
-
-    /**
      * Get the value associated with this key digest from phone flash memory
      *
      * @param digest
@@ -524,7 +461,7 @@ public class RMSFastCache extends FlashCache {
 
             if (hashValue != null) {
                 try {
-                    final int valueIndex = toValueIndex(hashValue);
+                    final int valueIndex = RMSKeyUtils.toValueIndex(hashValue);
                     return valueRS.getRecord(valueIndex);
                 } catch (Exception ex) {
                     throw new FlashDatabaseException("Can not getData from RMS: " + Long.toString(digest, 16) + " - " + ex);
@@ -568,7 +505,7 @@ public class RMSFastCache extends FlashCache {
                     //#debug
                     L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value added to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length + " keyIndex=" + keyRecordId);
                 } else {
-                    valueRecordId = toValueIndex(indexEntry);
+                    valueRecordId = RMSKeyUtils.toValueIndex(indexEntry);
                     valueRS.setRecord(valueRecordId, value, 0, value.length);
                     //#debug
                     L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value overwrite to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length);
@@ -603,8 +540,8 @@ public class RMSFastCache extends FlashCache {
 
                 if (indexEntry != null) {
                     indexHash.remove(new Long(digest));
-                    final int valueRecordId = toValueIndex(indexEntry);
-                    final int keyRecordId = toKeyIndex(indexEntry);
+                    final int valueRecordId = RMSKeyUtils.toValueIndex(indexEntry);
+                    final int keyRecordId = RMSKeyUtils.toKeyIndex(indexEntry);
                     valueRS.deleteRecord(valueRecordId);
                     keyRS.deleteRecord(keyRecordId);
                 }
