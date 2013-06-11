@@ -145,7 +145,7 @@ public class RMSFastCache extends FlashCache {
         forEachRecord(valueRS, new RecordTask() {
             void exec() {
                 //#debug
-                L.i(this, "initReadValueIntegers", "" + currentRecordTaskKeyIndex);
+                L.i(this, "initReadValueIntegers", Integer.toString(currentRecordTaskKeyIndex));
                 final Integer valueIndex = new Integer(currentRecordTaskKeyIndex);
                 valueIntegers.put(valueIndex, valueIndex);
             }
