@@ -453,7 +453,7 @@ public abstract class Task {
     public final Object set(final Object value) {
         synchronized (mutex) {
             if (this.status != Task.PENDING) {
-                throw new IllegalStateException(getClassName() + " can not setValue(), Task value is final after execution: " + this);
+                throw new IllegalStateException(getClassName() + " can not set(), Task value is final after execution: " + this);
             }
 
             return this.value = value;
@@ -646,16 +646,18 @@ public abstract class Task {
         //#debug
         L.i(this, "Successful unfork join() PENDING task", "Out of order exec: " + this);
 
-        switch (getStatus()) {
-            case PENDING:
-                return executeTask(getValue());
+        synchronized (mutex) {
+            switch (getStatus()) {
+                case PENDING:
+                    return executeTask(getValue());
 
-            case FINISHED:
-                return value;
+                case FINISHED:
+                    return value;
 
-            default:
-            case CANCELED:
-                throw new CancellationException("join() was to a Task which was canceled: " + this);
+                default:
+                case CANCELED:
+                    throw new CancellationException("join() was to a Task which was canceled: " + this);
+            }
         }
     }
 
@@ -1202,7 +1204,6 @@ public abstract class Task {
         }
         //#enddebug
     }
-    
     //#mdebug
     private static String[] PRIORITY_STRINGS = {"PRIORITY_NOT_SET", "SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "FASTLANE_PRIORITY", "UI_PRIORITY", "DEDICATED_THREAD_PRIORITY"};
 

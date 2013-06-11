@@ -561,6 +561,7 @@ public final class StaticWebCache extends StaticCache {
                 super(priority);
 
                 setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN);
+                setClassName("StaticWebCache.ValidationTask");
             }
 
             protected Object exec(final Object in) {
