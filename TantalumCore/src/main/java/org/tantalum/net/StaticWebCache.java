@@ -80,33 +80,6 @@ public final class StaticWebCache extends StaticCache {
     private static final String[] GET_TYPES = {"GET_LOCAL", "GET_ANYWHERE", "GET_WEB"};
 
     /**
-     * Get existing or create a new local cache of a web service.
-     *
-     * This uses the default
-     * <code>StaticWebCache.HttpTaskFactory</code> is to perform HTTP GET or
-     * HTTP PUT with no cookies and minimal validation of the server responses.
-     * You can change this by providing your own custom override of this class.
-     * A common need for this changing this default behavior is if the HTTP
-     * server you are caching does not return an HTTP header error code but
-     * rather gives an unexpected response body that you need to watch for
-     * before deciding to cache the response.
-     *
-     * @param priority
-     * @param cacheType
-     * @param defaultCacheView
-     * @return
-     */
-//    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView) {
-//        try {
-//            return (StaticWebCache) getWebCache(priority, cacheType, cacheView, DEFAULT_HTTP_GETTER_FACTORY);
-//        } catch (Exception e) {
-//            //#debug
-//            L.e("Can not create StaticWebCache", "" + priority, e);
-//            return null;
-//        }
-//    }
-
-    /**
      * Return a cache of default type PlatformUtils.PHONE_DATABASE_CACHE. The cache is created if it does not already exist.
      *
      * @param priority
