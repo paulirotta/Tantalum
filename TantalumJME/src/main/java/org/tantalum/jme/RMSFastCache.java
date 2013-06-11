@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.tantalum.jme;
 
 import java.io.UnsupportedEncodingException;
@@ -137,7 +133,7 @@ public class RMSFastCache extends FlashCache {
      * RMS. At this point these may or may not be properly referenced from a key
      * in the index- that will be checked next.
      *
-     * @param unreferencedValueRecordIdHash
+     * @param valueIntegers
      * @throws RecordStoreNotOpenException
      * @throws InvalidRecordIDException
      */
@@ -290,10 +286,9 @@ public class RMSFastCache extends FlashCache {
      * During startup, read into in-memory accelerator Hashtable and check
      * integrity of each key record.
      *
-     * @param unreferencedValueIds
-     * @param referencedValueRecordIdHash
+     * @param initTimeToKeyRMSIndexHash
+     * @param initTimeReferencedValueIntegers
      * @throws RecordStoreNotOpenException
-     * @throws InvalidRecordIDException
      */
     private void initReadIndexRecords(final Hashtable initTimeToKeyRMSIndexHash,
             final Vector initTimeReferencedValueIntegers, final FlashCache.StartupTask startupTask) throws RecordStoreNotOpenException {
