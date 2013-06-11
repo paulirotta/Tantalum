@@ -8,8 +8,6 @@ import java.io.UnsupportedEncodingException;
  * @author Kai Inkinen <kai.inkinen@futurice.com>; github.com/kaiinkinen
  */
 public class RMSKeyUtils {
-    public RMSKeyUtils() {
-    }
 
     /**
      * Combine two 4 byte integers into one Long object for indexHash storage
@@ -20,7 +18,8 @@ public class RMSKeyUtils {
      *         in memory as a Hashtable value
      */
     Long toIndexHash(final int keyIndex, final int valueIndex) {
-        return new Long(((long) keyIndex << 32) | valueIndex);
+        final long lki = (long) keyIndex;
+        return new Long((lki << 32) | valueIndex);
     }
 
     /**
@@ -31,7 +30,7 @@ public class RMSKeyUtils {
      * @return record number in keyRMS
      */
     int toKeyIndex(final Long hashValue) {
-        return (int) ((hashValue.longValue() >>> 32) & 0xFFFF);
+        return (int) ((hashValue.longValue() >>> 32) & 0xFFFFFFFF);
     }
 
     /**
@@ -42,7 +41,7 @@ public class RMSKeyUtils {
      * @return record number in valueRMS
      */
     int toValueIndex(final Long hashValue) {
-        return (int) (hashValue.longValue() & 0xFFFF);
+        return (int) (hashValue.longValue() & 0xFFFFFFFF);
     }
 
     /**
@@ -63,7 +62,6 @@ public class RMSKeyUtils {
      *         extracted
      */
     int toValueIndex(final byte[] indexBytes) {
-        //TODO Write sanity check unit tests, most significant bit
         int i = indexBytes[0] & 0xFF;
         i <<= 8;
         i |= indexBytes[1] & 0xFF;

@@ -6,14 +6,16 @@ package org.tantalum.jme;
  * Time: 01:08
  */
 
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
+
 
 /**
  * Unit tests for the key methods in the RMSFastCache.
@@ -28,17 +30,81 @@ public class RMSKeyUtilsTest extends RMSTestUtils {
     }
 
     @Test
-    public void indexKeyValueIsReversible() {
+    public void indexKeyForTrivialValueIsReversible() {
         long indexHash = keyUtils.toIndexHash(13, 0);
         assertEquals(13, keyUtils.toKeyIndex(indexHash));
     }
 
     @Test
-    public void indexValueForValIsReversible() {
+    public void indexValueForTrivialValIsReversible() {
         long indexHash = keyUtils.toIndexHash(0, 97);
         assertEquals(97, keyUtils.toValueIndex(indexHash));
     }
 
+    @Test
+    public void reversible() {
+        final int value = 1 << 16;
+
+        long indexHash = keyUtils.toIndexHash(value, value);
+
+        assertEquals(value, keyUtils.toKeyIndex(indexHash));
+        assertEquals(value, keyUtils.toValueIndex(indexHash));
+    }
+
+
+    @Test
+    public void indexKeyCanReverseAllIntegerBits() {
+        int one = 1;
+        for (int bits = 0; bits < 32; bits++) {
+            final int shifted = one << bits;
+            long indexHash = keyUtils.toIndexHash(shifted, 0);
+            assertEquals("For shift value " + bits + " values are not equal", shifted, keyUtils.toKeyIndex(indexHash));
+        }
+    }
+
+    @Test
+    public void indexValueCanReverseAllIntegerBits() {
+        int one = 1;
+        for (int bits = 0; bits < 32; bits++) {
+            final int shifted = one << bits;
+            long indexHash = keyUtils.toIndexHash(0, shifted);
+            assertEquals("For shift value " + bits + " values are not equal", shifted, keyUtils.toValueIndex(indexHash));
+        }
+    }
+
+    @Test
+    public void valueIndexValuesCanStoreEntireIntegerRange() {
+        long one = 1;
+        long previous = 0;
+
+        for (int bits = 0; bits < 32; bits++) {
+            long shifted = one << bits;
+            assertTrue("Overflow when shifting long. Previous value: " + previous + " now: " + shifted, shifted > previous);
+            previous = shifted;
+
+            int vi = keyUtils.toValueIndex(shifted);
+
+            assertEquals((int) shifted, vi);
+        }
+    }
+
+    @Test
+    public void keyIndexValuesCanStoreEntireIntegerRange() {
+        final int bitsInInteger = 32;
+        final long one = 1;
+
+        for (int bits = 0; bits < bitsInInteger; bits++) {
+            final int keyIntegerValue = (int)(one << bits);
+            final long shiftedLong = one << (bits + bitsInInteger);
+
+            int ki = keyUtils.toKeyIndex(shiftedLong);
+
+            assertEquals(keyIntegerValue, ki);
+        }
+    }
+
+
+    @Ignore
     @Test
     public void hashValueCollision() {
         final int keyIndex = 2;
@@ -54,10 +120,6 @@ public class RMSKeyUtilsTest extends RMSTestUtils {
 
         for (int key = 1; key < numberOfEntries; key++) {
             for (int value = 1; value < numberOfEntries; value++) {
-                if (counter++ % 10000 == 0) {
-                    System.out.println("Checked " + counter + " values");
-                }
-
                 Long hash = keyUtils.toIndexHash(key, value);
                 if (values.contains(hash)) {
                     System.out.println("Hash value " + hash + " already exists");
