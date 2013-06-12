@@ -72,4 +72,28 @@ public class RMSKeyUtils {
 
         return i;
     }
+
+    /**
+     * Encode the key and an index into the valueRMS into a byte[] to store in
+     * the keyRMS
+     *
+     *
+     * @param key
+     * @param valueIndex
+     * @return the bytes to put in the keyRMS
+     * @throws java.io.UnsupportedEncodingException
+     */
+    byte[] toIndexBytes(final String key, final int valueIndex) throws UnsupportedEncodingException {
+        final byte[] bytes = key.getBytes();
+        final byte[] bytesWithValue = new byte[bytes.length + 4];
+
+        bytesWithValue[0] = (byte) ((valueIndex & 0xFF000000) >>> 24);
+        bytesWithValue[1] = (byte) ((valueIndex & 0xFF0000) >>> 16);
+        bytesWithValue[2] = (byte) ((valueIndex & 0x0FF00) >>> 8);
+        bytesWithValue[3] = (byte) (valueIndex & 0xFF);
+
+        System.arraycopy(bytes, 0, bytesWithValue, 4, bytes.length);
+
+        return bytesWithValue;
+    }
 }

@@ -354,8 +354,6 @@ public class RMSFastCache extends FlashCache {
      * @param digest
      * @param keyRecordId
      * @param valueRecordId
-     * @throws DigestException
-     * @throws UnsupportedEncodingException
      */
     private void indexHashPut(final long digest, final int keyRecordId, final int valueRecordId) {
         final Long l = RMSKeyUtils.toIndexHash(keyRecordId, valueRecordId);
@@ -426,29 +424,6 @@ public class RMSFastCache extends FlashCache {
     }
 
     /**
-     * Encode the key and an index into the valueRMS into a byte[] to store in
-     * the keyRMS
-     *
-     * @param key
-     * @param valueIndex
-     * @return the bytes to put in the keyRMS
-     * @throws UnsupportedEncodingException
-     */
-    private byte[] toIndexBytes(final String key, final int valueIndex) throws UnsupportedEncodingException {
-        final byte[] bytes = key.getBytes();
-        final byte[] bytesWithValue = new byte[bytes.length + 4];
-
-        bytesWithValue[0] = (byte) ((valueIndex & 0xFF000000) >>> 24);
-        bytesWithValue[1] = (byte) ((valueIndex & 0xFF0000) >>> 16);
-        bytesWithValue[2] = (byte) ((valueIndex & 0x0FF00) >>> 8);
-        bytesWithValue[3] = (byte) (valueIndex & 0xFF);
-
-        System.arraycopy(bytes, 0, bytesWithValue, 4, bytes.length);
-
-        return bytesWithValue;
-    }
-
-    /**
      * Get the value associated with this key digest from phone flash memory
      *
      * @param digest
@@ -499,7 +474,7 @@ public class RMSFastCache extends FlashCache {
 
                 if (indexEntry == null) {
                     valueRecordId = valueRS.addRecord(value, 0, value.length);
-                    final byte[] byteKey = toIndexBytes(key, valueRecordId);
+                    final byte[] byteKey = RMSKeyUtils.toIndexBytes(key, valueRecordId);
                     keyRecordId = keyRS.addRecord(byteKey, 0, byteKey.length);
                     indexHashPut(digest, keyRecordId, valueRecordId);
                     //#debug
