@@ -428,7 +428,7 @@ public class StaticCache {
             try {
                 // Load from flash memory
                 final byte[] bytes;
-//#debug                
+                //#debug                
                 if (flashCacheEnabled) {
                     bytes = flashCache.get(key);
 //#mdebug
