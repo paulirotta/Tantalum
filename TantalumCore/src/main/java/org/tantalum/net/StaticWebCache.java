@@ -490,12 +490,16 @@ public final class StaticWebCache extends StaticCache {
             } else {
                 try {
                     final String url = (String) in;
-                    //#debug
+                    //#mdebug
                     L.i(this, "get", url);
+                    System.out.println("StaticWebCache.HttpGetterTask.exec: Get locally " + url);
+                    //#enddebug
                     out = synchronousGet(url, skipHeap);
                     if (out == null) {
-                        //#debug
+                        //#mdebug
                         L.i(this, "Not found locally, get from the web", url);
+                        System.out.println("StaticWebCache.HttpGetterTask.exec: Get from web " + url);
+                        //#enddebug
                         final Task httpGetter = getHttpGetter(preventWebTaskFromUsingFastLane(priority), url, postMessage, nextTask, taskFactory, skipHeap);
                         if (httpGetter == null) {
                             cancel(false, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter: " + url);
@@ -575,7 +579,17 @@ public final class StaticWebCache extends StaticCache {
                     cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
                 } else {
                     try {
+                        //#mdebug
+                        final int dataLength = (in instanceof byte[] ? ((byte[])in).length : 0);
+                        L.i(this, "Put '" + url + "'", "Convert to use form and write to flash");
+                        System.out.println("StaticWebCache.ValidationTask.exec: Putting '" + url + "' converting to use form and store in cache " + dataLength);
+                        //#enddebug
                         out = put(url, (byte[]) in, skipHeap); // Convert to use form
+                        //#mdebug
+                        final int dataLengthAfter = (in instanceof byte[] ? ((byte[])in).length : 0);
+                        L.i(this, "Put '" + url + "'", "Finished convert to use form and write to flash");
+                        System.out.println("StaticWebCache.ValidationTask.exec: Finished putting '" + url + "' converting to use form and store in cache " + dataLengthAfter);
+                        //#enddebug
                     } catch (FlashDatabaseException e) {
                         //#debug
                         L.e("Can not set result after staticwebcache http get", httpGetter.toString(), e);
@@ -630,6 +644,7 @@ public final class StaticWebCache extends StaticCache {
 
             TimerEndTask(final HttpGetter httpGetter) {
                 super(Task.FASTLANE_PRIORITY);
+                
                 this.httpGetter = httpGetter;
             }
 

@@ -105,7 +105,7 @@ public class WeakHashCache {
             throw new IllegalArgumentException("null key put to WeakHashCache");
         }
         if (value == null) {
-            throw new IllegalArgumentException("null key put to WeakHashCache");
+            throw new IllegalArgumentException("null value put to WeakHashCache");
         }
 
         hash.put(key, new WeakReference(value));

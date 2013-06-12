@@ -478,7 +478,17 @@ public class StaticCache {
      * @throws FlashDatabaseException
      */
     public Object put(final String key, final byte[] bytes) throws FlashDatabaseException {
-        return put(key, bytes, false);
+        //#mdebug
+        System.out.println("StaticCache.put '" + key + "' with " + (bytes != null ? bytes.length : 0));
+        //#enddebug
+        Object returnValue = put(key, bytes, false);
+        
+        //#mdebug
+         System.out.println("StaticCache.put Finished putting '" + key + "' with " + (bytes != null ? bytes.length : 0));
+        //#enddebug
+        
+        return returnValue;
+        
     }
 
     /**
