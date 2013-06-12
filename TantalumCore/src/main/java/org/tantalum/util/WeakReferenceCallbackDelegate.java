@@ -116,7 +116,7 @@ public class WeakReferenceCallbackDelegate {
                 if (o == null) {
                     listeners.removeElementAt(i--);
                 } else {
-                    v.add(o);
+                    v.addElement(o);
                 }
             }
             listenersAreRegistered = !listeners.isEmpty();
