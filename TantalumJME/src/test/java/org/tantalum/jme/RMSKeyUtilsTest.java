@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
 /**
  * Unit tests for the key methods in the RMSFastCache.
  */
-public class RMSKeyUtilsTest extends RMSTestUtils {
+public class RMSKeyUtilsTest {
 
     RMSKeyUtils keyUtils;
 
