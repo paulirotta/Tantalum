@@ -466,7 +466,7 @@ public class HttpGetter extends Task {
      * available
      */
     public static final int HTTP_OPERATION_PENDING = -1;
-    private static final int HTTP_GET_RETRIES = 0;
+    private static final int HTTP_GET_RETRIES = 1;
     private static final int HTTP_RETRY_DELAY = 5000; // 5 seconds
     /**
      * Connections slower than this drop into single file load with header
