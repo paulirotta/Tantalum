@@ -107,12 +107,16 @@ public class WeakReferenceCallbackDelegate {
         }
 
         synchronized (listeners) {
+            final Vector v = new Vector(listeners.size());
+            
             for (int i = 0; i < listeners.size(); i++) {
                 final WeakReference wr = (WeakReference) listeners.elementAt(i);
                 final Object o = wr.get();
 
                 if (o == null) {
                     listeners.removeElementAt(i--);
+                } else {
+                    v.add(o);
                 }
             }
             listenersAreRegistered = !listeners.isEmpty();
@@ -120,8 +124,8 @@ public class WeakReferenceCallbackDelegate {
                 return NO_LISTENERS_REGISTERED;
             }
             
-            final Object[] listenersCopy = new Object[listeners.size()];
-            listeners.copyInto(listenersCopy);
+            final Object[] listenersCopy = new Object[v.size()];
+            v.copyInto(listenersCopy);
 
             return listenersCopy;
         }
