@@ -165,7 +165,7 @@ public class StaticCache {
      * when loading into the RAM ramCache.
      * @param startupTask if provided will be run on every entry in the cache
      * @return
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public static StaticCache getCache(final char priority, final int cacheType, final CacheView cacheView, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
         synchronized (caches) {
@@ -187,7 +187,7 @@ public class StaticCache {
      * @param cacheType
      * @param defaultCacheView
      * @param startupTask
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     protected StaticCache(final char priority, final int cacheType, final CacheView defaultCacheView, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
         if (priority < '0') {
@@ -204,8 +204,8 @@ public class StaticCache {
      *
      * We want to use the RAM Hashtable to know what the ramCache contains, even
      * though we do not pre-load from flash all the values
-     * 
-     * @throws FlashDatabaseException 
+     *
+     * @throws FlashDatabaseException
      */
     private void init() throws FlashDatabaseException {
         final long[] digests;
@@ -338,10 +338,9 @@ public class StaticCache {
      * @param nextTask
      * @return
      */
-    public Task getAsync(final String key, int priority, final Task nextTask) {
-        return getAsync(key, priority, nextTask, false);
-    }
-
+//    public Task getAsync(final String key, int priority, final Task nextTask) {
+//        return getAsync(key, priority, nextTask, false);
+//    }
     /**
      * Local flash read should be fast- allow it into the FASTLANE so it can
      * bump past a (possible large number of blocking) HTTP operations.
@@ -375,21 +374,26 @@ public class StaticCache {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
-        priority = boostHighPriorityToFastlane(priority);
+        if (skipHeap) {
+            //#debug
+            L.i(this, "getAsync(" + key + ")", "automatic switched to Task.SERIAL_PRIORITY to ensure data integrity, response may be slowed");
+            priority = Task.SERIAL_PRIORITY;
+        } else {
+            priority = boostHighPriorityToFastlane(priority);
+        }
 
         return (new GetLocalTask(priority, key, skipHeap)).chain(nextTask).fork();
     }
 
     /**
-     * Simple synchronous get.
+     * Simple synchronous get. This does not run at particularly high priority
+     * relative to other Tasks and will block until the result is returned, so
+     * only call from inside a Task or other worker thread. Never call from the
+     * UI thread.
      *
-     * This will block until the result is returned, so only call from inside a
-     * Task or other worker thread. Never call from the UI thread.
-     *
-     * Unlike getAsync(url, chainedTask), this may hold multiple threads for
-     * some time depending on cache status. It is thus higher performance for
-     * your app as a whole to use the async request and let chaining sequence
-     * the load across threads.
+     * Unlike getAsync(), this may hold multiple threads for some time depending
+     * on cache status. It is thus higher performance for your app as a whole to
+     * use the async request and let chaining sequence the load across threads.
      *
      * @param url
      * @return
@@ -397,7 +401,7 @@ public class StaticCache {
      * @throws TimeoutException
      */
     public Object get(final String key) throws CancellationException, TimeoutException {
-        return getAsync(key, Task.NORMAL_PRIORITY, null).get();
+        return getAsync(key, Task.NORMAL_PRIORITY, null, false).get();
     }
 
     /**
@@ -455,7 +459,7 @@ public class StaticCache {
 
         return useForm;
     }
-
+    
     /**
      * Store a value to heap and flash memory.
      *
@@ -473,27 +477,92 @@ public class StaticCache {
      *
      * @param key
      * @param bytes
-     * @return the byte[] converted to the parsed Object "use form" returned by
-     * this cache's CacheView
+     * @param skipHeap
+     * @param nextTask
+     * @return
      * @throws FlashDatabaseException
      */
-    public Object put(final String key, final byte[] bytes) throws FlashDatabaseException {
-        //#mdebug
-        System.out.println("StaticCache.put '" + key + "' with " + (bytes != null ? bytes.length : 0));
-        //#enddebug
-        Object returnValue = put(key, bytes, false);
+    public Object put(final String key, final byte[] bytes, final Task nextTask) throws FlashDatabaseException {
+        if (key == null || key.length() == 0) {
+            throw new IllegalArgumentException("Attempt to put trivial key to cache");
+        }
+        if (bytes == null || bytes.length == 0) {
+            throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
+        }
+
+        Object previousUseForm = this.ramCache.get(key);
+        /**
+         * This useForm pojo (plain old java object) serves to ensure the
+         * WeakReferenceHashCache does not garbage collect the RAM copy of the
+         * object until the write to flash completes. This is a very subtle
+         * issue, but the heap copy is shielding the asynchronous write from
+         * premature read. In other words you can async lazy write to flash as
+         * long as you write in sequential order of the write requests and don't
+         * read from flash until after you write.
+         */
+        final Object useForm;
+        //#debug
+        L.i(this, "putAsync", "key=" + key + " byteLength=" + bytes.length);
+        try {
+            useForm = convertAndPutToHeapCache(key, bytes);
+        } catch (DigestException ex) {
+            //#debug
+            L.e("Can not putAync", key, ex);
+            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+        } catch (UnsupportedEncodingException ex) {
+            //#debug
+            L.e("Can not putAync", key, ex);
+            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+        }
+        final boolean newUseFormSameAsPreviousUseForm = useForm.equals(previousUseForm);
+        previousUseForm = null;
+        if (newUseFormSameAsPreviousUseForm) {
+            //#debug
+            L.i("Ignoring trivial re-put() of the same key-value pair, a dummy Task response instead of actual async save is returned", key);
+            return new Task(Task.FASTLANE_PRIORITY) {
+                protected Object exec(final Object in) throws CancellationException, TimeoutException, InterruptedException {
+                    return useForm;
+                }
+            }.setClassName("DummyDuplicatePutAsyncResponse").fork();
+        }
+
+//#mdebug        
+        if (!flashCacheEnabled) {
+            return useForm;
+        }
+//#enddebug        
+
+        new Task(Task.SERIAL_PRIORITY) {
+            protected Object exec(final Object in) {
+                try {
+                    synchronousFlashPut(key, bytes);
+                } catch (FlashDatabaseException e) {
+                    //#debug
+                    L.e("Can not synch write to flash", key, e);
+                    cancel(false, "Can not sync write to flash: " + key + " byte length=" + bytes.length, e);
+                }
+
+                return useForm;
+            }
+        }.setClassName("PutAsync").chain(nextTask).fork();
         
-        //#mdebug
-         System.out.println("StaticCache.put Finished putting '" + key + "' with " + (bytes != null ? bytes.length : 0));
-        //#enddebug
-        
-        return returnValue;
-        
+        return useForm;
     }
 
     /**
-     * Store a value to heap and flash memory, possibly bypassing any associated
-     * heap memory changes.
+     * Store a value to heap and (optionally) flash memory.
+     *
+     * Conversion to from byte[] to use form (POJO, Plain Old Java Object)
+     * happens synchronously on the calling thread. If data type conversion may
+     * take a long time (XML or JSON parsing, etc) then avoid calling this
+     * method from the UI thread.
+     *
+     * Actual storage to persistent flash storage is done asynchronously on a
+     * background worker thread. This is done at high priority to prevent the
+     * queue of to-be-written objects from taking up precious heap memory. Items
+     * are written in the order in which calls to this method complete. You may
+     * prefer to explicitly manage this processes yourself by use of
+     * synchronousPutToRMS().
      *
      * Setting skipHeap=true delays any (possibly slow) process in your custom
      * CacheView until load time. Note that any previously-heap-cached "use
@@ -509,59 +578,52 @@ public class StaticCache {
      * this cache's CacheView
      * @throws FlashDatabaseException
      */
-    public Object put(final String key, final byte[] bytes, final boolean skipHeap) throws FlashDatabaseException {
-        if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("Attempt to put trivial key to cache");
-        }
-        if (bytes == null || bytes.length == 0) {
-            throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
-        }
-        final Object previousUseForm = this.ramCache.get(key);
-        final Object useForm;
-        //#debug
-        L.i(this, "put", "key=" + key + " byteLength=" + bytes.length);
-        try {
-            useForm = convertAndPutToHeapCache(key, bytes);
-        } catch (DigestException ex) {
-            //#debug
-            L.e("Can not putAync", key, ex);
-            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
-        } catch (UnsupportedEncodingException ex) {
-            //#debug
-            L.e("Can not putAync", key, ex);
-            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
-        }
-        if (useForm.equals(previousUseForm)) {
-            //#debug
-            L.i("Ignoring trivial re-put() of the same key-value pair", key);
-            return useForm;
-        }
-
-//#mdebug        
-        if (!flashCacheEnabled) {
-            return useForm;
-        }
-//#enddebug        
-
-        (new Task(Task.SERIAL_PRIORITY) {
-            public Object exec(final Object in) {
-                try {
-                    synchronousFlashPut(key, bytes);
-                } catch (FlashDatabaseException e) {
-                    //#debug
-                    L.e("Can not synch write to flash", key, e);
-                    cancel(false, "Can not sync write to flash: " + key + " byte length=" + bytes.length, e);
-                }
-
-                return in;
-            }
-        }.setClassName("FlashPut")
-                .setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN))
-                .fork();
-
-        return useForm;
-    }
-
+//    private Object put(final String key, final byte[] bytes, final boolean skipHeap) throws FlashDatabaseException {
+//        final Object previousUseForm = this.ramCache.get(key);
+//        final Object useForm;
+//        //#debug
+//        L.i(this, "put", "key=" + key + " byteLength=" + bytes.length);
+//        try {
+//            useForm = convertAndPutToHeapCache(key, bytes);
+//        } catch (DigestException ex) {
+//            //#debug
+//            L.e("Can not putAync", key, ex);
+//            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+//        } catch (UnsupportedEncodingException ex) {
+//            //#debug
+//            L.e("Can not putAync", key, ex);
+//            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+//        }
+//        if (useForm.equals(previousUseForm)) {
+//            //#debug
+//            L.i("Ignoring trivial re-put() of the same key-value pair", key);
+//            return useForm;
+//        }
+//
+////#mdebug        
+//        if (!flashCacheEnabled) {
+//            return useForm;
+//        }
+////#enddebug        
+//
+//        (new Task(Task.SERIAL_PRIORITY) {
+//            public Object exec(final Object in) {
+//                try {
+//                    synchronousFlashPut(key, bytes);
+//                } catch (FlashDatabaseException e) {
+//                    //#debug
+//                    L.e("Can not synch write to flash", key, e);
+//                    cancel(false, "Can not sync write to flash: " + key + " byte length=" + bytes.length, e);
+//                }
+//
+//                return in;
+//            }
+//        }.setClassName("FlashPut")
+//                .setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN))
+//                .fork();
+//
+//        return useForm;
+//    }
     /**
      * Store the object to RMS, blocking the calling thread until the write is
      * complete.

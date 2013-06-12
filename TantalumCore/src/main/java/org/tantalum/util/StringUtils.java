@@ -204,7 +204,6 @@ public class StringUtils {
 
                     bos.write(first);
                     bos.write(second);
-                    System.out.println("second %" + s2 + " - " + Integer.toHexString(second) + " - " + Integer.toBinaryString(second));
                     if (first < 224) {
                         sb.append(new String(bos.toByteArray(), "UTF-8"));
                     } else {

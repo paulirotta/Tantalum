@@ -80,7 +80,8 @@ public final class StaticWebCache extends StaticCache {
     private static final String[] GET_TYPES = {"GET_LOCAL", "GET_ANYWHERE", "GET_WEB"};
 
     /**
-     * Return a cache of default type PlatformUtils.PHONE_DATABASE_CACHE. The cache is created if it does not already exist.
+     * Return a cache of default type PlatformUtils.PHONE_DATABASE_CACHE. The
+     * cache is created if it does not already exist.
      *
      * @param priority
      * @param defaultCacheView
@@ -105,9 +106,10 @@ public final class StaticWebCache extends StaticCache {
      * server you are caching does not return an HTTP header error code but
      * rather gives an unexpected response body that you need to watch for
      * before deciding to cache the response.
-     * @param startupTask - an action to perform on each key found in the cache as part of initialization
+     * @param startupTask - an action to perform on each key found in the cache
+     * as part of initialization
      * @return
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
         StaticWebCache c = (StaticWebCache) getExistingCache(priority, cacheView, httpTaskFactory, StaticWebCache.class);
@@ -130,7 +132,7 @@ public final class StaticWebCache extends StaticCache {
      * @param cacheView
      * @param httpTaskFactory
      * @param startupTask
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     private StaticWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory, final StartupTask startupTask) throws FlashDatabaseException {
         super(priority, cacheType, cacheView, startupTask);
@@ -302,7 +304,7 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param * * * * * * * * * * * * * * * * * * * * *
+     * @param * * * * * * * * * * * * * * * * * * * * * *
      *      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
@@ -490,18 +492,16 @@ public final class StaticWebCache extends StaticCache {
             } else {
                 try {
                     final String url = (String) in;
-                    //#mdebug
-                    L.i(this, "get", url);
-                    System.out.println("StaticWebCache.HttpGetterTask.exec: Get locally " + url);
-                    //#enddebug
+                    //#debug
+                    L.i(this, "StaticWebCache.HttpGetterTask.exec: GetAnywhereTask get locally", url);
                     out = synchronousGet(url, skipHeap);
                     if (out == null) {
-                        //#mdebug
-                        L.i(this, "Not found locally, get from the web", url);
-                        System.out.println("StaticWebCache.HttpGetterTask.exec: Get from web " + url);
-                        //#enddebug
+                        //#debug
+                        L.i(this, "StaticWebCache.HttpGetterTask.exec: GetAnywhereTask did not found locally, get from the web", url);
                         final Task httpGetter = getHttpGetter(preventWebTaskFromUsingFastLane(priority), url, postMessage, nextTask, taskFactory, skipHeap);
                         if (httpGetter == null) {
+                            //#debug
+                            L.i(this, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter", url);
                             cancel(false, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter: " + url);
                         } else {
                             httpGetter.fork();
@@ -553,21 +553,13 @@ public final class StaticWebCache extends StaticCache {
         if (httpGetter == null) {
             //#debug
             L.i(this, taskFactory.getClass().getName() + " signaled the HttpGetter is no longer needed- aborting", url);
-            return httpGetter;
+            return null;
         }
 
         //#debug
-        L.i(this, "getHttpGetter", L.CRLF + httpGetter);
+        L.i(this, "getHttpGetter(" + url + ")", L.CRLF + httpGetter);
 
-        final class ValidationTask extends Task {
-
-            ValidationTask(final int priority) {
-                super(priority);
-
-                setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN);
-                setClassName("StaticWebCache.ValidationTask");
-            }
-
+        final Task validationTask = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(final Object in) {
                 Object out = null;
 
@@ -579,34 +571,19 @@ public final class StaticWebCache extends StaticCache {
                     cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
                 } else {
                     try {
-                        //#mdebug
-                        final int dataLength = (in instanceof byte[] ? ((byte[])in).length : 0);
-                        L.i(this, "Put '" + url + "'", "Convert to use form and write to flash");
-                        System.out.println("StaticWebCache.ValidationTask.exec: Putting '" + url + "' converting to use form and store in cache " + dataLength);
-                        //#enddebug
-                        out = put(url, (byte[]) in, skipHeap); // Convert to use form
-                        //#mdebug
-                        final int dataLengthAfter = (in instanceof byte[] ? ((byte[])in).length : 0);
-                        L.i(this, "Put '" + url + "'", "Finished convert to use form and write to flash");
-                        System.out.println("StaticWebCache.ValidationTask.exec: Finished putting '" + url + "' converting to use form and store in cache " + dataLengthAfter);
-                        //#enddebug
-                    } catch (FlashDatabaseException e) {
+                        out = put(url, (byte[]) in, null);
+                    } catch (FlashDatabaseException ex) {
                         //#debug
-                        L.e("Can not set result after staticwebcache http get", httpGetter.toString(), e);
-                        cancel(false, "Can not set result after staticwebcache http get: " + httpGetter.toString(), e);
+                        L.e(this, "Can not put web service response to heap cache", url, ex);
+                        cancel(false, "Can not put web service response to heap cache: " + url + " : " + ex);
                     }
                 }
 
                 return out;
             }
-        }
-        final ValidationTask validationTask = new ValidationTask(Task.FASTLANE_PRIORITY);
-        httpGetter.chain(validationTask);
-        validationTask.chain(nextTask);
+        }.setClassName("StaticWebCacheValidateWebServiceReponse").setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN).chain(nextTask);
 
-        return httpGetter;
-
-
+        return httpGetter.chain(validationTask);
     }
 
     /**
@@ -644,7 +621,7 @@ public final class StaticWebCache extends StaticCache {
 
             TimerEndTask(final HttpGetter httpGetter) {
                 super(Task.FASTLANE_PRIORITY);
-                
+
                 this.httpGetter = httpGetter;
             }
 
