@@ -67,7 +67,7 @@ public final class RSSReaderCanvas extends Canvas implements GestureListener, Fr
         super();
         this.rssReader = rssReader;
 
-        imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler(), null, null);
+        imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageCacheView(), null, null);
 
         //listView = new VerticalListView(this);
         listView = new IconListView(this);

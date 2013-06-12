@@ -99,7 +99,7 @@ public interface PlatformAdapter {
      *
      * @return
      */
-    public ImageCacheView getImageTypeHandler();
+    public ImageCacheView getImageCacheView();
 
     /**
      * Vibrate the phone

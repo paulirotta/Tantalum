@@ -52,7 +52,9 @@ import org.tantalum.util.StringUtils;
  * @author phou
  */
 public final class JMEPlatformAdapter implements PlatformAdapter {
-
+    private static class ImageCacheViewHolder {
+        static ImageCacheView imageCacheView = new JMEImageTypeHandler();
+    }
     /**
      * There is only one Display per application
      *
@@ -108,8 +110,8 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         ((MIDlet) PlatformUtils.getInstance().getProgram()).notifyDestroyed();
     }
 
-    public ImageCacheView getImageTypeHandler() {
-        return new JMEImageTypeHandler();
+    public ImageCacheView getImageCacheView() {
+        return ImageCacheViewHolder.imageCacheView;
     }
 
     public FlashCache getFlashCache(final char priority, final int cacheType, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {

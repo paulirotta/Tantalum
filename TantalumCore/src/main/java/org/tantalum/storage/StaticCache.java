@@ -283,7 +283,7 @@ public class StaticCache {
      * @throws DigestException
      * @throws UnsupportedEncodingException
      */
-    private Object convertAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
+    private Object convertWithDefaultCacheViewAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
         //#mdebug
         L.i(this, "Start to convert", key + " bytes length=" + bytes.length);
         final long startTime = System.currentTimeMillis();
@@ -331,17 +331,6 @@ public class StaticCache {
     }
 
     /**
-     * Retrieve an object from RAM or RMS storage.
-     *
-     * @param key
-     * @param priority
-     * @param nextTask
-     * @return
-     */
-//    public Task getAsync(final String key, int priority, final Task nextTask) {
-//        return getAsync(key, priority, nextTask, false);
-//    }
-    /**
      * Local flash read should be fast- allow it into the FASTLANE so it can
      * bump past a (possible large number of blocking) HTTP operations.
      *
@@ -351,6 +340,16 @@ public class StaticCache {
     protected int boostHighPriorityToFastlane(final int priority) {
         if (priority == Task.HIGH_PRIORITY) {
             return Task.FASTLANE_PRIORITY;
+        }
+
+        return priority;
+    }
+
+    protected int switchToSerialPriorityIfNotDefaultCacheView(final int priority, final CacheView cacheView) {
+        if (cacheView != defaultCacheView) {
+            //#debug
+            L.i(this, "automatic switched to Task.SERIAL_PRIORITY to ensure data integrity", "Response from SERIAL priority queue may be slower than other FASTLANE or HIGH");
+            return Task.SERIAL_PRIORITY;
         }
 
         return priority;
@@ -370,19 +369,14 @@ public class StaticCache {
      * for example to re-annotate images as they are loaded from cache.
      * @return
      */
-    public Task getAsync(final String key, int priority, final Task nextTask, final boolean skipHeap) {
+    public Task getAsync(final String key, final int priority, final Task nextTask, final CacheView cacheView) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Trivial StaticCache get");
         }
-        if (skipHeap) {
-            //#debug
-            L.i(this, "getAsync(" + key + ")", "automatic switched to Task.SERIAL_PRIORITY to ensure data integrity, response may be slowed");
-            priority = Task.SERIAL_PRIORITY;
-        } else {
-            priority = boostHighPriorityToFastlane(priority);
-        }
+        int getPriority = boostHighPriorityToFastlane(priority);
+        getPriority = switchToSerialPriorityIfNotDefaultCacheView(getPriority, cacheView);
 
-        return (new GetLocalTask(priority, key, skipHeap)).chain(nextTask).fork();
+        return (new GetLocalTask(getPriority, key, cacheView)).chain(nextTask).fork();
     }
 
     /**
@@ -401,7 +395,7 @@ public class StaticCache {
      * @throws TimeoutException
      */
     public Object get(final String key) throws CancellationException, TimeoutException {
-        return getAsync(key, Task.NORMAL_PRIORITY, null, false).get();
+        return getAsync(key, Task.NORMAL_PRIORITY, null, defaultCacheView).get();
     }
 
     /**
@@ -409,13 +403,18 @@ public class StaticCache {
      * if the value is not available locally.
      *
      * @param key
+     * @param cacheView
      * @return
      * @throws FlashDatabaseException
      */
-    protected Object synchronousGet(final String key, final boolean skipHeap) throws FlashDatabaseException {
+    protected Object synchronousGet(final String key, CacheView cacheView) throws FlashDatabaseException {
         Object useForm = null;
 
-        if (!skipHeap) {
+        if (cacheView == null) {
+            cacheView = defaultCacheView;
+        }
+
+        if (cacheView == defaultCacheView) {
             useForm = synchronousRAMCacheGet(key);
             //#mdebug
             if (useForm != null) {
@@ -440,9 +439,15 @@ public class StaticCache {
                 //#debug
                 L.i(this, "Flash get result", "(" + cachePriorityChar + ") key=" + key + " byteLength=" + (bytes != null ? ("" + bytes.length) : "<null>"));
                 if (bytes != null) {
-                    useForm = convertAndPutToHeapCache(key, bytes);
-                    //#debug
-                    L.i(this, "Flash get converted result", "(" + cachePriorityChar + ") " + key + " : " + useForm);
+                    if (defaultCacheView == cacheView) {
+                        useForm = convertWithDefaultCacheViewAndPutToHeapCache(key, bytes);
+                        //#debug
+                        L.i(this, "Flash get converted result", "(" + cachePriorityChar + ") " + key + " : " + useForm);
+                    } else {
+                        useForm = cacheView.convertToUseForm(key, bytes);
+                        //#debug
+                        L.i(this, "Flash get converted result, result not placed in heap cache, non-default cacheView=" + cacheView, "(" + cachePriorityChar + ") " + key + " : " + useForm);
+                    }
                 } else {
                     useForm = null;
                 }
@@ -459,7 +464,7 @@ public class StaticCache {
 
         return useForm;
     }
-    
+
     /**
      * Store a value to heap and flash memory.
      *
@@ -482,7 +487,7 @@ public class StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public Object put(final String key, final byte[] bytes, final Task nextTask) throws FlashDatabaseException {
+    public Object put(final String key, final byte[] bytes, CacheView cacheView, final Task nextTask) throws FlashDatabaseException {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }
@@ -490,40 +495,52 @@ public class StaticCache {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
 
-        Object previousUseForm = this.ramCache.get(key);
-        /**
-         * This useForm pojo (plain old java object) serves to ensure the
-         * WeakReferenceHashCache does not garbage collect the RAM copy of the
-         * object until the write to flash completes. This is a very subtle
-         * issue, but the heap copy is shielding the asynchronous write from
-         * premature read. In other words you can async lazy write to flash as
-         * long as you write in sequential order of the write requests and don't
-         * read from flash until after you write.
-         */
         final Object useForm;
-        //#debug
-        L.i(this, "putAsync", "key=" + key + " byteLength=" + bytes.length);
-        try {
-            useForm = convertAndPutToHeapCache(key, bytes);
-        } catch (DigestException ex) {
-            //#debug
-            L.e("Can not putAync", key, ex);
-            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
-        } catch (UnsupportedEncodingException ex) {
-            //#debug
-            L.e("Can not putAync", key, ex);
-            throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+
+        if (cacheView == null) {
+            cacheView = defaultCacheView;
         }
-        final boolean newUseFormSameAsPreviousUseForm = useForm.equals(previousUseForm);
-        previousUseForm = null;
-        if (newUseFormSameAsPreviousUseForm) {
+
+        if (cacheView == defaultCacheView) {
+            Object previousUseForm = this.ramCache.get(key);
+
+            /**
+             * This hard reference to the useForm (= pojo, Plain Old Java
+             * Object) serves to ensure the WeakReferenceHashCache does not
+             * garbage collect the RAM copy of the object until the write to
+             * flash completes. This is a very subtle issue, but the heap copy
+             * is shielding the asynchronous write from premature read. In other
+             * words you can async lazy write to flash as long as you write in
+             * sequential order of the write requests and don't read from flash
+             * until after you write.
+             */
             //#debug
-            L.i("Ignoring trivial re-put() of the same key-value pair, a dummy Task response instead of actual async save is returned", key);
-            return new Task(Task.FASTLANE_PRIORITY) {
-                protected Object exec(final Object in) throws CancellationException, TimeoutException, InterruptedException {
-                    return useForm;
-                }
-            }.setClassName("DummyDuplicatePutAsyncResponse").fork();
+            L.i(this, "putAsync", "key=" + key + " byteLength=" + bytes.length);
+            try {
+                useForm = convertWithDefaultCacheViewAndPutToHeapCache(key, bytes);
+            } catch (DigestException ex) {
+                //#debug
+                L.e("Can not putAync", key, ex);
+                throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+            } catch (UnsupportedEncodingException ex) {
+                //#debug
+                L.e("Can not putAync", key, ex);
+                throw new FlashDatabaseException("Can not putAsync: " + key + " - " + ex);
+            }
+            final boolean newUseFormSameAsPreviousUseForm = useForm.equals(previousUseForm);
+            previousUseForm = null;
+            if (newUseFormSameAsPreviousUseForm) {
+                //#debug
+                L.i("Ignoring trivial re-put() of the same key-value pair, a dummy Task response instead of actual async save is returned", key);
+
+                return new Task(Task.FASTLANE_PRIORITY) {
+                    protected Object exec(final Object in) throws CancellationException, TimeoutException, InterruptedException {
+                        return useForm;
+                    }
+                }.setClassName("DummyDuplicatePutAsyncResponse").fork();
+            }
+        } else {
+            useForm = cacheView.convertToUseForm(key, bytes);
         }
 
 //#mdebug        
@@ -538,14 +555,14 @@ public class StaticCache {
                     synchronousFlashPut(key, bytes);
                 } catch (FlashDatabaseException e) {
                     //#debug
-                    L.e("Can not synch write to flash", key, e);
+                    L.e(this, "Can not synchronousFlashPut()", key, e);
                     cancel(false, "Can not sync write to flash: " + key + " byte length=" + bytes.length, e);
                 }
 
                 return useForm;
             }
         }.setClassName("PutAsync").chain(nextTask).fork();
-        
+
         return useForm;
     }
 
@@ -881,7 +898,7 @@ public class StaticCache {
      */
     final protected class GetLocalTask extends Task {
 
-        final boolean skipHeap;
+        final CacheView cacheView;
 
         /**
          * Create a new getDigests operation, specifying the url in advance.
@@ -889,10 +906,10 @@ public class StaticCache {
          * @param priority
          * @param key
          */
-        public GetLocalTask(final int priority, final String key, final boolean skipHeap) {
+        public GetLocalTask(final int priority, final String key, final CacheView cacheView) {
             super(priority, key);
 
-            this.skipHeap = skipHeap;
+            this.cacheView = cacheView;
         }
 
         /**
@@ -918,7 +935,7 @@ public class StaticCache {
                 return in;
             }
             try {
-                return synchronousGet((String) in, skipHeap);
+                return synchronousGet((String) in, cacheView);
             } catch (FlashDatabaseException e) {
                 //#debug
                 L.e(this, "Can not exec async get", in.toString(), e);

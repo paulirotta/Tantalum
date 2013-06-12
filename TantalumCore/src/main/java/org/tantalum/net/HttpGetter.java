@@ -1173,7 +1173,7 @@ public class HttpGetter extends Task {
         HttpGetter.netActivityListenerDelegate.unregisterListener(listener);
     }
     private static volatile int netActivityState = NetActivityListener.INACTIVE; // Compare to the last notification to see if state is new
-    private static volatile int netActivityListnerStallTimeout = 5000; // ms
+    private static volatile int netActivityListnerStallTimeout = 10000; // ms
     private static volatile int netActivityListnerInactiveTimeout = 30000; // ms
     private static volatile long nextNetStallTimeout = 0; // ms, when should we transition to NetActivityListener.STALLED state unless something changes in the meantime
     private static volatile long nextNetInactiveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
@@ -1329,13 +1329,13 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Override the default 5 second stall and 30 second INACTIVE no net
+     * Override the default 10 second stall and 30 second INACTIVE no net
      * activity timeouts. This alters how quickly all
      * <code>NetActivityListener</code>s are notified that a network is not
      * receiving expected data.
      *
      * @param stallTimeoutInMilliseconds - time without net activity before
-     * entering STALLED state. The default is 5000.
+     * entering STALLED state. The default is 10000.
      * @param inactiveTimeoutInMilliseconds - time without net activity before
      * entering INACTIVE state. The default is 30000.
      */

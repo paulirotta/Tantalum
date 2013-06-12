@@ -53,7 +53,7 @@ public class PicasaStorage {
      */
     public static synchronized void init(final int width) throws FlashDatabaseException {
         if (feedCache == null) {
-            final ImageCacheView imageTypeHandler = PlatformUtils.getInstance().getImageTypeHandler();
+            final ImageCacheView imageTypeHandler = PlatformUtils.getInstance().getImageCacheView();
 
             screenWidth = width;
             if (screenWidth < 256) {

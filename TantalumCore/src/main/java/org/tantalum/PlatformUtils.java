@@ -356,8 +356,8 @@ public final class PlatformUtils {
      *
      * @return
      */
-    public ImageCacheView getImageTypeHandler() {
-        return platformAdapter.getImageTypeHandler();
+    public ImageCacheView getImageCacheView() {
+        return platformAdapter.getImageCacheView();
     }
 
     /**

@@ -273,7 +273,7 @@ public final class StaticWebCache extends StaticCache {
      * @return
      */
     public Task getAsync(final String url, final int priority, final int getType, final Task chainedTask) {
-        return getAsync(url, null, priority, getType, chainedTask, httpTaskFactory, false);
+        return getAsync(url, null, priority, getType, chainedTask, httpTaskFactory, null);
     }
 
     /**
@@ -304,25 +304,25 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param * * * * * * * * * * * * * * * * * * * * * *
-     *      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
+     * @param      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
      * and executed after the getAsync operation.
      * @param taskFactory - Specify a custom class for creating network
      * requests. If null, the default StaticWebCache.HttpTaskFactory specified
      * when you create this StaticWebCache will be used.
-     * @param skipHeap - Set true if you have added a custom
-     * <code>CacheView</code> and you want to force re-conversion through * *
-     * your <code>CacheView</code>. It is useful for example to update
-     * annotations to an Image at load time.
-     *
+     * @param cacheView - usually null, which means use the default CacheView
+     * specified when this cache was created. If you specify an alternate value,
+     * all requests will bypass the RAM cache and be served from memory. If you
+     * specify an alternate CacheView, results may be slightly slower since to
+     * maintain cache integrity they must execute serially after any pending
+     * write operations.
      * @return a new Task containing the result, or null if the
      * StaticWebCache.HttpTaskFactory decided not to honor the GET_WEB request
      * for application-specific reasons such as 'we don't need to do this
      * anymore'.
      */
-    public Task getAsync(final String url, final byte[] postMessage, final int priority, final int getType, final Task nextTask, StaticWebCache.HttpTaskFactory taskFactory, final boolean skipHeap) {
+    public Task getAsync(final String url, final byte[] postMessage, final int priority, final int getType, final Task nextTask, StaticWebCache.HttpTaskFactory taskFactory, final CacheView cacheView) {
         if (url == null) {
             throw new IllegalArgumentException("Can not getAsync() with null key");
         }
@@ -331,25 +331,27 @@ public final class StaticWebCache extends StaticCache {
         }
 
         final Task getTask;
-        final int getterPriority;
+        int getterPriority;
 
         //#debug
         L.i(this, "getAsync getType=" + GET_TYPES[getType] + " priority=" + priority + "key=" + url, "nextTask=" + nextTask);
         switch (getType) {
             case GET_LOCAL:
                 getterPriority = boostHighPriorityToFastlane(priority);
-                getTask = new StaticCache.GetLocalTask(getterPriority, url, skipHeap);
+                getterPriority = switchToSerialPriorityIfNotDefaultCacheView(getterPriority, cacheView);
+                getTask = new StaticCache.GetLocalTask(getterPriority, url, cacheView);
                 getTask.chain(nextTask);
                 break;
 
             case GET_ANYWHERE:
                 getterPriority = boostHighPriorityToFastlane(priority);
-                getTask = new StaticWebCache.GetAnywhereTask(getterPriority, url, postMessage, nextTask, taskFactory, skipHeap);
+                getterPriority = switchToSerialPriorityIfNotDefaultCacheView(getterPriority, cacheView);
+                getTask = new StaticWebCache.GetAnywhereTask(getterPriority, url, postMessage, nextTask, taskFactory, cacheView);
                 break;
 
             case GET_WEB:
                 getterPriority = preventWebTaskFromUsingFastLane(priority);
-                getTask = getHttpGetter(getterPriority, url, postMessage, nextTask, taskFactory, skipHeap);
+                getTask = getHttpGetter(getterPriority, url, postMessage, nextTask, taskFactory, cacheView);
                 if (getTask == null) {
                     nextTask.cancel(false, "StaticWebCache was told by " + taskFactory.getClass().getName() + " not to complete the get operation (null returned): " + url);
                     return null;
@@ -447,7 +449,7 @@ public final class StaticWebCache extends StaticCache {
         final byte[] postMessage;
         final Task nextTask;
         final StaticWebCache.HttpTaskFactory taskFactory;
-        final boolean skipHeap;
+        final CacheView cacheView;
 
         /**
          * Create a
@@ -472,14 +474,14 @@ public final class StaticWebCache extends StaticCache {
          * @param cachePriorityChar
          * @param postMessage
          */
-        private GetAnywhereTask(final int priority, final String key, final byte[] postMessage, final Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory, final boolean skipHeap) {
+        private GetAnywhereTask(final int priority, final String key, final byte[] postMessage, final Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory, final CacheView cacheView) {
             super(priority, key);
 
             this.postMessage = postMessage;
             this.priority = priority;
             this.nextTask = nextTask;
             this.taskFactory = taskFactory;
-            this.skipHeap = skipHeap;
+            this.cacheView = cacheView;
         }
 
         protected Object exec(final Object in) {
@@ -494,11 +496,11 @@ public final class StaticWebCache extends StaticCache {
                     final String url = (String) in;
                     //#debug
                     L.i(this, "StaticWebCache.HttpGetterTask.exec: GetAnywhereTask get locally", url);
-                    out = synchronousGet(url, skipHeap);
+                    out = synchronousGet(url, cacheView);
                     if (out == null) {
                         //#debug
                         L.i(this, "StaticWebCache.HttpGetterTask.exec: GetAnywhereTask did not found locally, get from the web", url);
-                        final Task httpGetter = getHttpGetter(preventWebTaskFromUsingFastLane(priority), url, postMessage, nextTask, taskFactory, skipHeap);
+                        final Task httpGetter = getHttpGetter(preventWebTaskFromUsingFastLane(priority), url, postMessage, nextTask, taskFactory, cacheView);
                         if (httpGetter == null) {
                             //#debug
                             L.i(this, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter", url);
@@ -547,7 +549,7 @@ public final class StaticWebCache extends StaticCache {
      * @param skipHeap
      * @return
      */
-    private Task getHttpGetter(final int priority, final String url, final byte[] postMessage, final Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory, final boolean skipHeap) {
+    private Task getHttpGetter(final int priority, final String url, final byte[] postMessage, final Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory, final CacheView cacheView) {
         final HttpGetter httpGetter = taskFactory.getHttpTask(priority, url, postMessage);
 
         if (httpGetter == null) {
@@ -571,7 +573,7 @@ public final class StaticWebCache extends StaticCache {
                     cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
                 } else {
                     try {
-                        out = put(url, (byte[]) in, null);
+                        out = put(url, (byte[]) in, cacheView, null);
                     } catch (FlashDatabaseException ex) {
                         //#debug
                         L.e(this, "Can not put web service response to heap cache", url, ex);

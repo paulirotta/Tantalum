@@ -126,7 +126,7 @@ public class RSSReader extends MIDlet implements CommandListener {
     public void startApp() {
         try {
             TantalumJME.start(this);
-            imageCache = org.tantalum.net.StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageTypeHandler(), null, null);
+            imageCache = org.tantalum.net.StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, PlatformUtils.getInstance().getImageCacheView(), null, null);
             final Task reloadTask = getCanvas().getListView().reloadAsync(false);
             final Display display = getDisplay();
             COLOR_BACKGROUND = display.getColor(Display.COLOR_BACKGROUND);
