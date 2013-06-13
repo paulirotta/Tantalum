@@ -52,7 +52,9 @@ import org.tantalum.util.StringUtils;
  * @author phou
  */
 public final class JMEPlatformAdapter implements PlatformAdapter {
+
     private static class ImageCacheViewHolder {
+
         static ImageCacheView imageCacheView = new JMEImageTypeHandler();
     }
     /**
@@ -110,25 +112,60 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
         ((MIDlet) PlatformUtils.getInstance().getProgram()).notifyDestroyed();
     }
 
+    /**
+     * Return a singleton of the default byte[] to Image converter
+     * 
+     * @return 
+     */
     public ImageCacheView getImageCacheView() {
         return ImageCacheViewHolder.imageCacheView;
     }
 
+    /**
+     * Get the cache singleton associated with these parameters.
+     * 
+     * @param priority
+     * @param cacheType
+     * @param startupTask
+     * @return
+     * @throws FlashDatabaseException 
+     */
     public FlashCache getFlashCache(final char priority, final int cacheType, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
         switch (cacheType) {
             case PlatformUtils.PHONE_DATABASE_CACHE:
                 try {
-                    //                return new RMSCache(priority);
                     return new RMSFastCache(priority, startupTask);
                 } catch (Exception e) {
                     //#debug
-                    L.e("Can not create flash cache", "" + priority, e);
-                    throw new FlashDatabaseException("Can not create flash cache: " + e);
+                    L.e("Can not create flash cache, will attempt delete and re-init one time", "" + priority, e);
+                    RMSFastCache.deleteDataFiles(priority);
+                    try {
+                        final RMSFastCache cache = new RMSFastCache(priority, startupTask);
+                        //#debug
+                        L.i("After deleting the files giving and error, we successfully created flash cache", "" + priority);
+                        return cache;
+                    } catch (Exception e2) {
+                        throw new FlashDatabaseException("Can not create flash cache: " + e2);
+                    }
                 }
 
             default:
                 throw new IllegalArgumentException("Unsupported cache type " + cacheType + ": only PlatformAdapter.PHONE_DATABASE_CACHE is supported at this time");
         }
+    }
+
+    /**
+     * Delete the files or RMS associated with this cache
+     * 
+     * @param priority
+     * @param cacheType 
+     */
+    public void deleteFlashCache(final char priority, final int cacheType) {
+        if (cacheType != PlatformUtils.PHONE_DATABASE_CACHE) {
+            throw new UnsupportedOperationException("Not supported yet. Only PlatformUtils.PHONE_DATABASE_CACHE can be deleted (or created)");
+        }
+
+        RMSFastCache.deleteDataFiles(priority);
     }
 
     /**
@@ -264,7 +301,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
                 final String value = httpConnection.getHeaderField(i);
                 final String[] values = (String[]) headers.get(key);
                 final String[] newValues;
-                
+
                 if (values == null) {
                     newValues = new String[1];
                     newValues[0] = value;

@@ -196,7 +196,14 @@ public class StaticCache {
         this.cachePriorityChar = priority;
         this.defaultCacheView = defaultCacheView;
         flashCache = PlatformUtils.getInstance().getFlashCache(priority, cacheType, startupTask);
-        init();
+        try {
+            init();
+        } catch (FlashDatabaseException e) {
+            //#debug
+            L.e(this, "Can not create StaticCache, will attempt to delete database files and if successful, try one more time to open", "priority=" + priority, e);
+            PlatformUtils.getInstance().deleteFlashCache(priority, cacheType);
+            init();
+        }
     }
 
     /**

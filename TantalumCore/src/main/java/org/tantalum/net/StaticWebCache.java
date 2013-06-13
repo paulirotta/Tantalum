@@ -583,7 +583,7 @@ public final class StaticWebCache extends StaticCache {
 
                 return out;
             }
-        }.setClassName("StaticWebCacheValidateWebServiceReponse").setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN).chain(nextTask);
+        }.setClassName("ValidateAndWriteWebServiceReponse").chain(nextTask);
 
         return httpGetter.chain(validationTask);
     }

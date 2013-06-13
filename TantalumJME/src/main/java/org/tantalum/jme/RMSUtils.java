@@ -354,13 +354,17 @@ public final class RMSUtils {
         final String truncatedRecordStoreName = truncateRecordStoreNameToLast32(key);
 
         try {
+            //#debug
+            L.i(this, "Attempt to delete RMS", key);
             RecordStore.deleteRecordStore(truncatedRecordStoreName);
+            //#debug
+            L.i(this, "RMS deleted", key);
         } catch (RecordStoreNotFoundException ex) {
             //#debug
-            L.i("RMS not found (normal result)", key);
+            L.i(this, "RMS not found during delete", key);
         } catch (RecordStoreException ex) {
             //#debug
-            L.e("RMS delete problem", key, ex);
+            L.e(this, "RMS delete problem", key, ex);
             throw new FlashDatabaseException("Can not delete RMS: " + key + " : " + ex);
         }
     }

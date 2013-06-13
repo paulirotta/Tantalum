@@ -348,6 +348,17 @@ public final class PlatformUtils {
     }
 
     /**
+     * Delete the files or database associated with this cache. This may be
+     * called during startup if an error is detected.
+     *
+     * @param priority
+     * @param cacheType
+     */
+    public void deleteFlashCache(final char priority, final int cacheType) {
+        platformAdapter.deleteFlashCache(priority, cacheType);
+    }
+
+    /**
      * Get a DataTypeHandler for converting from compressed byte[] format (JPG,
      * PNG) to platform-specific image class.
      *

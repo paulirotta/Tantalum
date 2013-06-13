@@ -61,10 +61,6 @@ public final class AndroidCache extends FlashCache {
      */
     private static final String databaseName = "Tantalum";
     /**
-     * Database table name
-     */
-    private final String TABLE_NAME = "Tantalum_Table" + +priority;
-    /**
      * Database id column tag
      */
     private static final String COL_ID = "id";
@@ -87,10 +83,14 @@ public final class AndroidCache extends FlashCache {
     /**
      * SQL to create the database
      */
-    private final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS "
-            + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_DIGEST + " BIGINT NOT NULL" + COL_KEY
+    /**
+     * Database table name
+     */
+    private final String tableName = "Tantalum_Table" + priority;
+    private final String createTable = "CREATE TABLE IF NOT EXISTS "
+            + tableName + "(" + COL_ID + " INTEGER PRIMARY KEY, " + COL_DIGEST + " BIGINT NOT NULL" + COL_KEY
             + " TEXT NOT NULL, " + COL_DATA + " BLOB NOT NULL)";
-    private final String CLEAR_TABLE = "DROP TABLE " + TABLE_NAME;
+    private final String clearTable = "DROP TABLE IF EXISTS " + tableName;
     private SQLiteDatabase db = null;
     private final Object MUTEX = new Object();
 
@@ -108,15 +108,15 @@ public final class AndroidCache extends FlashCache {
             @Override
             public void onCreate(final SQLiteDatabase sqld) {
                 synchronized (MUTEX) {
-                    sqld.execSQL(CREATE_TABLE);
+                    sqld.execSQL(createTable);
                 }
             }
 
             @Override
             public void onUpgrade(final SQLiteDatabase sqld, int i, int i1) {
                 synchronized (MUTEX) {
-                    sqld.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-                    sqld.execSQL(CREATE_TABLE);
+                    clear();
+                    sqld.execSQL(createTable);
                 }
             }
 
@@ -127,10 +127,10 @@ public final class AndroidCache extends FlashCache {
                 if (startupTask != null) {
                     try {
                         final long[] digests = getDigests();
-                        
+
                         for (int i = 0; i < digests.length; i++) {
                             final String key = getKey(digests[i]);
-                            
+
                             if (key != null) {
                                 startupTask.execForEachKey(AndroidCache.this, key);
                             }
@@ -166,7 +166,7 @@ public final class AndroidCache extends FlashCache {
                 if (db == null) {
                     db = helper.getWritableDatabase();
                 }
-                cursor = db.query(TABLE_NAME, fields, COL_DIGEST + "=?",
+                cursor = db.query(tableName, fields, COL_DIGEST + "=?",
                         new String[]{"" + digest}, null, null, null, null);
 
                 if (cursor == null || cursor.getCount() == 0) {
@@ -213,7 +213,7 @@ public final class AndroidCache extends FlashCache {
                 if (db == null) {
                     db = helper.getWritableDatabase();
                 }
-                cursor = db.query(TABLE_NAME, fields, COL_DIGEST + "=?",
+                cursor = db.query(tableName, fields, COL_DIGEST + "=?",
                         new String[]{"" + digest}, null, null, null, null);
 
                 if (cursor == null || cursor.getCount() == 0) {
@@ -268,7 +268,7 @@ public final class AndroidCache extends FlashCache {
                 if (db == null) {
                     db = helper.getWritableDatabase();
                 }
-                db.insert(TABLE_NAME, null, values);
+                db.insert(tableName, null, values);
             } catch (Exception e) {
                 try {
                     if (Class.forName("android.database.sqlite.SQLiteFullException").isAssignableFrom(e.getClass())) {
@@ -301,7 +301,7 @@ public final class AndroidCache extends FlashCache {
                 if (db == null) {
                     db = helper.getWritableDatabase();
                 }
-                db.delete(TABLE_NAME, where, null);
+                db.delete(tableName, where, null);
             } catch (Exception e) {
                 //#debug
                 L.e("Can not access database on removeData()", Long.toString(digest, 16), e);
@@ -326,7 +326,7 @@ public final class AndroidCache extends FlashCache {
                 if (db == null) {
                     db = helper.getWritableDatabase();
                 }
-                cursor = db.query(TABLE_NAME, new String[]{COL_KEY}, "*",
+                cursor = db.query(tableName, new String[]{COL_KEY}, "*",
                         null, null, null, null, null);
                 if (cursor != null && cursor.getCount() > 0) {
                     digests = new long[cursor.getCount()];
@@ -361,7 +361,10 @@ public final class AndroidCache extends FlashCache {
     @Override
     public void clear() {
         synchronized (MUTEX) {
-            db.execSQL(CLEAR_TABLE);
+            if (db == null) {
+                db = helper.getWritableDatabase();
+            }
+            db.execSQL(clearTable);
         }
     }
 
@@ -379,8 +382,8 @@ public final class AndroidCache extends FlashCache {
                 super.close();
 
                 db.close();
+                db = null;
             }
-            db = null;
         }
     }
 }

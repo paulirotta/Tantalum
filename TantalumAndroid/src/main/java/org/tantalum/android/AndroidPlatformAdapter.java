@@ -36,9 +36,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.tantalum.PlatformUtils;
 import org.tantalum.PlatformUtils.HttpConn;
 import org.tantalum.storage.FlashCache;
+import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
 import org.tantalum.util.StringUtils;
@@ -49,10 +52,27 @@ import org.tantalum.util.StringUtils;
  * @author phou
  */
 public final class AndroidPlatformAdapter implements PlatformAdapter {
+
     private static class ImageCacheViewHolder {
         static ImageCacheView imageCacheView = new AndroidImageTypeHandler();
     }
 
+    @Override
+    public void deleteFlashCache(final char priority, final int cacheType) {
+        if (cacheType != PlatformUtils.PHONE_DATABASE_CACHE) {
+            throw new UnsupportedOperationException("Not supported yet. Only PlatformUtils.PHONE_DATABASE_CACHE can be deleted (or created)");
+        }
+
+        final AndroidCache cache = new AndroidCache(priority, null);
+        cache.clear();
+        try {
+            cache.close();
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e(this, "Can not close Android database after delete", "priority=" + priority, ex);
+        }
+    }
+    
     private final L log;
     private final Context applicationContext;
 

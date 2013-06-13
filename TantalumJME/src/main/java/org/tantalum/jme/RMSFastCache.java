@@ -55,6 +55,36 @@ public class RMSFastCache extends FlashCache {
     }
 
     /**
+     * Hard kill the RMS files. This is only done if there are unfixable errors
+     * detected.
+     *
+     * @param priority
+     */
+    public static void deleteDataFiles(final char priority) {
+        //#debug
+        L.i("*** Attempting to delete keyRS", "priority=" + priority);
+        try {
+            RMSUtils.getInstance().delete(getKeyRSName(priority));
+            //#debug
+            L.i("Successful delete keyRS", "priority=" + priority);
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e("Failed to delete keyRS", "priority=" + priority, ex);
+        }
+
+        //#debug
+        L.i("*** Attempting to delete valueRS", "priority=" + priority);
+        try {
+            RMSUtils.getInstance().delete(getValueRSName(priority));
+            //#debug
+            L.i("Successful delete valueRS", "priority=" + priority);
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e("Failed to delete valueRS", "priority=" + priority, ex);
+        }
+    }
+
+    /**
      * Read the index into Hashtable for rapid "contains" and read operations.
      *
      * Check the integrity of the RMS and delete inconsistent values that may
@@ -67,7 +97,7 @@ public class RMSFastCache extends FlashCache {
      * @throws InvalidRecordIDException
      * @throws RecordStoreException
      * @throws DigestException
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
     private void initIndex(final int numberOfKeys, final FlashCache.StartupTask startupTask) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException, DigestException, UnsupportedEncodingException {
         /*
@@ -105,7 +135,7 @@ public class RMSFastCache extends FlashCache {
         //#mdebug
         // Validate that no two keys have the same value
         Hashtable copy = new Hashtable();
-        
+
         Enumeration enumeration = indexHash.elements();
         while (enumeration.hasMoreElements()) {
             final Object dummyObject = new Object();
@@ -116,16 +146,16 @@ public class RMSFastCache extends FlashCache {
                 dumpHash(copy);
                 PlatformUtils.getInstance().shutdown(true, "RMS is inconsistent");
             }
-            
+
             copy.put(theValue, dummyObject);
         }
-        
+
         if (copy.size() != indexHash.size()) {
             // We have a problem
-                L.i(this, "Size mismatch in indexHash", copy.size() + " != " + indexHash.size());
-                dumpHash(copy);
-                PlatformUtils.getInstance().shutdown(true, "RMS size mismatch, is inconsistent");
-        }        
+            L.i(this, "Size mismatch in indexHash", copy.size() + " != " + indexHash.size());
+            dumpHash(copy);
+            PlatformUtils.getInstance().shutdown(true, "RMS size mismatch, is inconsistent");
+        }
         //#enddebug
     }
 
@@ -298,7 +328,7 @@ public class RMSFastCache extends FlashCache {
         final Hashtable duplicateIndexValueHash = new Hashtable();
         final Object AN_OBJECT_THAT_SAVES_MEMORY = new Object();
         //#enddebug
-        
+
         forEachRecord(keyRS, new RecordTask() {
             void exec() {
                 try {
@@ -411,6 +441,10 @@ public class RMSFastCache extends FlashCache {
      * @return the keyRMS name based on the cache priority
      */
     private String getKeyRSName() {
+        return RMSFastCache.getKeyRSName(priority);
+    }
+
+    private static String getKeyRSName(final char priority) {
         return "" + RECORD_HASH_PREFIX + priority + "key";
     }
 
@@ -420,6 +454,10 @@ public class RMSFastCache extends FlashCache {
      * @return the valueRMS name based on the cache priority
      */
     private String getValueRSName() {
+        return getValueRSName(priority);
+    }
+
+    private static String getValueRSName(final char priority) {
         return "" + RECORD_HASH_PREFIX + priority + "val";
     }
 
@@ -648,6 +686,7 @@ public class RMSFastCache extends FlashCache {
                     keyRS.closeRecordStore();
                 }
             } catch (RecordStoreException ex) {
+                //#debug
                 L.e(this, "RMS close exception", this.toString(), ex);
                 throw new FlashDatabaseException("RMS close exception: " + ex);
             }

@@ -45,6 +45,7 @@ import org.tantalum.util.L;
  * @author phou
  */
 public interface PlatformAdapter {
+
     /**
      * Initialize logging
      *
@@ -129,9 +130,18 @@ public interface PlatformAdapter {
      * @param cacheType
      * @param startupTask
      * @return the existing or new cache
-     * @throws FlashDatabaseException 
+     * @throws FlashDatabaseException
      */
     public FlashCache getFlashCache(char priority, int cacheType, FlashCache.StartupTask startupTask) throws FlashDatabaseException;
+
+    /**
+     * Delete the files or database associated with this cache. This may be
+     * called during startup if an error is detected.
+     *
+     * @param priority
+     * @param cacheType
+     */
+    public void deleteFlashCache(char priority, int cacheType);
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform
