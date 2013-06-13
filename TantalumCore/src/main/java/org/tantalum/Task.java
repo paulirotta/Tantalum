@@ -192,6 +192,8 @@ public abstract class Task {
     public static final int IDLE_PRIORITY = 2;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
+     * These tasks start when the application begins to close. The application
+     * will not complete close until after they are all done.
      *
      * Start execution when
      * <code>PlatformUtils.getInstance().shutdown()</code> is called, and do not
