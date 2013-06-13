@@ -84,13 +84,13 @@ public abstract class AsyncTask extends Task {
      * @param runnable
      */
     public static void execute(final Runnable runnable) {
-        (new Task(Task.SERIAL_PRIORITY) {
+        new Task(Task.SERIAL_PRIORITY) {
             public Object exec(final Object in) {
                 runnable.run();
 
                 return in;
             }
-        }.setClassName("SerialExecutor")).fork();
+        }.setClassName("SerialExecutor").fork();
     }
 
     /**

@@ -389,7 +389,7 @@ public final class StaticWebCache extends StaticCache {
      */
     public void prefetch(final String key) throws FlashDatabaseException {
         if (synchronousRAMCacheGet(key) == null) {
-            (new Task(Task.IDLE_PRIORITY) {
+            new Task(Task.IDLE_PRIORITY) {
                 public Object exec(final Object in) {
                     try {
                         getAsync(key, Task.IDLE_PRIORITY, StaticWebCache.GET_ANYWHERE, null);
@@ -400,7 +400,7 @@ public final class StaticWebCache extends StaticCache {
 
                     return in;
                 }
-            }.setClassName("Prefetch")).fork();
+            }.setClassName("Prefetch").fork();
         }
     }
 
@@ -549,7 +549,7 @@ public final class StaticWebCache extends StaticCache {
      * @param skipHeap
      * @return
      */
-    private Task getHttpGetter(final int priority, final String url, final byte[] postMessage, final Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory, final CacheView cacheView) {
+    private Task getHttpGetter(int priority, final String url, byte[] postMessage, Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory, final CacheView cacheView) {
         final HttpGetter httpGetter = taskFactory.getHttpTask(priority, url, postMessage);
 
         if (httpGetter == null) {
