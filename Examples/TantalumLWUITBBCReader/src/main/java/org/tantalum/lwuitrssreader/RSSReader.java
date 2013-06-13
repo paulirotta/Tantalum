@@ -33,6 +33,8 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.jme.TantalumJME;
+import org.tantalum.storage.FlashDatabaseException;
+import org.tantalum.util.L;
 
 /**
  * @author tsaa
@@ -58,12 +60,17 @@ public class RSSReader extends MIDlet {
         plainFont = Font.createSystemFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         italicFont = Font.createSystemFont(Font.FACE_PROPORTIONAL, Font.STYLE_ITALIC, Font.SIZE_SMALL);
         underlinedFont = Font.createSystemFont(Font.FACE_PROPORTIONAL, Font.STYLE_UNDERLINED, Font.SIZE_SMALL);
-        listForm = new ListForm("LWUIT RSS Reader", this);
+        try {
+            listForm = new ListForm("LWUIT RSS Reader", this);
 
-        SCREEN_WIDTH = listForm.getWidth();
-        SCREEN_HEIGHT = listForm.getHeight();
-        listForm.show();
-        detailsForm = new DetailsForm("LWUIT RSS Reader", this);
+            SCREEN_WIDTH = listForm.getWidth();
+            SCREEN_HEIGHT = listForm.getHeight();
+            listForm.show();
+            detailsForm = new DetailsForm("LWUIT RSS Reader", this);
+        } catch (FlashDatabaseException ex) {
+           //#debug
+            L.e("Can not start app", null, ex);
+        }
     }
 
     public ListForm getListForm() {

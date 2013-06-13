@@ -29,6 +29,8 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import org.tantalum.PlatformUtils;
 import org.tantalum.jme.TantalumJME;
+import org.tantalum.storage.FlashDatabaseException;
+import org.tantalum.util.L;
 
 /**
  * @author vand
@@ -69,7 +71,7 @@ public class FormRSSReader extends MIDlet implements CommandListener {
     }//GEN-BEGIN:|5-switchDisplayable|2|
     //</editor-fold>//GEN-END:|5-switchDisplayable|2|
 
-    public ListForm getList() {
+    public ListForm getList() throws FlashDatabaseException {
         if (list == null) {
             list = new ListForm(this, "Tantalum3 BBC");
         }
@@ -113,7 +115,12 @@ public class FormRSSReader extends MIDlet implements CommandListener {
      */
     public void startApp() {
         TantalumJME.start(this);
-        switchDisplayable(null, getList());
+        try {
+            switchDisplayable(null, getList());
+        } catch (FlashDatabaseException ex) {
+           //#debug
+           L.e("Can not start app", null, ex);
+        }
     }
 
     public void pauseApp() {
