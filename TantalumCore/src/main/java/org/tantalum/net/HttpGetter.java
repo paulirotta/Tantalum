@@ -40,7 +40,7 @@ import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.RollingAverage;
 import org.tantalum.util.WeakHashCache;
-import org.tantalum.util.WeakReferenceCallbackDelegate;
+import org.tantalum.util.WeakReferenceListenerHandler;
 
 /**
  * GET something from a URL on the Worker thread
@@ -486,7 +486,7 @@ public class HttpGetter extends Task {
      * useful as a performance tuning parameter.
      */
     public static final RollingAverage averageResponseDelayMillis = new RollingAverage(10, 700.0f);
-    private static final WeakReferenceCallbackDelegate netActivityListenerDelegate = new WeakReferenceCallbackDelegate(NetActivityListener.class);
+    private static final WeakReferenceListenerHandler netActivityListenerDelegate = new WeakReferenceListenerHandler(NetActivityListener.class);
     /**
      * bits per second realized by a each connection. When multiple connections
      * are reading simultaneously this will be lower than the total bits per
