@@ -4,6 +4,7 @@
  */
 package org.tantalum.jme;
 
+import javax.microedition.lcdui.Display;
 import javax.microedition.midlet.MIDlet;
 import org.tantalum.PlatformUtils;
 
@@ -53,6 +54,32 @@ public final class TantalumJME {
         PlatformUtils.getInstance().setProgram(midlet, numberOfWorkerThreads, logMode);
     }
 
+    /**
+     * A thread-safe convenience class for getting the program
+     * 
+     * @return 
+     */
+    public static MIDlet getMIDlet() {
+        final MIDlet midlet = (MIDlet) PlatformUtils.getInstance().getProgram();
+
+        
+        if (midlet == null) {
+            throw new IllegalStateException("You first need to initialize by calling TantalumJME.start()");
+        }
+        
+        return midlet;
+    }
+    
+
+    /**
+     * A thread-safe convenience class for getting the display
+     * 
+     * @return 
+     */
+    public static Display getDisplay() {
+        return Display.getDisplay(getMIDlet());
+    }
+    
     /**
      * Shut down the Tantalum utilities. This will block for up to 3 seconds
      * while flash memory writes and log writes (TantalumJME-debug.jar with
