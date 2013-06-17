@@ -1173,8 +1173,8 @@ public class HttpGetter extends Task {
         HttpGetter.netActivityListenerDelegate.unregisterListener(listener);
     }
     private static volatile int netActivityState = NetActivityListener.INACTIVE; // Compare to the last notification to see if state is new
-    private static volatile int netActivityListnerStallTimeout = 10000; // ms
-    private static volatile int netActivityListnerInactiveTimeout = 30000; // ms
+    private static volatile int netActivityListenerStallTimeout = 10000; // ms
+    private static volatile int netActivityListenerInactiveTimeout = 30000; // ms
     private static volatile long nextNetStallTimeout = 0; // ms, when should we transition to NetActivityListener.STALLED state unless something changes in the meantime
     private static volatile long nextNetInactiveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
     private static volatile TimerTask netActivityStallTimerTask = null;
@@ -1297,10 +1297,10 @@ public class HttpGetter extends Task {
             networkActivityActorsHash.put(key, key);
         }
         final long t = System.currentTimeMillis();
-        nextNetStallTimeout = t + netActivityListnerStallTimeout;
-        conditionalStartStallTimer(netActivityListnerStallTimeout);
-        nextNetInactiveTimeout = t + netActivityListnerInactiveTimeout;
-        conditionalStartInactiveTimer(netActivityListnerInactiveTimeout);
+        nextNetStallTimeout = t + netActivityListenerStallTimeout;
+        conditionalStartStallTimer(netActivityListenerStallTimeout);
+        nextNetInactiveTimeout = t + netActivityListenerInactiveTimeout;
+        conditionalStartInactiveTimer(netActivityListenerInactiveTimeout);
 
         if (netActivityState != NetActivityListener.ACTIVE) {
             // Update possible state change to inactive
@@ -1340,8 +1340,8 @@ public class HttpGetter extends Task {
      * entering INACTIVE state. The default is 30000.
      */
     public static void setNetActivityListenerTimeouts(final int stallTimeoutInMilliseconds, final int inactiveTimeoutInMilliseconds) {
-        netActivityListnerStallTimeout = stallTimeoutInMilliseconds;
-        netActivityListnerInactiveTimeout = inactiveTimeoutInMilliseconds;
+        netActivityListenerStallTimeout = stallTimeoutInMilliseconds;
+        netActivityListenerInactiveTimeout = inactiveTimeoutInMilliseconds;
     }
 
     /**
