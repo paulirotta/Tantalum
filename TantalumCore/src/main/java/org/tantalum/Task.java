@@ -999,7 +999,7 @@ public abstract class Task {
                 throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
             }
 
-            boolean canceled = status != Task.CANCELED;
+            boolean canceled = status == Task.CANCELED;
 
             if (canceled) {
                 //#debug
