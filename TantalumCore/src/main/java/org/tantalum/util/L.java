@@ -77,8 +77,10 @@ public abstract class L {
     public static final void e(final Object callingObject, final String tag, final String message, final Throwable t) {
 //#mdebug
         final StringBuffer sb = getMessage(callingObject, true, tag, message);
-        sb.append(", EXCEPTION: ");
-        sb.append(t);
+        if (t != null) {
+            sb.append(", EXCEPTION: ");
+            sb.append(t);
+        }
         sb.append(CRLF);
 
         synchronized (L.class) {

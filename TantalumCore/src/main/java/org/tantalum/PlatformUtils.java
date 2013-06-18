@@ -452,7 +452,21 @@ public final class PlatformUtils {
     public void shutdown(final boolean block, final String reason) {
         //#debug
         L.i(this, "Shutdown", reason + " - block up to 3 seconds=" + block);
-        Worker.shutdown(block, reason);
+        if (!isUIThread()) {
+            Worker.shutdown(block, reason);
+        } else {
+            //#debug
+            L.i(this, "WARNING: Can not shutdown() from the UI thread", "Automatically changing to a Worker thread, function will return immediately to keep the shutdown smooth - " + reason + " - block up to 3 seconds=" + block);
+            new Task(Task.NORMAL_PRIORITY) {
+                protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
+                    //#debug
+                    L.i(this, "Shutdown (automatically changed to a Worker Thread)", reason);
+                    Worker.shutdown(false, reason);
+
+                    return null;
+                }
+            }.setClassName("ShutdownOnWorkerInsteadOfUIThread").fork();
+        }
     }
 
     /**

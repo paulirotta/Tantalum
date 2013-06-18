@@ -510,11 +510,6 @@ public class HttpGetter extends Task {
      */
     private static volatile long nextHeaderStartTime = 0;
     /**
-     * At what time earliest can the next HTTP body read operation can begin
-     * when in slow connection mode
-     */
-    private static volatile long nextBodyStartTime = 0;
-    /**
      * How many more times will we try to re-connect after a 5 second delay
      * before giving up. This aids in working with low quality networks and
      * normal HTTP connection setup errors even on a "good" mobile network.

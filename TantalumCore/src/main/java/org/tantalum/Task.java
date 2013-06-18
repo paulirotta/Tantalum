@@ -452,13 +452,15 @@ public abstract class Task {
      * @param value
      * @return
      */
-    public final Object set(final Object value) {
+    public final Task set(final Object value) {
         synchronized (mutex) {
             if (this.status != Task.PENDING) {
                 throw new IllegalStateException(getClassName() + " can not set(), Task value is final after execution: " + this);
             }
 
-            return this.value = value;
+            this.value = value;
+            
+            return this;
         }
     }
 
@@ -1000,17 +1002,19 @@ public abstract class Task {
             }
 
             boolean canceled = status == Task.CANCELED;
+//#debug
+            final String tStr = t == null ? "null" : t.toString();
 
             if (canceled) {
-                //#debug
-                L.i(this, "Ignoring cancel(\"" + reason + " - " + t + "\")", "Already CANCELED: " + this);
+//#debug
+                L.i(this, "Ignoring cancel(\"" + reason + "\" - " + tStr + ")", "Already CANCELED: " + this);
             } else {
-                //#debug
-                L.e(this, "Begin cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " " + this, t);
+//#debug
+                L.i(this, "Begin cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " - " + tStr + " - "+ this);
                 switch (status) {
                     case FINISHED:
                         //#debug
-                        L.i(this, "Ignored attempt to interrupt an EXEC_FINISHED Task:" + reason + " - " + t, this.toString());
+                        L.i(this, "Ignored attempt to interrupt an EXEC_FINISHED Task: " + reason + " - " + tStr, this.toString());
                         break;
 
                     case PENDING:
@@ -1187,7 +1191,7 @@ public abstract class Task {
             }
         }
 
-        //#mdebug
+//#mdebug
         public String toString() {
             final StringBuffer sb = new StringBuffer();
 
@@ -1204,15 +1208,16 @@ public abstract class Task {
 
             return sb.toString();
         }
-        //#enddebug
+//#enddebug
     }
-    //#mdebug
+
     private static String[] PRIORITY_STRINGS = {"PRIORITY_NOT_SET", "SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "FASTLANE_PRIORITY", "UI_PRIORITY", "DEDICATED_THREAD_PRIORITY"};
 
     String getPriorityString() {
         return PRIORITY_STRINGS[getForkPriority()];
     }
 
+//#mdebug    
     /**
      * When debugging, show what each Worker is doing and the queue length
      *
@@ -1239,7 +1244,7 @@ public abstract class Task {
      *
      * @return
      */
-    public String showChain() {
+    private String showChain() {
         final StringBuffer sb = new StringBuffer();
         final Task previousTask;
         final Task nextTask;
@@ -1273,7 +1278,7 @@ public abstract class Task {
      * @param showChain
      * @return
      */
-    public String toString(final boolean showChain) {
+    private String toString(final boolean showChain) {
         final String chain = showChain ? showChain() : "";
 
         synchronized (mutex) {
