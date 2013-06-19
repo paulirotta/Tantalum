@@ -106,13 +106,13 @@ final class Worker extends Thread {
                         //mdebug
                         L.e(task, "Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
                     } finally {
-                        dedicatedThreads.remove(currentThread());
+                        dedicatedThreads.removeElement(currentThread());
                     }
                 }
             });
 
             this.task = task;
-            dedicatedThreads.add(this);
+            dedicatedThreads.addElement(this);
         }
     }
 
