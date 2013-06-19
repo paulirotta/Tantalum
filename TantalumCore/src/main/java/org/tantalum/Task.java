@@ -769,8 +769,10 @@ public abstract class Task {
                 L.i(this, "State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
                 return;
             }
-            if (status > FINISHED) {
-                throw new IllegalArgumentException("setStatus(" + Task.STATUS_STRINGS[status] + ") not allowed, already FINISHED or CANCELED: " + this);
+            if (this.status >= FINISHED) {
+                //#debug
+                L.i(this, "(Task already FINISHED or CANCELED) State change from " + getStatusString() + " to " + Task.STATUS_STRINGS[status] + " is ignored", this.toString());
+                return;
             }
             this.status = status;
             t = chainedTask;

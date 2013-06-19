@@ -183,9 +183,9 @@ public final class RMSUtils {
      * Write to the record store a cached value based on the hashcode of the key
      * to the data
      *
-     * @param priority 
+     * @param priority
      * @param data
-     * @param digest 
+     * @param digest
      * @throws RecordStoreFullException
      * @throws FlashDatabaseException
      */
@@ -211,30 +211,33 @@ public final class RMSUtils {
         if (data == null) {
             throw new IllegalArgumentException("Can not RMSUtils.write(), data is null: " + key);
         }
-        try {
-            //#debug
-            L.i("Add to RMS", "key=" + key + " recordStoreName=" + recordStoreName + " (" + data.length + " bytes)");
-            rs = getRecordStore(recordStoreName, true);
-            //#debug
-            L.i("Add to RMS", "recordStoreName=" + recordStoreName + " opened");
-            if (rs.getNumRecords() == 0) {
-                rs.addRecord(data, 0, data.length);
-            } else {
-                rs.setRecord(1, data, 0, data.length);
+
+        synchronized (this) { // Guard against parallel update/add/delete
+            try {
+                //#debug
+                L.i("Add to RMS", "key=" + key + " recordStoreName=" + recordStoreName + " (" + data.length + " bytes)");
+                rs = getRecordStore(recordStoreName, true);
+                //#debug
+                L.i("Add to RMS", "recordStoreName=" + recordStoreName + " opened");
+                if (rs.getNumRecords() == 0) {
+                    rs.addRecord(data, 0, data.length);
+                } else {
+                    rs.setRecord(1, data, 0, data.length);
+                }
+                //#debug
+                L.i("Added to RMS", recordStoreName + " (" + data.length + " bytes)");
+            } catch (RecordStoreFullException e) {
+                //#debug
+                L.i("RMS FULL when writing", key + " " + recordStoreName);
+                throw e;
+            } catch (Exception e) {
+                //#debug
+                L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
+                delete(key);
+                throw new FlashDatabaseException("RMS write problem, delete was attempted: " + key + " : " + e);
+            } finally {
+                close(key, rs);
             }
-            //#debug
-            L.i("Added to RMS", recordStoreName + " (" + data.length + " bytes)");
-        } catch (RecordStoreFullException e) {
-            //#debug
-            L.i("RMS FULL when writing", key + " " + recordStoreName);
-            throw e;
-        } catch (Exception e) {
-            //#debug
-            L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
-            delete(key);
-            throw new FlashDatabaseException("RMS write problem, delete was attempted: " + key + " : " + e);
-        } finally {
-            close(key, rs);
         }
     }
 
@@ -252,8 +255,8 @@ public final class RMSUtils {
      * Read from the record store a cached value based on the hashcode of the
      * key to the data
      *
-     * @param priority 
-     * @param digest 
+     * @param priority
+     * @param digest
      * @return bytes stored in phone flash memory
      * @throws FlashDatabaseException
      */
@@ -299,8 +302,8 @@ public final class RMSUtils {
     /**
      * Delete one item from a cache
      *
-     * @param priority 
-     * @param digest 
+     * @param priority
+     * @param digest
      * @throws FlashDatabaseException
      */
     public void cacheDelete(final char priority, final byte[] digest) throws FlashDatabaseException {
@@ -325,8 +328,6 @@ public final class RMSUtils {
         L.i("getRecordStore", recordStoreName + " createIfNecessary:" + createIfNecessary);
         try {
             rs = RecordStore.openRecordStore(recordStoreName, createIfNecessary);
-            //            openRecordStores.addElement(rs);
-
             success = true;
         } catch (RecordStoreNotFoundException e) {
             success = !createIfNecessary;
