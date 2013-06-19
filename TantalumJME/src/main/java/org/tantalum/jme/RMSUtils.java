@@ -74,7 +74,11 @@ public final class RMSUtils {
      * @return list of cache-related RMS names as strings
      */
     public Vector getCacheRecordStoreNames() {
-        final String[] rs = RecordStore.listRecordStores();
+        final String[] rs;
+        
+        synchronized (this) {
+            rs = RecordStore.listRecordStores();
+        }
 
         if (rs == null) {
             return new Vector();
@@ -98,8 +102,12 @@ public final class RMSUtils {
      * @return all RMS names, whether part of the cache or not
      */
     public Vector getNoncacheRecordStoreNames() {
-        final String[] rs = RecordStore.listRecordStores();
-
+        final String[] rs;
+        
+        synchronized (this) {
+            rs = RecordStore.listRecordStores();
+        }
+        
         if (rs == null) {
             return new Vector();
         }
@@ -121,7 +129,7 @@ public final class RMSUtils {
      * This is rather violent. Use only as a last resort, for example when
      * corruption is detected.
      */
-    public void wipeRMS() {
+    public synchronized void wipeRMS() {
         final String[] rs = RecordStore.listRecordStores();
 
         for (int i = 0; i < rs.length; i++) {
@@ -202,9 +210,6 @@ public final class RMSUtils {
      * @throws FlashDatabaseException
      */
     public void write(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
-        RecordStore rs = null;
-        final String recordStoreName = truncateRecordStoreNameToLast32(key);
-
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Can not RMSUtils.write(), null or trivial key: " + key);
         }
@@ -212,7 +217,11 @@ public final class RMSUtils {
             throw new IllegalArgumentException("Can not RMSUtils.write(), data is null: " + key);
         }
 
+        final String recordStoreName = truncateRecordStoreNameToLast32(key);
+
         synchronized (this) { // Guard against parallel update/add/delete
+            RecordStore rs = null;
+
             try {
                 //#debug
                 L.i("Add to RMS", "key=" + key + " recordStoreName=" + recordStoreName + " (" + data.length + " bytes)");
@@ -230,7 +239,7 @@ public final class RMSUtils {
                 //#debug
                 L.i("RMS FULL when writing", key + " " + recordStoreName);
                 throw e;
-            } catch (Exception e) {
+            } catch (RecordStoreException e) {
                 //#debug
                 L.e("RMS write problem, will attempt to delete record", key + " " + recordStoreName, e);
                 delete(key);
@@ -245,7 +254,7 @@ public final class RMSUtils {
         if (rs != null) {
             try {
                 rs.closeRecordStore();
-            } catch (Exception e) {
+            } catch (RecordStoreException e) {
                 throw new FlashDatabaseException("RMS close problem: " + key + " : " + e);
             }
         }
@@ -272,31 +281,35 @@ public final class RMSUtils {
      * @throws FlashDatabaseException
      */
     public byte[] read(final String key) throws FlashDatabaseException {
-        RecordStore rs = null;
         final String recordStoreName = truncateRecordStoreNameToLast32(key);
-        byte[] data = null;
 
-        try {
-            //#debug
-            L.i("Read from RMS", recordStoreName);
-            rs = getRecordStore(recordStoreName, false);
-            if (rs != null && rs.getNumRecords() > 0) {
-                data = rs.getRecord(1);
+        synchronized (this) {
+            final byte[] data;
+            RecordStore rs = null;
+
+            try {
                 //#debug
-                L.i("End read from RMS", recordStoreName + " (" + data.length + " bytes)");
-            } else {
+                L.i("Read from RMS", recordStoreName);
+                rs = getRecordStore(recordStoreName, false);
+                if (rs != null && rs.getNumRecords() > 0) {
+                    data = rs.getRecord(1);
+                    //#debug
+                    L.i("End read from RMS", recordStoreName + " (" + data.length + " bytes)");
+                } else {
+                    data = null;
+                    //#debug
+                    L.i("End read from RMS", recordStoreName + " (NOTHING TO READ)");
+                }
+            } catch (Exception e) {
                 //#debug
-                L.i("End read from RMS", recordStoreName + " (NOTHING TO READ)");
+                L.e("Can not read RMS", recordStoreName, e);
+                throw new FlashDatabaseException("Can not read record from RMS: " + key + " - " + recordStoreName + " : " + e);
+            } finally {
+                close(key, rs);
             }
-        } catch (Exception e) {
-            //#debug
-            L.e("Can not read RMS", recordStoreName, e);
-            throw new FlashDatabaseException("Can not read record from RMS: " + key + " - " + recordStoreName + " : " + e);
-        } finally {
-            close(key, rs);
-        }
 
-        return data;
+            return data;
+        }
     }
 
     /**
@@ -320,7 +333,7 @@ public final class RMSUtils {
      * @return null if the record store does not exist
      * @throws RecordStoreException
      */
-    RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException {
+    synchronized RecordStore getRecordStore(final String recordStoreName, final boolean createIfNecessary) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException {
         RecordStore rs = null;
         boolean success = false;
 
@@ -354,19 +367,21 @@ public final class RMSUtils {
     public void delete(final String key) throws FlashDatabaseException {
         final String truncatedRecordStoreName = truncateRecordStoreNameToLast32(key);
 
-        try {
-            //#debug
-            L.i(this, "Attempt to delete RMS", key);
-            RecordStore.deleteRecordStore(truncatedRecordStoreName);
-            //#debug
-            L.i(this, "RMS deleted", key);
-        } catch (RecordStoreNotFoundException ex) {
-            //#debug
-            L.i(this, "RMS not found during delete", key);
-        } catch (RecordStoreException ex) {
-            //#debug
-            L.e(this, "RMS delete problem", key, ex);
-            throw new FlashDatabaseException("Can not delete RMS: " + key + " : " + ex);
+        synchronized (this) {
+            try {
+                //#debug
+                L.i(this, "Attempt to delete RMS", key);
+                RecordStore.deleteRecordStore(truncatedRecordStoreName);
+                //#debug
+                L.i(this, "RMS deleted", key);
+            } catch (RecordStoreNotFoundException ex) {
+                //#debug
+                L.i(this, "RMS not found during delete, ignoring", key);
+            } catch (RecordStoreException ex) {
+                //#debug
+                L.e(this, "RMS delete problem", key, ex);
+                throw new FlashDatabaseException("Can not delete RMS: " + key + " : " + ex);
+            }
         }
     }
 

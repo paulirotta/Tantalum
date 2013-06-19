@@ -459,7 +459,7 @@ public abstract class Task {
             }
 
             this.value = value;
-            
+
             return this;
         }
     }
@@ -980,14 +980,17 @@ public abstract class Task {
      * @param reason
      * @return
      */
-    public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
+    public final boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
         return cancel(mayInterruptIfRunning, reason, null);
     }
 
     /**
      * Cancel execution of this Task. This is called on the Worker thread
      *
-     * Do not override this unless you also call super.cancel(boolean).
+     * Do not override this unless you also call super.cancel(boolean). You may
+     * want to override this method instead of onCanceled() if you wish to
+     * perform an action synchronously at the moment of cancellation, not some
+     * milliseconds later on the UI thread.
      *
      * Override onCanceled() is the normal notification location, and is called
      * from the UI thread with Task state updates handled for you.
@@ -1012,7 +1015,7 @@ public abstract class Task {
                 L.i(this, "Ignoring cancel(\"" + reason + "\" - " + tStr + ")", "Already CANCELED: " + this);
             } else {
 //#debug
-                L.i(this, "Begin cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " - " + tStr + " - "+ this);
+                L.i(this, "Begin cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " - " + tStr + " - " + this);
                 switch (status) {
                     case FINISHED:
                         //#debug
@@ -1212,7 +1215,6 @@ public abstract class Task {
         }
 //#enddebug
     }
-
     private static String[] PRIORITY_STRINGS = {"PRIORITY_NOT_SET", "SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "FASTLANE_PRIORITY", "UI_PRIORITY", "DEDICATED_THREAD_PRIORITY"};
 
     String getPriorityString() {

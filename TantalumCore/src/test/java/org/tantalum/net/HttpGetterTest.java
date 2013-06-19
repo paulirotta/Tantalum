@@ -136,9 +136,9 @@ public class HttpGetterTest extends MockedStaticInitializers {
         }
 
         @Override
-        public boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
+        public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
             cancelCalled = true;
-            return true;
+            return super.cancel(mayInterruptIfRunning, reason, t);
         }
     }
 }
