@@ -54,6 +54,7 @@ final class Worker extends Thread {
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
     private static final Vector q = new Vector();
+    private static final Vector dedicatedThreads = new Vector();
     private static Worker[] workers;
     /*
      * Higher priority forkSerial of tasks to be done only by this thread, in the
@@ -89,6 +90,29 @@ final class Worker extends Thread {
         for (int i = 0; i < numberOfWorkers; i++) {
             workers[i] = new Worker("Worker" + i, i == numberOfWorkers - 1);
             workers[i].start();
+        }
+    }
+
+    private static class DedicatedThread extends Thread {
+
+        final Task task;
+
+        DedicatedThread(final Task task) {
+            super(new Runnable() {
+                public void run() {
+                    try {
+                        task.executeTask(task.getValue());
+                    } catch (final Throwable t) {
+                        //mdebug
+                        L.e(task, "Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
+                    } finally {
+                        dedicatedThreads.remove(currentThread());
+                    }
+                }
+            });
+
+            this.task = task;
+            dedicatedThreads.add(this);
         }
     }
 
@@ -128,16 +152,8 @@ final class Worker extends Thread {
         synchronized (q) {
             switch (priority) {
                 case Task.DEDICATED_THREAD_PRIORITY:
-                    new Thread(new Runnable() {
-                        public void run() {
-                            try {
-                                task.executeTask(task.getValue());
-                            } catch (Exception e) {
-                                //mdebug
-                                L.e(task, "Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, e);
-                            }
-                        }
-                    }, "" + task.getClassName()).start();
+                    final DedicatedThread thread = new DedicatedThread(task);
+                    thread.start();
                     break;
                 case Task.UI_PRIORITY:
                     PlatformUtils.getInstance().runOnUiThread(new Runnable() {
@@ -233,38 +249,68 @@ final class Worker extends Thread {
      * Stop the specified task if it is currently running on any Worker
      *
      * @param task
-     * @return
+     * @return null, or the thread found running the Task and to which interrupt() was sent
      */
-    static void interruptTask(final Task task) {
+    static Thread interruptTask(final Task task) {
         if (task == null) {
             throw new IllegalArgumentException("interruptTask(null) not allowed");
         }
 
-        synchronized (q) {
-            final Thread currentThread = Thread.currentThread();
+        final Thread currentThread = Thread.currentThread();
 
+        synchronized (q) {
             for (int i = 0; i < workers.length; i++) {
+                if (currentThread == workers[i]) {
+                    /**
+                     * Never send interrupt to own thread, even if there is a
+                     * match. The task state will change.
+                     */
+                    return null;
+                }
+
                 if (task.equals(workers[i].currentTask)) {
-                    if (currentThread == workers[i]) {
-                        //#debug
-                        L.i(task, "Task attempted hard interrupt, usually cancel(true, ..), in itself", "The task is canceled, but will execute to the end. It if faster and more clear execution if you cancel(false, ..)");
-                        break;
-                    }
                     //#debug
-                    L.i(task, "Sending interrupt signal", "thread=" + workers[i].getName() + " task=" + task);
-                    if (task == workers[i].currentTask) {
-                        /*
-                         * Note that there is no race condition here (risk the
-                         * task ends before you interrupt it) because currentTask
-                         * is a variable only accessed within a q-synchronized block
-                         * and Worker.run() is hardened against stray interrupts
-                         */
-                        workers[i].interrupt();
-                    }
-                    break;
+                    L.i(task, "cancel() is sending Thread.interrupt()", "thread=" + workers[i].getName() + " task=" + task);
+                    /*
+                     * Note that there is no race condition here (risk the
+                     * task ends before you interrupt it) because currentTask
+                     * is a variable only accessed within a q-synchronized block
+                     * and Worker.run() is hardened against stray interrupts
+                     */
+                    workers[i].interrupt();
+                    return workers[i];
                 }
             }
         }
+
+        synchronized (dedicatedThreads) {
+            for (int i = 0; i < dedicatedThreads.size(); i++) {
+                final DedicatedThread thread = (DedicatedThread) dedicatedThreads.elementAt(i);
+
+                if (currentThread == thread) {
+                    /**
+                     * Never send interrupt to own thread, even if there is a
+                     * match. The task state will change.
+                     */
+                    return null;
+                }
+
+                if (task.equals(thread.task)) {
+                    //#debug
+                    L.i(task, "cancel() is sending Thread.interrupt()", "thread=" + workers[i].getName() + " task=" + task);
+                    /*
+                     * Note that there is no race condition here (risk the
+                     * task ends before you interrupt it) because currentTask
+                     * is a variable only accessed within a q-synchronized block
+                     * and Worker.run() is hardened against stray interrupts
+                     */
+                    thread.interrupt();
+                    return thread;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

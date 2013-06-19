@@ -998,54 +998,42 @@ public abstract class Task {
      * @param mayInterruptIfRunning
      * @param reason
      * @param t
-     * @return
+     * @return true if a Task was actually canceled
      */
     public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
-        synchronized (mutex) {
-            if (reason == null) {
-                throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
-            }
-
-            boolean canceled = status == Task.CANCELED;
-//#debug
-            final String tStr = t == null ? "null" : t.toString();
-
-            if (canceled) {
-//#debug
-                L.i(this, "Ignoring cancel(\"" + reason + "\" - " + tStr + ")", "Already CANCELED: " + this);
-            } else {
-//#debug
-                L.i(this, "Begin cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " - " + tStr + " - " + this);
-                switch (status) {
-                    case FINISHED:
-                        //#debug
-                        L.i(this, "Ignored attempt to interrupt an EXEC_FINISHED Task: " + reason + " - " + tStr, this.toString());
-                        break;
-
-                    case PENDING:
-                        if (mayInterruptIfRunning) {
-                            canceled = true;
-                            Worker.interruptTask(this);
-                            if (status == Task.CANCELED) {
-                                /*
-                                 * If the Task.cancel() sent an interrupt which was
-                                 * caught, the Task was canceled at that point.
-                                 */
-                                break;
-                            }
-                        }
-                    // continue to default
-
-                    default:
-                        canceled = true;
-                        doSetStatus(CANCELED, reason);
-                }
-                //#debug
-                L.i(this, "End cancel() - " + reason, "status=" + this.getStatusString() + " " + this);
-            }
-
-            return canceled;
+        if (reason == null) {
+            throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
         }
+
+        final String s = reason + " : " + t;
+
+        synchronized (mutex) {
+            if (status >= Task.FINISHED) {
+                //#debug
+                L.i(this, "Ignoring cancel(\"" + reason + "\" - " + s + ")", "Already FINISHED or CANCELED: " + this);
+
+                return false;
+            }
+        }
+        //#debug
+        L.i(this, "Begin cancel(\"" + reason + "\")", s + " - " + this);
+        if (mayInterruptIfRunning) {
+            Worker.interruptTask(this);
+            synchronized (mutex) {
+                if (status >= Task.FINISHED) {
+                    //#debug
+                    L.i(this, "End cancel(\"" + reason + "\")", "Successful interrupt sent and received");
+                    return true;
+                }
+            }
+            //#debug
+            L.i(this, "cancel(\"" + reason + "\")", "Unable to find and interrupt() on known threads. Task is not currently running, so we will just change status and notify chained tasks by canceling them also");
+        }
+        doSetStatus(CANCELED, s);
+        //#debug
+        L.i(this, "End cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " " + this);
+
+        return true;
     }
 
     /**
@@ -1136,6 +1124,10 @@ public abstract class Task {
         this.anonInnerClassName = name;
 
         return this;
+
+
+
+
     }
 
     private static final class ChainSplitter extends Task {
