@@ -353,7 +353,7 @@ public class StaticCache {
     }
 
     protected int switchToSerialPriorityIfNotDefaultCacheView(final int priority, final CacheView cacheView) {
-        if (cacheView != defaultCacheView) {
+        if (cacheView != null && cacheView != defaultCacheView) {
             //#debug
             L.i(this, "automatic switched to Task.SERIAL_PRIORITY to ensure data integrity", "Response from SERIAL priority queue may be slower than other FASTLANE or HIGH");
             return Task.SERIAL_PRIORITY;
