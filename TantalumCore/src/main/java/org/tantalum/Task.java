@@ -1016,10 +1016,12 @@ public abstract class Task {
             }
         }
         //#debug
-        L.i(this, "Begin cancel(\"" + reason + "\")", s + " - " + this);
-       if (mayInterruptIfRunning) {
+        L.i(this, "Begin cancel\"" + reason + "\" mayInterruptIfRunning=" + mayInterruptIfRunning, s + " - " + this);
+        if (mayInterruptIfRunning) {
             final Thread thread = Worker.interruptTask(this);
-            
+            //#debug
+            L.i(this, "cancel(\"" + reason + "\")", "interrupt sent to thread=" + thread);
+
             synchronized (mutex) {
                 if (status >= Task.FINISHED) {
                     //#debug
