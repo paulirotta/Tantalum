@@ -386,6 +386,7 @@ final class Worker extends Thread {
         }
         for (int i = queue.size() - 1; i >= 0; i--) {
             final Task t = (Task) queue.elementAt(i);
+            boolean interrupt = false;
 
             switch (t.getShutdownBehaviour()) {
                 default:
@@ -393,8 +394,11 @@ final class Worker extends Thread {
                     break;
 
                 case Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN:
+                    interrupt = true;
+                    // continue to next case
+
                 case Task.DEQUEUE_BUT_LEAVE_RUNNING_IF_ALREADY_STARTED_ON_SHUTDOWN:
-                    t.cancel(false, "Shutdown signal received, soft cancel signal sent");
+                    t.cancel(interrupt, "Shutdown signal received, cancel signal sent, interrupt=" + interrupt);
                     queue.removeElementAt(i);
                     break;
 

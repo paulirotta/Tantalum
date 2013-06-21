@@ -552,6 +552,8 @@ public class HttpGetter extends Task {
      */
     public HttpGetter() {
         this(Task.NORMAL_PRIORITY);
+
+        setShutdownBehaviour(Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN);
     }
 
     /**
