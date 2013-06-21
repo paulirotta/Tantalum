@@ -981,7 +981,7 @@ public abstract class Task {
      * @return
      */
     public final boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
-        return cancel(mayInterruptIfRunning, reason, null);
+        return doCancel(mayInterruptIfRunning, reason, null, null);
     }
 
     /**
@@ -1001,6 +1001,10 @@ public abstract class Task {
      * @return true if a Task was actually canceled
      */
     public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
+        return doCancel(mayInterruptIfRunning, reason, t, null);
+    }
+    
+    boolean doCancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t, Thread thread) {
         if (reason == null) {
             throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
         }
@@ -1018,7 +1022,11 @@ public abstract class Task {
         //#debug
         L.i(this, "Begin cancel\"" + reason + "\" mayInterruptIfRunning=" + mayInterruptIfRunning, s + " - " + this);
         if (mayInterruptIfRunning) {
-            final Thread thread = Worker.interruptTask(this);
+            if (thread != null) {
+                thread.interrupt();
+            } else {
+                thread = Worker.interruptTask(this);
+            }
             //#debug
             L.i(this, "cancel(\"" + reason + "\")", "interrupt sent to thread=" + thread);
 

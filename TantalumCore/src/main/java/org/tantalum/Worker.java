@@ -341,8 +341,8 @@ final class Worker extends Thread {
              */
             for (int i = 0; i < workers.length; i++) {
                 final Task t = workers[i].currentTask;
-                if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                    ((Task) t).cancel(true, "Shutdown signal received, hard cancel signal sent");
+                if (t != null && t.getShutdownBehaviour() >= Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
+                    ((Task) t).cancel(true, "Shutdown: cancel signal sent");
                 }
             }
 

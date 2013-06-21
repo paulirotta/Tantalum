@@ -745,10 +745,8 @@ public class HttpGetter extends Task {
      * @return
      */
     public Object exec(final Object in) throws InterruptedException {
-        staggerHeaderStartTime();
         byte[] out = null;
-
-        startTime = System.currentTimeMillis();
+        
         if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
             final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
             //#debug
@@ -757,6 +755,9 @@ public class HttpGetter extends Task {
             return out;
         }
 
+        staggerHeaderStartTime();
+
+        startTime = System.currentTimeMillis();
         final String url = keyIncludingPostDataHashtoUrl((String) in);
         final Integer netActivityKey = new Integer(url.hashCode());
         HttpGetter.networkActivity(netActivityKey); // Notify listeners, net is in use

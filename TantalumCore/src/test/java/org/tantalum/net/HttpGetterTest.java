@@ -66,9 +66,9 @@ public class HttpGetterTest extends MockedStaticInitializers {
      * toString()
      */
     @Test
-    public void illegalArgumentExceptionThrownWhenNonStringKey() throws InterruptedException {
+    public void canceledWhenNonStringKey() throws InterruptedException {
         getter.exec(new Object());
-        assertTrue("Getter was not correctly cancelled for non-String url", cancelCalled);
+        assertEquals("Getter was not correctly cancelled for non-String url", getter.getStatus(), Task.CANCELED);
     }
 
     @Ignore
