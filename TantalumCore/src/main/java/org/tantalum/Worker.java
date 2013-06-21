@@ -341,7 +341,7 @@ final class Worker extends Thread {
              */
             for (int i = 0; i < workers.length; i++) {
                 final Task t = workers[i].currentTask;
-                if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
+                if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
                     ((Task) t).cancel(true, "Shutdown signal received, hard cancel signal sent");
                 }
             }
@@ -393,14 +393,13 @@ final class Worker extends Thread {
                 case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
                     break;
 
-                case Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN:
+                case Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN:
                     interrupt = true;
                     // continue to next case
 
-                case Task.DEQUEUE_BUT_LEAVE_RUNNING_IF_ALREADY_STARTED_ON_SHUTDOWN:
+                case Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN:
                     t.cancel(interrupt, "Shutdown signal received, cancel signal sent, interrupt=" + interrupt);
-                    queue.removeElementAt(i);
-                    break;
+                    // continue to next case
 
                 case Task.DEQUEUE_ON_SHUTDOWN:
                     queue.removeElementAt(i);

@@ -259,7 +259,7 @@ public abstract class Task {
      * An alternative to this is to create a Task that is run at shutdown time
      * using Worker.queueShutdownTask(Task).
      */
-    public static final int DEQUEUE_BUT_LEAVE_RUNNING_IF_ALREADY_STARTED_ON_SHUTDOWN = 2;
+    public static final int DEQUEUE_OR_CANCEL_ON_SHUTDOWN = 2;
     /**
      * Default shutdown behavior.
      *
@@ -271,7 +271,7 @@ public abstract class Task {
      * An alternative to this is to create a Task that is run at shutdown time
      * using Worker.queueShutdownTask(Task).
      */
-    public static final int DEQUEUE_OR_CANCEL_ON_SHUTDOWN = 3;
+    public static final int DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN = 3;
     private Object value = null; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants
@@ -383,7 +383,7 @@ public abstract class Task {
      */
     public final Task setShutdownBehaviour(final int shutdownBehaviour) {
         synchronized (mutex) {
-            if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
+            if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
                 throw new IllegalArgumentException(getClassName() + " invalid shutdownBehaviour value: " + shutdownBehaviour);
             }
 
@@ -1017,12 +1017,13 @@ public abstract class Task {
         }
         //#debug
         L.i(this, "Begin cancel(\"" + reason + "\")", s + " - " + this);
-        if (mayInterruptIfRunning) {
-            Worker.interruptTask(this);
+       if (mayInterruptIfRunning) {
+            final Thread thread = Worker.interruptTask(this);
+            
             synchronized (mutex) {
                 if (status >= Task.FINISHED) {
                     //#debug
-                    L.i(this, "End cancel(\"" + reason + "\")", "Successful interrupt sent and received");
+                    L.i(this, "End cancel(\"" + reason + "\")", "Successful interrupt sent and received, thread=" + thread);
                     return true;
                 }
             }
