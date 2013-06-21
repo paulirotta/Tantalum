@@ -277,9 +277,27 @@ public final class PlatformUtils {
             shutdownComplete = true;
         }
         //#mdebug
-        L.i(this, "Call to notifyDestroyed", reasonDestroyed);
+        L.i(this, "Shutdown complete", reasonDestroyed);
         L.shutdown();
         //#enddebug
+
+        /**
+         * Add a magic wait for one second on shutdown to reduce
+         * platform errors thrown by some phones some of the time. This may
+         * give underlying, not completely thread-safe, C code drivers a moment
+         * more to clean themselves up before exiting the app
+         *
+         * We wait in a lock because Thread.sleep() is disabled on the UI and
+         * perhaps other Threads like the system thread. Undocumented behavior.
+         */
+        synchronized (PlatformUtils.class) {
+            try {
+                PlatformUtils.class.wait(1000);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+
         platformAdapter.shutdownComplete();
 
         return true;
