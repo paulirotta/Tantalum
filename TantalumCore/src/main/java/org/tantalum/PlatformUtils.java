@@ -292,7 +292,7 @@ public final class PlatformUtils {
          */
         synchronized (PlatformUtils.class) {
             try {
-                PlatformUtils.class.wait(1000);
+                PlatformUtils.class.wait(500);
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
