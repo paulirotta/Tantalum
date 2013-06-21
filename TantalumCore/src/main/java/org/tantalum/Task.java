@@ -1020,7 +1020,7 @@ public abstract class Task {
             }
         }
         //#debug
-        L.i(this, "Begin cancel\"" + reason + "\" mayInterruptIfRunning=" + mayInterruptIfRunning, s + " - " + this);
+        L.i(this, "Begin cancel \"" + reason + "\" mayInterruptIfRunning=" + mayInterruptIfRunning, s + " - " + this);
         if (mayInterruptIfRunning) {
             if (thread != null) {
                 thread.interrupt();
