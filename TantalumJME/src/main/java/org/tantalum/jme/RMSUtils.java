@@ -167,40 +167,6 @@ public final class RMSUtils {
         sb.append(Long.toString(l, RADIX));
     }
 
-//    private String getRecordStoreCacheName(final String key) {
-//        final StringBuffer sb = new StringBuffer(MAX_RECORD_NAME_LENGTH);
-//
-//        sb.append(RECORD_HASH_PREFIX);
-//        if (key.length() > MAX_RECORD_NAME_LENGTH - 1) {
-//            final String hashString = Integer.toString(key.hashCode(), Character.MAX_RADIX);
-//            final int fillLength = MAX_RECORD_NAME_LENGTH - 1 - hashString.length();
-//            sb.append(key.substring(0, fillLength));
-//            sb.append(hashString);
-//        } else {
-//            // Short key, just prepend 
-//            sb.append(key);
-//        }
-//
-//        final String s = sb.toString();
-//        //#debug
-//        L.i("key to rms cache key", key + " -> " + s);
-//
-//        return s;
-//    }
-    /**
-     * Write to the record store a cached value based on the hashcode of the key
-     * to the data
-     *
-     * @param priority
-     * @param data
-     * @param digest
-     * @throws RecordStoreFullException
-     * @throws FlashDatabaseException
-     */
-    public void cacheWrite(final char priority, final byte[] digest, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
-        write(getRecordStoreCacheName(priority, digest), data);
-    }
-
     /**
      * Writes the byte array to the record store. Deletes the previous data.
      *
@@ -261,19 +227,6 @@ public final class RMSUtils {
     }
 
     /**
-     * Read from the record store a cached value based on the hashcode of the
-     * key to the data
-     *
-     * @param priority
-     * @param digest
-     * @return bytes stored in phone flash memory
-     * @throws FlashDatabaseException
-     */
-    public byte[] cacheRead(final char priority, final byte[] digest) throws FlashDatabaseException {
-        return read(getRecordStoreCacheName(priority, digest));
-    }
-
-    /**
      * Reads the data from the given record store.
      *
      * @param key
@@ -310,17 +263,6 @@ public final class RMSUtils {
 
             return data;
         }
-    }
-
-    /**
-     * Delete one item from a cache
-     *
-     * @param priority
-     * @param digest
-     * @throws FlashDatabaseException
-     */
-    public void cacheDelete(final char priority, final byte[] digest) throws FlashDatabaseException {
-        delete(getRecordStoreCacheName(priority, digest));
     }
 
     /**
