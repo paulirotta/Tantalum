@@ -232,11 +232,11 @@ public class StaticCache {
             protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
                 try {
                     //#debug
-                    L.i(this, "Closing FlashCache on shutdown", this.toString());
+                    L.i(this, "Closing FlashCache \'" + flashCache.priority + " on shutdown", StaticCache.this.toString());
                     flashCache.close();
                 } catch (FlashDatabaseException ex) {
                     //#debug
-                    L.e(this, "Problem closing FlashCache on shutdown", this.toString(), ex);
+                    L.e(this, "Problem closing FlashCache on shutdown", StaticCache.this.toString(), ex);
                 }
 
                 return in;

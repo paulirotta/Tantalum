@@ -96,7 +96,11 @@ public class RMSFastCache extends FlashCache {
     }
 
     private void clearDirtyFlagAfterNormalShutdown() throws RecordStoreException {
+        //#debug
+        L.i("Start: clear dirty flag on normal shutdown", "cache \'" + priority + "\'");
         RecordStore.deleteRecordStore(getFlagRMSName());
+        //#debug
+        L.i("Success: clear dirty flag on normal shutdown", "cache \'" + priority + "\'");
     }
 
     private void setDirtyFlagAfterNormalStartup() throws RecordStoreException {

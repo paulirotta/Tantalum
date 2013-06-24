@@ -219,6 +219,8 @@ public abstract class FlashCache {
             t = new Task[shutdownTasks.size()];
             for (int i = 0; i < t.length; i++) {
                 t[i] = (Task) shutdownTasks.elementAt(i);
+                //#debug
+                L.i(this, "forking FlashCache shutdown task", t[i].toString());
                 t[i].fork();
             }
             shutdownTasks.removeAllElements();
@@ -232,11 +234,14 @@ public abstract class FlashCache {
             //#debug
             L.e(this, "Timeout", "Cache shutdown tasks not completed", ex);
         }
+        //#debug
+        L.i(this, "FlashCache shutdown tasks complete", this.toString());
     }
-    
+
     /**
-     * An action you would like to perform on every cache entry at application start
-     * 
+     * An action you would like to perform on every cache entry at application
+     * start
+     *
      */
     public interface StartupTask {
 
