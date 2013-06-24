@@ -74,22 +74,22 @@ public class RMSFastCache extends FlashCache {
             deleteDataFiles(priority);
         } finally {
             try {
-                setDirtyFlagAfterNormalStartup();
-            } catch (RecordStoreException e) {
-                //#debug
-                L.e("*** Cache \'" + priority + "\' had trouble setting dirty flag", "(normal RMS-not-yet-closed flag created on startup)", e);
-                RMSUtils.getInstance().wipeRMS();
-            } finally {
                 if (flagRMS != null) {
-                    try {
-                        //#debug
-                        L.i("*** Cache \'" + priority + "\' is possibly dirty after incomplete shutdown last run, deleting entire cache to avoid possible deadlock", null);
-                        flagRMS.closeRecordStore();
-                        deleteDataFiles(priority);
-                    } catch (RecordStoreException ex) {
-                        //#debug
-                        L.e("*** Cache \'" + priority + "\'", "Had trouble deleting after dirty previous shutdown detected", ex);
-                    }
+                    //#debug
+                    L.i("*** Cache \'" + priority + "\' is possibly dirty after incomplete shutdown last run, deleting entire cache to avoid possible deadlock", null);
+                    flagRMS.closeRecordStore();
+                    deleteDataFiles(priority);
+                }
+            } catch (RecordStoreException ex) {
+                //#debug
+                L.e("*** Cache \'" + priority + "\'", "Had trouble deleting after dirty previous shutdown detected", ex);
+            } finally {
+                try {
+                    setDirtyFlagAfterNormalStartup();
+                } catch (RecordStoreException e) {
+                    //#debug
+                    L.e("*** Cache \'" + priority + "\' had trouble setting dirty flag", "(normal RMS-not-yet-closed flag created on startup)", e);
+                    RMSUtils.getInstance().wipeRMS();
                 }
             }
         }
