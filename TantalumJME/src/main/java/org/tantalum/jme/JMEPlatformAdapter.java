@@ -85,6 +85,8 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
      */
     public void init(final int logMode) {
         log = new JMELog(logMode);
+        //#debug
+        L.i("Log start", "phone=" + System.getProperty("microedition.platform"));
     }
 
     /**

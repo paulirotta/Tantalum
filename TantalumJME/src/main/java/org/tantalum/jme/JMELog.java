@@ -52,7 +52,6 @@ public class JMELog extends L {
     private final OutputStream os;
 //#mdebug
     private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//    private final Vector byteArrayQueue = new Vector();
     private final JMELog.LogWriter usbWriter;
     private static final byte[] CRLF_BYTES = CRLF.getBytes();
     private final Object OUTPUT_MUTEX = new Object();
