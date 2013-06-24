@@ -47,11 +47,81 @@ public class RMSFastCache extends FlashCache {
     public RMSFastCache(final char priority, final FlashCache.StartupTask startupTask) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException, NoSuchAlgorithmException, InvalidRecordIDException, DigestException, UnsupportedEncodingException {
         super(priority);
 
+        clearCacheIfLastCloseWasDirty();
         keyRS = RMSUtils.getInstance().getRecordStore(getKeyRSName(), true);
         valueRS = RMSUtils.getInstance().getRecordStore(getValueRSName(), true);
         final int numberOfKeys = keyRS.getNumRecords();
         indexHash = new Hashtable(numberOfKeys);
         initIndex(numberOfKeys, startupTask);
+    }
+
+    private String getFlagRMSName() {
+        return "dirty+" + getKeyRSName();
+    }
+
+    private void clearCacheIfLastCloseWasDirty() {
+        RecordStore flagRMS = null;
+
+        try {
+            flagRMS = RMSUtils.getInstance().getRecordStore(getFlagRMSName(), false); // Just see if the RMS exists, do not create
+        } catch (RecordStoreException e) {
+            //#debug
+            L.e("*** Cache \'" + priority + "\'", "Had trouble checking dirty flag", e);
+            deleteDataFiles(priority);
+        } catch (FlashDatabaseException e) {
+            //#debug
+            L.e("*** Cache \'" + priority + "\'", "Had trouble checking dirty flag", e);
+            deleteDataFiles(priority);
+        } finally {
+            try {
+                setDirtyFlagAfterNormalStartup();
+            } catch (RecordStoreException e) {
+                //#debug
+                L.e("*** Cache \'" + priority + "\' had trouble setting dirty flag", "(normal RMS-not-yet-closed flag created on startup)", e);
+                RMSUtils.getInstance().wipeRMS();
+            } finally {
+                if (flagRMS != null) {
+                    try {
+                        //#debug
+                        L.i("*** Cache \'" + priority + "\' is possibly dirty after incomplete shutdown last run, deleting entire cache to avoid possible deadlock", null);
+                        flagRMS.closeRecordStore();
+                    } catch (RecordStoreException ex) {
+                        //#debug
+                        L.e("*** Cache \'" + priority + "\'", "Had trouble deleting after dirty previous shutdown detected", ex);
+                    }
+                }
+            }
+        }
+    }
+
+    private void clearDirtyFlagAfterNormalShutdown() throws RecordStoreException {
+        RecordStore.deleteRecordStore(getFlagRMSName());
+    }
+
+    private void setDirtyFlagAfterNormalStartup() throws RecordStoreException {
+        RecordStore flagRMS = null;
+
+        try {
+            flagRMS = RMSUtils.getInstance().getRecordStore(getFlagRMSName(), true); // Just create the RMS, does not matter what is inside
+        } catch (RecordStoreException e) {
+            //#debug
+            L.e("*** Cache \'" + priority + "\'", "Had trouble setting dirty flag", e);
+            RMSUtils.getInstance().wipeRMS();
+        } catch (FlashDatabaseException e) {
+            //#debug
+            L.e("*** Cache \'" + priority + "\'", "Had trouble setting dirty flag", e);
+            RMSUtils.getInstance().wipeRMS();
+        } finally {
+            if (flagRMS != null) {
+                try {
+                    flagRMS.closeRecordStore();
+                } catch (RecordStoreException ex) {
+                    //#debug
+                    L.e("*** Cache \'" + priority + "\'", "Had trouble closing flag after create on startup", ex);
+                    RMSUtils.getInstance().wipeRMS();
+                }
+            }
+        }
     }
 
     /**
@@ -685,6 +755,7 @@ public class RMSFastCache extends FlashCache {
                 } finally {
                     keyRS.closeRecordStore();
                 }
+                clearDirtyFlagAfterNormalShutdown();
             } catch (RecordStoreException ex) {
                 //#debug
                 L.e(this, "RMS close exception", this.toString(), ex);

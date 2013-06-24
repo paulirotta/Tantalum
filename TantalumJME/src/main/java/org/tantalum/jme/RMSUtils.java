@@ -75,7 +75,7 @@ public final class RMSUtils {
      */
     public Vector getCacheRecordStoreNames() {
         final String[] rs;
-        
+
         synchronized (this) {
             rs = RecordStore.listRecordStores();
         }
@@ -103,11 +103,11 @@ public final class RMSUtils {
      */
     public Vector getNoncacheRecordStoreNames() {
         final String[] rs;
-        
+
         synchronized (this) {
             rs = RecordStore.listRecordStores();
         }
-        
+
         if (rs == null) {
             return new Vector();
         }
@@ -132,6 +132,8 @@ public final class RMSUtils {
     public synchronized void wipeRMS() {
         final String[] rs = RecordStore.listRecordStores();
 
+        //#debug
+        L.i("wipeRMS(), preparting to delete all RMS entries", rs.length + " found");
         for (int i = 0; i < rs.length; i++) {
             try {
                 RecordStore.deleteRecordStore(rs[i]);
