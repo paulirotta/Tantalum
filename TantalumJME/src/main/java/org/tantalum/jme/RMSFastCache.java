@@ -85,6 +85,7 @@ public class RMSFastCache extends FlashCache {
                         //#debug
                         L.i("*** Cache \'" + priority + "\' is possibly dirty after incomplete shutdown last run, deleting entire cache to avoid possible deadlock", null);
                         flagRMS.closeRecordStore();
+                        deleteDataFiles(priority);
                     } catch (RecordStoreException ex) {
                         //#debug
                         L.e("*** Cache \'" + priority + "\'", "Had trouble deleting after dirty previous shutdown detected", ex);
