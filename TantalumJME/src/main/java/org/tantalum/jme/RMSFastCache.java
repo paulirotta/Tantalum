@@ -392,6 +392,8 @@ public class RMSFastCache extends FlashCache {
      * During startup, read into in-memory accelerator Hashtable and check
      * integrity of each key record.
      *
+     * //
+     *
      * @param initTimeToKeyRMSIndexHash
      * @param initTimeReferencedValueIntegers
      * @throws RecordStoreNotOpenException
@@ -405,6 +407,21 @@ public class RMSFastCache extends FlashCache {
         //#enddebug
 
         forEachRecord(keyRS, new RecordTask() {
+            private void deleteCurrentKey() {
+                try {
+                    keyRS.deleteRecord(currentRecordTaskKeyIndex);
+                } catch (RecordStoreNotOpenException ex) {
+                    //#debug
+                    L.e(this, "Can not delete unreadable index entry", "keyIndex=" + currentRecordTaskKeyIndex, ex);
+                } catch (InvalidRecordIDException ex) {
+                    //#debug
+                    L.e(this, "Can not delete unreadable index entry", "keyIndex=" + currentRecordTaskKeyIndex, ex);
+                } catch (RecordStoreException ex) {
+                    //#debug
+                    L.e(this, "Can not delete unreadable index entry", "keyIndex=" + currentRecordTaskKeyIndex, ex);
+                }
+            }
+
             void exec() {
                 try {
                     final byte[] keyIndexBytes = keyRS.getRecord(currentRecordTaskKeyIndex);
@@ -433,21 +450,22 @@ public class RMSFastCache extends FlashCache {
                     if (startupTask != null) {
                         startupTask.execForEachKey(RMSFastCache.this, key);
                     }
-                } catch (final Exception e) {
+                } catch (final DigestException e) {
                     //#debug
                     L.e("Can not read index entry, deleting", "" + currentRecordTaskKeyIndex, e);
-                    try {
-                        keyRS.deleteRecord(currentRecordTaskKeyIndex);
-                    } catch (RecordStoreNotOpenException ex) {
-                        //#debug
-                        L.e(this, "Can not delete unreadable index entry", "keyIndex=" + currentRecordTaskKeyIndex, e);
-                    } catch (InvalidRecordIDException ex) {
-                        //#debug
-                        L.e(this, "Can not delete unreadable index entry", "keyIndex=" + currentRecordTaskKeyIndex, e);
-                    } catch (RecordStoreException ex) {
-                        //#debug
-                        L.e(this, "Can not delete unreadable index entry", "keyIndex=" + currentRecordTaskKeyIndex, e);
-                    }
+                    deleteCurrentKey();
+                } catch (final FlashDatabaseException e) {
+                    //#debug
+                    L.e("Can not read index entry, deleting", "" + currentRecordTaskKeyIndex, e);
+                    deleteCurrentKey();
+                } catch (final UnsupportedEncodingException e) {
+                    //#debug
+                    L.e("Can not read index entry, deleting", "" + currentRecordTaskKeyIndex, e);
+                    deleteCurrentKey();
+                } catch (final RecordStoreException e) {
+                    //#debug
+                    L.e("Can not read index entry, deleting", "" + currentRecordTaskKeyIndex, e);
+                    deleteCurrentKey();
                 }
             }
         });
