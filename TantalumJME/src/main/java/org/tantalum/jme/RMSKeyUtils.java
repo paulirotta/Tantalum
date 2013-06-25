@@ -84,7 +84,7 @@ public class RMSKeyUtils {
      * @throws java.io.UnsupportedEncodingException
      */
     byte[] toIndexBytes(final String key, final int valueIndex) throws UnsupportedEncodingException {
-        final byte[] bytes = key.getBytes();
+        final byte[] bytes = key.getBytes("UTF-8");
         final byte[] bytesWithValue = new byte[bytes.length + 4];
 
         bytesWithValue[0] = (byte) ((valueIndex & 0xFF000000) >>> 24);
