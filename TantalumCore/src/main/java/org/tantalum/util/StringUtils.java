@@ -93,7 +93,7 @@ public class StringUtils {
      * @throws IOException
      */
     public static String readStringFromJAR(final String name) throws IOException {
-        return new String(readBytesFromJAR(name));
+        return readStringFromJAR(name, "UTF-8");
     }
 
     /**

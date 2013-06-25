@@ -124,6 +124,10 @@ public final class JSONObject {
         public boolean equals(final Object object) {
             return object == null || object == this;
         }
+        
+        public int hashCode() {
+            return super.hashCode();
+        }
 
         /**
          * Get the "null" string value.
