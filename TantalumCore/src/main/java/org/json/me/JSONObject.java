@@ -1200,9 +1200,9 @@ public final class JSONObject {
             return "null";
         }
         if (value instanceof JSONString) {
-            final Object o = ((JSONString) value).toJSONString();
-            if (o instanceof String) {
-                return (String) o;
+            final String s = ((JSONString) value).toJSONString();
+            if (s != null) {
+                return (String) s;
             }
         }
         if (value instanceof Float || value instanceof Double

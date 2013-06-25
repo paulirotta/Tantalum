@@ -905,7 +905,7 @@ public class HttpGetter extends Task {
                 out = (byte[]) exec(url);
             } else if (!success) {
                 //#debug
-                L.i("HTTP GET FAILED, cancel() of task and any chained Tasks", (this != null ? this.toString() : "null"));
+                L.i("HTTP GET FAILED: about to HttpGetter.cancel() this and any chained Tasks", this.toString());
                 cancel(false, "HttpGetter failed response code and header check: " + this);
             }
             //#debug
