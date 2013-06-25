@@ -909,7 +909,7 @@ public class HttpGetter extends Task {
                 cancel(false, "HttpGetter failed response code and header check: " + this);
             }
             //#debug
-            L.i(this, "End", url + " status=" + getStatus() + " out=" + out);
+            L.i(this, "End", url + " status=" + getStatus() + " out=" + (out == null ? "null" : "(" + out.length + " bytes)"));
             HttpGetter.endNetworkActivity(netActivityKey); // Notify listeners, net is in use
         }
 
