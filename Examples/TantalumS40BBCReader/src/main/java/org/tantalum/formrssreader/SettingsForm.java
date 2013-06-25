@@ -67,22 +67,27 @@ public final class SettingsForm extends TextBox implements CommandListener {
     }
 
     public void commandAction(Command command, Displayable displayable) {
-        if (command == saveCommand) {
-            try {
-                RMSUtils.getInstance().write("settings", getString().getBytes());
-            } catch (Exception ex) {
-                L.e("Can not write settings, attempting to delete settings", "", ex);
+        try {
+            if (command == saveCommand) {
                 try {
-                    RMSUtils.getInstance().delete("settings");
                     RMSUtils.getInstance().write("settings", getString().getBytes());
-                } catch (Exception ex1) {
-                    L.e("Can not write settings", "", ex);
+                } catch (Exception ex) {
+                    L.e("Can not write settings, attempting to delete settings", "", ex);
+                    try {
+                        RMSUtils.getInstance().delete("settings");
+                        RMSUtils.getInstance().write("settings", getString().getBytes());
+                    } catch (Exception ex1) {
+                        L.e("Can not write settings", "", ex);
+                    }
                 }
+                midlet.switchDisplayable(null, midlet.getList());
+                midlet.getList().reload(true);
+            } else if (command == backCommand) {
+                midlet.switchDisplayable(null, midlet.getList());
             }
-            midlet.switchDisplayable(null, midlet.getList());
-            midlet.getList().reload(true);
-        } else if (command == backCommand) {
-            midlet.switchDisplayable(null, midlet.getList());
+        } catch (FlashDatabaseException e) {
+            //#debug
+            L.e("Can not handle commandAction()", "command=" + command, e);
         }
     }
 }

@@ -37,7 +37,7 @@ import org.tantalum.util.L;
  *
  * @author tsaa
  */
-public final class JMEImageTypeHandler extends org.tantalum.storage.ImageCacheView {
+public class JMEImageCacheView extends org.tantalum.storage.ImageCacheView {
 
     public Object convertToUseForm(final Object key, final byte[] bytes) {
         final Image img;

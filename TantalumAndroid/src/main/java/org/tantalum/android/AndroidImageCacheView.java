@@ -38,18 +38,21 @@ import org.tantalum.util.L;
  *
  * @author tsaa
  */
-public final class AndroidImageTypeHandler extends ImageCacheView {
+public class AndroidImageCacheView extends ImageCacheView {
 
     @Override
     public Object convertToUseForm(final Object key, final byte[] bytes) {
         try {
-            Bitmap b = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            final Bitmap b = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            
             if (maxWidth == SCALING_DISABLED || maxHeight == SCALING_DISABLED) {
                 return b;
             }
+            
             return Bitmap.createScaledBitmap(b, maxWidth, maxHeight, true);
-        } catch (IllegalArgumentException e) {
-            L.e("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
+        } catch (final IllegalArgumentException e) {
+            //#debug
+            L.e("Exception converting bytes to image", "key=" + key, e);
             throw e;
         }
     }

@@ -58,7 +58,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
 
     private static class ImageCacheViewHolder {
 
-        static ImageCacheView imageCacheView = new JMEImageTypeHandler();
+        static ImageCacheView imageCacheView = new JMEImageCacheView();
     }
     /**
      * There is only one Display per application

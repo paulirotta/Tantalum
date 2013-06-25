@@ -57,7 +57,7 @@ import org.tantalum.util.StringUtils;
 public final class AndroidPlatformAdapter implements PlatformAdapter {
 
     private static class ImageCacheViewHolder {
-        static ImageCacheView imageCacheView = new AndroidImageTypeHandler();
+        static ImageCacheView imageCacheView = new AndroidImageCacheView();
     }
 
     @Override
