@@ -1,6 +1,9 @@
 /*
- Copyright (c) 2013, Paul Houghton and Futurice Oy
- All rights reserved.
+ Copyright (c) 2013 Nokia Corporation. All rights reserved.
+ Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation.
+ Oracle and Java are trademarks or registered trademarks of Oracle and/or its
+ affiliates. Other product and company names mentioned herein may be trademarks
+ or trade names of their respective owners.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -82,7 +85,7 @@ public final class AndroidPlatformAdapter implements PlatformAdapter {
     }
 
     /**
-     * This method is not ´called during startup.
+     * This method is not called during startup.
      *
      * Default Android logging is supported and any changes to how you want the
      * log displayed should be done there.
