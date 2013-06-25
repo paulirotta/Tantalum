@@ -125,10 +125,6 @@ public final class JSONObject {
             return object == null || object == this;
         }
 
-        public int hashCode() {
-            return super.hashCode();
-        }
-
         /**
          * Get the "null" string value.
          *
@@ -882,7 +878,7 @@ public final class JSONObject {
      * @throws JSONException If the value is non-finite number or if the key is
      * null.
      */
-    public final JSONObject put(final String key, final Object value) throws JSONException {
+    public JSONObject put(final String key, final Object value) throws JSONException {
         if (key == null) {
             throw new JSONException("Null key.");
         }
