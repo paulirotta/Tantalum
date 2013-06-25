@@ -1,6 +1,9 @@
 /*
- Copyright © 2012 Paul Houghton and Futurice on behalf of the Tantalum Project.
- All rights reserved.
+ Copyright (c) 2012-2013 Nokia Corporation. All rights reserved.
+ Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation.
+ Oracle and Java are trademarks or registered trademarks of Oracle and/or its
+ affiliates. Other product and company names mentioned herein may be trademarks
+ or trade names of their respective owners.
 
  Tantalum software shall be used to make the world a better place for everyone.
 
