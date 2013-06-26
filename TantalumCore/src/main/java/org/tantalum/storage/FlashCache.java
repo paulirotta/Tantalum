@@ -120,7 +120,7 @@ public abstract class FlashCache {
      */
     public final byte[] get(final String key) throws DigestException, FlashDatabaseException {
         if (key == null) {
-            throw new IllegalArgumentException("You attempted to get a null digest from the cache");
+            throw new NullPointerException("You attempted to get a null digest from the cache");
         }
 
         final long digest;
@@ -168,7 +168,7 @@ public abstract class FlashCache {
      */
     public final void removeData(final String key) throws DigestException, FlashDatabaseException {
         if (key == null) {
-            throw new IllegalArgumentException("You attempted to remove a null string key from the cache");
+            throw new NullPointerException("You attempted to remove a null string key from the cache");
         }
         try {
             removeData(CryptoUtils.getInstance().toDigest(key));

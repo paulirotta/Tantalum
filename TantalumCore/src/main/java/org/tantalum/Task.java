@@ -683,7 +683,7 @@ public abstract class Task {
      */
     public static void joinAll(final Task[] tasks, final long timeout) throws CancellationException, TimeoutException {
         if (tasks == null) {
-            throw new IllegalArgumentException("Can not joinAll(), list of tasks to join is null");
+            throw new NullPointerException("Can not joinAll(), list of tasks to join is null");
         }
         if (timeout < 0) {
             throw new IllegalArgumentException("Can not joinAll() with timeout < 0: timeout=" + timeout);
@@ -871,7 +871,7 @@ public abstract class Task {
 
     private void setPreviousTaskInChain(final Task previousTaskInChain) {
         if (previousTaskInChain == null) {
-            throw new IllegalArgumentException("setPreiouvTaskInChain(null) not allowed");
+            throw new NullPointerException("setPreiouvTaskInChain(null) not allowed");
         }
 
         this.previousTaskInChain = previousTaskInChain;
@@ -998,7 +998,7 @@ public abstract class Task {
     
     boolean doCancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t, Thread thread) {
         if (reason == null) {
-            throw new IllegalArgumentException("For clean debug, you must provide a reason for cancel(), null will not do");
+            throw new NullPointerException("For clean debug, you must provide a reason for cancel(), null will not do");
         }
 
         final String s = reason + " : " + t;

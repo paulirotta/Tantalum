@@ -380,8 +380,11 @@ public class StaticCache {
      * @return
      */
     public Task getAsync(final String key, final int priority, final Task nextTask, final CacheView cacheView) {
-        if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("Trivial StaticCache get");
+        if (key == null) {
+            throw new NullPointerException("StaticCache get with null key");
+        }
+        if (key.length() == 0) {
+            throw new IllegalArgumentException("StaticCache get with trivial (zero length) key");
         }
         int getPriority = boostHighPriorityToFastlane(priority);
         getPriority = switchToSerialPriorityIfNotDefaultCacheView(getPriority, cacheView);
@@ -498,10 +501,16 @@ public class StaticCache {
      * @throws FlashDatabaseException
      */
     public Object put(final String key, final byte[] bytes, CacheView cacheView, Task nextTask) throws FlashDatabaseException {
-        if (key == null || key.length() == 0) {
+        if (key == null) {
+            throw new NullPointerException("Attempt to put trivial key to cache");
+        }
+        if (key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }
-        if (bytes == null || bytes.length == 0) {
+        if (bytes == null) {
+            throw new NullPointerException("Attempt to put trivial null key to cache");
+        }
+        if (bytes.length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
 
@@ -593,8 +602,12 @@ public class StaticCache {
      */
     private void synchronousFlashPut(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException {
         if (key == null) {
-            throw new IllegalArgumentException("Null key put to cache");
+            throw new NullPointerException("Null key put to cache \'" + cachePriorityChar + "\'");
         }
+        if (key.length() == 0) {
+            throw new IllegalArgumentException("Trivial (zero length) key put to cache \'" + cachePriorityChar + "\'");
+        }
+        
         try {
             try {
                 //#debug

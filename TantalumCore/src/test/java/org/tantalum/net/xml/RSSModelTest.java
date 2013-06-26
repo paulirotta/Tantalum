@@ -70,7 +70,7 @@ public class RSSModelTest extends MockedStaticInitializers {
         fail("Should not handle 0 byte RSS");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void dontAllowNullInput() throws SAXException {
         instance.setXML(null);
         fail("Should not attempt to parse null RSS");

@@ -55,8 +55,9 @@ public class CryptoUtils {
      */
     public synchronized long toDigest(final String key) throws DigestException, UnsupportedEncodingException {
         if (key == null) {
-            throw new IllegalArgumentException("You attempted to convert a null string into a hash digest");
+            throw new NullPointerException("You attempted to convert a null string into a hash digest");
         }
+        
         final byte[] bytes = key.getBytes("UTF-8");
 
         return toDigest(bytes);
@@ -72,8 +73,9 @@ public class CryptoUtils {
      */
     public synchronized long toDigest(final byte[] bytes) throws DigestException, UnsupportedEncodingException {
         if (bytes == null) {
-            throw new IllegalArgumentException("You attempted to convert a null byte[] into a hash digest");
+            throw new NullPointerException("You attempted to convert a null byte[] into a hash digest");
         }
+        
         final byte[] hashKey = new byte[DIGEST_LENGTH];
 
         messageDigest.update(bytes, 0, bytes.length);
@@ -95,8 +97,11 @@ public class CryptoUtils {
      * @return
      */
     public long bytesToLong(final byte[] bytes, final int start) {
-        if (bytes == null || bytes.length != 8) {
-            throw new IllegalArgumentException("Bad byteLength != 8 or null: can not convert digest to Long");
+        if (bytes == null) {
+            throw new NullPointerException("Bad bytesToLong, bytes passed are null: can not convert digest to Long");
+        }
+        if (bytes.length != 8) {
+            throw new IllegalArgumentException("Bad bytesToLong, length != 8: can not convert digest to Long");
         }
         long l = 0;
 

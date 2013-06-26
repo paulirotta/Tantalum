@@ -125,7 +125,7 @@ public class StringUtils {
      */
     public static String urlEncode(final String s) throws IOException {
         if (s == null) {
-            throw new IllegalArgumentException("Can not urlEncode null string");
+            throw new NullPointerException("Can not urlEncode null string");
         }
         if (s.length() == 0) {
             return s;
@@ -181,7 +181,7 @@ public class StringUtils {
      */
     public static String urlDecode(final String s) throws UnsupportedEncodingException, IOException {
         if (s == null) {
-            throw new IllegalArgumentException("Can not urlDecode null string");
+            throw new NullPointerException("Can not urlDecode null string");
         }
         final int n = s.length();
         final StringBuffer sb = new StringBuffer(n * 2);
@@ -307,6 +307,10 @@ public class StringUtils {
      * @return
      */
     public static byte[] hexStringToByteArray(final String s) {
+        if (s == null) {
+            throw new NullPointerException("hexStringToByteArray was pass null string");
+        }
+        
         final int n = s.length();
         if (n % 2 != 0) {
             throw new IllegalArgumentException("Input string must be an even length and encoded by byteArrayToHexString(s), but input length is " + n);

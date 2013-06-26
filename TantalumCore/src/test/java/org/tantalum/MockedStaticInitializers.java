@@ -58,7 +58,7 @@ import static org.mockito.Mockito.when;
  * @author Kai Inkinen <kai.inkinen@futurice.com>
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({L.class, PlatformUtils.class})
+@PrepareForTest({L.class, PlatformUtils.class, Worker.class})
 @SuppressStaticInitializationFor(
         {"org.tantalum.util.L",
                 "org.tantalum.PlatformUtils",

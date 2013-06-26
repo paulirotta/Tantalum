@@ -80,10 +80,12 @@ public abstract class XMLModel extends DefaultHandler {
      *
      * @param xml
      * @throws SAXException
-     * @throws IllegalArgumentException
      */
-    public void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
-        if (xml == null || xml.length == 0) {
+    public void setXML(final byte[] xml) throws SAXException{
+        if (xml == null) {
+            throw new NullPointerException("Attempt to XML parse a null or zero byte value");
+        }
+        if (xml.length == 0) {
             throw new IllegalArgumentException("Attempt to XML parse a null or zero byte value");
         }
         synchronized (MUTEX) {

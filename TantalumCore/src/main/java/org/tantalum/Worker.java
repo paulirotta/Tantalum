@@ -444,7 +444,7 @@ final class Worker extends Thread {
         if (!removed) {
             removed = dequeue(task, fastlaneQ, false);
         }
-        if (!removed) {
+        if (!removed && workers != null) {
             removed = dequeue(task, workers[0].serialQ, false);
         }
         if (!removed) {

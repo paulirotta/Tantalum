@@ -590,10 +590,10 @@ public class RMSFastCache extends FlashCache {
      */
     public void put(final String key, final byte[] value) throws DigestException, FlashFullException, FlashDatabaseException {
         if (key == null) {
-            throw new IllegalArgumentException("You attempted to put a null key to the cache");
+            throw new NullPointerException("You attempted to put a null key to the cache");
         }
         if (value == null) {
-            throw new IllegalArgumentException("You attempted to put null data to the cache");
+            throw new NullPointerException("You attempted to put null data to the cache");
         }
 
         synchronized (mutex) {

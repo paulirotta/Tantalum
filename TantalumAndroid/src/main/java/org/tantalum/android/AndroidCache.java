@@ -255,7 +255,7 @@ public final class AndroidCache extends FlashCache {
     @Override
     public void put(final String url, final byte[] data) throws FlashFullException, FlashDatabaseException {
         if (url == null) {
-            throw new IllegalArgumentException("You attempted to put a null key to the cache");
+            throw new NullPointerException("You attempted to put a null key to the cache");
         }
         if (data == null) {
             throw new IllegalArgumentException("You attempted to put null data to the cache");

@@ -42,11 +42,8 @@ public final class JMEFontUtils {
      * @return
      */
     public static synchronized JMEFontUtils getFontUtils(final Font font, final String elipsis) {
-        if (font == null) {
-            throw new IllegalArgumentException("JMEFontUtils was passed a null font");
-        }
-        if (elipsis == null) {
-            throw new IllegalArgumentException("JMEFontUtils was passed a null elipsis");
+        if (font == null || elipsis == null) {
+            throw new NullPointerException("JMEFontUtils was passed a null font or elipsis");
         }
         final int key = font.hashCode() ^ elipsis.hashCode();
         JMEFontUtils instance = (JMEFontUtils) instances.get(new Integer(key));
@@ -60,7 +57,7 @@ public final class JMEFontUtils {
 
     private JMEFontUtils(final Font font, final String elipsis) {
         if (font == null && elipsis != null) {
-            throw new IllegalArgumentException("JMEFontUtils requires a non-null font and elipsis");
+            throw new NullPointerException("JMEFontUtils requires a non-null font and elipsis");
         }
 
         this.font = font;

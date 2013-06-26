@@ -76,7 +76,7 @@ public class WeakHashCache {
      */
     public synchronized Object get(final Object key) {
         if (key == null) {
-            throw new IllegalArgumentException("Attempt to get(null) from WeakHashCache");
+            throw new NullPointerException("Attempt to get(null) from WeakHashCache");
         }
 
         final WeakReference reference = (WeakReference) hash.get(key);
@@ -105,7 +105,7 @@ public class WeakHashCache {
      */
     public synchronized void put(final Object key, final Object value) {
         if (key == null) {
-            throw new IllegalArgumentException("null key put to WeakHashCache");
+            throw new NullPointerException("null key put to WeakHashCache");
         }
         if (value == null) {
             throw new IllegalArgumentException("null value put to WeakHashCache");
@@ -125,7 +125,7 @@ public class WeakHashCache {
      */
     public synchronized void markContains(final Object key) {
         if (key == null) {
-            throw new IllegalArgumentException("markContains(null) to WeakHashCache");
+            throw new NullPointerException("markContains(null) to WeakHashCache");
         }
         if (hash.containsKey(key)) {
             return;
@@ -165,7 +165,7 @@ public class WeakHashCache {
      */
     public synchronized boolean containsKey(final Object key) {
         if (key == null) {
-            throw new IllegalArgumentException("containsKey() with null key");
+            throw new NullPointerException("containsKey() with null key");
         }
 
         return hash.containsKey(key);

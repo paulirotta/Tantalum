@@ -327,7 +327,7 @@ public final class StaticWebCache extends StaticCache {
      */
     public Task getAsync(final String url, final byte[] postMessage, final int priority, final int getType, final Task nextTask, StaticWebCache.HttpTaskFactory taskFactory, final CacheView cacheView) {
         if (url == null) {
-            throw new IllegalArgumentException("Can not getAsync() with null key");
+            throw new NullPointerException("Can not getAsync() with null key");
         }
         if (taskFactory == null) {
             taskFactory = this.httpTaskFactory;
@@ -654,7 +654,7 @@ public final class StaticWebCache extends StaticCache {
          */
         public HttpGetter getHttpTask(final int priority, final String url, final byte[] postMessage) {
             if (url == null) {
-                throw new IllegalArgumentException("HttpTaskFactory was asked to make an HttpGetter for a null url");
+                throw new NullPointerException("HttpTaskFactory was asked to make an HttpGetter for a null url");
             }
             final HttpGetter httpGetter;
             if (postMessage == null) {

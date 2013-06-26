@@ -140,7 +140,7 @@ public abstract class RSSListView extends View {
             super(60);
         }
 
-        public void setXML(final byte[] xml) throws SAXException, IllegalArgumentException {
+        public void setXML(final byte[] xml) throws SAXException {
             checkForWLAN(); // If this just came in over a WLAN net, getAsync the images also
             super.setXML(xml);
         }

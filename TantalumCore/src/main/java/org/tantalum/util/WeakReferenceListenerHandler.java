@@ -42,7 +42,7 @@ public class WeakReferenceListenerHandler {
      */
     public void registerListener(final Object listener) {
         if (listener == null) {
-            throw new IllegalArgumentException("Attempt to resister null callback. Expected " + listenerClass);
+            throw new NullPointerException("Attempt to resister null callback. Expected " + listenerClass);
         }
         if (!(listenerClass.isAssignableFrom(listener.getClass()))) {
             throw new IllegalArgumentException(listener.getClass().toString() + " is not assignable from " + listenerClass + " so can not be registered as a listener");
@@ -68,7 +68,7 @@ public class WeakReferenceListenerHandler {
      */
     public void unregisterListener(final Object listener) {
         if (listener == null) {
-            throw new IllegalArgumentException("Attempt to unresister null callback. Expected " + listenerClass);
+            throw new NullPointerException("Attempt to unresister null callback. Expected " + listenerClass);
         }
 
         synchronized (listeners) {

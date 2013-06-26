@@ -62,12 +62,12 @@ public class CryptoUtilsTest extends MockedStaticInitializers {
         assertNotEquals(cryptoUtils.toDigest(" "), cryptoUtils.toDigest(""));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void nullStringTest() throws DigestException, UnsupportedEncodingException {
         cryptoUtils.toDigest((String) null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void nullByteArrayTest() throws DigestException, UnsupportedEncodingException {
         cryptoUtils.toDigest((byte[]) null);
     }

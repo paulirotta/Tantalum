@@ -90,13 +90,13 @@ public class WeakHashCacheTest extends MockedStaticInitializers {
         instance.put("aKey", null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testPutNullKey() {
         WeakHashCache instance = new WeakHashCache();
         instance.put(null, "aValue");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testGetNullKey() {
         WeakHashCache instance = new WeakHashCache();
         instance.put("aKey", "aValue");

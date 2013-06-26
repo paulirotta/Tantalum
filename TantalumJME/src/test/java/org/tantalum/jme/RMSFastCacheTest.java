@@ -60,23 +60,23 @@ public class RMSFastCacheTest extends MockedStaticInitializers {
         when(mockedValueRS.enumerateRecords(any(RecordFilter.class), any(RecordComparator.class), anyBoolean())).thenReturn(mock(RecordEnumeration.class));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalArgumentExceptionThrownWhenNullStringRemoveData() throws DigestException, FlashDatabaseException {
+    @Test(expected = NullPointerException.class)
+    public void nullPointerExceptionThrownWhenNullStringRemoveData() throws DigestException, FlashDatabaseException {
         rmsFastCache.removeData((String) null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalArgumentExceptionThrownWhenPutNullKey() throws DigestException, FlashDatabaseException {
+    @Test(expected = NullPointerException.class)
+    public void nullPointerExceptionThrownWhenPutNullKey() throws DigestException, FlashDatabaseException {
         rmsFastCache.put(null, new byte[16]);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalArgumentExceptionThrownWhenPutNullData() throws DigestException, FlashDatabaseException {
+    @Test(expected = NullPointerException.class)
+    public void nullPointerExceptionThrownWhenPutNullData() throws DigestException, FlashDatabaseException {
         rmsFastCache.put("fah", null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalArgumentExceptionThrownWhenGetNullString() throws DigestException, FlashDatabaseException {
+    @Test(expected = NullPointerException.class)
+    public void nullPointerExceptionThrownWhenGetNullString() throws DigestException, FlashDatabaseException {
         rmsFastCache.get((String) null);
     }
 }

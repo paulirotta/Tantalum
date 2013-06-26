@@ -181,11 +181,14 @@ public final class RMSUtils {
      * @throws FlashDatabaseException
      */
     public void write(final String key, final byte[] data) throws RecordStoreFullException, FlashDatabaseException {
-        if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("Can not RMSUtils.write(), null or trivial key: " + key);
+        if (key == null) {
+            throw new NullPointerException("Can not RMSUtils.write(), null key");
+        }
+        if (key.length() == 0) {
+            throw new IllegalArgumentException("Can not RMSUtils.write(), trivial (zero length) key: " + key);
         }
         if (data == null) {
-            throw new IllegalArgumentException("Can not RMSUtils.write(), data is null: " + key);
+            throw new NullPointerException("Can not RMSUtils.write(), data is null: " + key);
         }
 
         final String recordStoreName = truncateRecordStoreNameToLast32(key);
@@ -340,8 +343,11 @@ public final class RMSUtils {
      * system) name
      */
     private String truncateRecordStoreNameToLast32(String recordStoreName) {
-        if (recordStoreName == null || recordStoreName.length() == 0) {
-            throw new IllegalArgumentException("null or trivial record store name");
+        if (recordStoreName == null) {
+            throw new NullPointerException("Can not truncate null record store name");
+        }
+        if (recordStoreName.length() == 0) {
+            throw new IllegalArgumentException("truncateRecordStoreNameToLast32 was passed trivial (zero length) record store name");
         }
         if (recordStoreName.length() > MAX_RECORD_NAME_LENGTH) {
             recordStoreName = recordStoreName.substring(recordStoreName.length() - MAX_RECORD_NAME_LENGTH);

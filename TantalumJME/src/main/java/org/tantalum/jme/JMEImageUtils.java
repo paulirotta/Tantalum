@@ -190,7 +190,7 @@ public final class JMEImageUtils {
             throw new IllegalArgumentException("scaleImage requires maxW, maxH, srcW and srcH be >= 1");
         }
         if (inputImageARGB == null || outputImageARGB == null) {
-            throw new IllegalArgumentException("scaleImage requires non-null input and output image buffers");
+            throw new NullPointerException("scaleImage requires non-null input and output image buffers");
         }
 
         final float byWidth = maxW / (float) srcW;
@@ -295,7 +295,7 @@ public final class JMEImageUtils {
             throw new IllegalArgumentException("drawFlipshade requires maxW, maxH, srcW and srcH be >= 1");
         }
         if (inputImageARGB == null || outputImageARGB == null) {
-            throw new IllegalArgumentException("drawFlipshade requires non-null input and output image buffers");
+            throw new NullPointerException("drawFlipshade requires non-null input and output image buffers");
         }
 
         while (srcW >> 1 > maxW && srcH >> 1 > maxH) {
@@ -328,10 +328,10 @@ public final class JMEImageUtils {
         int z = 0;
 
         if (in == null) {
-            throw new IllegalArgumentException("Half a source image, but source array is null");
+            throw new NullPointerException("Half a source image, but source array is null");
         }
         if (out == null) {
-            throw new IllegalArgumentException("Half a source image, but destination array is null");
+            throw new NullPointerException("Half a source image, but destination array is null");
         }
         if (in.length < srcW * srcH) {
             throw new IllegalArgumentException("Half a source image, but source array is less than data dimensions: " + in.length + " < " + srcW + "*" + srcH);
@@ -368,10 +368,10 @@ public final class JMEImageUtils {
             final int[] out, final int srcW, final int srcH,
             final int w, final int h) {
         if (in == null) {
-            throw new IllegalArgumentException("Five point downsample a source image, but source array is null");
+            throw new NullPointerException("Five point downsample a source image, but source array is null");
         }
         if (out == null) {
-            throw new IllegalArgumentException("Five point downsample a source image, but destination array is null");
+            throw new NullPointerException("Five point downsample a source image, but destination array is null");
         }
         if (in.length < srcW * srcH) {
             throw new IllegalArgumentException("Five point downsample a source image, but source array is less than image dimensions: " + in.length + " < " + srcW + "*" + srcH);

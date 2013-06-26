@@ -96,7 +96,7 @@ public class HttpPoster extends HttpGetter {
      */
     public final HttpPoster setPostData(final byte[] postData) {
         if (postData == null) {
-            throw new IllegalArgumentException(getClassName() + " was passed null message- meaningless POST or PUT operation");
+            throw new NullPointerException(getClassName() + " was passed null message- meaningless POST or PUT operation");
         }
         this.postMessage = new byte[postData.length];
         System.arraycopy(postData, 0, this.postMessage, 0, postData.length);

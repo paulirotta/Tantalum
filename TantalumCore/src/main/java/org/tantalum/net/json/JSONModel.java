@@ -75,7 +75,7 @@ public class JSONModel {
      */
     public synchronized void setJSON(final String json) throws JSONException {
         if (json == null) {
-            throw new IllegalArgumentException("Can not setJSON(null): " + this);
+            throw new NullPointerException("Can not setJSON(null): " + this);
         }
         jsonObject = new JSONObject(json);
     }

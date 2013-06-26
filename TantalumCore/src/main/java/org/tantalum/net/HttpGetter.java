@@ -582,7 +582,7 @@ public class HttpGetter extends Task {
         this(priority);
 
         if (url == null) {
-            throw new IllegalArgumentException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
+            throw new NullPointerException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
         }
         set(url);
     }
@@ -752,8 +752,6 @@ public class HttpGetter extends Task {
         
         if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
             final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
-            //#debug
-            L.e("HttpGetter with non-String input", s, new IllegalArgumentException());
             cancel(false, s);
             return out;
         }
@@ -778,7 +776,7 @@ public class HttpGetter extends Task {
             final OutputStream outputStream;
             if (this instanceof HttpPoster) {
                 if (postMessage == null && streamWriter == null) {
-                    throw new IllegalArgumentException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + url);
+                    throw new NullPointerException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + url);
                 }
 
                 httpConn = PlatformUtils.getInstance().getHttpPostConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
@@ -865,6 +863,10 @@ public class HttpGetter extends Task {
         } catch (IllegalArgumentException e) {
             //#debug
             L.e(this, "HttpGetter has illegal argument", url, e);
+            throw e;
+        } catch (NullPointerException e) {
+            //#debug
+            L.e(this, "HttpGetter has null pointer", url, e);
             throw e;
         } catch (IOException e) {
             //#debug
