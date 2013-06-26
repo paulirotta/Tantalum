@@ -1002,7 +1002,7 @@ public abstract class Task {
         }
 
         final String s = reason + " : " + t;
-
+        
         synchronized (mutex) {
             if (status >= Task.FINISHED) {
                 //#debug
@@ -1011,6 +1011,15 @@ public abstract class Task {
                 return false;
             }
         }
+        
+        if (Worker.dequeue(this)) {
+            //#debug
+            L.i(this, "Found and removed pending task from queue on cancel", reason);
+        } else {
+            //#debug
+            L.i(this, "Did not find/remove pending task from queue on cancel", reason);
+        }
+
         //#debug
         L.i(this, "Begin cancel \"" + reason + "\" mayInterruptIfRunning=" + mayInterruptIfRunning, s + " - " + this);
         if (mayInterruptIfRunning) {

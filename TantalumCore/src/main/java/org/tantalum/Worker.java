@@ -257,20 +257,20 @@ final class Worker extends Thread {
      */
     static Thread interruptTask(final Task task) {
         if (task == null) {
-            throw new IllegalArgumentException("interruptTask(null) not allowed");
+            throw new NullPointerException("interruptTask(null) not allowed");
         }
 
-        final Thread currentThread = Thread.currentThread();
+//        final Thread currentThread = Thread.currentThread();
 
         synchronized (q) {
             for (int i = 0; i < workers.length; i++) {
-                if (currentThread == workers[i]) {
-                    /**
-                     * Never send interrupt to own thread, even if there is a
-                     * match. The task state will change.
-                     */
-                    return null;
-                }
+//                if (currentThread == workers[i]) {
+//                    /**
+//                     * Never send interrupt to own thread. The task state will
+//                     * change to canceled, which is enough.
+//                     */
+//                    continue;
+//                }
 
                 if (task.equals(workers[i].currentTask)) {
                     //#debug
@@ -291,13 +291,13 @@ final class Worker extends Thread {
             for (int i = 0; i < dedicatedThreads.size(); i++) {
                 final DedicatedThread thread = (DedicatedThread) dedicatedThreads.elementAt(i);
 
-                if (currentThread == thread) {
-                    /**
-                     * Never send interrupt to own thread, even if there is a
-                     * match. The task state will change.
-                     */
-                    return null;
-                }
+//                if (currentThread == thread) {
+//                    /**
+//                     * Never send interrupt to own thread, even if there is a
+//                     * match. The task state will change.
+//                     */
+//                    return null;
+//                }
 
                 if (task.equals(thread.task)) {
                     //#debug
@@ -361,6 +361,7 @@ final class Worker extends Thread {
                     }
                 }
             }
+
             while (dedicatedThreads.size() > 0) {
                 DedicatedThread dedicatedThread = null;
 
@@ -416,22 +417,41 @@ final class Worker extends Thread {
         final Task[] tasks = copyOfQueueTasks(queue);
 
         for (int i = tasks.length - 1; i >= 0; i--) {
-            final Task t = tasks[i];
-
-            switch (t.getShutdownBehaviour()) {
-                default:
-                case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
-                    break;
-
-                case Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN:
-                    t.cancel(true, "Shutdown signal received, interrupt signal sent");
-                // continue to next case
-
-                case Task.DEQUEUE_ON_SHUTDOWN:
-                    queue.removeElement(t);
-                    break;
-            }
+            dequeue(tasks[i], queue, true);
         }
+    }
+
+    static boolean dequeue(final Task task, final Vector queue, final boolean cancelIfRunning) {
+        switch (task.getShutdownBehaviour()) {
+            default:
+            case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
+                return false;
+
+            case Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN:
+                if (cancelIfRunning) {
+                    task.cancel(cancelIfRunning, "Shutdown signal received, interrupt signal sent");
+                }
+            // continue to next case
+
+            case Task.DEQUEUE_ON_SHUTDOWN:
+                return queue.removeElement(task);
+        }
+    }
+
+    static boolean dequeue(final Task task) {
+        boolean removed = dequeue(task, q, false);
+
+        if (!removed) {
+            removed = dequeue(task, fastlaneQ, false);
+        }
+        if (!removed) {
+            removed = dequeue(task, workers[0].serialQ, false);
+        }
+        if (!removed) {
+            removed = dequeue(task, idleQ, false);
+        }
+
+        return removed;
     }
 
     /**
