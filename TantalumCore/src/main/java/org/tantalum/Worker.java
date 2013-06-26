@@ -353,15 +353,17 @@ final class Worker extends Thread {
             /*
              * Interrupt currently running tasks which can be interrupted
              */
-            for (int i = 0; i < workers.length; i++) {
-                final Task t = workers[i].currentTask;
-                if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                    ((Task) t).cancel(true, "Shutdown: cancel signal sent");
+            synchronized (q) {
+                for (int i = 0; i < workers.length; i++) {
+                    final Task t = workers[i].currentTask;
+                    if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
+                        workers[i].interrupt();
+                    }
                 }
             }
             while (dedicatedThreads.size() > 0) {
                 DedicatedThread dedicatedThread = null;
-                
+
                 synchronized (dedicatedThreads) {
                     if (dedicatedThreads.size() > 0) {
                         dedicatedThread = (DedicatedThread) dedicatedThreads.firstElement();
