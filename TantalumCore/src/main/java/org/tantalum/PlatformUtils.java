@@ -477,8 +477,8 @@ public final class PlatformUtils {
             Worker.shutdown(block, reason);
         } else {
             //#debug
-            L.i(this, "WARNING: Can not shutdown() from the UI thread", "Automatically changing to a Worker thread, function will return immediately to keep the shutdown smooth - " + reason + " - block up to 3 seconds=" + block);
-            new Task(Task.NORMAL_PRIORITY) {
+            L.i(this, "WARNING: Can not shutdown() from the UI thread", "Automatically changing to FASTLANE to initiate shutdown, function will return immediately to keep the shutdown smooth - " + reason);
+            new Task(Task.FASTLANE_PRIORITY) {
                 protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
                     //#debug
                     L.i(this, "Shutdown (automatically changed to a Worker Thread)", reason);

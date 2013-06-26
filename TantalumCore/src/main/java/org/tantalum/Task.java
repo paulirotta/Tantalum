@@ -995,14 +995,14 @@ public abstract class Task {
     public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
         return doCancel(mayInterruptIfRunning, reason, t, null);
     }
-    
+
     boolean doCancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t, Thread thread) {
         if (reason == null) {
             throw new NullPointerException("For clean debug, you must provide a reason for cancel(), null will not do");
         }
 
         final String s = reason + " : " + t;
-        
+
         synchronized (mutex) {
             if (status >= Task.FINISHED) {
                 //#debug
@@ -1011,7 +1011,7 @@ public abstract class Task {
                 return false;
             }
         }
-        
+
         if (Worker.dequeue(this)) {
             //#debug
             L.i(this, "Found and removed pending task from queue on cancel", reason);
@@ -1208,10 +1208,9 @@ public abstract class Task {
             synchronized (tasksToFork) {
                 for (int i = 0; i < tasksToFork.size(); i++) {
                     final Task t = (Task) tasksToFork.elementAt(i);
-                    if (t instanceof Task) {
-                        sb.append(t.getClassName());
-                        sb.append(" ");
-                    }
+
+                    sb.append(t.getClassName());
+                    sb.append(" ");
                 }
             }
 
