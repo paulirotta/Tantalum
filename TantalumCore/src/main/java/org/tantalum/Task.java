@@ -253,17 +253,6 @@ public abstract class Task {
      */
     public static final int DEQUEUE_ON_SHUTDOWN = 1;
     /**
-     * If a Task is still queued but not yet started, you can request
-     * notification of the shutdown in order to complete some cleanup activity.
-     * Note that you should usually not be holding resources when queued, so
-     * cleanup of that form is probably a design error. You may however want to
-     * briefly notify the user.
-     *
-     * An alternative to this is to create a Task that is run at shutdown time
-     * using Worker.queueShutdownTask(Task).
-     */
-    public static final int DEQUEUE_OR_CANCEL_ON_SHUTDOWN = 2;
-    /**
      * Default shutdown behavior.
      *
      * If you explicitly do not want your Task to be cancel(true)ed during
@@ -274,7 +263,7 @@ public abstract class Task {
      * An alternative to this is to create a Task that is run at shutdown time
      * using Worker.queueShutdownTask(Task).
      */
-    public static final int DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN = 3;
+    public static final int DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN = 2;
     private Object value = null; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants

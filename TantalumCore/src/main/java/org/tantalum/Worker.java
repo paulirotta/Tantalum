@@ -40,7 +40,7 @@ import org.tantalum.util.L;
 final class Worker extends Thread {
 
     private static final int RUNNING = 0;
-    private static final int WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
+    private static final int WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
     private static final int RUNNING_SHUTDOWN_TASKS = 2;
     /**
      * Serial priority is bumped above HIGH_PRIORITY when the serialQ backlog
@@ -252,7 +252,8 @@ final class Worker extends Thread {
      * Stop the specified task if it is currently running on any Worker
      *
      * @param task
-     * @return null, or the thread found running the Task and to which interrupt() was sent
+     * @return null, or the thread found running the Task and to which
+     * interrupt() was sent
      */
     static Thread interruptTask(final Task task) {
         if (task == null) {
@@ -316,6 +317,15 @@ final class Worker extends Thread {
         return null;
     }
 
+    private static Task[] copyOfQueueTasks(final Vector queue) {
+        synchronized (queue) {
+            final Task[] tasks = new Task[queue.size()];
+            queue.copyInto(tasks);
+
+            return tasks;
+        }
+    }
+
     /**
      * Call PlatformUtils.getInstance().shutdown() after all current queued and
      * shutdown Tasks are completed. Resources held by the system will be closed
@@ -332,20 +342,34 @@ final class Worker extends Thread {
              * Removed queued tasks which can be removed
              */
             synchronized (q) {
-                runState = WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS;
-                dequeueOrCancelOnShutdown(fastlaneQ);
-                Worker.dequeueOrCancelOnShutdown(workers[0].serialQ);
-                dequeueOrCancelOnShutdown(q);
-                dequeueOrCancelOnShutdown(idleQ);
+                runState = WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS;
                 q.notifyAll();
             }
+            dequeueOrCancelOnShutdown(fastlaneQ);
+            Worker.dequeueOrCancelOnShutdown(workers[0].serialQ);
+            dequeueOrCancelOnShutdown(q);
+            dequeueOrCancelOnShutdown(idleQ);
+
             /*
              * Interrupt currently running tasks which can be interrupted
              */
             for (int i = 0; i < workers.length; i++) {
                 final Task t = workers[i].currentTask;
-                if (t != null && t.getShutdownBehaviour() >= Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN) {
+                if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
                     ((Task) t).cancel(true, "Shutdown: cancel signal sent");
+                }
+            }
+            while (dedicatedThreads.size() > 0) {
+                DedicatedThread dedicatedThread = null;
+                
+                synchronized (dedicatedThreads) {
+                    if (dedicatedThreads.size() > 0) {
+                        dedicatedThread = (DedicatedThread) dedicatedThreads.firstElement();
+                        dedicatedThreads.removeElementAt(0);
+                    }
+                }
+                if (dedicatedThread != null && dedicatedThread.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
+                    dedicatedThread.interrupt();
                 }
             }
 
@@ -387,9 +411,10 @@ final class Worker extends Thread {
         if (queue == null) {
             return;
         }
-        for (int i = queue.size() - 1; i >= 0; i--) {
-            final Task t = (Task) queue.elementAt(i);
-            boolean interrupt = false;
+        final Task[] tasks = copyOfQueueTasks(queue);
+
+        for (int i = tasks.length - 1; i >= 0; i--) {
+            final Task t = tasks[i];
 
             switch (t.getShutdownBehaviour()) {
                 default:
@@ -397,15 +422,11 @@ final class Worker extends Thread {
                     break;
 
                 case Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN:
-                    interrupt = true;
-                    // continue to next case
-
-                case Task.DEQUEUE_OR_CANCEL_ON_SHUTDOWN:
-                    t.cancel(interrupt, "Shutdown signal received, cancel signal sent, interrupt=" + interrupt);
-                    // continue to next case
+                    t.cancel(true, "Shutdown signal received, interrupt signal sent");
+                // continue to next case
 
                 case Task.DEQUEUE_ON_SHUTDOWN:
-                    queue.removeElementAt(i);
+                    queue.removeElement(t);
                     break;
             }
         }
@@ -444,7 +465,7 @@ final class Worker extends Thread {
                         try {
                             currentTask = null;
                             switch (runState) {
-                                case WAIT_FOR_NORMAL_TASKS_TO_FINISH_BEFORE_STARTING_SHUTDOWN_TASKS:
+                                case WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS:
                                     if (allWorkersIdleExceptThisOne()) {
                                         runState = RUNNING_SHUTDOWN_TASKS;
                                         q.notifyAll();
