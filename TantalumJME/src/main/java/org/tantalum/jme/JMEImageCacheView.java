@@ -29,6 +29,7 @@ package org.tantalum.jme;
 
 import javax.microedition.lcdui.Image;
 import org.tantalum.Task;
+import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
 
 /**
@@ -37,7 +38,7 @@ import org.tantalum.util.L;
  *
  * @author tsaa
  */
-public class JMEImageCacheView extends org.tantalum.storage.ImageCacheView {
+public class JMEImageCacheView extends ImageCacheView {
 
     public Object convertToUseForm(final Object key, final byte[] bytes) {
         final Image img;

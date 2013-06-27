@@ -498,23 +498,6 @@ public abstract class Task {
     }
 
     /**
-     * Perform multiple operations as a single atomic update to the task queues.
-     *
-     * For example, you can pass in a Runnable which calls
-     * <code>StaticWebCache.getAsync()</code> several times to guarantee the
-     * order in which these asynchronous operations start after the Runnable
-     * completes.
-     *
-     * Note that until your Runnable completes, no new Task can be fork()ed and
-     * no new Task can start. Thus be careful to do any
-     *
-     * @param runnable
-     */
-    public static void runAtomic(final Runnable runnable) {
-        Worker.runAtomic(runnable);
-    }
-
-    /**
      * Wait for up to MAX_TIMEOUT milliseconds for the Task to complete.
      *
      * @return
