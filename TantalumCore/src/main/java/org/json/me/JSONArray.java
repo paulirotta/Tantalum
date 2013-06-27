@@ -775,8 +775,11 @@ public class JSONArray {
     public String toString() {
         try {
             return '[' + join(",") + ']';
-        } catch (Exception e) {
-            return null;
+        } catch (JSONException e) {
+            //#debug
+            L.e(this, "toString fault", null, e);
+            
+            return "[]";
         }
     }
 
@@ -835,6 +838,7 @@ public class JSONArray {
             }
         }
         sb.append(']');
+        
         return sb.toString();
     }
 
