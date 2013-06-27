@@ -1185,7 +1185,7 @@ public abstract class Task {
 
 //#mdebug
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuffer sb = new StringBuffer(400);
 
             sb.append("ChainSplitter concurrent fork() tasks: ");
             synchronized (tasksToFork) {
@@ -1196,6 +1196,8 @@ public abstract class Task {
                     sb.append(" ");
                 }
             }
+            sb.append("\n");
+            sb.append(super.toString());
 
             return sb.toString();
         }
