@@ -567,6 +567,9 @@ public final class StaticWebCache extends StaticCache {
 
         final Task validationTask = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(final Object in) {
+                if (!(in instanceof LOR)) {
+                    throw new IllegalArgumentException("StaticWebCache validationTask was passed bad argument: " + in);
+                }
                 Object out = null;
                 final LOR bytesReference = (LOR) in;
 

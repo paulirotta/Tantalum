@@ -41,6 +41,7 @@ import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 import org.tantalum.util.RollingAverage;
 import org.tantalum.util.WeakHashCache;
 import org.tantalum.util.WeakReferenceListenerHandler;
@@ -748,7 +749,7 @@ public class HttpGetter extends Task {
      * @return
      */
     public Object exec(final Object in) throws InterruptedException {
-        byte[] out = null;
+        LOR out = null;
         
         if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
             final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
@@ -823,11 +824,11 @@ public class HttpGetter extends Task {
             } else if (length > 0 && HttpGetter.netActivityListenerDelegate.isEmpty()) {
                 final byte[] bytes = new byte[length];
                 firstByteTime = readBytesFixedLength(url, inputStream, bytes);
-                out = bytes;
+                out = new LOR(bytes);
             } else {
                 bos = new ByteArrayOutputStream(OUTPUT_BUFFER_INITIAL_LENGTH);
                 firstByteTime = readBytesVariableLength(inputStream, bos, netActivityKey);
-                out = bos.toByteArray();
+                out = new LOR(bos.toByteArray());
             }
             if (firstByteTime != Long.MAX_VALUE) {
                 final long responseTime = firstByteTime - startTime;
@@ -839,7 +840,7 @@ public class HttpGetter extends Task {
             final float baud;
             int dataLength = 0;
             if (out != null) {
-                dataLength = out.length;
+                dataLength = out.getBytes().length;
             }
             if (dataLength > 0 && lastByteTime > firstByteTime) {
                 baud = (dataLength * 8 * 1000) / ((int) (lastByteTime - firstByteTime));
@@ -853,7 +854,7 @@ public class HttpGetter extends Task {
             if (out != null) {
                 addDownstreamDataCount(dataLength);
                 //#debug
-                L.i(this, "End read", "url=" + url + " bytes=" + ((byte[]) out).length);
+                L.i(this, "End read", "url=" + url + " bytes=" + out.getBytes().length);
             }
             synchronized (this) {
                 success = checkResponseCode(url, responseCode, responseHeaders);
@@ -907,14 +908,14 @@ public class HttpGetter extends Task {
                 } catch (InterruptedException ex) {
                     cancel(false, "Interrupted HttpGetter while sleeping between retries: " + this);
                 }
-                out = (byte[]) exec(url);
+                out = (LOR) exec(url);
             } else if (!success) {
                 //#debug
                 L.i("HTTP GET FAILED: about to HttpGetter.cancel() this and any chained Tasks", this.toString());
                 cancel(false, "HttpGetter failed response code and header check: " + this);
             }
             //#debug
-            L.i(this, "End", url + " status=" + getStatus() + " out=" + (out == null ? "null" : "(" + out.length + " bytes)"));
+            L.i(this, "End", url + " status=" + getStatus() + " out=" + (out == null ? "null" : "(" + out.getBytes().length + " bytes)"));
             HttpGetter.endNetworkActivity(netActivityKey); // Notify listeners, net is in use
         }
 
