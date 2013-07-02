@@ -37,6 +37,7 @@ import org.tantalum.net.xml.RSSModel;
 import org.tantalum.storage.CacheView;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 
 /**
  *
@@ -61,10 +62,11 @@ public final class ListForm extends Form implements CommandListener {
     public ListForm(FormRSSReader rssReader, String title) throws FlashDatabaseException {
         super(title);
         this.feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
-            public Object convertToUseForm(final Object key, final byte[] bytes) {
+            public Object convertToUseForm(final Object key, final LOR bytesReference) {
                 try {
                     rssModel.removeAllElements();
-                    rssModel.setXML(bytes);
+                    rssModel.setXML(bytesReference.getBytes());
+                    bytesReference.clear();
 
                     return rssModel;
                 } catch (Exception e) {

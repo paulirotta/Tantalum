@@ -31,6 +31,7 @@ import javax.microedition.lcdui.Image;
 import org.tantalum.Task;
 import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 
 /**
  * This is a helper class for creating an image class. It automatically converts
@@ -40,11 +41,15 @@ import org.tantalum.util.L;
  */
 public class JMEImageCacheView extends ImageCacheView {
 
-    public Object convertToUseForm(final Object key, final byte[] bytes) {
+    public Object convertToUseForm(final Object key, final LOR bytesReference) {
         final Image img;
         final int alg;
         final boolean aspect;
         final int w, h;
+
+        if (LOR.get(bytesReference) == null) {
+            throw new NullPointerException("Can not convert null bytes to an image");
+        }
 
         synchronized (this) {
             alg = this.algorithm;
@@ -53,18 +58,25 @@ public class JMEImageCacheView extends ImageCacheView {
             h = this.maxHeight;
         }
 
+        //#debug
+        int bytesLength = 0;
         try {
-            if (w == -1) {
-                //#debug
-                L.i("convert image", "length=" + bytes.length);
-                img = Image.createImage(bytes, 0, bytes.length);
-            } else {
-                synchronized (Task.LARGE_MEMORY_MUTEX) {
+            byte[] bytes = bytesReference.getBytes();
+            bytesReference.clear();
+            synchronized (Task.LARGE_MEMORY_MUTEX) {
+                if (w == -1) {
+                    //#mdebug
+                    bytesLength = bytes.length;
+                    L.i("convert bytes to image", "length=" + bytesLength);
+                    //#enddebug
+                    img = Image.createImage(bytes, 0, bytes.length);
+                } else {
                     final int tempW;
                     final int tempH;
                     final int[] argb;
                     {
                         final Image tempImage = Image.createImage(bytes, 0, bytes.length);
+                        bytes = null;
                         tempW = tempImage.getWidth();
                         tempH = tempImage.getHeight();
                         argb = new int[tempW * tempH];
@@ -75,7 +87,7 @@ public class JMEImageCacheView extends ImageCacheView {
             }
         } catch (IllegalArgumentException e) {
             //#debug
-            L.e("Exception converting bytes to image", "image byte length=" + bytes.length, e);
+            L.e("Exception converting bytes to image", "image byte length=" + bytesLength, e);
             throw e;
         }
 

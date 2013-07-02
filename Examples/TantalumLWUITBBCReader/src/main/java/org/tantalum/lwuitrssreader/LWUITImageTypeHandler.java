@@ -30,6 +30,7 @@ package org.tantalum.lwuitrssreader;
 import com.sun.lwuit.Image;
 import org.tantalum.storage.CacheView;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 
 /**
  *
@@ -37,11 +38,16 @@ import org.tantalum.util.L;
  */
 public final class LWUITImageTypeHandler implements CacheView {
 
-    public Object convertToUseForm(final Object key, final byte[] bytes) {
+    public Object convertToUseForm(final Object key, final LOR bytesReference) {
         try {
+            final byte[] bytes = bytesReference.getBytes();
+            
+            bytesReference.clear();
+            
             return Image.createImage(bytes, 0, bytes.length);
         } catch (Exception e) {
-            L.e("Error converting bytes to LWUIT image", bytes == null ? "" : "" + bytes.length, e);
+            //#debug
+            L.e("Error converting bytes to LWUIT image", "" + bytesReference, e);
         }
 
         return null;

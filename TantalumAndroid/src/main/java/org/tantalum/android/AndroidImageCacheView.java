@@ -31,6 +31,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 
 /**
  * This is a helper class for creating an image class. It automatically converts
@@ -41,8 +42,10 @@ import org.tantalum.util.L;
 public class AndroidImageCacheView extends ImageCacheView {
 
     @Override
-    public Object convertToUseForm(final Object key, final byte[] bytes) {
+    public Object convertToUseForm(final Object key, final LOR bytesReference) {
         try {
+            final byte[] bytes = bytesReference.getBytes();
+            bytesReference.clear();
             final Bitmap b = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             
             if (maxWidth == SCALING_DISABLED || maxHeight == SCALING_DISABLED) {

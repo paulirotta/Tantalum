@@ -38,6 +38,7 @@ import org.tantalum.util.Comparator;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.LRUVector;
+import org.tantalum.util.LOR;
 import org.tantalum.util.SortedVector;
 import org.tantalum.util.WeakHashCache;
 
@@ -293,12 +294,15 @@ public class StaticCache {
      * @throws DigestException
      * @throws UnsupportedEncodingException
      */
-    private Object convertWithDefaultCacheViewAndPutToHeapCache(final String key, final byte[] bytes) throws DigestException, UnsupportedEncodingException {
+    private Object convertWithDefaultCacheViewAndPutToHeapCache(final String key, final LOR bytesReference) throws DigestException, UnsupportedEncodingException {
         //#mdebug
-        L.i(this, "Start to convert", key + " bytes length=" + bytes.length);
+        {
+            final byte[] bytes = bytesReference.getBytes();
+            L.i(this, "Start to convert", key + " bytes length=" + bytes.length);
+        }
         final long startTime = System.currentTimeMillis();
         //#enddebug
-        final Object o = defaultCacheView.convertToUseForm(key, bytes);
+        final Object o = defaultCacheView.convertToUseForm(key, bytesReference);
 
         final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
         synchronized (ramCache) {
@@ -439,7 +443,7 @@ public class StaticCache {
         if (useForm == null) {
             try {
                 // Load from flash memory
-                final byte[] bytes;
+                byte[] bytes;
                 //#debug                
                 if (flashCacheEnabled) {
                     bytes = flashCache.get(key);
@@ -452,12 +456,14 @@ public class StaticCache {
                 //#debug
                 L.i(this, "Flash get result", "(" + cachePriorityChar + ") key=" + key + " byteLength=" + (bytes != null ? ("" + bytes.length) : "<null>"));
                 if (bytes != null) {
+                    final LOR bytesReference = new LOR(bytes);
+                    bytes = null;
                     if (defaultCacheView == cacheView) {
-                        useForm = convertWithDefaultCacheViewAndPutToHeapCache(key, bytes);
+                        useForm = convertWithDefaultCacheViewAndPutToHeapCache(key, bytesReference);
                         //#debug
                         L.i(this, "Flash get converted result", "(" + cachePriorityChar + ") " + key + " : " + useForm);
                     } else {
-                        useForm = cacheView.convertToUseForm(key, bytes);
+                        useForm = cacheView.convertToUseForm(key, bytesReference);
                         //#debug
                         L.i(this, "Flash get converted result, result not placed in heap cache, non-default cacheView=" + cacheView, "(" + cachePriorityChar + ") " + key + " : " + useForm);
                     }
@@ -500,21 +506,22 @@ public class StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public Object put(final String key, final byte[] bytes, CacheView cacheView, Task nextTask) throws FlashDatabaseException {
+    public Object put(final String key, final LOR bytesReference, CacheView cacheView, Task nextTask) throws FlashDatabaseException {
         if (key == null) {
             throw new NullPointerException("Attempt to put trivial key to cache");
         }
         if (key.length() == 0) {
             throw new IllegalArgumentException("Attempt to put trivial key to cache");
         }
-        if (bytes == null) {
-            throw new NullPointerException("Attempt to put trivial null key to cache");
+        if (LOR.get(bytesReference) == null) {
+            throw new NullPointerException("Attempt to put null bytes to cache");
         }
-        if (bytes.length == 0) {
+        if (bytesReference.getBytes().length == 0) {
             throw new IllegalArgumentException("Attempt to put trivial bytes to cache: key=" + key);
         }
 
         final Object useForm;
+        final LOR serialWriteBytesReference = new LOR(bytesReference.get());
 
         if (cacheView == null) {
             cacheView = defaultCacheView;
@@ -534,9 +541,9 @@ public class StaticCache {
              * until after you write.
              */
             //#debug
-            L.i(this, "putAsync", "key=" + key + " byteLength=" + bytes.length);
+            L.i(this, "putAsync", "key=" + key + " byteLength=" + bytesReference.getBytes().length);
             try {
-                useForm = convertWithDefaultCacheViewAndPutToHeapCache(key, bytes);
+                useForm = convertWithDefaultCacheViewAndPutToHeapCache(key, bytesReference);
             } catch (DigestException ex) {
                 //#debug
                 L.e("Can not putAync", key, ex);
@@ -559,7 +566,7 @@ public class StaticCache {
                 }.setClassName("DummyDuplicatePutAsyncResponse").fork();
             }
         } else {
-            useForm = cacheView.convertToUseForm(key, bytes);
+            useForm = cacheView.convertToUseForm(key, bytesReference);
         }
 
 //#mdebug        
@@ -570,12 +577,14 @@ public class StaticCache {
 
         new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
+                int byteLength = 0;
                 try {
-                    synchronousFlashPut(key, bytes);
+                    byteLength = serialWriteBytesReference.getBytes().length;
+                    synchronousFlashPut(key, serialWriteBytesReference);
                 } catch (FlashDatabaseException e) {
                     //#debug
                     L.e(this, "Can not synchronousFlashPut()", key, e);
-                    cancel(false, "Can not sync write to flash: " + key + " byte length=" + bytes.length, e);
+                    cancel(false, "Can not sync write to flash: " + key + " byte length=" + byteLength, e);
                 }
 
                 return useForm;
@@ -600,15 +609,17 @@ public class StaticCache {
      * @throws FlashFullException
      * @throws FlashDatabaseException
      */
-    private void synchronousFlashPut(final String key, final byte[] bytes) throws FlashFullException, FlashDatabaseException {
+    private void synchronousFlashPut(final String key, final LOR bytesReference) throws FlashFullException, FlashDatabaseException {
         if (key == null) {
             throw new NullPointerException("Null key put to cache \'" + cachePriorityChar + "\'");
         }
         if (key.length() == 0) {
             throw new IllegalArgumentException("Trivial (zero length) key put to cache \'" + cachePriorityChar + "\'");
         }
-        
+
         try {
+            final byte[] bytes = bytesReference.getBytes();
+            bytesReference.clear();
             try {
                 //#debug
                 L.i("RMS cache write start", key + " (" + bytes.length + " bytes)");

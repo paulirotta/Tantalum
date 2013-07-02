@@ -27,6 +27,8 @@
  */
 package org.tantalum.storage;
 
+import org.tantalum.util.LOR;
+
 /**
  * Each StaticCache has a handler which handles conversions from network and RMS
  * binary form into the form used in memory and the cache. For example, image
@@ -51,5 +53,5 @@ public interface CacheView {
      * <code>StaticCache</code> for persistence.
      * @return
      */
-    public Object convertToUseForm(Object key, byte[] bytes);
+    public Object convertToUseForm(Object key, LOR bytes);
 }

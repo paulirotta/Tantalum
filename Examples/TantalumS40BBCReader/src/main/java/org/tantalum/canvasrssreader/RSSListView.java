@@ -36,6 +36,7 @@ import org.tantalum.net.xml.RSSModel;
 import org.tantalum.storage.CacheView;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 import org.xml.sax.SAXException;
 
 /**
@@ -53,9 +54,10 @@ public abstract class RSSListView extends View {
         super(canvas);
 
         feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
-            public Object convertToUseForm(final Object key, byte[] bytes) {
+            public Object convertToUseForm(final Object key, final LOR bytesReference) {
                 try {
-                    rssModel.setXML(bytes);
+                    rssModel.setXML(bytesReference.getBytes());
+                    bytesReference.clear();
                     //#debug
                     L.i(this, "convertToUseForm", "" + rssModel);
 

@@ -32,6 +32,7 @@ import com.sun.lwuit.list.DefaultListModel;
 import org.tantalum.net.xml.RSSModel;
 import org.tantalum.storage.CacheView;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 import org.xml.sax.SAXException;
 
 /**
@@ -56,8 +57,11 @@ public class ListModel extends DefaultListModel implements DataChangedListener, 
         listForm.repaint();
     }
 
-    public Object convertToUseForm(final Object key, byte[] bytes) {
+    public Object convertToUseForm(final Object key, final LOR bytesReference) {
         try {
+            final byte[] bytes = bytesReference.getBytes();
+
+            bytesReference.clear();
             if (bytes.length > 0) {
                 rssModel.setXML(bytes);
             }

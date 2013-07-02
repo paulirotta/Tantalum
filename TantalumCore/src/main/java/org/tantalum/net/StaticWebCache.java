@@ -40,6 +40,7 @@ import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.StaticCache;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 import org.tantalum.util.RollingAverage;
 
 /**
@@ -576,7 +577,7 @@ public final class StaticWebCache extends StaticCache {
                     cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
                 } else {
                     try {
-                        out = put(url, (byte[]) in, cacheView, null);
+                        out = put(url, (LOR) in, cacheView, null);
                     } catch (FlashDatabaseException ex) {
                         //#debug
                         L.e(this, "Can not put web service response to heap cache", url, ex);

@@ -19,6 +19,7 @@ import org.tantalum.storage.CacheView;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 
 /**
  * Class for accessing cached data like thumbnails, images and feeds. The class
@@ -106,12 +107,13 @@ public class PicasaStorage {
      */
     private static class PicasaJSONDataTypeHandler implements CacheView {
 
-        public Object convertToUseForm(final Object key, byte[] bytes) {
+        public Object convertToUseForm(final Object key, final LOR bytesReference) {
             JSONObject o;
             final Vector vector = new Vector();
 
             try {
-                o = new JSONObject(new String(bytes));
+                o = new JSONObject(new String(bytesReference.getBytes()));
+                bytesReference.clear();
             } catch (JSONException ex) {
                 //#debug
                 L.e("bytes are not a JSON object", featURL, ex);
