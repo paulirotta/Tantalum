@@ -285,7 +285,8 @@ public final class JSONObject {
     public JSONObject accumulate(final String key, final Object value)
             throws JSONException {
         testValidity(value);
-        Object o = opt(key);
+        final Object o = opt(key);
+        
         if (o == null) {
             put(key, value);
         } else if (o instanceof JSONArray) {
@@ -293,6 +294,7 @@ public final class JSONObject {
         } else {
             put(key, new JSONArray().put(o).put(value));
         }
+        
         return this;
     }
 
@@ -345,6 +347,7 @@ public final class JSONObject {
                 s = s.substring(0, s.length() - 1);
             }
         }
+        
         return s;
     }
 
@@ -430,7 +433,8 @@ public final class JSONObject {
      * converted to an integer.
      */
     public int getInt(final String key) throws JSONException {
-        Object o = get(key);
+        final Object o = get(key);
+        
         if (o instanceof Byte) {
             return ((Byte) o).byteValue();
         } else if (o instanceof Short) {
@@ -446,6 +450,7 @@ public final class JSONObject {
         } else if (o instanceof String) {
             return (int) getDouble(key);
         }
+        
         throw new JSONException("JSONObject[" + quote(key)
                 + "] is not a number.");
     }
@@ -459,10 +464,12 @@ public final class JSONObject {
      * JSONArray.
      */
     public JSONArray getJSONArray(final String key) throws JSONException {
-        Object o = get(key);
+        final Object o = get(key);
+        
         if (o instanceof JSONArray) {
             return (JSONArray) o;
         }
+        
         throw new JSONException("JSONObject[" + quote(key)
                 + "] is not a JSONArray.");
     }
@@ -476,10 +483,12 @@ public final class JSONObject {
      * JSONObject.
      */
     public JSONObject getJSONObject(final String key) throws JSONException {
-        Object o = get(key);
+        final Object o = get(key);
+        
         if (o instanceof JSONObject) {
             return (JSONObject) o;
         }
+        
         throw new JSONException("JSONObject[" + quote(key)
                 + "] is not a JSONObject.");
     }
@@ -494,7 +503,8 @@ public final class JSONObject {
      * converted to a long.
      */
     public long getLong(final String key) throws JSONException {
-        Object o = get(key);
+        final Object o = get(key);
+        
         if (o instanceof Byte) {
             return ((Byte) o).byteValue();
         } else if (o instanceof Short) {
@@ -510,6 +520,7 @@ public final class JSONObject {
         } else if (o instanceof String) {
             return (long) getDouble(key);
         }
+        
         throw new JSONException("JSONObject[" + quote(key) + "] is not a number.");
     }
 
@@ -574,9 +585,11 @@ public final class JSONObject {
     public JSONArray names() {
         final JSONArray ja = new JSONArray();
         final Enumeration keys = keys();
+        
         while (keys.hasMoreElements()) {
             ja.put(keys.nextElement());
         }
+        
         return ja.length() == 0 ? null : ja;
     }
 
@@ -595,6 +608,7 @@ public final class JSONObject {
                 s = s.substring(0, s.length() - 1);
             }
         }
+        
         return s;
     }
 
@@ -605,12 +619,12 @@ public final class JSONObject {
      * @return A String.
      * @throws JSONException If n is a non-finite number.
      */
-    static public String numberToString(final Object n)
-            throws JSONException {
+    static public String numberToString(final Object n) throws JSONException {
         if (n == null) {
             throw new JSONException("Null pointer");
         }
         testValidity(n);
+        
         return trimNumber(n.toString());
     }
 
@@ -663,6 +677,7 @@ public final class JSONObject {
      */
     public JSONObject put(final String key, final Vector value) throws JSONException {
         put(key, new JSONArray(value));
+        
         return this;
     }
 
@@ -734,6 +749,7 @@ public final class JSONObject {
      */
     public JSONArray optJSONArray(final String key) {
         Object o = opt(key);
+        
         return o instanceof JSONArray ? (JSONArray) o : null;
     }
 
@@ -746,6 +762,7 @@ public final class JSONObject {
      */
     public JSONObject optJSONObject(final String key) {
         Object o = opt(key);
+        
         return o instanceof JSONObject ? (JSONObject) o : null;
     }
 
@@ -800,6 +817,7 @@ public final class JSONObject {
      */
     public String optString(final String key, final String defaultValue) {
         Object o = opt(key);
+        
         return o != null ? o.toString() : defaultValue;
     }
 
@@ -827,6 +845,7 @@ public final class JSONObject {
      */
     public JSONObject put(final String key, final double value) throws JSONException {
         put(key, new Double(value));
+        
         return this;
     }
 
@@ -840,6 +859,7 @@ public final class JSONObject {
      */
     public JSONObject put(final String key, final int value) throws JSONException {
         put(key, new Integer(value));
+        
         return this;
     }
 
@@ -853,6 +873,7 @@ public final class JSONObject {
      */
     public JSONObject put(final String key, final long value) throws JSONException {
         put(key, new Long(value));
+        
         return this;
     }
 
@@ -892,6 +913,7 @@ public final class JSONObject {
         } else {
             remove(key);
         }
+        
         return this;
     }
 
@@ -910,6 +932,7 @@ public final class JSONObject {
         if (key != null && value != null) {
             put(key, value);
         }
+        
         return this;
     }
 
@@ -999,11 +1022,13 @@ public final class JSONObject {
         if (o != null && !(o instanceof String)) {
             if (o instanceof Double) {
                 final Double d = (Double) o;
+                
                 if (d.isInfinite() || d.isNaN()) {
                     throw new JSONException("JSON does not allow non-finite numbers");
                 }
             } else if (o instanceof Float) {
                 final Float f = (Float) o;
+                
                 if (f.isInfinite() || f.isNaN()) {
                     throw new JSONException("JSON does not allow non-finite numbers.");
                 }
@@ -1160,6 +1185,7 @@ public final class JSONObject {
 
         if (value instanceof JSONString) {
             final String jsonString;
+            
             try {
                 jsonString = ((JSONString) value).toJSONString();
             } catch (Exception e) {
@@ -1167,17 +1193,21 @@ public final class JSONObject {
                 L.e("JSONObject.valueToString()", "Can not convert", e);
                 throw new JSONException(e);
             }
+            
             return (String) jsonString;
         }
+        
         if (value instanceof Float || value instanceof Double
                 || value instanceof Byte || value instanceof Short
                 || value instanceof Integer || value instanceof Long) {
             return numberToString(value);
         }
+        
         if (value instanceof Boolean || value instanceof JSONObject
                 || value instanceof JSONArray) {
             return value.toString();
         }
+        
         return quote(value.toString());
     }
 
@@ -1199,23 +1229,29 @@ public final class JSONObject {
         if (value == null) {
             return "null";
         }
+        
         if (value instanceof JSONString) {
             final String s = ((JSONString) value).toJSONString();
+            
             if (s != null) {
                 return (String) s;
             }
         }
+        
         if (value instanceof Float || value instanceof Double
                 || value instanceof Byte || value instanceof Short
                 || value instanceof Integer || value instanceof Long) {
             return numberToString(value);
         }
+        
         if (value instanceof Boolean) {
             return value.toString();
         }
+        
         if (value instanceof JSONObject) {
             return ((JSONObject) value).toString(indentFactor, indent);
         }
+        
         if (value instanceof JSONArray) {
             return ((JSONArray) value).toString(indentFactor, indent);
         }

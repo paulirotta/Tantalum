@@ -98,7 +98,7 @@ public class JSONModel {
      * @return
      * @throws JSONException
      */
-    public synchronized String getString(String key) throws JSONException {
+    public synchronized String getString(final String key) throws JSONException {
         return jsonObject.getString(key);
     }
 
@@ -109,7 +109,7 @@ public class JSONModel {
      * @return
      * @throws JSONException
      */
-    public synchronized double getDouble(String key) throws JSONException {
+    public synchronized double getDouble(final String key) throws JSONException {
         return jsonObject.getDouble(key);
     }
 
@@ -120,7 +120,7 @@ public class JSONModel {
      * @return
      * @throws JSONException
      */
-    public synchronized int getInt(String key) throws JSONException {
+    public synchronized int getInt(final String key) throws JSONException {
         return jsonObject.getInt(key);
     }
 
@@ -131,7 +131,7 @@ public class JSONModel {
      * @return
      * @throws JSONException
      */
-    public synchronized long getLong(String key) throws JSONException {
+    public synchronized long getLong(final String key) throws JSONException {
         return jsonObject.getLong(key);
     }
     
@@ -145,6 +145,7 @@ public class JSONModel {
     */
     public synchronized JSONObject take() {
     	final JSONObject ret = jsonObject;
+        
     	jsonObject = null;
         
     	return ret;    	

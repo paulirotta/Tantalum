@@ -1,5 +1,7 @@
 package org.json.me;
 
+import org.tantalum.util.L;
+
 /*
 Copyright (c) 2002 JSON.org
 
@@ -109,10 +111,13 @@ public final class JSONTokener {
      */
     public char next() {
         if (more()) {
-            char c = this.mySource.charAt(this.myIndex);
+            final char c = this.mySource.charAt(this.myIndex);
+            
             this.myIndex += 1;
+            
             return c;
         }
+        
         return 0;
     }
 
@@ -212,7 +217,8 @@ public final class JSONTokener {
      */
     public String nextString(final char quote) throws JSONException {
         char c;
-        StringBuffer sb = new StringBuffer();
+        final StringBuffer sb = new StringBuffer();
+        
         for (;;) {
             c = next();
             switch (c) {
@@ -287,7 +293,8 @@ public final class JSONTokener {
      */
     public String nextTo(final String delimiters) {
         char c;
-        StringBuffer sb = new StringBuffer();
+        final StringBuffer sb = new StringBuffer();
+        
         for (;;) {
             c = next();
             if (delimiters.indexOf(c) >= 0 || c == 0 ||
@@ -334,7 +341,7 @@ public final class JSONTokener {
          * formatting character.
          */
 
-        StringBuffer sb = new StringBuffer();
+        final StringBuffer sb = new StringBuffer();
         char b = c;
         while (c >= ' ' && ",:]}/\\\"[{;=#".indexOf(c) < 0) {
             sb.append(c);
@@ -376,13 +383,15 @@ public final class JSONTokener {
                         return new Integer(Integer.parseInt(s.substring(2),
                             16));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        //#debug
+                        L.e(this, "nextValue", null, e);
                     }
                 } else {
                     try {
                         return new Integer(Integer.parseInt(s, 8));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        //#debug
+                        L.e(this, "nextValue", null, e);
                     }
                 }
             }
@@ -400,6 +409,7 @@ public final class JSONTokener {
                 }
             }
         }
+        
         return s;
     }
 
@@ -418,10 +428,12 @@ public final class JSONTokener {
             c = next();
             if (c == 0) {
                 this.myIndex = index;
+                
                 return c;
             }
         } while (c != to);
         back();
+        
         return c;
     }
 
@@ -451,7 +463,7 @@ public final class JSONTokener {
         return new JSONException(message + toString());
     }
 
-
+//#mdebug    
     /**
      * Make a printable string of this JSONTokener.
      *
@@ -460,4 +472,5 @@ public final class JSONTokener {
     public String toString() {
         return " at character " + this.myIndex + " of " + this.mySource;
     }
+//#enddebug    
 }
