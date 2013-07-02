@@ -553,7 +553,7 @@ public final class StaticWebCache extends StaticCache {
      * @param skipHeap
      * @return
      */
-    private Task getHttpGetter(int priority, final String url, byte[] postMessage, Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory, final CacheView cacheView) {
+    private Task getHttpGetter(final int priority, final String url, final byte[] postMessage, final Task nextTask, final StaticWebCache.HttpTaskFactory taskFactory, final CacheView cacheView) {
         final HttpGetter httpGetter = taskFactory.getHttpTask(priority, url, postMessage);
 
         if (httpGetter == null) {
