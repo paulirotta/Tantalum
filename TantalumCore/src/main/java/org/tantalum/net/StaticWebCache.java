@@ -568,16 +568,17 @@ public final class StaticWebCache extends StaticCache {
         final Task validationTask = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(final Object in) {
                 Object out = null;
+                final LOR bytesReference = (LOR) in;
 
                 //#debug
                 L.i(this, "Validation start", "in=" + in + " - " + httpGetter.toString());
-                if (!taskFactory.validateHttpResponse(httpGetter, (byte[]) in)) {
+                if (!taskFactory.validateHttpResponse(httpGetter, bytesReference.getBytes())) {
                     //#debug
                     L.i(this, "Rejected server response", httpGetter.toString());
                     cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
                 } else {
                     try {
-                        out = put(url, (LOR) in, cacheView, null);
+                        out = put(url, bytesReference, cacheView, null);
                     } catch (FlashDatabaseException ex) {
                         //#debug
                         L.e(this, "Can not put web service response to heap cache", url, ex);
