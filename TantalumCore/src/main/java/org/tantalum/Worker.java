@@ -254,17 +254,17 @@ final class Worker extends Thread {
             throw new NullPointerException("interruptTask(null) not allowed");
         }
 
-//        final Thread currentThread = Thread.currentThread();
+        final Thread currentThread = Thread.currentThread();
 
         synchronized (q) {
             for (int i = 0; i < workers.length; i++) {
-//                if (currentThread == workers[i]) {
-//                    /**
-//                     * Never send interrupt to own thread. The task state will
-//                     * change to canceled, which is enough.
-//                     */
-//                    continue;
-//                }
+                if (currentThread == workers[i]) {
+                    /**
+                     * Never send interrupt to own thread. The task state will
+                     * change to canceled, which is enough.
+                     */
+                    continue;
+                }
 
                 if (task.equals(workers[i].currentTask)) {
                     //#debug
@@ -285,13 +285,13 @@ final class Worker extends Thread {
             for (int i = 0; i < dedicatedThreads.size(); i++) {
                 final DedicatedThread thread = (DedicatedThread) dedicatedThreads.elementAt(i);
 
-//                if (currentThread == thread) {
-//                    /**
-//                     * Never send interrupt to own thread, even if there is a
-//                     * match. The task state will change.
-//                     */
-//                    return null;
-//                }
+                if (currentThread == thread) {
+                    /**
+                     * Never send interrupt to own thread, even if there is a
+                     * match. The task state will change.
+                     */
+                    continue;
+                }
 
                 if (task.equals(thread.task)) {
                     //#debug
@@ -415,15 +415,15 @@ final class Worker extends Thread {
         }
     }
 
-    static boolean dequeue(final Task task, final Vector queue, final boolean cancelIfRunning) {
+    static boolean dequeue(final Task task, final Vector queue, final boolean interruptIfRunning) {
         switch (task.getShutdownBehaviour()) {
             default:
             case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
                 return false;
 
             case Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN:
-                if (cancelIfRunning) {
-                    task.cancel(cancelIfRunning, "Shutdown signal received, interrupt signal sent");
+                if (interruptIfRunning) {
+                    task.cancel(interruptIfRunning, "Shutdown signal received, interrupt signal sent");
                 }
             // continue to next case
 

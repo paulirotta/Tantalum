@@ -951,12 +951,12 @@ public abstract class Task {
     /**
      * Cancel execution of this Task
      *
-     * @param mayInterruptIfRunning
+     * @param interruptIfRunning
      * @param reason
      * @return
      */
-    public final boolean cancel(final boolean mayInterruptIfRunning, final String reason) {
-        return doCancel(mayInterruptIfRunning, reason, null, null);
+    public final boolean cancel(final boolean interruptIfRunning, final String reason) {
+        return doCancel(interruptIfRunning, reason, null, null);
     }
 
     /**
@@ -979,7 +979,7 @@ public abstract class Task {
         return doCancel(mayInterruptIfRunning, reason, t, null);
     }
 
-    boolean doCancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t, Thread thread) {
+    boolean doCancel(final boolean interruptIfRunning, final String reason, final Throwable t, Thread thread) {
         if (reason == null) {
             throw new NullPointerException("For clean debug, you must provide a reason for cancel(), null will not do");
         }
@@ -1004,8 +1004,8 @@ public abstract class Task {
         }
 
         //#debug
-        L.i(this, "Begin cancel \"" + reason + "\" mayInterruptIfRunning=" + mayInterruptIfRunning, s + " - " + this);
-        if (mayInterruptIfRunning) {
+        L.i(this, "Begin cancel \"" + reason + "\" mayInterruptIfRunning=" + interruptIfRunning, s + " - " + this);
+        if (interruptIfRunning) {
             if (thread != null) {
                 thread.interrupt();
             } else {
