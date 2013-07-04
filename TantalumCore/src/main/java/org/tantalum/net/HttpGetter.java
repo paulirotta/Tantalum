@@ -67,7 +67,7 @@ import org.tantalum.util.WeakReferenceListenerHandler;
  * @author pahought
  */
 public class HttpGetter extends Task {
-
+    
     private static final int READ_BUFFER_LENGTH = 8192; //8k read buffer if no Content-Length header from server
     private static final int OUTPUT_BUFFER_INITIAL_LENGTH = 8192; //8k read buffer if no Content-Length header from server
     /**
@@ -523,6 +523,14 @@ public class HttpGetter extends Task {
      * Data to be sent to the server as part of an HTTP POST operation
      */
     protected byte[] postMessage = null;
+    /**
+     * How many ms after a connection is not used do we wait before actually
+     * closing the connection. If we delay this, and in that delay interval
+     * another connection attempt to that same server is made, the chances may
+     * increase that the previously-opened connection is reused for the next
+     * connection also.
+     */
+    private static volatile long httpCloseDelay = 0;
     // Always access in a synchronized(HttpGetter.this) block
     private final Hashtable responseHeaders = new Hashtable();
     private Vector requestPropertyKeys = new Vector();
@@ -544,7 +552,7 @@ public class HttpGetter extends Task {
     // Always access in a synchronized(HttpGetter.this) block
     private int responseCode = HTTP_OPERATION_PENDING;
     private volatile long startTime = 0;
-
+    
     static {
         HttpGetter.averageBaud.setLowerBound(HttpGetter.THRESHOLD_BAUD / 10);
         HttpGetter.averageResponseDelayMillis.setUpperBound(5000.0f);
@@ -556,7 +564,7 @@ public class HttpGetter extends Task {
      */
     public HttpGetter() {
         this(Task.NORMAL_PRIORITY);
-
+        
         setShutdownBehaviour(Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN);
     }
 
@@ -569,7 +577,7 @@ public class HttpGetter extends Task {
      */
     public HttpGetter(final int priority) {
         super(priority);
-
+        
         setShutdownBehaviour(Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN);
     }
 
@@ -581,7 +589,7 @@ public class HttpGetter extends Task {
      */
     public HttpGetter(final int priority, final String url) {
         this(priority);
-
+        
         if (url == null) {
             throw new NullPointerException("Attempt to create an HttpGetter with null URL. Perhaps you want to use the alternate new HttpGetter() constructor and let the previous Task in a chain set the URL.");
         }
@@ -626,6 +634,30 @@ public class HttpGetter extends Task {
         if (staggerStartMode) {
             nextHeaderStartTime = t + (((int) HttpGetter.averageResponseDelayMillis.value()) * 7) / 8;
         }
+    }
+
+    /**
+     * Adjust how many milliseconds after a connection is not used do we wait
+     * before actually closing the connection. The default value is zero (close
+     * immediately).
+     *
+     * If we delay this, and in that delay interval another connection attempt
+     * to that same server is made, the chances may increase that the
+     * previously-opened connection is reused for the next connection also.
+     *
+     * @param delay
+     */
+    public static void setHttpConnectionCloseDelay(final long delay) {
+        HttpGetter.httpCloseDelay = delay;
+    }
+
+    /**
+     * The current http connection close delay value
+     *
+     * @return
+     */
+    public static long getHttpConnectionCloseDelay() {
+        return HttpGetter.httpCloseDelay;
     }
 
     /**
@@ -700,7 +732,7 @@ public class HttpGetter extends Task {
      */
     public Task setRetriesRemaining(final int retries) {
         this.retriesRemaining = retries;
-
+        
         return this;
     }
 
@@ -733,9 +765,32 @@ public class HttpGetter extends Task {
         if (responseCode != HTTP_OPERATION_PENDING) {
             throw new IllegalStateException("Can not set request property to HTTP operation already executed  (" + key + ": " + value + ")");
         }
-
+        
         this.requestPropertyKeys.addElement(key);
         this.requestPropertyValues.addElement(value);
+    }
+    
+    private static void closeHttpConnectionAfterDelay(final PlatformUtils.HttpConn httpConn, final String url) {
+        final long delay = HttpGetter.httpCloseDelay;
+        
+        if (delay == 0) {
+            closeHttpConnection(httpConn, url);
+        } else {
+            Task.getTimer().schedule(new TimerTask() {
+                public void run() {
+                    closeHttpConnection(httpConn, url);
+                }
+            }, delay);
+        }
+    }
+    
+    private static void closeHttpConnection(final PlatformUtils.HttpConn httpConn, final String url) {
+        try {
+            httpConn.close();
+        } catch (IOException e) {
+            //#debug
+            L.e("Closing Http InputStream error", url, e);
+        }
     }
 
     /**
@@ -756,9 +811,9 @@ public class HttpGetter extends Task {
             cancel(false, s);
             return out;
         }
-
+        
         staggerHeaderStartTime();
-
+        
         startTime = System.currentTimeMillis();
         final String url = keyIncludingPostDataHashtoUrl((String) in);
         final Integer netActivityKey = new Integer(url.hashCode());
@@ -770,16 +825,16 @@ public class HttpGetter extends Task {
         PlatformUtils.HttpConn httpConn = null;
         boolean tryAgain = false;
         boolean success = false;
-
+        
         addUpstreamDataCount(url.length());
-
+        
         try {
             final OutputStream outputStream;
             if (this instanceof HttpPoster) {
                 if (postMessage == null && streamWriter == null) {
                     throw new NullPointerException("null HTTP POST- did you forget to call httpPoster.setMessage(byte[]) ? : " + url);
                 }
-
+                
                 httpConn = PlatformUtils.getInstance().getHttpPostConn(url, requestPropertyKeys, requestPropertyValues, postMessage);
                 outputStream = httpConn.getOutputStream();
                 final StreamWriter writer = this.streamWriter;
@@ -803,7 +858,7 @@ public class HttpGetter extends Task {
                 addUpstreamDataCount(((String) requestPropertyKeys.elementAt(i)).length());
                 addUpstreamDataCount(((String) requestPropertyValues.elementAt(i)).length());
             }
-
+            
             final int length = (int) httpConn.getLength();
             final int downstreamDataHeaderLength;
             synchronized (this) {
@@ -814,7 +869,7 @@ public class HttpGetter extends Task {
 
             // Response headers length estimation
             addDownstreamDataCount(downstreamDataHeaderLength);
-
+            
             long firstByteTime = Long.MAX_VALUE;
             if (length == 0) {
                 //#debug
@@ -850,7 +905,7 @@ public class HttpGetter extends Task {
             HttpGetter.averageBaud.update(baud);
             //#debug
             L.i(this, "Average HTTP body read baud", HttpGetter.averageBaud.value() + " current=" + baud);
-
+            
             if (out != null) {
                 addDownstreamDataCount(dataLength);
                 //#debug
@@ -882,14 +937,8 @@ public class HttpGetter extends Task {
             }
         } finally {
             if (httpConn != null) {
-                try {
-                    httpConn.close();
-                } catch (Exception e) {
-                    //#debug
-                    L.e(this, "Closing Http InputStream error", url, e);
-                } finally {
-                    httpConn = null;
-                }
+                closeHttpConnectionAfterDelay(httpConn, url);
+                httpConn = null;
             }
             try {
                 if (bos != null) {
@@ -901,7 +950,7 @@ public class HttpGetter extends Task {
             } finally {
                 bos = null;
             }
-
+            
             if (tryAgain) {
                 try {
                     Thread.sleep(HTTP_RETRY_DELAY);
@@ -918,11 +967,11 @@ public class HttpGetter extends Task {
             L.i(this, "End", url + " status=" + getStatus() + " out=" + (out == null ? "null" : "(" + out.getBytes().length + " bytes)"));
             HttpGetter.endNetworkActivity(netActivityKey); // Notify listeners, net is in use
         }
-
+        
         if (!success) {
             return null;
         }
-
+        
         return out;
     }
 
@@ -938,10 +987,10 @@ public class HttpGetter extends Task {
      */
     private long readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
         long firstByteReceivedTime = Long.MAX_VALUE;
-
+        
         if (bytes.length != 0) {
             int totalBytesRead = 0;
-
+            
             final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
             if (b >= 0) {
                 bytes[totalBytesRead++] = (byte) b;
@@ -961,10 +1010,10 @@ public class HttpGetter extends Task {
                 }
             }
         }
-
+        
         return firstByteReceivedTime;
     }
-
+    
     private void prematureEOF(final String url, final int bytesRead, final int length) throws IOException {
         //#debug
         L.i(this, "EOF before Content-Length sent by server", url + ", Content-Length=" + length + " bytesRead=" + bytesRead);
@@ -982,7 +1031,7 @@ public class HttpGetter extends Task {
      */
     private long readBytesVariableLength(final InputStream inputStream, final OutputStream bos, final Integer netActivityKey) throws IOException {
         final byte[] readBuffer = new byte[READ_BUFFER_LENGTH];
-
+        
         final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
         if (b < 0) {
             return Long.MAX_VALUE;
@@ -998,7 +1047,7 @@ public class HttpGetter extends Task {
             }
             bos.write(readBuffer, 0, bytesRead);
         }
-
+        
         return firstByteReceivedTime;
     }
 
@@ -1039,11 +1088,11 @@ public class HttpGetter extends Task {
      */
     private String keyIncludingPostDataHashtoUrl(final String key) {
         final int i = key.indexOf('\n');
-
+        
         if (i < 0) {
             return key;
         }
-
+        
         return key.substring(0, i);
     }
 
@@ -1060,7 +1109,7 @@ public class HttpGetter extends Task {
         }
         final long digest = CryptoUtils.getInstance().toDigest(this.postMessage);
         final String digestAsHex = Long.toString(digest, 16);
-
+        
         return url + '\n' + digestAsHex;
     }
 
@@ -1119,7 +1168,7 @@ public class HttpGetter extends Task {
     //#mdebug
     public synchronized String toString() {
         final StringBuffer sb = new StringBuffer();
-
+        
         sb.append(super.toString());
         sb.append("   retriesRemaining=");
         sb.append(retriesRemaining);
@@ -1129,7 +1178,7 @@ public class HttpGetter extends Task {
         } else {
             sb.append(postMessage.length);
         }
-
+        
         if (requestPropertyKeys.isEmpty()) {
             sb.append(L.CRLF + "(default HTTP request, no customer header params)");
         } else {
@@ -1143,18 +1192,18 @@ public class HttpGetter extends Task {
                 sb.append(value);
             }
         }
-
+        
         if (responseCode == HTTP_OPERATION_PENDING) {
             sb.append(L.CRLF + "(http operation pending, no server response yet)");
         } else {
             sb.append(L.CRLF + "serverHTTPResponseCode=");
             sb.append(responseCode);
-
+            
             sb.append(L.CRLF + "HTTP RESPONSE HEADERS" + L.CRLF);
             sb.append(PlatformUtils.responseHeadersToString(responseHeaders));
         }
         sb.append(L.CRLF);
-
+        
         return sb.toString();
     }
     //#enddebug
@@ -1188,31 +1237,31 @@ public class HttpGetter extends Task {
         public void run() {
             // Detect current state. If changed, notify listeners
             final int newNetActivityState = getCurrentNetActivityState();
-
+            
             if (netActivityState != newNetActivityState) {
                 final Object[] listeners = netActivityListenerDelegate.getAllListeners();
-
+                
                 for (int i = 0; i < listeners.length; i++) {
                     ((NetActivityListener) listeners[i]).netActivityStateChanged(netActivityState, newNetActivityState);
                 }
-
+                
                 netActivityState = newNetActivityState;
             }
         }
     };
-
+    
     private static int getCurrentNetActivityState() {
         networkActivityActorsHash.purgeExpiredWeakReferences();
         final long t;
-
+        
         if (networkActivityActorsHash.size() == 0 || (t = System.currentTimeMillis()) >= nextNetInactiveTimeout) {
             return NetActivityListener.INACTIVE;
         }
-
+        
         if (t >= nextNetStallTimeout) {
             return NetActivityListener.STALLED;
         }
-
+        
         return NetActivityListener.ACTIVE;
     }
 
@@ -1228,7 +1277,7 @@ public class HttpGetter extends Task {
                     netActivityStallTimerTask = null;
                     final long t = System.currentTimeMillis();
                     final long t2 = nextNetStallTimeout;
-
+                    
                     if (t >= t2) {
                         // Update possible state change to stalled
                         PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
@@ -1255,7 +1304,7 @@ public class HttpGetter extends Task {
                     netActivityInactiveTimerTask = null;
                     final long t = System.currentTimeMillis();
                     final long t2 = nextNetInactiveTimeout;
-
+                    
                     if (t >= t2) {
                         // Update possible state change to inactive
                         PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
@@ -1305,7 +1354,7 @@ public class HttpGetter extends Task {
         conditionalStartStallTimer(netActivityListenerStallTimeout);
         nextNetInactiveTimeout = t + netActivityListenerInactiveTimeout;
         conditionalStartInactiveTimer(netActivityListenerInactiveTimeout);
-
+        
         if (netActivityState != NetActivityListener.ACTIVE) {
             // Update possible state change to inactive
             PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
@@ -1325,7 +1374,7 @@ public class HttpGetter extends Task {
      */
     public static void endNetworkActivity(final Integer key) {
         networkActivityActorsHash.remove(key);
-
+        
         if (networkActivityActorsHash.size() == 0) {
             // Update possible state change to inactive
             PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
