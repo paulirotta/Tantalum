@@ -29,7 +29,6 @@ package org.tantalum.net.json;
 
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
-import org.tantalum.util.L;
 
 /**
  * A data model (as in MVC) that keeps the data in JSON format

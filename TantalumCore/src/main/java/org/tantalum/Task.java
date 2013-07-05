@@ -316,7 +316,7 @@ public abstract class Task {
      * @param priority
      */
     public Task(final int priority) {
-        if ((priority < Task.SHUTDOWN) || priority > Task.DEDICATED_THREAD_PRIORITY) {
+        if (priority < Task.SHUTDOWN || priority > Task.DEDICATED_THREAD_PRIORITY) {
             throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
         }
         forkPriority = priority;

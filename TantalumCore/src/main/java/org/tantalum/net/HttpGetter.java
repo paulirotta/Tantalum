@@ -35,13 +35,10 @@ import java.util.Vector;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
-import java.util.Enumeration;
 import java.util.TimerTask;
-import org.tantalum.CancellationException;
 
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.TimeoutException;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.LOR;
@@ -526,15 +523,6 @@ public class HttpGetter extends Task {
      * Data to be sent to the server as part of an HTTP POST operation
      */
     protected byte[] postMessage = null;
-    /**
-     * How many ms after a connection is not used do we wait before actually
-     * closing the connection. If we delay this, and in that delay interval
-     * another connection attempt to that same server is made, the chances may
-     * increase that the previously-opened connection is reused for the next
-     * connection also.
-     */
-    private static volatile long httpCloseDelay = 0;
-    private static final Vector delayedCloseHttpConnectionTimerTasks = new Vector();
     // Always access in a synchronized(HttpGetter.this) block
     private final Hashtable responseHeaders = new Hashtable();
     private Vector requestPropertyKeys = new Vector();
@@ -638,44 +626,6 @@ public class HttpGetter extends Task {
         if (staggerStartMode) {
             nextHeaderStartTime = t + (((int) HttpGetter.averageResponseDelayMillis.value()) * 7) / 8;
         }
-    }
-
-    /**
-     * Adjust how many milliseconds after a connection is not used do we wait
-     * before actually closing the connection. The default value is zero (close
-     * immediately).
-     *
-     * If we delay this, and in that delay interval another connection attempt
-     * to that same server is made, the chances may increase that the
-     * previously-opened connection is reused for the next connection also.
-     *
-     * @param delay
-     */
-    public static void setHttpConnectionCloseDelay(final long delay) {
-        HttpGetter.httpCloseDelay = delay;
-
-        new Task(Task.SHUTDOWN) {
-            protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
-                synchronized (delayedCloseHttpConnectionTimerTasks) {
-                    final Enumeration enu = delayedCloseHttpConnectionTimerTasks.elements();
-
-                    while (enu.hasMoreElements()) {
-                        ((TimerTask) enu.nextElement()).run();
-                    }
-
-                    return null;
-                }
-            }
-        }.setClassName("CloseDelayedCloseHttpConnectionsOnShutdown").fork();
-    }
-
-    /**
-     * The current http connection close delay value
-     *
-     * @return
-     */
-    public static long getHttpConnectionCloseDelay() {
-        return HttpGetter.httpCloseDelay;
     }
 
     /**
@@ -786,32 +736,6 @@ public class HttpGetter extends Task {
 
         this.requestPropertyKeys.addElement(key);
         this.requestPropertyValues.addElement(value);
-    }
-
-    private static void closeHttpConnectionAfterDelay(final PlatformUtils.HttpConn httpConn, final String url) {
-        final long delay = HttpGetter.httpCloseDelay;
-
-        if (delay == 0) {
-            closeHttpConnection(httpConn, url);
-        } else {
-            final TimerTask tt = new TimerTask() {
-                public void run() {
-                    closeHttpConnection(httpConn, url);
-                    delayedCloseHttpConnectionTimerTasks.remove(this);
-                }
-            };
-            delayedCloseHttpConnectionTimerTasks.add(tt);
-            Task.getTimer().schedule(tt, delay);
-        }
-    }
-
-    private static void closeHttpConnection(final PlatformUtils.HttpConn httpConn, final String url) {
-        try {
-            httpConn.close();
-        } catch (IOException e) {
-            //#debug
-            L.e("Closing Http InputStream error", url, e);
-        }
     }
 
     /**
@@ -958,7 +882,12 @@ public class HttpGetter extends Task {
             }
         } finally {
             if (httpConn != null) {
-                closeHttpConnectionAfterDelay(httpConn, url);
+                try {
+                    httpConn.close();
+                } catch (IOException e) {
+                    //#debug
+                    L.e("Closing Http InputStream error", url, e);
+                }
                 httpConn = null;
             }
             try {
