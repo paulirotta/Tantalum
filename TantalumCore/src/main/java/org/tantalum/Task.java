@@ -102,7 +102,7 @@ public abstract class Task {
      * Note that you must be careful to limit the number of simultaneous threads
      * which result or application performance and stability may drop.
      */
-    public static final int DEDICATED_THREAD_PRIORITY = 8;
+    public static final int DEDICATED_THREAD_PRIORITY = 9;
     /**
      * Queue the task the system UI thread where it will execute after any
      * pending system events like touch input.
@@ -124,7 +124,7 @@ public abstract class Task {
      * <code>Runnable</code> object can implement frequently-occurring display
      * events.
      */
-    public static final int UI_PRIORITY = 7;
+    public static final int UI_PRIORITY = 8;
     /**
      * Start the task as soon as possible, LIFO with no guaranteed sequence
      * order and higher absolute priority than
@@ -137,7 +137,16 @@ public abstract class Task {
      * the other threads are busy with tasks such as HTTP GET that can more than
      * a few milliseconds to complete.
      */
-    public static final int FASTLANE_PRIORITY = 6;
+    public static final int FASTLANE_PRIORITY = 7;
+    /**
+     * FIFO with guaranteed sequence. The task will execute on the same thread
+     * making the call if that thread is a Worker or UI.
+     *
+     * You can use this to add a list of actions to complete immediately after
+     * the current Task. Once these tasks are completed, the Worker continues to
+     * pull from all available threads.
+     */
+    public static final int SERIAL_CURRENT_THREAD_PRIORITY = 6;
     /**
      * FIFO with guaranteed sequence (single-thread concurrent execution, this
      * one thread also does
@@ -502,7 +511,7 @@ public abstract class Task {
      *
      * @return
      * @throws CancellationException
-     * @throws TimeoutException
+     * @throws TimeoutException 
      */
     public final Object join() throws CancellationException, TimeoutException {
         return join(MAX_TIMEOUT);
@@ -554,7 +563,6 @@ public abstract class Task {
      * @throws CancellationException - task was explicitly canceled by another
      * thread
      * @throws TimeoutException - UITask failed to complete within timeout
-     * milliseconds
      */
     public final Object join(long timeout) throws CancellationException, TimeoutException {
         if (timeout < 0) {
@@ -647,7 +655,7 @@ public abstract class Task {
      *
      * @param tasks
      * @throws CancellationException
-     * @throws TimeoutException
+     * @throws TimeoutException 
      */
     public static void joinAll(final Task[] tasks) throws CancellationException, TimeoutException {
         joinAll(tasks, Task.MAX_TIMEOUT);
@@ -662,7 +670,7 @@ public abstract class Task {
      * @param timeout - milliseconds, max total time from for all Tasks to
      * complete
      * @throws CancellationException
-     * @throws TimeoutException
+     * @throws TimeoutException 
      */
     public static void joinAll(final Task[] tasks, final long timeout) throws CancellationException, TimeoutException {
         if (tasks == null) {
