@@ -72,7 +72,7 @@ public abstract class XMLModel extends DefaultHandler {
      * we enter each tag, and decreases as we leave.
      */
     protected int currentDepth;
-    //TODO The following is a bit unelegant. Make it more clear.
+
     private final Object MUTEX = PlatformUtils.getInstance().isSingleCore() ? Task.LARGE_MEMORY_MUTEX : new Object();
 
     /**

@@ -42,7 +42,7 @@ public interface StreamReader {
      * Read the stream to the end. Call cancel() if the process needs to be
      * terminated early. The stream will be closed for you after returning.
      *
-     * @param inputStream 
+     * @param inputStream
      */
-    public void readReady(InputStream inputStream);
+    void readReady(InputStream inputStream);
 }

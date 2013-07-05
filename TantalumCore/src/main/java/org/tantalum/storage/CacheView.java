@@ -53,5 +53,5 @@ public interface CacheView {
      * <code>StaticCache</code> for persistence.
      * @return
      */
-    public Object convertToUseForm(Object key, LOR bytes);
+    Object convertToUseForm(Object key, LOR bytes);
 }

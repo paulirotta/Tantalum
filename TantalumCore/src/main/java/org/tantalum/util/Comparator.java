@@ -22,5 +22,5 @@ public interface Comparator {
      * @param o2
      * @return
      */
-    public abstract int compare(Object o1, Object o2);
+    int compare(Object o1, Object o2);
 }

@@ -42,7 +42,7 @@ public interface StreamWriter {
      * Write the stream to the end. Call cancel() if the process needs to be
      * terminated early. The stream will be closed for you after returning.
      *
-     * @param outputStream 
+     * @param outputStream
      */
-    public void writeReady(OutputStream outputStream);
+    void writeReady(OutputStream outputStream);
 }

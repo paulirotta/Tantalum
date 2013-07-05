@@ -1354,22 +1354,22 @@ public class HttpGetter extends Task {
      *
      * These notifications will always arrive on the User Interface thread.
      */
-    public static interface NetActivityListener {
+    public interface NetActivityListener {
 
         /**
          * The data network is not in use
          */
-        static final int INACTIVE = 0;
+        int INACTIVE = 0;
         /**
          * New network data has been requested or received within the last 5
          * seconds
          */
-        static final int ACTIVE = 1;
+        int ACTIVE = 1;
         /**
          * One or more requests have been made, but no network data has been
          * received during the last 5 seconds
          */
-        static final int STALLED = 2;
+        int STALLED = 2;
 
         /**
          * An update received on the UI thread indicating changes in network

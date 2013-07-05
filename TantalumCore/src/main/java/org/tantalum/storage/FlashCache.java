@@ -258,6 +258,6 @@ public abstract class FlashCache {
          *
          * @param key
          */
-        public abstract void execForEachKey(FlashCache flashCache, String key) throws DigestException, FlashDatabaseException;
+        void execForEachKey(FlashCache flashCache, String key) throws DigestException, FlashDatabaseException;
     }
 }
