@@ -285,10 +285,10 @@ public final class PlatformUtils {
         //#enddebug
 
         /**
-         * Add a magic wait for one second on shutdown to reduce
-         * platform errors thrown by some phones some of the time. This may
-         * give underlying, not completely thread-safe, C code drivers a moment
-         * more to clean themselves up before exiting the app
+         * Add a magic wait for one second on shutdown to reduce platform errors
+         * thrown by some phones some of the time. This may give underlying, not
+         * completely thread-safe, C code drivers a moment more to clean
+         * themselves up before exiting the app
          *
          * We wait in a lock because Thread.sleep() is disabled on the UI and
          * perhaps other Threads like the system thread. Undocumented behavior.
@@ -525,7 +525,7 @@ public final class PlatformUtils {
      * to response codes and the HTTP header with the corresponding key-value
      * pairs
      */
-    public static interface HttpConn {
+    public interface HttpConn {
 
         /**
          * Get the InputStream from the platform-specific HTTP connection
@@ -533,7 +533,7 @@ public final class PlatformUtils {
          * @return
          * @throws IOException
          */
-        public InputStream getInputStream() throws IOException;
+        InputStream getInputStream() throws IOException;
 
         /**
          * Get the OutputStream from the platform-specific HTTP connection
@@ -541,7 +541,7 @@ public final class PlatformUtils {
          * @return
          * @throws IOException
          */
-        public OutputStream getOutputStream() throws IOException;
+        OutputStream getOutputStream() throws IOException;
 
         /**
          * Get the response code provided by the HTTP server after the
@@ -550,7 +550,7 @@ public final class PlatformUtils {
          * @return
          * @throws IOException
          */
-        public int getResponseCode() throws IOException;
+        int getResponseCode() throws IOException;
 
         /**
          * Get the HTTP header fields provided by the server
@@ -570,7 +570,7 @@ public final class PlatformUtils {
          * @param headers
          * @throws IOException
          */
-        public void getResponseHeaders(Hashtable headers) throws IOException;
+        void getResponseHeaders(Hashtable headers) throws IOException;
 
         /**
          * Get the length in bytes of the HTTP response body that the server
@@ -579,7 +579,7 @@ public final class PlatformUtils {
          *
          * @return
          */
-        public long getLength();
+        long getLength();
 
         /**
          * If the routine will read the entire HTTP contents into memory in one
@@ -589,7 +589,7 @@ public final class PlatformUtils {
          *
          * @return
          */
-        public long getMaxLengthSupportedAsBlockOperation();
+        long getMaxLengthSupportedAsBlockOperation();
 
         /**
          * Close the network connection. The underlying platform HTTP
@@ -599,6 +599,6 @@ public final class PlatformUtils {
          *
          * @throws IOException
          */
-        public void close() throws IOException;
+        void close() throws IOException;
     }
 }

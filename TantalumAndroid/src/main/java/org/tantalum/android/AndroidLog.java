@@ -28,7 +28,6 @@
 package org.tantalum.android;
 
 import android.util.Log;
-import java.util.logging.Level;
 import org.tantalum.util.L;
 
 /**

@@ -54,7 +54,7 @@ public interface PlatformAdapter {
      *
      * @param logMode
      */
-    public void init(int logMode);
+    void init(int logMode);
 
     /**
      * Execute the run() method of the action on the platform's user interface
@@ -71,7 +71,7 @@ public interface PlatformAdapter {
      *
      * @param action
      */
-    public void runOnUiThread(final Runnable action);
+    void runOnUiThread(final Runnable action);
 
     /**
      * The application calls this when all Workers have completed shutdown to
@@ -80,7 +80,7 @@ public interface PlatformAdapter {
      * Do not call this directly, call Worker.shutdown() to initiate a close
      *
      */
-    public void shutdownComplete();
+    void shutdownComplete();
 
     /**
      * Get a platform-specific logging class. Add Tantalum logs to the
@@ -90,7 +90,7 @@ public interface PlatformAdapter {
      *
      * @return
      */
-    public L getLog();
+    L getLog();
 
     /**
      * Provide a return the converts from common Internet compressed byte[]
@@ -103,7 +103,7 @@ public interface PlatformAdapter {
      *
      * @return
      */
-    public ImageCacheView getImageCacheView();
+    ImageCacheView getImageCacheView();
 
     /**
      * Vibrate the phone
@@ -111,7 +111,7 @@ public interface PlatformAdapter {
      * @param duration in milliseconds
      * @param timekeeperLambda code which is run just before vibration begins
      */
-    public void vibrateAsync(int duration, Runnable timekeeperLambda);
+    void vibrateAsync(int duration, Runnable timekeeperLambda);
 
     /**
      * Return the platform-specific Image type as a resource decompressed from
@@ -121,7 +121,7 @@ public interface PlatformAdapter {
      * @return
      * @throws IOException
      */
-    public Object readImageFromJAR(String jarPathAndFilename) throws IOException;
+    Object readImageFromJAR(String jarPathAndFilename) throws IOException;
 
     /**
      * Get a persistence support class. Each cache is identified by a single
@@ -135,7 +135,7 @@ public interface PlatformAdapter {
      * @return the existing or new cache
      * @throws FlashDatabaseException
      */
-    public FlashCache getFlashCache(char priority, int cacheType, FlashCache.StartupTask startupTask) throws FlashDatabaseException;
+    FlashCache getFlashCache(char priority, int cacheType, FlashCache.StartupTask startupTask) throws FlashDatabaseException;
 
     /**
      * Delete the files or database associated with this cache. This may be
@@ -144,7 +144,7 @@ public interface PlatformAdapter {
      * @param priority
      * @param cacheType
      */
-    public void deleteFlashCache(char priority, int cacheType);
+    void deleteFlashCache(char priority, int cacheType);
 
     /**
      * Create an HTTP PUT connection appropriate for this phone platform
@@ -157,5 +157,5 @@ public interface PlatformAdapter {
      * @return
      * @throws IOException
      */
-    public PlatformUtils.HttpConn getHttpConn(String url, Vector requestPropertyKeys, Vector requestPropertyValues, byte[] bytes, String requestMethod) throws IOException;
+    PlatformUtils.HttpConn getHttpConn(String url, Vector requestPropertyKeys, Vector requestPropertyValues, byte[] bytes, String requestMethod) throws IOException;
 }

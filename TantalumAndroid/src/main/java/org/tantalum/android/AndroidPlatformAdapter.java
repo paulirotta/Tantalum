@@ -39,8 +39,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.tantalum.PlatformUtils;
 import org.tantalum.PlatformUtils.HttpConn;
 import org.tantalum.storage.FlashCache;

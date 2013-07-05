@@ -1359,17 +1359,17 @@ public class HttpGetter extends Task {
         /**
          * The data network is not in use
          */
-        public static final int INACTIVE = 0;
+        static final int INACTIVE = 0;
         /**
          * New network data has been requested or received within the last 5
          * seconds
          */
-        public static final int ACTIVE = 1;
+        static final int ACTIVE = 1;
         /**
          * One or more requests have been made, but no network data has been
          * received during the last 5 seconds
          */
-        public static final int STALLED = 2;
+        static final int STALLED = 2;
 
         /**
          * An update received on the UI thread indicating changes in network
@@ -1387,6 +1387,6 @@ public class HttpGetter extends Task {
          * @param previousState
          * @param newState
          */
-        public void netActivityStateChanged(final int previousState, final int newState);
+        void netActivityStateChanged(final int previousState, final int newState);
     }
 }
