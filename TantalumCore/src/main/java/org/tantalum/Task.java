@@ -102,7 +102,7 @@ public abstract class Task {
      * Note that you must be careful to limit the number of simultaneous threads
      * which result or application performance and stability may drop.
      */
-    public static final int DEDICATED_THREAD_PRIORITY = 9;
+    public static final int DEDICATED_THREAD_PRIORITY = 8;
     /**
      * Queue the task the system UI thread where it will execute after any
      * pending system events like touch input.
@@ -124,7 +124,7 @@ public abstract class Task {
      * <code>Runnable</code> object can implement frequently-occurring display
      * events.
      */
-    public static final int UI_PRIORITY = 8;
+    public static final int UI_PRIORITY = 7;
     /**
      * Start the task as soon as possible, LIFO with no guaranteed sequence
      * order and higher absolute priority than
@@ -137,7 +137,7 @@ public abstract class Task {
      * the other threads are busy with tasks such as HTTP GET that can more than
      * a few milliseconds to complete.
      */
-    public static final int FASTLANE_PRIORITY = 7;
+    public static final int FASTLANE_PRIORITY = 6;
     /**
      * FIFO with guaranteed sequence. The task will execute on the same thread
      * making the call if that thread is a Worker or UI.
@@ -146,7 +146,7 @@ public abstract class Task {
      * the current Task. Once these tasks are completed, the Worker continues to
      * pull from all available threads.
      */
-    public static final int SERIAL_CURRENT_THREAD_PRIORITY = 6;
+    public static final int SERIAL_CURRENT_THREAD_PRIORITY = 5;
     /**
      * FIFO with guaranteed sequence (single-thread concurrent execution, this
      * one thread also does
@@ -168,7 +168,7 @@ public abstract class Task {
      * <code>Task</code> chains to or forks other
      * <code>Task</code>s.
      */
-    public static final int SERIAL_PRIORITY = 5;
+    public static final int SERIAL_PRIORITY = 4;
     /**
      * LIFO with no guaranteed sequence (multi-thread concurrent execution)
      * start the task as soon as possible. The
@@ -184,7 +184,7 @@ public abstract class Task {
      * as this can block for a long time and then the fastlane is not so fast
      * anymore.
      */
-    public static final int HIGH_PRIORITY = 4;
+    public static final int HIGH_PRIORITY = 3;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * Start execution after any previously
@@ -192,7 +192,7 @@ public abstract class Task {
      * multiple Workers in parallel means that execution start and completion
      * order is not guaranteed.
      */
-    public static final int NORMAL_PRIORITY = 3;
+    public static final int NORMAL_PRIORITY = 2;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * Start execution if there is nothing else for the Workers to do. At least
@@ -201,7 +201,7 @@ public abstract class Task {
      * for background tasks such as pre-fetch and pre-processing of data that
      * doe not affect the current user view.
      */
-    public static final int IDLE_PRIORITY = 2;
+    public static final int IDLE_PRIORITY = 1;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * These tasks start when the application begins to close. The application
@@ -224,7 +224,7 @@ public abstract class Task {
      * shutdown sequence, you must design for quick shutdown.
      *
      */
-    public static final int SHUTDOWN = 1;
+    public static final int SHUTDOWN = 0;
     /**
      * While holding no other locks, synchronize on the following during
      * critical code sections if your processing routine will temporarily need a
@@ -1211,7 +1211,7 @@ public abstract class Task {
         }
 //#enddebug
     }
-    private static String[] PRIORITY_STRINGS = {"PRIORITY_NOT_SET", "SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "FASTLANE_PRIORITY", "UI_PRIORITY", "DEDICATED_THREAD_PRIORITY"};
+    private static String[] PRIORITY_STRINGS = {"SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "SERIAL_CURRENT_THREAD_PRIORITY", "FASTLANE_PRIORITY", "UI_PRIORITY", "DEDICATED_THREAD_PRIORITY"};
 
     String getPriorityString() {
         return PRIORITY_STRINGS[getForkPriority()];

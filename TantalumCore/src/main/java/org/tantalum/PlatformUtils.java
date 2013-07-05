@@ -183,8 +183,8 @@ public final class PlatformUtils {
         if (this.program != null) {
             return false;
         }
-        if (numberOfWorkers < 2 || numberOfWorkers > 16) {
-            throw new IllegalArgumentException("Less than 2 or more than 16 workers threads is not supported: " + numberOfWorkers);
+        if (numberOfWorkers < 3 || numberOfWorkers > 16) {
+            throw new IllegalArgumentException("Less than 3 or more than 16 workers threads is not supported: " + numberOfWorkers);
         }
 
         this.program = program;

@@ -95,7 +95,10 @@ final class Worker extends Thread {
     static void init(final int numberOfWorkers) {
         workers = new Worker[numberOfWorkers];
         for (int i = 0; i < numberOfWorkers; i++) {
-            workers[i] = new Worker("Worker" + i, i == numberOfWorkers - 1);
+            final boolean fastlane = i == numberOfWorkers - 1;
+            final String name = fastlane ? "Fastlane" : "Worker" + i;
+
+            workers[i] = new Worker(name, fastlane);
             workers[i].start();
         }
     }

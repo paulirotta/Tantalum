@@ -43,6 +43,7 @@ import org.powermock.api.mockito.PowerMockito;
  * @author phou
  */
 public class TaskTest extends MockedStaticInitializers {
+
     @Before
     public final void taskTestFixture() {
         createMocks();
@@ -839,6 +840,17 @@ public class TaskTest extends MockedStaticInitializers {
         } catch (Exception ex) {
             ex.printStackTrace();
             fail("Can not testCancelSelf: " + ex);
+        }
+    }
+
+    public void testPriorityDebugDisplay() {
+        for (int i = 0; i <= Task.DEDICATED_THREAD_PRIORITY; i++) {
+            System.out.println((new Task(i) {
+                @Override
+                protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
+                    return in;
+                }
+            }).setClassName("TestTaskPriority" + i).toString());
         }
     }
 
