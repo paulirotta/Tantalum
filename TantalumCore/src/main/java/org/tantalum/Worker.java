@@ -122,7 +122,7 @@ final class Worker extends Thread {
                     throw new IllegalArgumentException("Can not create a DedicatedThread with null Task (no work to do)");
                 }
 
-                serialQ.add(firstTask);
+                serialQ.addElement(firstTask);
             }
 
             public void run() {
