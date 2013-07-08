@@ -508,7 +508,9 @@ public final class StaticWebCache extends StaticCache {
                         if (httpGetter == null) {
                             //#debug
                             L.i(this, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter", url);
-                            cancel(false, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter: " + url);
+                            final String s = getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter: " + url;
+                            cancel(false, s);
+                            nextTask.cancel(false, s);
                         } else {
                             httpGetter.fork();
                         }
