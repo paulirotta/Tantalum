@@ -308,7 +308,8 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
+     * @param *
+     * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
      * and executed after the getAsync operation.
@@ -510,7 +511,9 @@ public final class StaticWebCache extends StaticCache {
                             L.i(this, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter", url);
                             final String s = getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter: " + url;
                             cancel(false, s);
-                            nextTask.cancel(false, s);
+                            if (nextTask != null) {
+                                nextTask.cancel(false, s);
+                            }
                         } else {
                             httpGetter.fork();
                         }
@@ -570,7 +573,7 @@ public final class StaticWebCache extends StaticCache {
         final Task validationTask = new Task(Task.FASTLANE_PRIORITY) {
             protected Object exec(final Object in) {
                 if (!(in instanceof LOR)) {
-                    throw new IllegalArgumentException("StaticWebCache validationTask was passed bad argument: " + in);
+                    throw new IllegalArgumentException("StaticWebCache validationTask was passed bad argument, should be a LOR: " + in);
                 }
                 Object out = null;
                 final LOR bytesReference = (LOR) in;

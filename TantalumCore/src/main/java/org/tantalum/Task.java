@@ -94,13 +94,24 @@ public abstract class Task {
      * Start the task immediately on a dedicated Thread. The Thread expires
      * after the Task completes.
      *
-     * This is relatively expansive for performance. It can be useful in cases
-     * such as multimedia when the Task make take a long time to complete. It
-     * can also be useful if for best user experience (UX) the Task should start
-     * immediately regardless of current load.
+     * Creating a new Thread is relatively expansive for performance compared to
+     * the general worker thread model used by most Tasks. It can be useful in
+     * cases such as multimedia when the Task make take a long time to complete.
+     * It can also be useful if for best user experience (UX) the Task should
+     * start immediately regardless of current load.
+     *
+     * You may add additional Task.SERIAL_CURRENT_THREAD_PRIORITY tasks appended
+     * to this thread to also execute before the thread dies and returns to
+     * Valhalla.
      *
      * Note that you must be careful to limit the number of simultaneous threads
      * which result or application performance and stability may drop.
+     *
+     * Note that the app shutdown sequence will wait for the dedicated thread
+     * Task to complete. Thus if you use a very long or infinite loop on our
+     * dedicated thread, you should ensure a rapid app shutdown by calling
+     * Task.setShutdownBehaviour(Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) to
+     * ensure that a Thread.interrupt() is sent.
      */
     public static final int DEDICATED_THREAD_PRIORITY = 8;
     /**
@@ -145,6 +156,12 @@ public abstract class Task {
      * You can use this to add a list of actions to complete immediately after
      * the current Task. Once these tasks are completed, the Worker continues to
      * pull from all available threads.
+     *
+     * Adding tasks which will run after the current task in this manner may be
+     * useful for calling methods while not holding any synchronization locks.
+     * You fork additional Task.SERIAL_CURRENT_THREAD_PRIORITY Tasks while
+     * holding one or more locks, and then safely execute these after the locks
+     * are no longer held.
      */
     public static final int SERIAL_CURRENT_THREAD_PRIORITY = 5;
     /**
@@ -831,11 +848,11 @@ public abstract class Task {
             return this;
         }
         if (nextTask == this) {
-            throw new IllegalArgumentException("Can not chain a task to itself");
+            throw new IllegalArgumentException("Can not chain a task to itself: " + nextTask);
         }
         synchronized (mutex) {
             if (getStatus() > Task.PENDING) {
-                throw new IllegalStateException("Can not chain() to a Task unless it is still PENDING: " + this);
+                throw new IllegalStateException("Can not chain() to a Task unless it is still PENDING. Generally you should complete all chaining before you fork(): " + this + " -> " + nextTask);
             }
 
             if (chainedTask == null) {

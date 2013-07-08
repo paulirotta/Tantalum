@@ -102,7 +102,7 @@ final class Worker extends Thread {
             workers[i].start();
         }
     }
-    
+
     private static void forkToUIThread(final Task task) {
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
@@ -118,7 +118,7 @@ final class Worker extends Thread {
 
     private static void forkSerialToSameThread(final Task task) {
         final Thread currentThread = Thread.currentThread();
-        
+
         if (currentThread instanceof Worker) {
             ((Worker) currentThread).serialQ.addElement(task);
         } else if (currentThread instanceof DedicatedThread) {
@@ -157,7 +157,7 @@ final class Worker extends Thread {
     static Task fork(final Task task) {
         if (task.getStatus() != Task.PENDING) {
             L.i(task, "Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time. Task may have been cancel()ed by another thread.", "" + task);
-            
+
             return task;
         }
         final int priority = task.getForkPriority();
@@ -169,45 +169,57 @@ final class Worker extends Thread {
                     final DedicatedThread thread = new DedicatedThread(new DedicatedThread.TaskRunnable(task), task.getClassName());
                     thread.start();
                     break;
+
                 case Task.UI_PRIORITY:
                     forkToUIThread(task);
                     break;
+
                 case Task.FASTLANE_PRIORITY:
                     fastlaneQ.insertElementAt(task, 0);
-                    /*
-                     * Any thread will do as all will take Fastlane tasks, so
-                     * notifyAll() is not needed
+                    /**
+                     * notify() vs notifyAll(): Any thread will do as all
+                     * Workers (and nothing else) waits on this lock and will
+                     * accept into use Fastlane tasks. If in future these
+                     * conditions are not met, this optimization will no longer
+                     * work and notifyAll() will be needed
                      */
                     q.notify();
                     break;
+
                 case Task.SERIAL_CURRENT_THREAD_PRIORITY:
                     if (PlatformUtils.getInstance().isUIThread()) {
                         forkToUIThread(task);
                     } else {
                         forkSerialToSameThread(task);
                     }
-                    q.notifyAll();
+                    // No need to notifyAll()
                     break;
+
                 case Task.SERIAL_PRIORITY:
                     workers[0].serialQ.addElement(task);
                     q.notifyAll();
                     break;
+
                 case Task.HIGH_PRIORITY:
                     q.insertElementAt(task, 0);
                     q.notifyAll();
                     break;
+
                 case Task.NORMAL_PRIORITY:
                     q.addElement(task);
                     q.notifyAll();
                     break;
+
                 case Task.IDLE_PRIORITY:
                     idleQ.addElement(task);
                     q.notifyAll();
                     break;
+
                 case Task.SHUTDOWN:
                     shutdownQ.addElement(task);
                     q.notifyAll();
                     break;
+
                 default:
                     throw new IllegalArgumentException("Illegal priority '" + priority + "'");
             }
@@ -403,7 +415,7 @@ final class Worker extends Thread {
                      */
                     synchronized (q) {
                         if (Thread.currentThread() instanceof Worker) {
-                            // A Worker is initialized shutdown. Adjust so this does not corrupt "idle" state transitions
+                            // A Worker initialized shutdown. Adjust so this does not corrupt shutdown end state transition detection
                             currentlyIdleCount++;
                         }
                         while (currentlyIdleCount < workers.length - 1 || !shutdownQ.isEmpty() || !q.isEmpty() || !fastlaneQ.isEmpty()) {
@@ -441,19 +453,23 @@ final class Worker extends Thread {
     }
 
     static boolean dequeue(final Task task, final Vector queue, final boolean interruptIfRunning) {
-        switch (task.getShutdownBehaviour()) {
-            default:
+        final int sd = task.getShutdownBehaviour(); 
+                
+        switch (sd) {
             case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
                 return false;
 
             case Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN:
                 if (interruptIfRunning) {
-                    task.cancel(interruptIfRunning, "Shutdown signal received, interrupt signal sent");
+                    task.cancel(interruptIfRunning, "Shutdown signal received with interruptIfRunning=true");
                 }
             // continue to next case
 
             case Task.DEQUEUE_ON_SHUTDOWN:
                 return queue.removeElement(task);
+                
+            default:
+                throw new IllegalStateException("Can not dequeue Task, illegal shutdown behaviour state: " + sd);
         }
     }
 
@@ -519,7 +535,6 @@ final class Worker extends Thread {
                                     }
 
                                 // Continue from previous
-                                default:
                                 case STATE_RUNNING:
                                     getNormalRunTask();
                                     break;
@@ -527,6 +542,9 @@ final class Worker extends Thread {
                                 case STATE_RUNNING_SHUTDOWN_TASKS:
                                     getShutdownTask();
                                     break;
+                                    
+                                default:
+                                    throw new IllegalStateException("Illegal Worker run state: " + runState);
                             }
                         } finally {
                             if (currentTask == null) {
@@ -585,7 +603,7 @@ final class Worker extends Thread {
     private boolean allWorkersIdleExceptThisOne() {
         return currentlyIdleCount == workers.length - 1;
     }
-    
+
     private boolean allDedicatedThreadsComplete() {
         return dedicatedThreads.isEmpty();
     }
@@ -730,7 +748,6 @@ final class Worker extends Thread {
         return className;
     }
     //#enddebug
-    
 
     /**
      * A thread similar to a Worker which runs only until there is no more work
