@@ -937,7 +937,7 @@ public abstract class Task {
         } catch (final Throwable t) {
             final String s = "Exception during Task exec(): ";
             //#debug
-            L.e(s, "" + this, t);
+            L.e(this, s, "" + this, t);
             cancel(false, s + " : " + this, t);
             out = null;
         }

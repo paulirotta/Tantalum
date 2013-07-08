@@ -639,7 +639,7 @@ final class Worker extends Thread {
     }
 
     private boolean allWorkersIdleExceptThisOne() {
-        return currentlyIdleCount == workers.length - 2;
+        return currentlyIdleCount == workers.length - 1;
     }
 
     private void getFastlaneTask() {
