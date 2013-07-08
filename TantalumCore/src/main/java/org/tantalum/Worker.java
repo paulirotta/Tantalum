@@ -786,7 +786,7 @@ final class Worker extends Thread {
         }
 
         DedicatedThread(final DedicatedThread.TaskRunnable taskRunnable, final String threadName) {
-            super(taskRunnable, "DedicatedThread" + threadName);
+            super(taskRunnable, threadName);
 
             this.taskRunnable = taskRunnable;
             dedicatedThreads.addElement(this);
