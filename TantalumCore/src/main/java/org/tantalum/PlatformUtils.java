@@ -285,7 +285,7 @@ public final class PlatformUtils {
         //#enddebug
 
         /**
-         * Add a magic wait for one second on shutdown to reduce platform errors
+         * Add a magic wait for one half second on shutdown to reduce platform errors
          * thrown by some phones some of the time. This may give underlying, not
          * completely thread-safe, C code drivers a moment more to clean
          * themselves up before exiting the app

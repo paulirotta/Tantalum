@@ -455,11 +455,11 @@ public abstract class Task {
      */
     public final Task set(final Object value) {
         synchronized (mutex) {
-            if (this.status != Task.PENDING) {
-                throw new IllegalStateException(getClassName() + " can not set(), Task value is final after execution: " + this);
+            if (this.status == Task.PENDING) {
+                this.value = value;
+            } else {
+                L.i(this, "Can not set()", "Task value is final after execution or cancel(): " + this);
             }
-
-            this.value = value;
 
             return this;
         }
@@ -511,7 +511,7 @@ public abstract class Task {
      *
      * @return
      * @throws CancellationException
-     * @throws TimeoutException 
+     * @throws TimeoutException
      */
     public final Object join() throws CancellationException, TimeoutException {
         return join(MAX_TIMEOUT);
@@ -655,7 +655,7 @@ public abstract class Task {
      *
      * @param tasks
      * @throws CancellationException
-     * @throws TimeoutException 
+     * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks) throws CancellationException, TimeoutException {
         joinAll(tasks, Task.MAX_TIMEOUT);
@@ -670,7 +670,7 @@ public abstract class Task {
      * @param timeout - milliseconds, max total time from for all Tasks to
      * complete
      * @throws CancellationException
-     * @throws TimeoutException 
+     * @throws TimeoutException
      */
     public static void joinAll(final Task[] tasks, final long timeout) throws CancellationException, TimeoutException {
         if (tasks == null) {

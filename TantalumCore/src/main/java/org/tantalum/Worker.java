@@ -102,65 +102,7 @@ final class Worker extends Thread {
             workers[i].start();
         }
     }
-
-    /**
-     * A thread similar to a Worker which runs only until there is no more work
-     * in its serialQ to perform.
-     *
-     * Usually only a single Task is performed, but this may fork additional
-     * tasks using Task.SERIAL_CURRENT_THREAD_PRIORITY in which case multiple
-     * Tasks are executed before thread death
-     */
-    private static class DedicatedThread extends Thread {
-
-        final TaskRunnable taskRunnable;
-
-        static class TaskRunnable implements Runnable {
-
-            Task task = null;
-            final Vector serialQ = new Vector();
-
-            TaskRunnable(final Task firstTask) {
-                if (firstTask == null) {
-                    throw new IllegalArgumentException("Can not create a DedicatedThread with null Task (no work to do)");
-                }
-
-                serialQ.addElement(firstTask);
-            }
-
-            public void run() {
-                try {
-                    while (true) {
-                        synchronized (serialQ) {
-                            if (serialQ.isEmpty()) {
-                                task = null;
-                                break;
-                            }
-                            task = (Task) serialQ.firstElement();
-                            serialQ.removeElementAt(0);
-                        }
-
-                        try {
-                            task.executeTask(task.getValue());
-                        } catch (final Throwable t) {
-                            //mdebug
-                            L.e("Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
-                        }
-                    }
-                } finally {
-                    dedicatedThreads.removeElement(currentThread());
-                }
-            }
-        }
-
-        DedicatedThread(final TaskRunnable taskRunnable) {
-            super(taskRunnable);
-
-            this.taskRunnable = taskRunnable;
-            dedicatedThreads.addElement(this);
-        }
-    }
-
+    
     private static void forkToUIThread(final Task task) {
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
@@ -214,7 +156,9 @@ final class Worker extends Thread {
      */
     static Task fork(final Task task) {
         if (task.getStatus() != Task.PENDING) {
-            throw new IllegalStateException("Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time: " + task);
+            L.i(task, "Can not fork() a Task multiple times. Tasks are disposable, create a new instance each time. Task may have been cancel()ed by another thread.", "" + task);
+            
+            return task;
         }
         final int priority = task.getForkPriority();
         //#debug
@@ -222,7 +166,7 @@ final class Worker extends Thread {
         synchronized (q) {
             switch (priority) {
                 case Task.DEDICATED_THREAD_PRIORITY:
-                    final DedicatedThread thread = new DedicatedThread(new DedicatedThread.TaskRunnable(task));
+                    final DedicatedThread thread = new DedicatedThread(new DedicatedThread.TaskRunnable(task), task.getClassName());
                     thread.start();
                     break;
                 case Task.UI_PRIORITY:
@@ -592,7 +536,7 @@ final class Worker extends Thread {
                                 try {
                                     ++currentlyIdleCount;
                                     if (runState == STATE_RUNNING_SHUTDOWN_TASKS
-                                            && allWorkersIdleExceptThisOne()
+                                            && allWorkersIdleExceptThisOne() && allDedicatedThreadsComplete()
                                             && !PlatformUtils.getInstance().shutdownComplete("currentlyIdleCount=" + currentlyIdleCount)) {
                                         q.notifyAll();
                                     }
@@ -640,6 +584,10 @@ final class Worker extends Thread {
 
     private boolean allWorkersIdleExceptThisOne() {
         return currentlyIdleCount == workers.length - 1;
+    }
+    
+    private boolean allDedicatedThreadsComplete() {
+        return dedicatedThreads.isEmpty();
     }
 
     private void getFastlaneTask() {
@@ -782,4 +730,66 @@ final class Worker extends Thread {
         return className;
     }
     //#enddebug
+    
+
+    /**
+     * A thread similar to a Worker which runs only until there is no more work
+     * in its serialQ to perform.
+     *
+     * Usually only a single Task is performed, but this may fork additional
+     * tasks using Task.SERIAL_CURRENT_THREAD_PRIORITY in which case multiple
+     * Tasks are executed before thread death
+     */
+    private static class DedicatedThread extends Thread {
+
+        final DedicatedThread.TaskRunnable taskRunnable;
+
+        static class TaskRunnable implements Runnable {
+
+            Task task = null;
+            final Vector serialQ = new Vector();
+
+            TaskRunnable(final Task firstTask) {
+                if (firstTask == null) {
+                    throw new IllegalArgumentException("Can not create a DedicatedThread with null Task (no work to do)");
+                }
+
+                serialQ.addElement(firstTask);
+            }
+
+            public void run() {
+                try {
+                    while (true) {
+                        synchronized (serialQ) {
+                            if (serialQ.isEmpty()) {
+                                task = null;
+                                break;
+                            }
+                            task = (Task) serialQ.firstElement();
+                            serialQ.removeElementAt(0);
+                        }
+
+                        try {
+                            task.executeTask(task.getValue());
+                        } catch (final Throwable t) {
+                            //mdebug
+                            L.e("Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
+                        }
+                    }
+                } finally {
+                    dedicatedThreads.removeElement(currentThread());
+                    synchronized (q) {
+                        q.notifyAll(); // Shutdown sequence may need this notification to complete
+                    }
+                }
+            }
+        }
+
+        DedicatedThread(final DedicatedThread.TaskRunnable taskRunnable, final String threadName) {
+            super(taskRunnable, "DedicatedThread" + threadName);
+
+            this.taskRunnable = taskRunnable;
+            dedicatedThreads.addElement(this);
+        }
+    }
 }
