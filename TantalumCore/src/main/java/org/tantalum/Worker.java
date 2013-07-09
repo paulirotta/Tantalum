@@ -628,7 +628,7 @@ final class Worker extends Thread {
         if (!fastlaneQ.isEmpty()) {
             getFastlaneTask();
         } else if (!isDedicatedFastlaneWorker) {
-            if (serialQ.size() < MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST
+            if (serialQ.size() <= MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST
                     && !q.isEmpty()) {
                 // Normal compute, hardened against async interrupt
                 try {
