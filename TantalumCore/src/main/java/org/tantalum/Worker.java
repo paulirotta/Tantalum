@@ -46,17 +46,6 @@ final class Worker extends Thread {
     private static final int STATE_RUNNING = 0;
     private static final int STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
     private static final int STATE_RUNNING_SHUTDOWN_TASKS = 2;
-    /**
-     * Serial priority is bumped above HIGH_PRIORITY when the serialQ backlog
-     * gets above this number.
-     *
-     * Usually the seriaQ is used for writing to the file system. We mostly want
-     * such writes to be in idle time when there is no other activity in the
-     * thread pool. But in a phone where the user activity gives zero idle time
-     * for such writes, we need to start doing them before there is a risk of
-     * OutOfMemory from serialQ length growth.
-     */
-    private static final int MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST = 0;
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
@@ -243,6 +232,9 @@ final class Worker extends Thread {
      * been started, or has not been fork()ed, or has been forkSerial() assigned
      * to a dedicated thread queue, then this will return false.
      *
+     * Note: by definition, you can not unfork tasks in the serialQ of a Worker.
+     * These will always be run in guaranteed order.
+     *
      * @param task
      * @return
      */
@@ -259,7 +251,7 @@ final class Worker extends Thread {
             }
         }
         //#debug
-        L.i(task, "Unfork", "success=" + success + " task=" + task);
+        L.i(task, "tryUnfork", "success=" + success + " task=" + task);
 
         return success;
     }
@@ -453,8 +445,8 @@ final class Worker extends Thread {
     }
 
     static boolean dequeue(final Task task, final Vector queue, final boolean interruptIfRunning) {
-        final int sd = task.getShutdownBehaviour(); 
-                
+        final int sd = task.getShutdownBehaviour();
+
         switch (sd) {
             case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
                 return false;
@@ -467,7 +459,7 @@ final class Worker extends Thread {
 
             case Task.DEQUEUE_ON_SHUTDOWN:
                 return queue.removeElement(task);
-                
+
             default:
                 throw new IllegalStateException("Can not dequeue Task, illegal shutdown behaviour state: " + sd);
         }
@@ -542,7 +534,7 @@ final class Worker extends Thread {
                                 case STATE_RUNNING_SHUTDOWN_TASKS:
                                     getShutdownTask();
                                     break;
-                                    
+
                                 default:
                                     throw new IllegalStateException("Illegal Worker run state: " + runState);
                             }
@@ -608,6 +600,10 @@ final class Worker extends Thread {
         return dedicatedThreads.isEmpty();
     }
 
+    /**
+     * Hardened against async interrupt
+     *
+     */
     private void getFastlaneTask() {
         try {
             currentTask = (Task) fastlaneQ.firstElement();
@@ -616,6 +612,10 @@ final class Worker extends Thread {
         }
     }
 
+    /**
+     * Hardened against async interrupt
+     *
+     */
     private void getSerialTask() {
         try {
             currentTask = (Task) serialQ.firstElement();
@@ -624,22 +624,33 @@ final class Worker extends Thread {
         }
     }
 
+    /**
+     * Hardened against async interrupt
+     *
+     */
+    private void getNormalTask() {
+        try {
+            currentTask = (Task) q.firstElement();
+        } finally {
+            // Ensure we don't re-run in case of interrupt
+            q.removeElementAt(0);
+        }
+
+    }
+
+    /**
+     * Get the next task (if any) appropriate for this thread in the normal
+     * running state (not shutdown)
+     */
     private void getNormalRunTask() {
-        if (!fastlaneQ.isEmpty()) {
+        if (!serialQ.isEmpty()) {
+            getSerialTask();
+        } else if (!Worker.fastlaneQ.isEmpty()) {
             getFastlaneTask();
         } else if (!isDedicatedFastlaneWorker) {
-            if (serialQ.size() <= MAX_SERIAL_Q_LENGTH_BEFORE_PRIORITY_BOOST
-                    && !q.isEmpty()) {
-                // Normal compute, hardened against async interrupt
-                try {
-                    currentTask = (Task) q.firstElement();
-                } finally {
-                    // Ensure we don't re-run in case of interrupt
-                    q.removeElementAt(0);
-                }
-            } else if (!serialQ.isEmpty()) {
-                getSerialTask();
-            } else if (allWorkersIdleExceptThisOne() && idleQ.size() > 0) {
+            if (!Worker.q.isEmpty()) {
+                getNormalTask();
+            } else if (!idleQ.isEmpty() && allWorkersIdleExceptThisOne()) {
                 getIdleTask();
             }
         }
@@ -746,6 +757,10 @@ final class Worker extends Thread {
         }
 
         return className;
+
+
+
+
     }
     //#enddebug
 
