@@ -16,10 +16,12 @@ import org.tantalum.util.LOR;
 public class BBImageCacheView extends ImageCacheView {
 
     public Object convertToUseForm(Object key, LOR bytesReference) {
-        byte[] bytes = null;
+        if (bytesReference == null){
+            throw new NullPointerException("cannot convert null bytes to image");
+        }
         try {
-            bytes = bytesReference.getBytes();
-            bytesReference.clear();;
+            byte[] bytes = bytesReference.getBytes();
+            bytesReference.clear();
             Bitmap b = Bitmap.createBitmapFromBytes(bytes, 0, bytes.length, 1);
             if (maxWidth == SCALING_DISABLED || maxHeight == SCALING_DISABLED) {
                 return b;
@@ -27,11 +29,9 @@ public class BBImageCacheView extends ImageCacheView {
             Bitmap scaled = new Bitmap(maxWidth, maxHeight);
             b.scaleInto(scaled, Bitmap.FILTER_BOX);
             return scaled;
-        } catch (NullPointerException e){
-            L.e("Exception converting bytes to", bytes == null ? "" : "" + bytes.length, e);
-            throw e;
         } catch (IllegalArgumentException e) {
-            L.e("Exception converting bytes to image", bytes == null ? "" : "" + bytes.length, e);
+            //#debug
+            L.e("Exception converting bytes to image", "key=" + key, e);
             throw e;
         }
     }
