@@ -1,6 +1,6 @@
 /*
- * Copyright © 2012 Nokia Corporation. All rights reserved.
- * Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation. 
+ * Copyright (c) 2012-2013 Nokia Corporation. All rights reserved.
+ * Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation.
  * Oracle and Java are trademarks or registered trademarks of Oracle and/or its
  * affiliates. Other product and company names mentioned herein may be trademarks
  * or trade names of their respective owners. 
@@ -106,7 +106,7 @@ public final class CategoryBarHandler implements ElementListener {
     public void notifyElementSelected(CategoryBar cb, int i) {
         switch (i) {
             case ElementListener.BACK:
-                PlatformUtils.getInstance().shutdown(false);
+                PlatformUtils.getInstance().shutdown(false, "Back button pressed");
                 break;
             case 0:
                 midlet.goFeaturedCanvas();

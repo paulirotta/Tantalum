@@ -1,0 +1,91 @@
+Changelog
+-------------------------------------------------------------------------------
+1.0
+    * New Component: PopupChoiceGroup, an alternative for combobox to get more 
+      native look and feel to the application.
+    * added more example applications
+    * scrolling and focusing has been improved for touch devices.
+    * crash fix for ContextMenu
+    * Browser example now contains "Go" for easier usage of page loading.
+    * marginal removed from scrollbar in full touch devices
+    * fixed bug in textarea drawing where part of the text was cut of if
+      padding was added.
+0.9.1 Beta
+    * New component: ContextMenu, a menu that is styled according to Full touch
+      platform.
+    * Bugfixes for slider component
+    * fix for checkbox/radiobutton margins when rtl is true
+0.9.0 Beta
+    * list component styling finalized for non-touch.
+    * Tab component themed on all platforms.
+    * Fixed issue with texteditor getting focus in pressed event.
+    * Fixed issue with ticker feature breaking on orientation change
+    * Added a dialog for selecting SDK in ResourceEditor when generating
+      new project.
+    * Scrollbar restyled for FT, now it dissappears similary the way platform
+      does it.
+    * Restyled dialogs in FT to match platform style
+    * Fixed issues with flowLayout not working properly with three buttons.
+    * Optimized theme memoryusage, now it consumes almost half less memory.
+      This was achieved by removing EncodedImage usage and replacing that with
+      ordinary Image class. EncodedImage loads the imagebinary to memory but also
+      loads the same data as an Image object which causes excess calls to gc and
+      consumes memory.
+    * Fix for bug(ticket #19) where pressing and dragging over menubar causes
+      menubuttons to change state.
+
+0.8.3 Beta
+    * BoxLayout now default layout for Form
+    * Added CategoryBarProvider that acts as a wrapper for CategoryBar API
+    * Added automatic localization support
+    * Performance improvements especially memory usage of theme has been improved.
+    * Fixed issue with scrolling up caused form to suddenly jump back to top.
+0.8.1 Beta
+    * Clear and back commands are now handled according to s40 platform guidelines
+    * fixed issue with clear not being removed after dialog is shown
+    * fixed back command issue with textfield in older s40 devices that caused back
+      to go to menu instead of RSK.
+    * Fixed issue with select and defaultcommand priority. 
+    * Fixed issue with textarea not expanding on first display when growbycontent was true.
+0.8.0 Beta.
+	* Fixed many small bugs in TextArea including issues with clear command
+	* Fixed issue with too small options menu when only one menuitem
+	* Fixed issue with datachangedlistener not called in textfield.
+0.7.2 Beta.
+	* fixed issues with textarea clear command
+	* changed nontouch button highlight graphic
+	* fixed transparent combobox background
+	* Gesture API can now be used to listen only a particular gesture
+	* Fixed issues with slider only working with values 0-100
+	* Fixed button gradient issue in full touch
+	* Added api support for setting theme to be used only in spesific platform
+	* textarea focusing has changed in non-touch, user now has to press edit to type
+	  text.
+	* Added support for canvas objecttrait method.
+	* fixed issues with "null" menuitem appearing randomly
+0.7.1 Beta.
+	* textarea seteditable fixed.
+	* fixed issue where components forgot their draggable state
+	* fixed nullpointer issue in textarea/textfield when losing focus
+	* fixed issue with no commands appearing in the msk
+	* fixed issue with ok button shown twice in dialog
+	* fixed issue with defaultcommand disappearing when setting new defaultcommand
+	* fixed issue with selectcommand appearing in options-menu
+0.7.0 Beta.
+	* Fixed issue with textarea expanding not working.
+	* Resized checkboxes and radiobuttons in FT theme
+	* Fixed issue with command going to actionbutton 1 when it was not set as defaultcommand
+	* Fixed issue with removeCommands method in Form not working
+	* Fixed issue with blinking menuitems in FT
+	* Fixed issue with dialog creating an actionbutton when shown
+	* Fixed issue with T&T phones having focus when they shouldn't
+0.6.3 Beta. 
+	* TextArea setMaxSize now works
+	* TextArea setEditable now works
+	* LWUITDemo import to eclipse now works (fixed resources.res error)
+	* menus are now usable in non-touch
+	* TextArea shouldShowHint nullPointerException fixed
+	* RadioButton and CheckBox relayout according to S40 style
+0.6.2 Beta. TextArea and HTML Component fixes.
+0.6.1 Beta. TextArea/TextField bug fixes.
+0.6 Beta. Initial release.

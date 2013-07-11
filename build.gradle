@@ -1,67 +1,42 @@
 buildscript {
     repositories {
         mavenCentral()
+        maven {
+          url uri('file:repository')
+        }
     }
     dependencies {
-        classpath 'com.eriwen:gradle-cobertura-plugin:1.0'
-        classpath files(antennaJar)
+        classpath 'com.eriwen:gradle-cobertura-plugin:1.1.0'
+        // This is a local repository, so we can rely on SNAPSHOT-releases. Once this is an online dep, we must have a fixed version
+        classpath 'org.inkinen:gradle-preprocessor-plugin:0.1-SNAPSHOT'
     }
 }
-
-// antenna ant tasks
-ant.taskdef(resource: 'antenna.properties') {
-    classpath {
-        pathElement(path: buildscript.configurations.classpath.asPath)
-    }
-}
+// We need to explicitly import the implementation class. This should not be required?
+import org.inkinen.PreprocessorTask
 
 allprojects {
-
-}
-
-subprojects {
     repositories {
-        flatDir {
-            name "windowsJRE"
-            dirs "${System.env.JAVA_HOME}/jre/lib"
-        }
-        flatDir {
-            // Also requires 'ln -s /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/{classes,rt}.jar' to work
-            name "osxJRE"
-            dirs "${System.env.JAVA_HOME}/../Classes"
-        }
-        flatDir {
-            name "wtk"
-            dirs "${System.env.JAVA_ME_HOME}/lib"
-        }
         mavenCentral()
     }
+}
 
+apply plugin:  'idea'
+
+subprojects {
     apply plugin: 'java'
     apply plugin: 'cobertura'
-    apply plugin: 'eclipse'
-
+    apply plugin: 'preprocessor'
 
     configurations {
         bootClasspath
         jreBootClasspath
         testBootClasspath
+        provided
+        release
+        testJar
     }
 
     dependencies {
-        bootClasspath 'wtk:midp_2.1'
-        bootClasspath 'wtk:cldc_1.1'
-
-        testBootClasspath configurations.bootClasspath
-        jreBootClasspath 'jre:rt'
-        jreBootClasspath 'jre:jsse'
-
-        compile configurations.bootClasspath
-        compile 'wtk:jsr75_1.0'
-        compile 'wtk:jsr172_1.0'
-        compile 'wtk:jsr177_1.0'
-        compile 'wtk:jsr280_1.0'
-
         testCompile "junit:junit:4.11"
         testCompile 'net.sourceforge.cobertura:cobertura:1.9.4.1'
         testCompile "org.mockito:mockito-all:1.9.5"
@@ -69,131 +44,136 @@ subprojects {
         testCompile "org.powermock:powermock-module-junit4:1.5"
     }
 
-    /**
-     * Don't scan for test classes, as there will be an error with JavaME compiled classes
-     */
-    tasks.withType(Test) {
-        scanForTestClasses = false
-        include "**/*Test.class" // whatever Ant pattern matches the test class files
-    }
+    project.ext.preprocessedSources = "$buildDir/preprocessed-sources/main"
+    // Define a provided scope, as defined here
+    // http://blog.codeaholics.org/2012/emulating-mavens-provided-scope-in-gradle/
+    // The following lines are needed only when we build using the standard java compile
+    // task. For wtk-build we set the classpath manually and thus it's not really needed
+    sourceSets {
+        main.compileClasspath += configurations.provided
+        release.compileClasspath += configurations.provided
 
-    project.ext.target = buildDir.toString()
-
-
-    buildscript {
-        dependencies {
-            classpath files(rootDir.absolutePath + "/" + antennaJar)
-        }
-    }
-
-    // antenna ant tasks
-    ant.taskdef(resource: 'antenna.properties') {
-        classpath {
-            pathElement(path: buildscript.configurations.classpath.asPath)
-        }
-    }
-
-    task preverify << {
-        project.ext.wtkHome = "$System.env.JAVA_ME_HOME"
-        project.ext.javaHome = "$System.env.JAVA_HOME"
-
-        project.ext.errors = false
-        if (project.ext.wtkHome == null || ''.equals(project.ext.wtkHome)) {
-            println('Environment variable JAVA_ME_HOME has not been set')
-            project.ext.errors = true
-        } else if (!file(project.ext.wtkHome).exists() || !file(project.ext.wtkHome).isDirectory()) {
-            println('The JAVA_ME_HOME-variable must point to the installatio of the Java ME SDK')
-            project.ext.errors = true
+        test {
+            compileClasspath += configurations.provided
+            runtimeClasspath += configurations.provided
         }
 
-        if (project.ext.errors) {
-            println("Error: Missing variables. Failing build")
-            System.exit(1)
-        }
-
-    }
-
-    task init(dependsOn: preverify) << {
-        if (buildDir.isDirectory()) {
-            ant.delete(dir: sourceSets.main.output.classesDir)
-        }
-
-        buildDir.mkdirs()
-
-        // wtk properties
-        ant.property(name: 'wtk.home', value: project.ext.wtkHome)
-        ant.property(name: 'wtk.cldc.version', value: cldcVersion)
-        ant.property(name: 'wtk.midp.version', value: midpVersion)
-    }
-
-    project.ext.executeWtkBuild = {
-        sourceDir, destDir ->
-
-        ant.wtkbuild(
-                srcdir: sourceDir,
-                destdir: destDir,
-                encoding: sourceEncoding,
-                source: javaVersion,
-                includeantruntime: false,
-                preverify: doPreverify) {
-
-            bootclasspath {
-                pathElement(path: configurations.bootClasspath.asPath)
+        release {
+            java {
+                srcDir project.ext.preprocessedSources
             }
-            classpath {
-                pathElement(path: configurations.compile.asPath)
+
+        }
+
+    }
+    // End of compileJava requirements
+    project.tasks['javadoc'].classpath += configurations.provided
+
+    apply plugin: 'jdepend'
+    apply plugin: 'pmd'
+    apply plugin: 'project-report'
+    apply plugin: 'findbugs'
+
+    // Don't fail the build for static analysis warnings
+    project.findbugs.ignoreFailures = true
+    project.pmd.ignoreFailures = true
+
+    // Enable HTML report generation
+    tasks.withType(FindBugs) {
+        reports.xml.enabled = false
+        reports.html.enabled = true
+    }
+    tasks.withType(Pmd) {
+        reports.xml.enabled = false
+        reports.html.enabled = true
+    }
+
+    compileJava {
+        sourceCompatibility = '1.3'
+        targetCompatibility = '1.3'
+
+        options.encoding = 'UTF-8'
+        
+        // Coverity Requires Spawned java process to mimick the compilation
+        options.fork = true 
+        options.forkOptions.executable = "javac"
+
+        // Enable this to be strict about warnings, and fail the build if there are any
+//    options.compilerArgs = ['-Xlint', '-Xlint:-serial', '-Xlint:-path']
+    }
+
+    compileTestJava {
+        sourceCompatibility = '1.6'
+        targetCompatibility = '1.6'
+
+        options.encoding = 'UTF-8'
+//    options.compilerArgs = ['-Xlint', '-Xlint:-serial', '-Xlint:-path']
+    }
+
+
+    compileReleaseJava {
+        sourceCompatibility = '1.3'
+        targetCompatibility = '1.3'
+
+        options.encoding = 'UTF-8'
+        // Enable this to be strict about warnings, and fail the build if there are any
+//    options.compilerArgs = ['-Xlint', '-Xlint:-serial', '-Xlint:-path']
+    }
+
+    compileTestJava {
+        sourceCompatibility = '1.6'
+        targetCompatibility = '1.6'
+
+        options.encoding = 'UTF-8'
+//    options.compilerArgs = ['-Xlint', '-Xlint:-serial', '-Xlint:-path']
+    }
+
+    task createSourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    task createJavadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    jar {
+        from {
+            configurations.compile.collect {
+                it.isDirectory() ? it : zipTree(it)
             }
         }
     }
 
-    project.ext.convertSourceSetToDirectories = {
-        set ->
-        project.ext.temp = ""
-        for (file in set) {
-            if (file.exists()) {
-                project.ext.temp += file.getAbsolutePath() + ":"
-            }
-        }
-
-        return project.ext.temp
+    task preprocessSources(overwrite: true, type: PreprocessorTask) {
+         source = sourceSets.main.java.srcDirs
+         destination = new File(project.ext.preprocessedSources)
     }
 
-    /**
-     * Build the project using antenna and the WTK toolkit
-     */
-    task wtkbuild(dependsOn: init) << {
-        sourceSets.main.output.classesDir.mkdirs()
-        sourceSets.main.output.resourcesDir.mkdirs()
-
-        // Convert the source directories to a format that ant/antenna can understand
-        project.ext.sourceDirectories = project.ext.convertSourceSetToDirectories(sourceSets.main.java.srcDirs)
-        project.ext.executeWtkBuild(project.ext.sourceDirectories, sourceSets.main.output.classesDir)
+    task createTestJar(type: Jar) {
+        dependsOn compileTestJava
+        from sourceSets.test.output
+        classifier = 'tests'
     }
 
-    /**
-     * Package the MIDlet package containing the unit tests to run on a device/emulator
-     */
-    task wtkpackage << {
-        project.ext.jadFile = target + '/wtk/' + project.name + '.jad'
-        project.ext.jarFile = target + '/wtk/' + project.name + '.jar'
-
-        ant.copy(file: projectDir.toString() + "/Application Descriptor",
-                tofile: project.ext.jadFile)
-
-        ant.wtkpackage(
-                jadFile: project.ext.jadFile,
-                jarFile: project.ext.jarFile,
-                autoversion: doAutoversion,
-                obfuscate: doObfuscate,
-                preverify: false) {
-            bootclasspath {
-                pathElement(path: configurations.bootClasspath.asPath)
+    task createReleaseJar(type: Jar) {
+        dependsOn compileReleaseJava
+        from sourceSets.release.output
+        from {
+            configurations.compile.collect {
+                it.isDirectory() ? it : zipTree(it)
             }
-            classpath {
-                pathElement(path: configurations.compile.asPath)
-            }
-            ant.fileSet(dir: sourceSets.main.output.classesDir.toString())
-            ant.fileSet(dir: sourceSets.main.output.resourcesDir.toString())
         }
+    }
+
+    compileReleaseJava.dependsOn preprocessSources
+    build.dependsOn createReleaseJar
+
+    artifacts {
+        release createReleaseJar
+        testJar createTestJar
+        archives createSourcesJar
+        archives createJavadocJar
     }
 }
