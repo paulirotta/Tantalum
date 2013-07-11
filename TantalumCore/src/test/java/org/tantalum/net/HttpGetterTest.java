@@ -33,6 +33,7 @@ import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.PlatformUtils;
+import org.tantalum.Task;
 import org.tantalum.util.L;
 
 import java.io.IOException;
@@ -42,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import static org.mockito.Mockito.*;
-import main.java.org.tantalum.Task;
 
 /**
  * Unit tests for the default implementation of
