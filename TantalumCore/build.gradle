@@ -1,0 +1,27 @@
+/**
+ * TantalumCore/build.gradle
+ *
+ * Builds the TantalumCore-project, and generates four jar files
+ *
+ * TantalumCore.jar contains preprocessed classes without logging and other debug code
+ *
+ * TantalumCore-debug.jar contains the compiled code from the original sources
+ *
+ * TantalumCore-source.jar contains the original sources
+ *
+ * TantalumCore-javadoc.jar contains the generated javadoc for the project
+ *
+ */
+test {
+    maxParallelForks = 4
+    forkEvery = 1000
+}
+
+project.ext.releaseArchivesName = 'TantalumCore'
+project.archivesBaseName = 'TantalumCore-debug'
+
+project.tasks['createReleaseJar'].baseName = project.ext.releaseArchivesName
+project.tasks['createJavadocJar'].baseName = project.ext.releaseArchivesName
+project.tasks['createSourcesJar'].baseName = project.ext.releaseArchivesName
+project.tasks['createTestJar'].baseName = project.ext.releaseArchivesName
+

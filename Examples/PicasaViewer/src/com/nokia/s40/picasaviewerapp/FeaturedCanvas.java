@@ -1,6 +1,6 @@
 /*
- * Copyright © 2012 Nokia Corporation. All rights reserved.
- * Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation. 
+ * Copyright (c) 2012-2013 Nokia Corporation. All rights reserved.
+ * Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation.
  * Oracle and Java are trademarks or registered trademarks of Oracle and/or its
  * affiliates. Other product and company names mentioned herein may be trademarks
  * or trade names of their respective owners. 
@@ -56,7 +56,7 @@ public final class FeaturedCanvas extends ImageGridCanvas {
         } else if (c == searchCommand) {
             midlet.goSearchCanvas();
         } else if (c.getCommandType() == Command.EXIT) {
-            PlatformUtils.getInstance().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false, "Exit pressed");
         }
     }
 

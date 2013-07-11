@@ -6,7 +6,7 @@ import org.json.me.JSONObject;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
-import org.tantalum.storage.DataTypeHandler;
+import org.tantalum.storage.CacheView;
 import org.tantalum.util.L;
 
 import javax.microedition.lcdui.*;
@@ -17,6 +17,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import org.tantalum.CancellationException;
 import org.tantalum.TimeoutException;
+import org.tantalum.storage.FlashDatabaseException;
 
 /**
  * Demonstration of a JSON service which returns locally cached values if the
@@ -33,7 +34,33 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 
     private boolean midletPaused = false;
 
-    public HelloMIDlet() {
+    public HelloMIDlet() throws FlashDatabaseException {
+        this.locationsCache = StaticWebCache.getWebCache('0', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
+            /**
+             * This method converts the JSON byte[] received from the web
+             * service, or stored in local flash memory, into an object we can
+             * use in the application ("use form"). It is called by the cache
+             * automatically as needed on a background Worker thread so the User
+             * Interface Thread (UI Thread) is not blocked and the interface
+             * continues to be responsive.
+             */
+            public Object convertToUseForm(final Object key, final byte[] bytes) {
+                String out = "";
+                String s = new String(bytes);
+                try {
+                    JSONObject src = new JSONObject(s);
+                    JSONObject results = src.getJSONObject("results");
+                    JSONObject geometry = results.getJSONObject("geometry");
+                    JSONArray location = geometry.getJSONArray("location");
+
+                    out = "Lat: " + location.getString(0) + " & Lon: " + location.getString(1);
+                } catch (JSONException ex) {
+                    L.e("Can not parse JSON", s, ex);
+                }
+
+                return out;
+            }
+        }, null, null);
     }
     /*
      * Cache as like a Hashtable of key-value pairs, where the key is the
@@ -46,31 +73,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
      * least-recently-used local data. If that data is requested again, it will
      * be requested from the web server.
      */
-    private final StaticWebCache locationsCache = StaticWebCache.getWebCache('0', PlatformUtils.PHONE_DATABASE_CACHE, new DataTypeHandler() {
-        /**
-         * This method converts the JSON byte[] received from the web service,
-         * or stored in local flash memory, into an object we can use in the
-         * application ("use form"). It is called by the cache automatically as
-         * needed on a background Worker thread so the User Interface Thread (UI
-         * Thread) is not blocked and the interface continues to be responsive.
-         */
-        public Object convertToUseForm(final Object key, final byte[] bytes) {
-            String out = "";
-            String s = new String(bytes);
-            try {
-                JSONObject src = new JSONObject(s);
-                JSONObject results = src.getJSONObject("results");
-                JSONObject geometry = results.getJSONObject("geometry");
-                JSONArray location = geometry.getJSONArray("location");
-
-                out = "Lat: " + location.getString(0) + " & Lon: " + location.getString(1);
-            } catch (JSONException ex) {
-                L.e("Can not parse JSON", s, ex);
-            }
-
-            return out;
-        }
-    });
+    private final StaticWebCache locationsCache;
 //<editor-fold defaultstate="collapsed" desc=" Generated Fields ">//GEN-BEGIN:|fields|0|
     private Command exitCommand;
     private Command okCommand;
@@ -171,12 +174,8 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                 this.locationsCache.getAsync(getGeocodeUrl(
                         this.getAddressTextField().getString().trim().toLowerCase()),
                         Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE,
-                        new Task(Task.FASTLANE_PRIORITY) {
-                    protected Object exec(Object o) {
-                        return o;
-                    }
-
-                    public void run() {
+                        new Task(Task.UI_PRIORITY) {
+                    protected Object exec(final Object in) {
                         try {
                             // UI Thread callback on success
                             HelloMIDlet.this.getLocationStringItem().setText((String) get());
@@ -185,13 +184,15 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         } catch (TimeoutException ex) {
                             L.e(this, "Timeout", "", ex);
                         }
+
+                        return in;
                     }
 
                     protected void onCanceled(String reason) {
                         // UI Thread callback if not already cached and the HTTP GET fails
                         HelloMIDlet.this.getLocationStringItem().setText("Service not available");
                     }
-                }.setRunOnUIThreadWhenFinished(true).setClassName("UITextSetter"));
+                }.setClassName("UITextSetter"));
             }//GEN-BEGIN:|7-commandAction|5|7-postCommandAction
         }//GEN-END:|7-commandAction|5|7-postCommandAction
         // write post-action user code here
@@ -295,7 +296,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        PlatformUtils.getInstance().shutdown(true);
+        PlatformUtils.getInstance().shutdown(true, "exitMIDlet() called");
     }
 
     /**

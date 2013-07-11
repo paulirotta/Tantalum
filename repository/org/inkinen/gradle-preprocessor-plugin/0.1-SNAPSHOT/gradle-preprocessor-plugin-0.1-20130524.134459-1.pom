@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.inkinen</groupId>
+  <artifactId>gradle-preprocessor-plugin</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <description>Preprocessor plugin for gradle. Uses the antenna preprocesor, without needing a WTK installation to run the processor</description>
+  <url>https://github.com/kaiinkinen/gradle-preprocessor-plugin.git</url>
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>kaiinkinen</id>
+      <name>Kai Inkinen</name>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:https://github.com/kaiinkinen/gradle-preprocessor-plugin.git</connection>
+    <developerConnection>scm:https://github.com/kaiinkinen/gradle-preprocessor-plugin.git</developerConnection>
+    <url>scm:https://github.com/kaiinkinen/gradle-preprocessor-plugin.git</url>
+  </scm>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.ant</groupId>
+      <artifactId>ant</artifactId>
+      <version>1.8.4</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr-runtime</artifactId>
+      <version>3.0.1</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+</project>

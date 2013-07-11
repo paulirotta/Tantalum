@@ -1,0 +1,92 @@
+/**
+ * TantalumAndroid/build.gradle
+ *
+ * Builds the TantalumAndroid-project, and generates two jar files
+ *
+ * TantalumAndroid.jar contains preprocessed classes without logging and other debug code
+ *
+ *  TantalumAndroid-debug.jar contains the compiled code from the original sources
+ *
+ * The project contains an additional config, called 'codeCoverageJar', which
+ * packages and exposes the cobertura-instrumented classes as a jar file.
+ * This jar file is being used by the J2SE-project to execute the unit tests
+ * and generate the coverage report.
+ */
+project.ext.preprocessedSources = "${buildDir}/preprocessed-sources"
+
+dependencies {
+    compile project(path: ':TantalumCore', includes: ['TantalumCore-debug.jar'])
+    compile fileTree(dir: '../lib/android.jar')
+}
+
+sourceSets {
+    preprocessed {
+        java {
+            srcDir project.ext.preprocessedSources
+        }
+    }
+}
+
+// Run static checks on the library code
+apply plugin: 'jdepend'
+apply plugin: 'pmd'
+apply plugin: 'project-report'
+apply plugin: 'findbugs'
+
+// Don't fail the build for static analysis warnings
+project.findbugs.ignoreFailures = true
+project.pmd.ignoreFailures = true
+
+// Enable HTML report generation
+tasks.withType(FindBugs) {
+    reports.xml.enabled = false
+    reports.html.enabled = true
+}	
+tasks.withType(Pmd) {
+    reports.xml.enabled = false
+    reports.html.enabled = true
+}	
+
+// Use this as the name for the generated jars
+
+project.ext.releaseArchivesName = 'TantalumAndroid'
+project.archivesBaseName = 'TantalumAndroid-debug'
+
+configurations {
+    codeCoverageJar
+}
+
+task releaseJar(type: Jar) {
+    baseName = project.ext.releaseArchivesName
+    dependsOn compilePreprocessedJava
+    from sourceSets.preprocessed.output
+}
+
+task jarInstrumented(type: Jar) {
+    baseName = project.name + '-instrumented'
+    dependsOn coberturaInstrumentMain
+    from sourceSets.main.output
+    from sourceSets.main.cobertura.output
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    baseName = project.ext.releaseArchivesName
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    baseName = project.ext.releaseArchivesName
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    codeCoverageJar jarInstrumented
+    archives releaseJar
+	archives debugJar
+    archives sourcesJar
+    archives javadocJar
+}
+
+

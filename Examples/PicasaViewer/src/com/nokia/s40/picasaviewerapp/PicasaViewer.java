@@ -1,6 +1,6 @@
 /*
- * Copyright © 2012 Nokia Corporation. All rights reserved.
- * Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation. 
+ * Copyright (c) 2012-2013 Nokia Corporation. All rights reserved.
+ * Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation.
  * Oracle and Java are trademarks or registered trademarks of Oracle and/or its
  * affiliates. Other product and company names mentioned herein may be trademarks
  * or trade names of their respective owners. 
@@ -20,7 +20,8 @@ import org.tantalum.util.L;
 
 import com.nokia.common.picasaviewerapp.PicasaStorage;
 import javax.microedition.midlet.MIDlet;
-import javax.microedition.midlet.MIDletStateChangeException;
+import org.tantalum.jme.TantalumJME;
+import org.tantalum.storage.FlashDatabaseException;
 
 
 public final class PicasaViewer extends MIDlet {
@@ -32,7 +33,7 @@ public final class PicasaViewer extends MIDlet {
     private CategoryBarHandler categoryBarHandler = null;
 
     public void startApp() {
-        PlatformUtils.getInstance().setProgram(this, 4);
+        TantalumJME.start(this);
 
         try {
             categoryBarHandler = (CategoryBarHandler) Class.forName("com.nokia.example.picasa.s40.CategoryBarHandler").newInstance();
@@ -47,10 +48,14 @@ public final class PicasaViewer extends MIDlet {
         } catch (Exception ex) {
             //#debug
             L.e("Can not create FeaturedCanvas", null, ex);
-            PlatformUtils.getInstance().shutdown(false);
+            PlatformUtils.getInstance().shutdown(false, "Can not create FeaturedCanvas: " + ex);
         }
-        
-        PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
+        try {
+            PicasaStorage.init(featuredView.getWidth()); // Initialize storage with display width.
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e("Can not init flash storage", null, ex);
+        }
         try {
             featuredView.loadFeed(null, StaticWebCache.GET_ANYWHERE).fork(); //.join(200);
         } catch (Exception ex) {
@@ -123,7 +128,7 @@ public final class PicasaViewer extends MIDlet {
     protected void pauseApp() {
     }
 
-    protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
-        PlatformUtils.getInstance().shutdown(unconditional);
+    protected void destroyApp(final boolean unconditional) {
+        PlatformUtils.getInstance().shutdown(unconditional, "destroyApp(" + unconditional + ") received from phone");
     }
 }

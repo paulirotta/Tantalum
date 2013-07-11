@@ -1,0 +1,39 @@
+/**
+ * TantalumJME/build.gradle
+ *
+ * Builds the TantalumJME-project, and generates two jar files
+ *
+ * TantalumJME.jar contains preprocessed classes without logging and other debug code
+ *
+ * TantalumJME-debug.jar contains the compiled code from the original sources
+ */
+
+// Define project dependencies
+dependencies {
+    provided 'org.microemu:microemulator:2.0.4'
+    provided 'org.microemu:microemu-jsr-75:2.0.4'
+
+    compile project(path: ':TantalumCore')
+
+    releaseCompile project(path: ':TantalumCore', configuration: 'release')
+
+    testCompile project(path: ':TantalumCore', configuration: 'testJar')
+    testCompile 'org.microemu:microemulator:2.0.4'
+    testCompile 'org.microemu:microemu-jsr-75:2.0.4'
+}
+
+sourceSets {
+    test {
+        compileClasspath += configurations.provided
+        runtimeClasspath += configurations.provided
+    }
+}
+
+project.ext.releaseArchivesName = 'TantalumJME'
+project.archivesBaseName = project.ext.releaseArchivesName + '-debug'
+
+project.tasks['build'].dependsOn createReleaseJar
+
+project.tasks['createReleaseJar'].baseName = project.ext.releaseArchivesName
+project.tasks['createJavadocJar'].baseName = project.ext.releaseArchivesName
+project.tasks['createSourcesJar'].baseName = project.ext.releaseArchivesName

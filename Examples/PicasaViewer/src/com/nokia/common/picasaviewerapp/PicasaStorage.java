@@ -1,6 +1,6 @@
 /*
- * Copyright © 2012 Nokia Corporation. All rights reserved.
- * Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation. 
+ * Copyright (c) 2012-2013 Nokia Corporation. All rights reserved.
+ * Nokia and Nokia Connecting People are registered trademarks of Nokia Corporation.
  * Oracle and Java are trademarks or registered trademarks of Oracle and/or its
  * affiliates. Other product and company names mentioned herein may be trademarks
  * or trade names of their respective owners. 
@@ -15,9 +15,11 @@ import org.json.me.JSONObject;
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
-import org.tantalum.storage.DataTypeHandler;
-import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.storage.CacheView;
+import org.tantalum.storage.FlashDatabaseException;
+import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 
 /**
  * Class for accessing cached data like thumbnails, images and feeds. The class
@@ -50,10 +52,9 @@ public class PicasaStorage {
      * used to determine how large images should be.
      *
      */
-    public static synchronized void init(final int width) {
-
+    public static synchronized void init(final int width) throws FlashDatabaseException {
         if (feedCache == null) {
-            final ImageTypeHandler imageTypeHandler = PlatformUtils.getInstance().getImageTypeHandler();
+            final ImageCacheView imageTypeHandler = PlatformUtils.getInstance().getImageCacheView();
 
             screenWidth = width;
             if (screenWidth < 256) {
@@ -64,8 +65,8 @@ public class PicasaStorage {
                 imageSize = 720; //Picasa size for "fullsize" images
             }
             imageTypeHandler.setMaxSize(width, width);
-            imageCache = StaticWebCache.getWebCache('4', PlatformUtils.PHONE_DATABASE_CACHE, imageTypeHandler);
-            feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new PicasaJSONDataTypeHandler());
+            imageCache = StaticWebCache.getWebCache('4', PlatformUtils.PHONE_DATABASE_CACHE, imageTypeHandler, null, null);
+            feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, new PicasaJSONDataTypeHandler(), null, null);
 
             thumbSize = imageSide + "c"; // c is for cropped, ensures image proportions
 
@@ -104,14 +105,15 @@ public class PicasaStorage {
      * Class for converting the JSON response in to a Vector of
      * PicasaImageObject-objects. The vector is saved by Tantalum.
      */
-    private static class PicasaJSONDataTypeHandler implements DataTypeHandler {
+    private static class PicasaJSONDataTypeHandler implements CacheView {
 
-        public Object convertToUseForm(final Object key, byte[] bytes) {
+        public Object convertToUseForm(final Object key, final LOR bytesReference) {
             JSONObject o;
             final Vector vector = new Vector();
 
             try {
-                o = new JSONObject(new String(bytes));
+                o = new JSONObject(new String(bytesReference.getBytes()));
+                bytesReference.clear();
             } catch (JSONException ex) {
                 //#debug
                 L.e("bytes are not a JSON object", featURL, ex);
