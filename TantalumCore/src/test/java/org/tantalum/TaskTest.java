@@ -27,6 +27,7 @@
  */
 package org.tantalum;
 
+import main.java.org.tantalum.Task;
 import org.junit.Test;
 import org.tantalum.util.L;
 

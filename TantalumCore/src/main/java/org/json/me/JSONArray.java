@@ -28,7 +28,6 @@ package org.json.me;
  */
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Hashtable;
 import java.util.Vector;
 import org.tantalum.util.L;
 

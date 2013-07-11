@@ -27,7 +27,6 @@
  */
 package org.tantalum.net;
 
-import main.java.org.tantalum.Task;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,9 +36,8 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
 import java.util.TimerTask;
-
 import org.tantalum.PlatformUtils;
-import main.java.org.tantalum.Task;
+import org.tantalum.Task;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
 import org.tantalum.util.LOR;

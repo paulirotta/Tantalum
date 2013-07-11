@@ -5,17 +5,21 @@
 package org.tantalum.blackberry;
 
 import net.rim.device.api.system.Bitmap;
-import org.tantalum.storage.ImageTypeHandler;
+import org.tantalum.storage.ImageCacheView;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 
 /**
  *
  * @author ADIKSONLINE
  */
-public class BBImageTypeHandler extends ImageTypeHandler {
+public class BBImageCacheView extends ImageCacheView {
 
-    public Object convertToUseForm(Object key, byte[] bytes) {
+    public Object convertToUseForm(Object key, LOR bytesReference) {
+        byte[] bytes = null;
         try {
+            bytes = bytesReference.getBytes();
+            bytesReference.clear();;
             Bitmap b = Bitmap.createBitmapFromBytes(bytes, 0, bytes.length, 1);
             if (maxWidth == SCALING_DISABLED || maxHeight == SCALING_DISABLED) {
                 return b;

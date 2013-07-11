@@ -37,8 +37,8 @@ import org.tantalum.TimeoutException;
 import org.tantalum.util.Comparator;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
-import org.tantalum.util.LRUVector;
 import org.tantalum.util.LOR;
+import org.tantalum.util.LRUVector;
 import org.tantalum.util.SortedVector;
 import org.tantalum.util.WeakHashCache;
 

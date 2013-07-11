@@ -1,6 +1,5 @@
-package main.java.org.json.me;
+package org.json.me;
 
-import org.json.me.JSONException;
 import org.tantalum.util.L;
 
 /*

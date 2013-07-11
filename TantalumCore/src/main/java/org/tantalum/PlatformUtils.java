@@ -200,7 +200,7 @@ public final class PlatformUtils {
                 platform = PLATFORM_ANDROID;
                 platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.android.AndroidPlatformAdapter").newInstance();
                 init(logMode);
-                return;
+                return true;
             }
         } catch (Throwable t) {
             System.out.println("Can not init Android in setProgram(" + program.getClass().getName() + ") : " + t);
@@ -210,7 +210,7 @@ public final class PlatformUtils {
                 platform = PLATFORM_BLACKBERRY;
                 platformAdapter = (PlatformAdapter) Class.forName("org.tantalum.blackberry.BBPlatformAdapter").newInstance();
                 init(logMode);
-                return;
+                return true;
             }
         } catch (Throwable t) {
             System.out.println("Can not init Blackberry in setProgram(" + program.getClass().getName() + ") : " + t);

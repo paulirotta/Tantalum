@@ -27,7 +27,6 @@
  */
 package org.tantalum.android;
 
-import org.tantalum.PlatformAdapter;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.BitmapFactory;
@@ -39,6 +38,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.Vector;
+import org.tantalum.PlatformAdapter;
 import org.tantalum.PlatformUtils;
 import org.tantalum.PlatformUtils.HttpConn;
 import org.tantalum.storage.FlashCache;

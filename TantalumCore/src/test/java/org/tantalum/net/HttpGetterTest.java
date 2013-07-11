@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import static org.mockito.Mockito.*;
-import org.tantalum.Task;
+import main.java.org.tantalum.Task;
 
 /**
  * Unit tests for the default implementation of
