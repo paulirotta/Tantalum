@@ -62,9 +62,7 @@ subprojects {
             java {
                 srcDir project.ext.preprocessedSources
             }
-
         }
-
     }
     // End of compileJava requirements
     project.tasks['javadoc'].classpath += configurations.provided
