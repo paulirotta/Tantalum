@@ -9,7 +9,7 @@ to have the project in the default directory for projects for your IDE such as
 <myhomedir>/nokia_eclipse or <myhomedir>/NetBeansProjects.
 
 The latest source can be pulled from the respository using git. The
-cross-platform example is released seperately and can be found from the link below.
+cross-platform example is released separately and can be found from the link below.
 
 For additional setup details, see:
    https://github.com/TantalumMobile/Tantalum
