@@ -46,6 +46,8 @@ final class Worker extends Thread {
     private static final int STATE_RUNNING = 0;
     private static final int STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
     private static final int STATE_RUNNING_SHUTDOWN_TASKS = 2;
+
+    private static final int QUEUE_SIZE_LIMIT = 32;
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
@@ -165,6 +167,9 @@ final class Worker extends Thread {
 
                 case Task.FASTLANE_PRIORITY:
                     fastlaneQ.insertElementAt(task, 0);
+                    if (fastlaneQ.size() > QUEUE_SIZE_LIMIT) {
+                        fastlaneQ.removeElementAt(fastlaneQ.size()-1);
+                    }
                     /**
                      * notify() vs notifyAll(): Any thread will do as all
                      * Workers (and nothing else) waits on this lock and will
@@ -191,10 +196,16 @@ final class Worker extends Thread {
 
                 case Task.HIGH_PRIORITY:
                     q.insertElementAt(task, 0);
+                    if (q.size() > QUEUE_SIZE_LIMIT) {
+                        q.removeElementAt(q.size()-1);
+                    }
                     q.notifyAll();
                     break;
 
                 case Task.NORMAL_PRIORITY:
+                    if (q.size() >= QUEUE_SIZE_LIMIT) {
+                        q.removeElementAt(q.size()-1);
+                    }
                     q.addElement(task);
                     q.notifyAll();
                     break;
