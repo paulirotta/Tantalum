@@ -141,8 +141,8 @@ public class StaticCache {
                     if (c.getClass() != clas) {
                         throw new IllegalArgumentException("You can not create a StaticCache and a StaticWebCache with the same priority: " + priority);
                     }
-                    if (c.equals(priority, cacheView, taskFactory)) {
-                        throw new IllegalArgumentException("A cache with priority=" + priority + " already exists, but DataTypeHandler and/or HttpTaskFactory are now equal to your factory request");
+                    if (!c.equals(priority, cacheView, taskFactory)) {
+                        throw new IllegalArgumentException("A cache with priority=" + priority + " already exists, but CacheView and/or HttpTaskFactory are not equal to your factory request");
                     }
 
                     return c;
