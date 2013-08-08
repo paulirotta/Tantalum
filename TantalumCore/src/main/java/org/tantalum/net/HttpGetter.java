@@ -551,16 +551,6 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Create a Task.NORMAL_PRIORITY getter
-     *
-     */
-    public HttpGetter() {
-        this(Task.NORMAL_PRIORITY);
-
-        setShutdownBehaviour(Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN);
-    }
-
-    /**
      * Get the byte[] from the URL specified by the input argument when
      * exec(url) is called. This may be chained from a previous chain()ed
      * asynchronous task.
