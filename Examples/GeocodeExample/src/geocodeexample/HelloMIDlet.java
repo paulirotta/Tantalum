@@ -6,16 +6,14 @@ import java.io.IOException;
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
-
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
-import org.tantalum.CancellationException;
-import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
-import org.tantalum.TimeoutException;
+import org.tantalum.jme.TantalumJME;
 import org.tantalum.net.HttpGetter;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 
 /**
  * @author phou
@@ -32,6 +30,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
 //</editor-fold>//GEN-END:|fields|0|
 
     public HelloMIDlet() {
+        TantalumJME.start(this);
     }
 
 //<editor-fold defaultstate="collapsed" desc=" Generated Methods ">//GEN-BEGIN:|methods|0|
@@ -123,16 +122,16 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                         // Parse the JSON on the background Worker thread
                         // Using the background thread keeps the UI fast and responsive
                         String out = "Parse error- try a different address";
-                        String s = new String((byte[]) in);
+                        String s = new String((byte[]) ((LOR)in).getBytes());
 
                         try {
                             final JSONObject src = new JSONObject(s);
-                            JSONArray inn = src.getJSONArray("Placemark");
-                            JSONObject arr = inn.getJSONObject(1);
-                            JSONObject d = arr.getJSONObject("Point");
-                            JSONArray f = d.getJSONArray("coordinates");
+                            JSONArray inn = src.getJSONArray("results");
+                            JSONObject arr = inn.getJSONObject(0);
+                            JSONObject d = arr.getJSONObject("geometry");
+                            JSONObject f = d.getJSONObject("location");
 
-                            out = "Lat: " + f.getString(0) + " & Lon: " + f.getString(1);
+                            out = "Lat: " + f.getDouble("lat") + " & Lon: " + f.getDouble("lng");
                             getLocationStringItem().setText((String) out);
                         } catch (JSONException ex) {
                             L.e("Can not parse JSON", s, ex);
@@ -251,7 +250,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        PlatformUtils.getInstance().shutdown(false, "exitMIDlet() signal");
+        TantalumJME.stop("exitMidlet() signal");
     }
 
     /**
@@ -276,7 +275,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
     }
 
     public String getGeocodeUrl(String address) {
-        return "http://maps.google.com/maps/geo?q=" + urlEncode(address) + "&output=json";
+        return "http://maps.googleapis.com/maps/api/geocode/json?address=" + urlEncode(address) + "&sensor=false";
     }
     private final static String UNRESERVED_CHARS = ".-_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQURSTUVWXYZ*~";
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();

@@ -54,7 +54,7 @@ public final class ListForm extends Form implements ActionListener, ListCellRend
 
     public ListForm(String title, RSSReader midlet) throws FlashDatabaseException {
         super(title);
-        this.feedCache = StaticWebCache.getWebCache('5', PlatformUtils.PHONE_DATABASE_CACHE, listModel, null, null);
+        this.feedCache = StaticWebCache.getWebCache('5', listModel);
         this.midlet = midlet;
         list.addActionListener(this);
 
