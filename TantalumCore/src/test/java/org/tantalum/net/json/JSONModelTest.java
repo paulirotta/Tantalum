@@ -8,7 +8,7 @@ import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.tantalum.MockedStaticInitializers;
 import org.tantalum.PlatformUtils;
-import main.java.org.tantalum.Task;
+import org.tantalum.Task;
 import org.tantalum.net.json.JSONGetter;
 import org.tantalum.net.json.JSONModel;
 import org.tantalum.util.L;

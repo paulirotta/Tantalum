@@ -63,24 +63,8 @@ public abstract class JSONPoster extends HttpPoster {
     }
 
     /**
-     * Create a Task.NORMAL_PRIORITY JSON poster
-     * 
-     */
-    public JSONPoster() {
-        super();
-    }
-
-    /**
      * HTTP POST JSON to a server
      *
-     * @param url
-     * @param json
-     * @param priority
-     * @throws UnsupportedEncodingException if the String can not be converted
-     * to UTF-8 on this device
-     */
-    /**
-     * 
      * @param priority
      * @param url
      * @param json

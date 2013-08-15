@@ -70,11 +70,6 @@ public class HttpPoster extends HttpGetter {
         this(Task.NORMAL_PRIORITY, url);
     }
     
-    public HttpPoster() {
-        super();
-    }
-    
-    
     /**
      * Create an HTTP POST operation
      *

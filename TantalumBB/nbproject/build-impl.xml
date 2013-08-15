@@ -137,6 +137,11 @@
             <include name="${dist.jar}"/>
         </patternset>
     </target>
+    <!--blackberry-init-->
+    <target name="blackberry-init">
+        <available file="${platform.home}/bin/rapc.jar" property="blackberry.trigger"/>
+        <available file="${platform.home}/bin/Settings.rc" property="blackberry.settings.trigger"/>
+    </target>
     <!--cdc-init-->
     <target name="cdc-init">
         <condition property="cdc-platform.trigger">
@@ -179,11 +184,6 @@
                 <istrue value="${sign.enabled}"/>
             </and>
         </condition>
-    </target>
-    <!--blackberry-init-->
-    <target name="blackberry-init">
-        <available file="${platform.home}/bin/rapc.jar" property="blackberry.trigger"/>
-        <available file="${platform.home}/bin/Settings.rc" property="blackberry.settings.trigger"/>
     </target>
     <!--semc-init-->
     <target name="semc-pre-init" if="cdc-platform.trigger">
@@ -302,7 +302,7 @@
     <!--init-->
     <target name="pre-init"/>
     <target name="post-init"/>
-    <target name="init" depends="pre-init,load-properties,basic-init,cldc-init,cdc-init,blackberry-init,semc-init,savaje-init,sjmc-init,ojec-init,cdc-hi-init,nokiaS80-init,post-init"/>
+    <target name="init" depends="pre-init,load-properties,basic-init,cldc-init,blackberry-init,cdc-init,semc-init,savaje-init,sjmc-init,ojec-init,cdc-hi-init,nokiaS80-init,post-init"/>
     <!--conditional clean-->
     <target name="conditional-clean-init">
         <uptodate property="no.clean.before.build" targetfile="${build.dir}/.timestamp">
