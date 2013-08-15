@@ -36,6 +36,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
 import java.util.TimerTask;
+
 import org.tantalum.PlatformUtils;
 import org.tantalum.Task;
 import org.tantalum.util.CryptoUtils;
@@ -547,16 +548,6 @@ public class HttpGetter extends Task {
     static {
         HttpGetter.averageBaud.setLowerBound(HttpGetter.THRESHOLD_BAUD / 10);
         HttpGetter.averageResponseDelayMillis.setUpperBound(5000.0f);
-    }
-
-    /**
-     * Create a Task.NORMAL_PRIORITY getter
-     *
-     */
-    public HttpGetter() {
-        this(Task.NORMAL_PRIORITY);
-
-        setShutdownBehaviour(Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN);
     }
 
     /**
