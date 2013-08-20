@@ -386,7 +386,7 @@ final class Worker extends Thread {
                 for (int i = 0; i < workers.length; i++) {
                     final Task t = workers[i].currentTask;
                     if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                        workers[i].interrupt();
+                        workers[i].currentTask.cancel(true, reason);
                     }
                 }
             }
