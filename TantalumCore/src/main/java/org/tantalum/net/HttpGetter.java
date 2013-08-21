@@ -901,7 +901,7 @@ public class HttpGetter extends Task {
                 bos = null;
             }
 
-            if (tryAgain) {
+            if (tryAgain && status == Task.PENDING) {
                 try {
                     Thread.sleep(HTTP_RETRY_DELAY);
                 } catch (InterruptedException ex) {
