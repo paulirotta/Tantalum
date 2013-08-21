@@ -153,6 +153,8 @@ public abstract class L {
         if (callingObject != null) {
             sb.append(' ');
             sb.append(Task.getClassName(callingObject));
+            sb.append('-');
+            sb.append(Integer.toHexString(callingObject.hashCode()));
         }
         sb.append("): ");
         sb.append(tag);
