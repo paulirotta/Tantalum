@@ -70,7 +70,8 @@ public class HttpGetter extends Task {
 
     private static final int READ_BUFFER_LENGTH = 8192; //8k read buffer if no Content-Length header from server
     private static final int OUTPUT_BUFFER_INITIAL_LENGTH = 8192; //8k read buffer if no Content-Length header from server
-    /**
+private static final int SLEEP_TIME_IF_READ_ZERO_BYTES = 10;
+        /**
      * HTTP GET is the default operation
      */
     public static final String HTTP_GET = "GET";
@@ -551,16 +552,6 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Create a Task.NORMAL_PRIORITY getter
-     *
-     */
-    public HttpGetter() {
-        this(Task.NORMAL_PRIORITY);
-
-        setShutdownBehaviour(Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN);
-    }
-
-    /**
      * Get the byte[] from the URL specified by the input argument when
      * exec(url) is called. This may be chained from a previous chain()ed
      * asynchronous task.
@@ -761,7 +752,7 @@ public class HttpGetter extends Task {
 
         startTime = System.currentTimeMillis();
         final String url = keyIncludingPostDataHashtoUrl((String) in);
-        final Integer netActivityKey = new Integer(url.hashCode());
+        final Integer netActivityKey = new Integer(hashCode());
         HttpGetter.networkActivity(netActivityKey); // Notify listeners, net is in use
 
         //#debug
@@ -890,16 +881,16 @@ public class HttpGetter extends Task {
                 }
                 httpConn = null;
             }
-            try {
-                if (bos != null) {
-                    bos.close();
-                }
-            } catch (Exception e) {
-                //#debug
-                L.e(this, "HttpGetter byteArrayOutputStream close error", url, e);
-            } finally {
+//            try {
+//                if (bos != null) {
+//                    bos.close();
+//                }
+//            } catch (Exception e) {
+//                //#debug
+//                L.e(this, "HttpGetter byteArrayOutputStream close error", url, e);
+//            } finally {
                 bos = null;
-            }
+//            }
 
             if (tryAgain) {
                 try {
@@ -942,7 +933,7 @@ public class HttpGetter extends Task {
      * @return time of first byte received
      * @throws IOException
      */
-    private long readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
+    private long readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException, InterruptedException {
         long firstByteReceivedTime = Long.MAX_VALUE;
 
         if (bytes.length != 0) {
@@ -957,11 +948,10 @@ public class HttpGetter extends Task {
             firstByteReceivedTime = System.currentTimeMillis();
             while (totalBytesRead < bytes.length) {
                 final int br = inputStream.read(bytes, totalBytesRead, bytes.length - totalBytesRead);
-                if (br >= 0) {
+                if (br > 0) {
                     totalBytesRead += br;
-                    if (totalBytesRead < bytes.length) {
-                        Thread.currentThread().yield();
-                    }
+                } else if (br == 0) {
+                    Thread.sleep(SLEEP_TIME_IF_READ_ZERO_BYTES);
                 } else {
                     prematureEOF(url, totalBytesRead, bytes.length);
                 }
@@ -986,7 +976,7 @@ public class HttpGetter extends Task {
      * @return time of first byte received
      * @throws IOException
      */
-    private long readBytesVariableLength(final InputStream inputStream, final OutputStream bos, final Integer netActivityKey) throws IOException {
+    private long readBytesVariableLength(final InputStream inputStream, final OutputStream bos, final Integer netActivityKey) throws IOException, InterruptedException {
         final byte[] readBuffer = new byte[READ_BUFFER_LENGTH];
 
         final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
@@ -1001,8 +991,11 @@ public class HttpGetter extends Task {
             HttpGetter.networkActivity(netActivityKey);
             if (bytesRead < 0) {
                 break;
+            } else if (bytesRead == 0) {
+                Thread.sleep(SLEEP_TIME_IF_READ_ZERO_BYTES);
+            } else {
+                bos.write(readBuffer, 0, bytesRead);
             }
-            bos.write(readBuffer, 0, bytesRead);
         }
 
         return firstByteReceivedTime;
