@@ -990,7 +990,7 @@ public abstract class Task {
      * started and no interrupt was requested
      */
     public final boolean cancel(final boolean interruptIfRunning, final String reason) {
-        return doCancel(interruptIfRunning, reason, null, null);
+        return cancel(interruptIfRunning, reason, null);
     }
 
     /**

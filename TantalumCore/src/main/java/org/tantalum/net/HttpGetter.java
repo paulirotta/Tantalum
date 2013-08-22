@@ -915,6 +915,13 @@ private static final int SLEEP_TIME_IF_READ_ZERO_BYTES = 10;
 
         return out;
     }
+    
+    public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
+        //#debug
+        L.i("The HttpGetter has been canceled. Retries Remaining is set to 0",reason);
+        retriesRemaining = 0;
+        return super.cancel(mayInterruptIfRunning, reason, t);
+    }
 
     /**
      * Read an exact number of bytes specified in the header Content-Length
