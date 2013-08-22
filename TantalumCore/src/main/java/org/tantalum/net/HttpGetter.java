@@ -70,8 +70,8 @@ public class HttpGetter extends Task {
 
     private static final int READ_BUFFER_LENGTH = 8192; //8k read buffer if no Content-Length header from server
     private static final int OUTPUT_BUFFER_INITIAL_LENGTH = 8192; //8k read buffer if no Content-Length header from server
-private static final int SLEEP_TIME_IF_READ_ZERO_BYTES = 10;
-        /**
+    private static final int SLEEP_TIME_IF_READ_ZERO_BYTES = 10;
+    /**
      * HTTP GET is the default operation
      */
     public static final String HTTP_GET = "GET";
@@ -881,16 +881,7 @@ private static final int SLEEP_TIME_IF_READ_ZERO_BYTES = 10;
                 }
                 httpConn = null;
             }
-//            try {
-//                if (bos != null) {
-//                    bos.close();
-//                }
-//            } catch (Exception e) {
-//                //#debug
-//                L.e(this, "HttpGetter byteArrayOutputStream close error", url, e);
-//            } finally {
-                bos = null;
-//            }
+            bos = null;
 
             if (tryAgain) {
                 try {
@@ -915,10 +906,10 @@ private static final int SLEEP_TIME_IF_READ_ZERO_BYTES = 10;
 
         return out;
     }
-    
+
     public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
         //#debug
-        L.i("The HttpGetter has been canceled. Retries Remaining is set to 0",reason);
+        L.i("The HttpGetter has been canceled. Retries Remaining is set to 0", reason);
         retriesRemaining = 0;
         return super.cancel(mayInterruptIfRunning, reason, t);
     }
