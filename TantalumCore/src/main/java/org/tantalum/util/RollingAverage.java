@@ -15,8 +15,8 @@ public final class RollingAverage {
     private float average;
     private final int windowLength;
     private int window;
-    private float upperBound = Float.POSITIVE_INFINITY;
-    private float lowerBound = Float.NEGATIVE_INFINITY;
+    private float upperBound = Float.MAX_VALUE;
+    private float lowerBound = -Float.MAX_VALUE;
 
     /**
      * Create a new rolling average filter. This will slowly track
