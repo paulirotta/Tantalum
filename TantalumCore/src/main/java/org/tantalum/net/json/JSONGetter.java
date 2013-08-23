@@ -85,7 +85,7 @@ public class JSONGetter extends HttpGetter {
         String value = null;
         
         try {
-            value = new String(((LOR) super.exec(in)).getBytes(), "UTF8").trim();
+            value = new String(((LOR) super.exec(in)).getBytes(), "UTF-8").trim();
             if (value.startsWith("[")) {
                 // Parser expects non-array base object- add one
                 value = "{\"base:\"" + value + "}";
