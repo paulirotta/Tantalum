@@ -94,6 +94,12 @@ final class Worker extends Thread {
         }
     }
 
+    static boolean isShuttingDown() {
+        synchronized (q) {
+            return runState != STATE_RUNNING;
+        }
+    }
+
     private static void forkToUIThread(final Task task) {
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
@@ -384,9 +390,12 @@ final class Worker extends Thread {
              */
             synchronized (q) {
                 for (int i = 0; i < workers.length; i++) {
+                    if (workers[i] == Thread.currentThread()) {
+                        continue;
+                    }
                     final Task t = workers[i].currentTask;
                     if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                        workers[i].currentTask.cancel(true, reason);
+                        workers[i].interrupt();
                     }
                 }
             }
@@ -401,7 +410,7 @@ final class Worker extends Thread {
                         dedicatedThread = null;
                     }
                 }
-                if (dedicatedThread != null) {
+                if (dedicatedThread != null && dedicatedThread != Thread.currentThread()) {
                     synchronized (dedicatedThread.taskRunnable.serialQ) {
                         if (dedicatedThread.taskRunnable.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
                             dedicatedThread.interrupt();

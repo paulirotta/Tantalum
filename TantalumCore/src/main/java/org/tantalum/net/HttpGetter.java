@@ -902,12 +902,12 @@ public class HttpGetter extends Task {
             }
 
             if (tryAgain && status == Task.PENDING) {
-                try {
+//                try {
                     Thread.sleep(HTTP_RETRY_DELAY);
-                } catch (InterruptedException ex) {
-                    cancel(false, "Interrupted HttpGetter while sleeping between retries: " + this);
-                }
-                out = (LOR) exec(url);
+//                } catch (InterruptedException ex) {
+//                    cancel(false, "Interrupted HttpGetter while sleeping between retries: " + this);
+//                }
+//                out = (LOR) exec(url);
             } else if (!success) {
                 //#debug
                 L.i("HTTP GET FAILED: about to HttpGetter.cancel() this and any chained Tasks", this.toString());
