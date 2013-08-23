@@ -169,7 +169,7 @@ final class Worker extends Thread {
                 case Task.DEDICATED_THREAD_PRIORITY:
                     final DedicatedThread thread = DedicatedThread.getDedicatedThread();
                     
-                    thread.serialQ.add(task);
+                    thread.serialQ.addElement(task);
                     thread.start();
                     break;
 
@@ -800,6 +800,7 @@ final class Worker extends Thread {
         private static DedicatedThread prebuildDedicatedThread = null;
         Task task = null;
         final Vector serialQ = new Vector();
+        static int dedicatedThreadCounter = 0;
 
         static synchronized DedicatedThread getDedicatedThread() {
             final DedicatedThread t;
@@ -833,7 +834,6 @@ final class Worker extends Thread {
 
 //        final DedicatedThread.TaskRunnable taskRunnable;
         public void run() {
-            boolean firstTask = true;
             try {
                 while (true) {
                     synchronized (serialQ) {
@@ -843,10 +843,6 @@ final class Worker extends Thread {
                         }
                         task = (Task) serialQ.firstElement();
                         serialQ.removeElementAt(0);
-                        if (firstTask) {
-                            setName(task.getClassName());
-                            firstTask = false;
-                        }
                     }
 
                     try {
@@ -910,6 +906,7 @@ final class Worker extends Thread {
 //            dedicatedThreads.addElement(this);
 //        }
         private DedicatedThread() {
+            super("DedicatedThread" + dedicatedThreadCounter++);
             dedicatedThreads.addElement(this);
         }
     }
