@@ -46,7 +46,6 @@ final class Worker extends Thread {
     private static final int STATE_RUNNING = 0;
     private static final int STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
     private static final int STATE_RUNNING_SHUTDOWN_TASKS = 2;
-
     private static final int QUEUE_SIZE_LIMIT = 32;
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
@@ -72,6 +71,17 @@ final class Worker extends Thread {
         super(name);
 
         this.isDedicatedFastlaneWorker = isDedicatedFastlaneWorker;
+    }
+
+    /**
+     * Return true until shutdown has started
+     *
+     * @return
+     */
+    static boolean isNormalRunState() {
+        synchronized (q) {
+            return runState == Worker.STATE_RUNNING;
+        }
     }
 
     /**
@@ -113,7 +123,7 @@ final class Worker extends Thread {
         if (currentThread instanceof Worker) {
             ((Worker) currentThread).serialQ.addElement(task);
         } else if (currentThread instanceof DedicatedThread) {
-            ((DedicatedThread) currentThread).taskRunnable.serialQ.addElement(task);
+            ((DedicatedThread) currentThread).serialQ.addElement(task);
         } else {
             throw new IllegalArgumentException("You must be in a Task running on a Tantalum Worker thread or DedicatedThread to fork a new Task.SERIAL_CURRENT_THREAD_PRIORITY");
         }
@@ -157,7 +167,9 @@ final class Worker extends Thread {
         synchronized (q) {
             switch (priority) {
                 case Task.DEDICATED_THREAD_PRIORITY:
-                    final DedicatedThread thread = new DedicatedThread(new DedicatedThread.TaskRunnable(task), task.getClassName());
+                    final DedicatedThread thread = DedicatedThread.getDedicatedThread();
+                    
+                    thread.serialQ.add(task);
                     thread.start();
                     break;
 
@@ -168,7 +180,7 @@ final class Worker extends Thread {
                 case Task.FASTLANE_PRIORITY:
                     fastlaneQ.insertElementAt(task, 0);
                     if (fastlaneQ.size() > QUEUE_SIZE_LIMIT) {
-                        fastlaneQ.removeElementAt(fastlaneQ.size()-1);
+                        fastlaneQ.removeElementAt(fastlaneQ.size() - 1);
                     }
                     /**
                      * notify() vs notifyAll(): Any thread will do as all
@@ -197,14 +209,14 @@ final class Worker extends Thread {
                 case Task.HIGH_PRIORITY:
                     q.insertElementAt(task, 0);
                     if (q.size() > QUEUE_SIZE_LIMIT) {
-                        q.removeElementAt(q.size()-1);
+                        q.removeElementAt(q.size() - 1);
                     }
                     q.notifyAll();
                     break;
 
                 case Task.NORMAL_PRIORITY:
                     if (q.size() >= QUEUE_SIZE_LIMIT) {
-                        q.removeElementAt(q.size()-1);
+                        q.removeElementAt(q.size() - 1);
                     }
                     q.addElement(task);
                     q.notifyAll();
@@ -318,7 +330,7 @@ final class Worker extends Thread {
                     continue;
                 }
 
-                if (task.equals(dedicatedThread.taskRunnable.task)) {
+                if (task.equals(dedicatedThread.task)) {
                     //#debug
                     L.i(task, "cancel() is sending Thread.interrupt()", "thread=" + workers[i].getName() + " task=" + task);
                     /*
@@ -376,7 +388,7 @@ final class Worker extends Thread {
                 dedicatedThreads.copyInto(dt);
             }
             for (int i = 0; i < dt.length; i++) {
-                Worker.dequeueOrCancelOnShutdown(dt[i].taskRunnable.serialQ);
+                Worker.dequeueOrCancelOnShutdown(dt[i].serialQ);
             }
 
             /*
@@ -402,8 +414,8 @@ final class Worker extends Thread {
                     }
                 }
                 if (dedicatedThread != null) {
-                    synchronized (dedicatedThread.taskRunnable.serialQ) {
-                        if (dedicatedThread.taskRunnable.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
+                    synchronized (dedicatedThread.serialQ) {
+                        if (dedicatedThread.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
                             dedicatedThread.interrupt();
                         }
                     }
@@ -785,53 +797,119 @@ final class Worker extends Thread {
      */
     private static class DedicatedThread extends Thread {
 
-        final DedicatedThread.TaskRunnable taskRunnable;
+        private static DedicatedThread prebuildDedicatedThread = null;
+        Task task = null;
+        final Vector serialQ = new Vector();
 
-        static class TaskRunnable implements Runnable {
+        static synchronized DedicatedThread getDedicatedThread() {
+            final DedicatedThread t;
 
-            Task task = null;
-            final Vector serialQ = new Vector();
-
-            TaskRunnable(final Task firstTask) {
-                if (firstTask == null) {
-                    throw new IllegalArgumentException("Can not create a DedicatedThread with null Task (no work to do)");
-                }
-
-                serialQ.addElement(firstTask);
+            if (prebuildDedicatedThread != null) {
+                t = prebuildDedicatedThread;
+                prebuildDedicatedThread = null;
+            } else {
+                t = new DedicatedThread();
             }
+            makeNextThread();
 
-            public void run() {
-                try {
-                    while (true) {
-                        synchronized (serialQ) {
-                            if (serialQ.isEmpty()) {
-                                task = null;
-                                break;
+            return t;
+        }
+
+        private static void makeNextThread() {
+            if (isNormalRunState()) {
+                new Task(Task.FASTLANE_PRIORITY) {
+                    protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
+                        synchronized (DedicatedThread.class) {
+                            if (prebuildDedicatedThread == null) {
+                                prebuildDedicatedThread = new DedicatedThread();
                             }
-                            task = (Task) serialQ.firstElement();
-                            serialQ.removeElementAt(0);
-                        }
 
-                        try {
-                            task.executeTask(task.getValue());
-                        } catch (final Throwable t) {
-                            //mdebug
-                            L.e("Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
+                            return in;
                         }
                     }
-                } finally {
-                    dedicatedThreads.removeElement(currentThread());
-                    synchronized (q) {
-                        q.notifyAll(); // Shutdown sequence may need this notification to complete
+                }.setClassName("PrebuildDedicatedThread").fork();
+            }
+        }
+
+//        final DedicatedThread.TaskRunnable taskRunnable;
+        public void run() {
+            boolean firstTask = true;
+            try {
+                while (true) {
+                    synchronized (serialQ) {
+                        if (serialQ.isEmpty()) {
+                            task = null;
+                            break;
+                        }
+                        task = (Task) serialQ.firstElement();
+                        serialQ.removeElementAt(0);
+                        if (firstTask) {
+                            setName(task.getClassName());
+                            firstTask = false;
+                        }
                     }
+
+                    try {
+                        task.executeTask(task.getValue());
+                    } catch (final Throwable t) {
+                        //mdebug
+                        L.e("Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
+                    }
+                }
+            } finally {
+                dedicatedThreads.removeElement(currentThread());
+                synchronized (q) {
+                    q.notifyAll(); // Shutdown sequence may need this notification to complete
                 }
             }
         }
 
-        DedicatedThread(final DedicatedThread.TaskRunnable taskRunnable, final String threadName) {
-            super(taskRunnable, threadName);
-
-            this.taskRunnable = taskRunnable;
+//        static class TaskRunnable implements Runnable {
+//
+//            Task task = null;
+//            final Vector serialQ = new Vector();
+//
+//            TaskRunnable() {
+//            }
+//            
+//            void setFirstTask(final Task firstTask) {
+//                serialQ.addElement(firstTask);
+//            }
+//
+//            public void run() {
+//                try {
+//                    while (true) {
+//                        synchronized (serialQ) {
+//                            if (serialQ.isEmpty()) {
+//                                task = null;
+//                                break;
+//                            }
+//                            task = (Task) serialQ.firstElement();
+//                            serialQ.removeElementAt(0);
+//                        }
+//
+//                        try {
+//                            task.executeTask(task.getValue());
+//                        } catch (final Throwable t) {
+//                            //mdebug
+//                            L.e("Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
+//                        }
+//                    }
+//                } finally {
+//                    dedicatedThreads.removeElement(currentThread());
+//                    synchronized (q) {
+//                        q.notifyAll(); // Shutdown sequence may need this notification to complete
+//                    }
+//                }
+//            }
+//        }
+//        DedicatedThread(final DedicatedThread.TaskRunnable taskRunnable) {
+//            super(taskRunnable);
+//
+//            this.taskRunnable = taskRunnable;
+//            dedicatedThreads.addElement(this);
+//        }
+        private DedicatedThread() {
             dedicatedThreads.addElement(this);
         }
     }
