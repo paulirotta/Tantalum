@@ -144,8 +144,10 @@ public class JMELog extends L {
             }
             if (os != null) {
                 try {
-                    bos.write(sb.toString().getBytes("UTF-8"));
+                    final String s = sb.toString();
+                    bos.write(s.getBytes("UTF-8"));
                     bos.write(CRLF_BYTES);
+                    System.out.println(s);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }

@@ -999,9 +999,18 @@ public abstract class Task {
     /**
      * Cancel execution of this Task
      *
-     * @param interruptIfRunning
-     * @param reason
-     * @return
+     * @param interruptIfRunning - if true and the Task is currently running,
+     * the worker thread running it will receive an interrupt(). This is useful
+     * for example to instantly end an HTTP connection. Make sure your code
+     * catches InterruptedException and closes resources and state
+     * appropriately.
+     * @param reason - an explanation visible in the log line in debug builds.
+     * This makes multi-threaded debugging easier to trace back to the origin
+     * event.
+     * @return - true if the Task was removed from the queue before being
+     * started or interrupted before it was completed, false if already
+     * completed, not found (is a chained task not executing), or already
+     * started and no interrupt was requested
      */
     public final boolean cancel(final boolean interruptIfRunning, final String reason) {
         return cancel(interruptIfRunning, reason, null);
