@@ -104,6 +104,12 @@ final class Worker extends Thread {
         }
     }
 
+    static boolean isShuttingDown() {
+        synchronized (q) {
+            return runState != STATE_RUNNING;
+        }
+    }
+
     private static void forkToUIThread(final Task task) {
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
@@ -375,6 +381,13 @@ final class Worker extends Thread {
             synchronized (q) {
                 runState = STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS;
                 q.notifyAll();
+                for (int i = 0; i < workers.length; i++) {
+                    final Task t = workers[i].currentTask;
+
+                    if (t != null) {
+                        t.shutdownNotify();
+                    }
+                }
             }
             dequeueOrCancelOnShutdown(fastlaneQ);
             for (int i = 0; i < workers.length; i++) {
@@ -396,9 +409,14 @@ final class Worker extends Thread {
              */
             synchronized (q) {
                 for (int i = 0; i < workers.length; i++) {
+                    if (workers[i] == Thread.currentThread()) {
+                        continue;
+                    }
                     final Task t = workers[i].currentTask;
                     if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                        workers[i].currentTask.cancel(true, reason);
+                        workers[i].interrupt();
+                        workers[i].currentTask = null; // We will no longer wait for this task to finish before proceeding with shutdown
+                        currentlyIdleCount++;
                     }
                 }
             }
@@ -413,6 +431,7 @@ final class Worker extends Thread {
                         dedicatedThread = null;
                     }
                 }
+
                 if (dedicatedThread != null) {
                     synchronized (dedicatedThread.serialQ) {
                         if (dedicatedThread.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {

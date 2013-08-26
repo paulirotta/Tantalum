@@ -884,13 +884,13 @@ public class HttpGetter extends Task {
             }
             bos = null;
 
-            if (tryAgain) {
-                try {
-                    Thread.sleep(HTTP_RETRY_DELAY);
-                } catch (InterruptedException ex) {
-                    cancel(false, "Interrupted HttpGetter while sleeping between retries: " + this);
-                }
-                out = (LOR) exec(url);
+            if (tryAgain && status == Task.PENDING) {
+//                try {
+                Thread.sleep(HTTP_RETRY_DELAY);
+//                } catch (InterruptedException ex) {
+//                    cancel(false, "Interrupted HttpGetter while sleeping between retries: " + this);
+//                }
+//                out = (LOR) exec(url);
             } else if (!success) {
                 //#debug
                 L.i("HTTP GET FAILED: about to HttpGetter.cancel() this and any chained Tasks", this.toString());
@@ -906,6 +906,14 @@ public class HttpGetter extends Task {
         }
 
         return out;
+    }
+
+    /**
+     * Chained tasks will be unchained on shutdown. This prevents new actions
+     * from starting after the HTTP connection takes time to close.
+     */
+    protected void shutdownNotify() {
+        unchain();
     }
 
     public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {

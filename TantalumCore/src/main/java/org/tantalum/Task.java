@@ -380,6 +380,10 @@ public abstract class Task {
         set(initialValue);
     }
 
+    public static boolean isShuttingDown() {
+        return Worker.isShuttingDown();
+    }
+
     /**
      * Return a general use Timer thread singleton. Note that the Timer thread
      * is not created unless you call this method.
@@ -388,6 +392,25 @@ public abstract class Task {
      */
     public static Timer getTimer() {
         return TimerHolder.timer;
+    }
+    
+    /**
+     * Remove all chained tasks
+     * 
+     */
+    public void unchain() {
+        synchronized(mutex) {
+            chainedTask = null;
+        }
+    }
+
+    /**
+     * Override this if, when this Task is running, you would like to perform an operation when shutdown begins
+     * 
+     */
+    protected void shutdownNotify() {
+        //#debug
+        L.i(this, "Task is running during shutdown", null);
     }
 
     /**
