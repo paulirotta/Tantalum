@@ -46,7 +46,6 @@ final class Worker extends Thread {
     private static final int STATE_RUNNING = 0;
     private static final int STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
     private static final int STATE_RUNNING_SHUTDOWN_TASKS = 2;
-
     private static final int QUEUE_SIZE_LIMIT = 32;
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
@@ -174,7 +173,7 @@ final class Worker extends Thread {
                 case Task.FASTLANE_PRIORITY:
                     fastlaneQ.insertElementAt(task, 0);
                     if (fastlaneQ.size() > QUEUE_SIZE_LIMIT) {
-                        fastlaneQ.removeElementAt(fastlaneQ.size()-1);
+                        fastlaneQ.removeElementAt(fastlaneQ.size() - 1);
                     }
                     /**
                      * notify() vs notifyAll(): Any thread will do as all
@@ -203,14 +202,14 @@ final class Worker extends Thread {
                 case Task.HIGH_PRIORITY:
                     q.insertElementAt(task, 0);
                     if (q.size() > QUEUE_SIZE_LIMIT) {
-                        q.removeElementAt(q.size()-1);
+                        q.removeElementAt(q.size() - 1);
                     }
                     q.notifyAll();
                     break;
 
                 case Task.NORMAL_PRIORITY:
                     if (q.size() >= QUEUE_SIZE_LIMIT) {
-                        q.removeElementAt(q.size()-1);
+                        q.removeElementAt(q.size() - 1);
                     }
                     q.addElement(task);
                     q.notifyAll();
@@ -369,6 +368,13 @@ final class Worker extends Thread {
             synchronized (q) {
                 runState = STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS;
                 q.notifyAll();
+                for (int i = 0; i < workers.length; i++) {
+                    final Task t = workers[i].currentTask;
+
+                    if (t != null) {
+                        t.shutdownNotify();
+                    }
+                }
             }
             dequeueOrCancelOnShutdown(fastlaneQ);
             for (int i = 0; i < workers.length; i++) {
@@ -396,6 +402,8 @@ final class Worker extends Thread {
                     final Task t = workers[i].currentTask;
                     if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
                         workers[i].interrupt();
+                        workers[i].currentTask = null; // We will no longer wait for this task to finish before proceeding with shutdown
+                        currentlyIdleCount++;
                     }
                 }
             }
