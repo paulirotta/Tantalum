@@ -149,6 +149,7 @@ public abstract class L {
         sb.append(millis);
         sb.append(" (");
         String threadName = PlatformUtils.getInstance().isUIThread() ? "UI" : Thread.currentThread().getName();
+        threadName = Task.isTimerThread() ? "Timer" : threadName;
         sb.append(threadName);
         if (callingObject != null) {
             sb.append(' ');

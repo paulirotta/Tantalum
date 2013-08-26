@@ -604,7 +604,7 @@ public class HttpGetter extends Task {
      *
      * @throws InterruptedException
      */
-    public static void staggerHeaderStartTime() throws InterruptedException {
+    public static long staggerHeaderStartTime() throws InterruptedException {
         long t = System.currentTimeMillis();
         long t2;
         boolean staggerStartMode;
@@ -617,6 +617,8 @@ public class HttpGetter extends Task {
         if (staggerStartMode) {
             nextHeaderStartTime = t + (((int) HttpGetter.averageResponseDelayMillis.value()) * 7) / 8;
         }
+        
+        return t;
     }
 
     /**
@@ -748,9 +750,8 @@ public class HttpGetter extends Task {
             return out;
         }
 
-        staggerHeaderStartTime();
+        startTime = staggerHeaderStartTime();
 
-        startTime = System.currentTimeMillis();
         final String url = keyIncludingPostDataHashtoUrl((String) in);
         final Integer netActivityKey = new Integer(hashCode());
         HttpGetter.networkActivity(netActivityKey); // Notify listeners, net is in use

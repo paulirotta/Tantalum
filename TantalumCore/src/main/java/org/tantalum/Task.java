@@ -28,6 +28,7 @@
 package org.tantalum;
 
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 import org.tantalum.util.L;
 
@@ -310,6 +311,7 @@ public abstract class Task {
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
     private final int forkPriority;
     private final Object mutex = new Object();
+    static volatile Thread timerThread = null;
 
     /**
      * Init on first request. Many apps will not use this extra thread, and this
@@ -319,6 +321,23 @@ public abstract class Task {
     private static class TimerHolder {
 
         static Timer timer = new Timer();
+
+        static {
+            timer.schedule(new TimerTask() {
+                public void run() {
+                    timerThread = Thread.currentThread();
+                }
+            }, 0);
+        }
+    }
+
+    /**
+     * Is the current thread the Timer singleton convenience created by Task?
+     *
+     * @return
+     */
+    public static boolean isTimerThread() {
+        return Thread.currentThread() == timerThread;
     }
 
     /**
@@ -697,7 +716,7 @@ public abstract class Task {
             throw new IllegalArgumentException("Can not joinAll() with timeout < 0: timeout=" + timeout);
         }
         //#mdebug
-        if (PlatformUtils.getInstance().isUIThread() && timeout > 100) {
+        if (PlatformUtils.getInstance().isUIThread() && timeout > 200) {
             L.i("WARNING- slow", "Task.joinAll(" + timeout + ") on UI Thread");
         }
         //#enddebug
