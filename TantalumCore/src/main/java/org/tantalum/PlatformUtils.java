@@ -285,10 +285,10 @@ public final class PlatformUtils {
         //#enddebug
 
         /**
-         * Add a magic wait for one half second on shutdown to reduce platform errors
-         * thrown by some phones some of the time. This may give underlying, not
-         * completely thread-safe, C code drivers a moment more to clean
-         * themselves up before exiting the app
+         * Add a magic wait for one half second on shutdown to reduce platform
+         * errors thrown by some phones some of the time. This may give
+         * underlying, not completely thread-safe, C code drivers a moment more
+         * to clean themselves up before exiting the app
          *
          * We wait in a lock because Thread.sleep() is disabled on the UI and
          * perhaps other Threads like the system thread. Undocumented behavior.
@@ -479,12 +479,16 @@ public final class PlatformUtils {
             //#debug
             L.i(this, "WARNING: Can not shutdown() from the UI thread", "Automatically changing to FASTLANE to initiate shutdown, function will return immediately to keep the shutdown smooth - " + reason);
             new Task(Task.FASTLANE_PRIORITY) {
-                protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
+                protected Object exec(final Object in) throws CancellationException, TimeoutException, InterruptedException {
                     //#debug
                     L.i(this, "Shutdown (automatically changed to a Worker Thread)", reason);
                     Worker.shutdown(false, reason);
 
-                    return null;
+                    return in;
+                }
+
+                protected void shutdownNotify() {
+                    // No need for a confusing debug message for this Task- do nothing
                 }
             }.setClassName("ShutdownOnWorkerInsteadOfUIThread").fork();
         }

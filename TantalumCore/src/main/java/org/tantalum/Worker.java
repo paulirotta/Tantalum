@@ -434,7 +434,7 @@ final class Worker extends Thread {
 
                 if (dedicatedThread != null) {
                     synchronized (dedicatedThread.serialQ) {
-                        if (dedicatedThread.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
+                        if (dedicatedThread.task != null && dedicatedThread.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
                             dedicatedThread.interrupt();
                         }
                     }

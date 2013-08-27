@@ -846,7 +846,7 @@ public class HttpGetter extends Task {
             if (out != null) {
                 addDownstreamDataCount(dataLength);
                 //#debug
-                L.i(this, "End read", "url=" + url + " bytes=" + out.getBytes().length);
+                L.i(this, "End read", "url=" + url + " bytes=" + dataLength);
             }
             synchronized (this) {
                 success = checkResponseCode(url, responseCode, responseHeaders);
