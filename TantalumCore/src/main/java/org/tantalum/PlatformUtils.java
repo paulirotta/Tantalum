@@ -470,28 +470,29 @@ public final class PlatformUtils {
      * @param block
      * @param reason
      */
-    public void shutdown(final boolean block, final String reason) {
+    public void shutdown(boolean block, final String reason) {
+        block &= !isUIThread();
         //#debug
         L.i(this, "Shutdown", reason + " - block up to 3 seconds=" + block);
-        if (!isUIThread()) {
+//        if (!isUIThread()) {
             Worker.shutdown(block, reason);
-        } else {
-            //#debug
-            L.i(this, "WARNING: Can not shutdown() from the UI thread", "Automatically changing to FASTLANE to initiate shutdown, function will return immediately to keep the shutdown smooth - " + reason);
-            new Task(Task.FASTLANE_PRIORITY) {
-                protected Object exec(final Object in) throws CancellationException, TimeoutException, InterruptedException {
-                    //#debug
-                    L.i(this, "Shutdown (automatically changed to a Worker Thread)", reason);
-                    Worker.shutdown(false, reason);
-
-                    return in;
-                }
-
-                protected void shutdownNotify() {
-                    // No need for a confusing debug message for this Task- do nothing
-                }
-            }.setClassName("ShutdownOnWorkerInsteadOfUIThread").fork();
-        }
+//        } else {
+//            //#debug
+//            L.i(this, "WARNING: Can not shutdown() from the UI thread", "Automatically changing to Task.DEDICATED_THREAD_PRIORITY to initiate shutdown, function will return immediately to keep the shutdown smooth - " + reason);
+//            new Task(Task.DEDICATED_THREAD_PRIORITY) {
+//                protected Object exec(final Object in) throws CancellationException, TimeoutException, InterruptedException {
+//                    //#debug
+//                    L.i(this, "Shutdown (automatically changed to a Worker Thread)", reason);
+//                    Worker.shutdown(false, reason);
+//
+//                    return in;
+//                }
+//
+//                protected void shutdownNotify() {
+//                    // No need for a confusing debug message for this Task- do nothing
+//                }
+//            }.setClassName("ShutdownOnWorkerInsteadOfUIThread").fork();
+//        }
     }
 
     /**
