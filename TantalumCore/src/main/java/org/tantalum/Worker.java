@@ -47,6 +47,7 @@ final class Worker extends Thread {
     private static final int STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
     private static final int STATE_RUNNING_SHUTDOWN_TASKS = 2;
     private static final int QUEUE_SIZE_LIMIT = 32;
+    private static final int SHUTDOWN_TIMEOUT = 1000; // ms, how long to hold the calling thread when system initiates a shutdown
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
@@ -62,7 +63,6 @@ final class Worker extends Thread {
     private static final Vector fastlaneQ = new Vector();
     private static final Vector idleQ = new Vector();
     private static final Vector shutdownQ = new Vector();
-    private static int currentlyIdleCount = 0;
     private static int runState = STATE_RUNNING;
     private Task currentTask = null; // Access only within synchronized(q)
     private final boolean isDedicatedFastlaneWorker;
@@ -174,7 +174,7 @@ final class Worker extends Thread {
             switch (priority) {
                 case Task.DEDICATED_THREAD_PRIORITY:
                     final DedicatedThread thread = DedicatedThread.getDedicatedThread();
-                    
+
                     thread.serialQ.addElement(task);
                     thread.start();
                     break;
@@ -415,8 +415,8 @@ final class Worker extends Thread {
                     final Task t = workers[i].currentTask;
                     if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
                         workers[i].interrupt();
-                        workers[i].currentTask = null; // We will no longer wait for this task to finish before proceeding with shutdown
-                        currentlyIdleCount++;
+                        workers[i] = new Worker("Shutdown-replace-" + workers[i].getName(), workers[i].isDedicatedFastlaneWorker);
+                        workers[i].start();
                     }
                 }
             }
@@ -448,12 +448,8 @@ final class Worker extends Thread {
                      * Block this thread up to 3 seconds while remaining tasks complete normally
                      */
                     synchronized (q) {
-                        if (Thread.currentThread() instanceof Worker) {
-                            // A Worker initialized shutdown. Adjust so this does not corrupt shutdown end state transition detection
-                            currentlyIdleCount++;
-                        }
-                        while (currentlyIdleCount < workers.length - 1 || !shutdownQ.isEmpty() || !q.isEmpty() || !fastlaneQ.isEmpty()) {
-                            final long timeRemaining = shutdownTimeout + 3000 - System.currentTimeMillis();
+                        while (!shutdownQ.isEmpty() || !q.isEmpty() || !fastlaneQ.isEmpty() || !allWorkersIdleExceptThisOne()) {
+                            final long timeRemaining = shutdownTimeout + SHUTDOWN_TIMEOUT - System.currentTimeMillis();
 
                             if (timeRemaining <= 0) {
                                 //#debug
@@ -585,17 +581,12 @@ final class Worker extends Thread {
                                 /*
                                  * Nothing for this thread to do
                                  */
-                                try {
-                                    ++currentlyIdleCount;
-                                    if (runState == STATE_RUNNING_SHUTDOWN_TASKS
-                                            && allWorkersIdleExceptThisOne() && allDedicatedThreadsComplete()
-                                            && !PlatformUtils.getInstance().shutdownComplete("currentlyIdleCount=" + currentlyIdleCount)) {
-                                        q.notifyAll();
-                                    }
-                                    q.wait();
-                                } finally {
-                                    --currentlyIdleCount;
+                                if (runState == STATE_RUNNING_SHUTDOWN_TASKS
+                                        && allWorkersIdleExceptThisOne() && allDedicatedThreadsComplete()
+                                        && !PlatformUtils.getInstance().shutdownComplete("All workers idle except this thread")) {
+                                    q.notifyAll();
                                 }
+                                q.wait();
                             } else {
                                 in = currentTask.getValue();
                             }
@@ -631,11 +622,20 @@ final class Worker extends Thread {
             }
         }
         //#debug
-        L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);
+        L.i(this, "Thread shutdown", null);
     }
 
-    private boolean allWorkersIdleExceptThisOne() {
-        return currentlyIdleCount == workers.length - 1;
+    private static boolean allWorkersIdleExceptThisOne() {
+        for (int i = 0; i < workers.length; i++) {
+            if (workers[i] == Thread.currentThread()) {
+                continue;
+            }
+            if (workers[i].currentTask != null) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private boolean allDedicatedThreadsComplete() {
@@ -720,8 +720,6 @@ final class Worker extends Thread {
     private static String toStringWorkers() {
         final StringBuffer sb = new StringBuffer();
 
-        sb.append("WORKERS: currentlyIdleCount=");
-        sb.append(Worker.currentlyIdleCount);
         sb.append(" q.size()=");
         sb.append(Worker.q.size());
         sb.append(" shutdownQ.size()=");
