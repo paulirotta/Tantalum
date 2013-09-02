@@ -618,7 +618,7 @@ public final class StaticWebCache extends StaticCache {
          * improve user experience (UX) on slow network. Delays are self-tuning
          * based on current network conditions.
          */
-        public volatile boolean getSequencerEnabled = false;
+        public volatile boolean getSequencerEnabled = true;
         /**
          * A measure of how long on average the last 10 HTTP operations to fetch
          * from the server have taken. If the get sequencer is enabled, this is
