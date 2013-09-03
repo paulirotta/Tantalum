@@ -1176,11 +1176,8 @@ public class HttpGetter extends Task {
         HttpGetter.netActivityListenerDelegate.unregisterListener(listener);
     }
     private static volatile int netActivityState = NetActivityListener.INACTIVE; // Compare to the last notification to see if state is new
-    private static volatile int netActivityListenerStallTimeout = 10000; // ms
     private static volatile int netActivityListenerInactiveTimeout = 30000; // ms
-//    private static volatile long nextNetStallTimeout = 0; // ms, when should we transition to NetActivityListener.STALLED state unless something changes in the meantime
     private static volatile long nextNetInactiveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
-//    private static volatile TimerTask netActivityStallTimerTask = null;
     private static volatile TimerTask netActivityInactiveTimerTask = null;
     private static final WeakHashCache networkActivityActorsHash = new WeakHashCache();
     private static final Runnable uiThreadNetworkStateChange = new Runnable() {
@@ -1332,18 +1329,15 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Override the default 10 second stall and 30 second INACTIVE no net
+     * Override the default 30 second INACTIVE no net
      * activity timeouts. This alters how quickly all
      * <code>NetActivityListener</code>s are notified that a network is not
      * receiving expected data.
      *
-     * @param stallTimeoutInMilliseconds - time without net activity before
-     * entering STALLED state. The default is 10000.
      * @param inactiveTimeoutInMilliseconds - time without net activity before
      * entering INACTIVE state. The default is 30000.
      */
-    public static void setNetActivityListenerTimeouts(final int stallTimeoutInMilliseconds, final int inactiveTimeoutInMilliseconds) {
-        netActivityListenerStallTimeout = stallTimeoutInMilliseconds;
+    public static void setNetActivityListenerTimeout(final int inactiveTimeoutInMilliseconds) {
         netActivityListenerInactiveTimeout = inactiveTimeoutInMilliseconds;
     }
 
@@ -1365,11 +1359,6 @@ public class HttpGetter extends Task {
          * seconds
          */
         int ACTIVE = 1;
-//        /**
-//         * One or more requests have been made, but no network data has been
-//         * received during the last 5 seconds
-//         */
-//        int STALLED = 2;
 
         /**
          * An update received on the UI thread indicating changes in network
