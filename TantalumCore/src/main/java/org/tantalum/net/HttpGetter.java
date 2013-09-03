@@ -1178,9 +1178,9 @@ public class HttpGetter extends Task {
     private static volatile int netActivityState = NetActivityListener.INACTIVE; // Compare to the last notification to see if state is new
     private static volatile int netActivityListenerStallTimeout = 10000; // ms
     private static volatile int netActivityListenerInactiveTimeout = 30000; // ms
-    private static volatile long nextNetStallTimeout = 0; // ms, when should we transition to NetActivityListener.STALLED state unless something changes in the meantime
+//    private static volatile long nextNetStallTimeout = 0; // ms, when should we transition to NetActivityListener.STALLED state unless something changes in the meantime
     private static volatile long nextNetInactiveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
-    private static volatile TimerTask netActivityStallTimerTask = null;
+//    private static volatile TimerTask netActivityStallTimerTask = null;
     private static volatile TimerTask netActivityInactiveTimerTask = null;
     private static final WeakHashCache networkActivityActorsHash = new WeakHashCache();
     private static final Runnable uiThreadNetworkStateChange = new Runnable() {
@@ -1208,9 +1208,9 @@ public class HttpGetter extends Task {
             return NetActivityListener.INACTIVE;
         }
 
-        if (t >= nextNetStallTimeout) {
-            return NetActivityListener.STALLED;
-        }
+//        if (t >= nextNetStallTimeout) {
+//            return NetActivityListener.STALLED;
+//        }
 
         return NetActivityListener.ACTIVE;
     }
@@ -1220,27 +1220,27 @@ public class HttpGetter extends Task {
      *
      * @param deltaT
      */
-    private static void conditionalStartStallTimer(final long deltaT) {
-        if (netActivityStallTimerTask == null) {
-            final TimerTask tt = new TimerTask() {
-                public void run() {
-                    netActivityStallTimerTask = null;
-                    final long t = System.currentTimeMillis();
-                    final long t2 = nextNetStallTimeout;
-
-                    if (t >= t2) {
-                        // Update possible state change to stalled
-                        PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
-                    } else {
-                        // Net was active. Test again at the revised stall time
-                        conditionalStartStallTimer(t2 - t);
-                    }
-                }
-            };
-            netActivityStallTimerTask = tt;
-            Task.getTimer().schedule(tt, deltaT);
-        }
-    }
+//    private static void conditionalStartStallTimer(final long deltaT) {
+//        if (netActivityStallTimerTask == null) {
+//            final TimerTask tt = new TimerTask() {
+//                public void run() {
+//                    netActivityStallTimerTask = null;
+//                    final long t = System.currentTimeMillis();
+//                    final long t2 = nextNetStallTimeout;
+//
+//                    if (t >= t2) {
+//                        // Update possible state change to stalled
+//                        PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+//                    } else {
+//                        // Net was active. Test again at the revised stall time
+//                        conditionalStartStallTimer(t2 - t);
+//                    }
+//                }
+//            };
+//            netActivityStallTimerTask = tt;
+//            Task.getTimer().schedule(tt, deltaT);
+//        }
+//    }
 
     /**
      * Check in 30 sec if the net state has changed
@@ -1300,8 +1300,8 @@ public class HttpGetter extends Task {
             networkActivityActorsHash.put(key, key);
         }
         final long t = System.currentTimeMillis();
-        nextNetStallTimeout = t + netActivityListenerStallTimeout;
-        conditionalStartStallTimer(netActivityListenerStallTimeout);
+//        nextNetStallTimeout = t + netActivityListenerStallTimeout;
+//        conditionalStartStallTimer(netActivityListenerStallTimeout);
         nextNetInactiveTimeout = t + netActivityListenerInactiveTimeout;
         conditionalStartInactiveTimer(netActivityListenerInactiveTimeout);
 
@@ -1365,11 +1365,11 @@ public class HttpGetter extends Task {
          * seconds
          */
         int ACTIVE = 1;
-        /**
-         * One or more requests have been made, but no network data has been
-         * received during the last 5 seconds
-         */
-        int STALLED = 2;
+//        /**
+//         * One or more requests have been made, but no network data has been
+//         * received during the last 5 seconds
+//         */
+//        int STALLED = 2;
 
         /**
          * An update received on the UI thread indicating changes in network
