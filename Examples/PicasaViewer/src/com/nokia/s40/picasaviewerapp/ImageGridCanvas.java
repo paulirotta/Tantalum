@@ -122,7 +122,7 @@ public abstract class ImageGridCanvas extends GestureCanvas {
                     } else {
                         // Start loading the image, draw a placeholder
                         PicasaStorage.imageCache.getAsync(((PicasaImageObject) imageObjectModel.elementAt(i)).thumbUrl,
-                                Task.NORMAL_PRIORITY, StaticWebCache.GET_ANYWHERE, new ImageResult(imageObjectModel.elementAt(i)));
+                                Task.HIGH_PRIORITY, StaticWebCache.GET_ANYWHERE, new ImageResult(imageObjectModel.elementAt(i)));
                         g.setColor(0x111111);
                         g.fillRect(xPosition, yPosition, imageSide, imageSide);
                     }
