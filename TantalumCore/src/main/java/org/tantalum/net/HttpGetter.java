@@ -617,7 +617,7 @@ public class HttpGetter extends Task {
         if (staggerStartMode) {
             nextHeaderStartTime = t + (((int) HttpGetter.averageResponseDelayMillis.value()) * 7) / 8;
         }
-        
+
         return t;
     }
 
@@ -1175,10 +1175,13 @@ public class HttpGetter extends Task {
     public static void unregisterNetActivityListener(final NetActivityListener listener) {
         HttpGetter.netActivityListenerDelegate.unregisterListener(listener);
     }
-    private static volatile int netActivityState = NetActivityListener.INACTIVE; // Compare to the last notification to see if state is new
-    private static volatile int netActivityListenerInactiveTimeout = 30000; // ms
+    private static volatile int netActivityState = NetActivityListener.INACTIVE; // Compare to the last notification to see if state is new, only changed on UI thread
+    private static volatile int netActivityListenerInactiveTimeout = 30000; // ms, this much inactivity means net is dead so notify listeners of that
+    private static volatile int netActivityListenerKeepaliveTimeout = 3000; // ms, this much activity is simulated after end of real activity to prevent flashing effects in net activity UIs
     private static volatile long nextNetInactiveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
+    private static volatile long nextNetKeepaliveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
     private static volatile TimerTask netActivityInactiveTimerTask = null;
+    private static TimerTask netActivityKeepaliveTimerTask = null;
     private static final WeakHashCache networkActivityActorsHash = new WeakHashCache();
     private static final Runnable uiThreadNetworkStateChange = new Runnable() {
         public void run() {
@@ -1186,13 +1189,41 @@ public class HttpGetter extends Task {
             final int newNetActivityState = getCurrentNetActivityState();
 
             if (netActivityState != newNetActivityState) {
-                final Object[] listeners = netActivityListenerDelegate.getAllListeners();
-
-                for (int i = 0; i < listeners.length; i++) {
-                    ((NetActivityListener) listeners[i]).netActivityStateChanged(netActivityState, newNetActivityState);
+                if (newNetActivityState == NetActivityListener.ACTIVE) {
+                    final TimerTask t = netActivityKeepaliveTimerTask;
+                    if (t != null) {
+                        t.cancel();
+                        netActivityKeepaliveTimerTask = null;
+                    }
+                    notifyListeners(newNetActivityState);
+                    netActivityState = newNetActivityState;
+                    nextNetKeepaliveTimeout = 0;
+                } else {
+                    // INACTIVE
+                    final long t = System.currentTimeMillis();
+                    if (t > nextNetKeepaliveTimeout) {
+                        notifyListeners(newNetActivityState);
+                        netActivityState = newNetActivityState;
+                    } else {
+                        // start delay timer to make change to INACTIVE if no more activity received
+                        netActivityKeepaliveTimerTask = new TimerTask() {
+                            public void run() {
+                                netActivityKeepaliveTimerTask = null;
+                                PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+                            }
+                        };
+                        nextNetKeepaliveTimeout = t + netActivityListenerKeepaliveTimeout;
+                        Task.getTimer().schedule(netActivityKeepaliveTimerTask, netActivityListenerKeepaliveTimeout);
+                    }
                 }
+            }
+        }
 
-                netActivityState = newNetActivityState;
+        private void notifyListeners(final int newNetActivityState) {
+            final Object[] listeners = netActivityListenerDelegate.getAllListeners();
+
+            for (int i = 0; i < listeners.length; i++) {
+                ((NetActivityListener) listeners[i]).netActivityStateChanged(netActivityState, newNetActivityState);
             }
         }
     };
@@ -1202,67 +1233,35 @@ public class HttpGetter extends Task {
         final long t;
 
         if (networkActivityActorsHash.size() == 0 || (t = System.currentTimeMillis()) >= nextNetInactiveTimeout) {
+
             return NetActivityListener.INACTIVE;
         }
 
-//        if (t >= nextNetStallTimeout) {
-//            return NetActivityListener.STALLED;
-//        }
-
         return NetActivityListener.ACTIVE;
     }
-
-    /**
-     * Check in 5 sec if the net state has changed
-     *
-     * @param deltaT
-     */
-//    private static void conditionalStartStallTimer(final long deltaT) {
-//        if (netActivityStallTimerTask == null) {
-//            final TimerTask tt = new TimerTask() {
-//                public void run() {
-//                    netActivityStallTimerTask = null;
-//                    final long t = System.currentTimeMillis();
-//                    final long t2 = nextNetStallTimeout;
-//
-//                    if (t >= t2) {
-//                        // Update possible state change to stalled
-//                        PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
-//                    } else {
-//                        // Net was active. Test again at the revised stall time
-//                        conditionalStartStallTimer(t2 - t);
-//                    }
-//                }
-//            };
-//            netActivityStallTimerTask = tt;
-//            Task.getTimer().schedule(tt, deltaT);
-//        }
-//    }
 
     /**
      * Check in 30 sec if the net state has changed
      *
      * @param deltaT
      */
-    private static void conditionalStartInactiveTimer(final long deltaT) {
+    private static void conditionalStartInactiveTimer() {
         if (netActivityInactiveTimerTask == null) {
             final TimerTask tt = new TimerTask() {
                 public void run() {
                     netActivityInactiveTimerTask = null;
-                    final long t = System.currentTimeMillis();
-                    final long t2 = nextNetInactiveTimeout;
 
-                    if (t >= t2) {
+                    if (System.currentTimeMillis() >= nextNetInactiveTimeout) {
                         // Update possible state change to inactive
                         PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
                     } else {
                         // Net was active. Test again at the revised inactive time
-                        conditionalStartInactiveTimer(t2 - t);
+                        conditionalStartInactiveTimer();
                     }
                 }
             };
             netActivityInactiveTimerTask = tt;
-            Task.getTimer().schedule(tt, deltaT);
+            Task.getTimer().schedule(tt, netActivityListenerInactiveTimeout);
         }
     }
 
@@ -1297,10 +1296,8 @@ public class HttpGetter extends Task {
             networkActivityActorsHash.put(key, key);
         }
         final long t = System.currentTimeMillis();
-//        nextNetStallTimeout = t + netActivityListenerStallTimeout;
-//        conditionalStartStallTimer(netActivityListenerStallTimeout);
         nextNetInactiveTimeout = t + netActivityListenerInactiveTimeout;
-        conditionalStartInactiveTimer(netActivityListenerInactiveTimeout);
+        conditionalStartInactiveTimer();
 
         if (netActivityState != NetActivityListener.ACTIVE) {
             // Update possible state change to inactive
@@ -1329,8 +1326,8 @@ public class HttpGetter extends Task {
     }
 
     /**
-     * Override the default 30 second INACTIVE no net
-     * activity timeouts. This alters how quickly all
+     * Override the default 30 second INACTIVE no net activity timeouts. This
+     * alters how quickly all
      * <code>NetActivityListener</code>s are notified that a network is not
      * receiving expected data.
      *
