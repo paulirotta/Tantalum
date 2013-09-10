@@ -849,7 +849,6 @@ final class Worker extends Thread {
             }
         }
 
-//        final DedicatedThread.TaskRunnable taskRunnable;
         public void run() {
             try {
                 while (true) {
@@ -874,54 +873,11 @@ final class Worker extends Thread {
                 synchronized (q) {
                     q.notifyAll(); // Shutdown sequence may need this notification to complete
                 }
+                //#debug
+                L.i("DedicatedThread end", this.getName());
             }
         }
 
-//        static class TaskRunnable implements Runnable {
-//
-//            Task task = null;
-//            final Vector serialQ = new Vector();
-//
-//            TaskRunnable() {
-//            }
-//            
-//            void setFirstTask(final Task firstTask) {
-//                serialQ.addElement(firstTask);
-//            }
-//
-//            public void run() {
-//                try {
-//                    while (true) {
-//                        synchronized (serialQ) {
-//                            if (serialQ.isEmpty()) {
-//                                task = null;
-//                                break;
-//                            }
-//                            task = (Task) serialQ.firstElement();
-//                            serialQ.removeElementAt(0);
-//                        }
-//
-//                        try {
-//                            task.executeTask(task.getValue());
-//                        } catch (final Throwable t) {
-//                            //mdebug
-//                            L.e("Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
-//                        }
-//                    }
-//                } finally {
-//                    dedicatedThreads.removeElement(currentThread());
-//                    synchronized (q) {
-//                        q.notifyAll(); // Shutdown sequence may need this notification to complete
-//                    }
-//                }
-//            }
-//        }
-//        DedicatedThread(final DedicatedThread.TaskRunnable taskRunnable) {
-//            super(taskRunnable);
-//
-//            this.taskRunnable = taskRunnable;
-//            dedicatedThreads.addElement(this);
-//        }
         private DedicatedThread() {
             super("DedicatedThread" + dedicatedThreadCounter++);
             dedicatedThreads.addElement(this);
