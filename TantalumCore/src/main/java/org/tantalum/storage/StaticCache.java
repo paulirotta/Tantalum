@@ -208,6 +208,8 @@ public class StaticCache {
             PlatformUtils.getInstance().deleteFlashCache(priority, cacheType);
             init();
         }
+        //#debug
+        L.i(this, "StaticCache created", toString());
     }
 
     /**

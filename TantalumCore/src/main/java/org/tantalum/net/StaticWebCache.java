@@ -91,8 +91,10 @@ public final class StaticWebCache extends StaticCache {
      * @param defaultCacheView
      * @return
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final CacheView cacheView) throws FlashDatabaseException {
-        return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, cacheView, DEFAULT_HTTP_GETTER_FACTORY, null);
+    public static StaticWebCache getWebCache(final char priority, final CacheView cacheView) throws FlashDatabaseException {
+        synchronized (caches) {
+            return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, cacheView, DEFAULT_HTTP_GETTER_FACTORY, null);
+        }
     }
 
     /**
@@ -115,15 +117,17 @@ public final class StaticWebCache extends StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
-        StaticWebCache c = (StaticWebCache) getExistingCache(priority, cacheView, httpTaskFactory, StaticWebCache.class);
+    public static StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
+        synchronized (caches) {
+            StaticWebCache c = (StaticWebCache) getExistingCache(priority, cacheView, httpTaskFactory, StaticWebCache.class);
 
-        if (c == null) {
-            c = new StaticWebCache(priority, cacheType, cacheView, httpTaskFactory, startupTask);
-            caches.addElement(c);
+            if (c == null) {
+                c = new StaticWebCache(priority, cacheType, cacheView, httpTaskFactory, startupTask);
+                caches.addElement(c);
+            }
+
+            return c;
         }
-
-        return c;
     }
 
     /**
@@ -308,7 +312,7 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param *
+     * @param * *
      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
