@@ -1229,15 +1229,15 @@ public class HttpGetter extends Task {
     };
 
     private static int getCurrentNetActivityState() {
-        networkActivityActorsHash.purgeExpiredWeakReferences();
-        final long t;
+        synchronized (networkActivityActorsHash) {
+            networkActivityActorsHash.purgeExpiredWeakReferences();
 
-        if (networkActivityActorsHash.size() == 0 || (t = System.currentTimeMillis()) >= nextNetInactiveTimeout) {
+            if (networkActivityActorsHash.size() == 0 || System.currentTimeMillis() >= nextNetInactiveTimeout) {
+                return NetActivityListener.INACTIVE;
+            }
 
-            return NetActivityListener.INACTIVE;
+            return NetActivityListener.ACTIVE;
         }
-
-        return NetActivityListener.ACTIVE;
     }
 
     /**
@@ -1292,16 +1292,18 @@ public class HttpGetter extends Task {
      * Integer(this.hashCode()</code>
      */
     public static void networkActivity(final Integer key) {
-        if (!networkActivityActorsHash.containsKey(key)) {
-            networkActivityActorsHash.put(key, key);
-        }
-        final long t = System.currentTimeMillis();
-        nextNetInactiveTimeout = t + netActivityListenerInactiveTimeout;
-        conditionalStartInactiveTimer();
+        synchronized (networkActivityActorsHash) {
+            if (!networkActivityActorsHash.containsKey(key)) {
+                networkActivityActorsHash.put(key, key);
+            }
+            final long t = System.currentTimeMillis();
+            nextNetInactiveTimeout = t + netActivityListenerInactiveTimeout;
+            conditionalStartInactiveTimer();
 
-        if (netActivityState != NetActivityListener.ACTIVE) {
-            // Update possible state change to inactive
-            PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+            if (netActivityState != NetActivityListener.ACTIVE) {
+                // Update possible state change to inactive
+                PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+            }
         }
     }
 
@@ -1317,11 +1319,13 @@ public class HttpGetter extends Task {
      * Integer(this.hashCode()</code>
      */
     public static void endNetworkActivity(final Integer key) {
-        networkActivityActorsHash.remove(key);
+        synchronized (networkActivityActorsHash) {
+            networkActivityActorsHash.remove(key);
 
-        if (networkActivityActorsHash.size() == 0) {
-            // Update possible state change to inactive
-            PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+            if (networkActivityActorsHash.size() == 0) {
+                // Update possible state change to inactive
+                PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+            }
         }
     }
 
@@ -1336,6 +1340,8 @@ public class HttpGetter extends Task {
      */
     public static void setNetActivityListenerTimeout(final int inactiveTimeoutInMilliseconds) {
         netActivityListenerInactiveTimeout = inactiveTimeoutInMilliseconds;
+
+
     }
 
     /**
