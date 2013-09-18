@@ -1181,7 +1181,7 @@ public class HttpGetter extends Task {
     private static volatile long nextNetInactiveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
     private static volatile long nextNetKeepaliveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
     private static volatile TimerTask netActivityInactiveTimerTask = null;
-    private static TimerTask netActivityKeepaliveTimerTask = null;
+    private static volatile TimerTask netActivityKeepaliveTimerTask = null;
     private static final WeakHashCache networkActivityActorsHash = new WeakHashCache();
     private static final Runnable uiThreadNetworkStateChange = new Runnable() {
         public void run() {
@@ -1189,21 +1189,21 @@ public class HttpGetter extends Task {
             final int newNetActivityState = getCurrentNetActivityState();
 
             if (netActivityState != newNetActivityState) {
-                if (newNetActivityState == NetActivityListener.ACTIVE) {
-                    final TimerTask t = netActivityKeepaliveTimerTask;
-                    if (t != null) {
-                        t.cancel();
-                        netActivityKeepaliveTimerTask = null;
-                    }
-                    notifyListeners(newNetActivityState);
+                final TimerTask task = netActivityKeepaliveTimerTask;
+                if (task != null) {
+                    task.cancel();
+                    netActivityKeepaliveTimerTask = null;
+                }
                     netActivityState = newNetActivityState;
+                
+                if (newNetActivityState == NetActivityListener.ACTIVE) {
+                    notifyListeners(newNetActivityState);
                     nextNetKeepaliveTimeout = 0;
                 } else {
                     // INACTIVE
                     final long t = System.currentTimeMillis();
                     if (t > nextNetKeepaliveTimeout) {
                         notifyListeners(newNetActivityState);
-                        netActivityState = newNetActivityState;
                     } else {
                         // start delay timer to make change to INACTIVE if no more activity received
                         netActivityKeepaliveTimerTask = new TimerTask() {
@@ -1230,9 +1230,9 @@ public class HttpGetter extends Task {
 
     private static int getCurrentNetActivityState() {
         synchronized (networkActivityActorsHash) {
-            networkActivityActorsHash.purgeExpiredWeakReferences();
+            final int size = networkActivityActorsHash.purgeExpiredWeakReferences();
 
-            if (networkActivityActorsHash.size() == 0 || System.currentTimeMillis() >= nextNetInactiveTimeout) {
+            if (size == 0 || System.currentTimeMillis() >= nextNetInactiveTimeout) {
                 return NetActivityListener.INACTIVE;
             }
 
