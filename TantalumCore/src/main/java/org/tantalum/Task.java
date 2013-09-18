@@ -994,7 +994,7 @@ public abstract class Task {
                 t.fork();
             }
         } catch (final Throwable t) {
-            final String s = "Exception during Task exec(): ";
+            final String s = "Exception during Task exec()";
             //#debug
             L.e(this, s, "" + this, t);
             cancel(false, s + " : " + this, t);
