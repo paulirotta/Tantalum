@@ -685,17 +685,32 @@ final class Worker extends Thread {
      * running state (not shutdown)
      */
     private void getNormalRunTask() {
-        if (!serialQ.isEmpty()) {
+        if (serialQ.size() > 8) {
             getSerialTask();
         } else if (!Worker.fastlaneQ.isEmpty()) {
             getFastlaneTask();
         } else if (!isDedicatedFastlaneWorker) {
             if (!Worker.q.isEmpty()) {
                 getNormalTask();
+            } else if (!serialQ.isEmpty()) {
+                getSerialTask();
             } else if (!idleQ.isEmpty() && allWorkersIdleExceptThisOne()) {
                 getIdleTask();
             }
+        } else if (!serialQ.isEmpty()) {
+            getSerialTask();
         }
+//        if (!serialQ.isEmpty()) {
+//            getSerialTask();
+//        } else if (!Worker.fastlaneQ.isEmpty()) {
+//            getFastlaneTask();
+//        } else if (!isDedicatedFastlaneWorker) {
+//            if (!Worker.q.isEmpty()) {
+//                getNormalTask();
+//            } else if (!idleQ.isEmpty() && allWorkersIdleExceptThisOne()) {
+//                getIdleTask();
+//            }
+//        }
     }
 
     private void getIdleTask() {
