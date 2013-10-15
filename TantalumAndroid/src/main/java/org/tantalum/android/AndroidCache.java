@@ -342,7 +342,11 @@ public final class AndroidCache extends FlashCache {
                         digests[i] = CryptoUtils.getInstance().toDigest(s);
                     }
                 }
-            } catch (UnsupportedEncodingException | DigestException e) {
+            } catch (UnsupportedEncodingException e) {
+                //#debug
+                L.e("Can not access database on getKeys()", "", e);
+                throw new FlashDatabaseException("Can not acccess database on getKeys() : " + e);
+            } catch (DigestException e) {
                 //#debug
                 L.e("Can not access database on getKeys()", "", e);
                 throw new FlashDatabaseException("Can not acccess database on getKeys() : " + e);

@@ -41,7 +41,6 @@ import org.tantalum.util.LOR;
  */
 public class AndroidImageCacheView extends ImageCacheView {
 
-    @Override
     public Object convertToUseForm(final Object key, final LOR bytesReference) {
         try {
             final byte[] bytes = bytesReference.getBytes();
