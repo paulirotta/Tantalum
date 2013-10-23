@@ -290,7 +290,7 @@ public abstract class Task {
      * An alternative to this is to create a Task that is run at shutdown time
      * using Worker.queueShutdownTask(Task).
      */
-    public static final int DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN = 2;
+//    public static final int DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN = 2;
     private Object value = null; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants
@@ -443,7 +443,7 @@ public abstract class Task {
      */
     public final Task setShutdownBehaviour(final int shutdownBehaviour) {
         synchronized (mutex) {
-            if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
+            if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_ON_SHUTDOWN /*Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN*/) {
                 throw new IllegalArgumentException(getClassName() + " invalid shutdownBehaviour value: " + shutdownBehaviour);
             }
 

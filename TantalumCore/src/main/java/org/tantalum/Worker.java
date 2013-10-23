@@ -412,12 +412,12 @@ final class Worker extends Thread {
                     if (workers[i] == Thread.currentThread()) {
                         continue;
                     }
-                    final Task t = workers[i].currentTask;
-                    if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                        workers[i].interrupt();
-                        workers[i] = new Worker("Shutdown-replace-" + workers[i].getName(), workers[i].isDedicatedFastlaneWorker);
-                        workers[i].start();
-                    }
+//                    final Task t = workers[i].currentTask;
+//                    if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
+//                        workers[i].interrupt();
+//                        workers[i] = new Worker("Shutdown-replace-" + workers[i].getName(), workers[i].isDedicatedFastlaneWorker);
+//                        workers[i].start();
+//                    }
                 }
             }
 
@@ -432,13 +432,13 @@ final class Worker extends Thread {
                     }
                 }
 
-                if (dedicatedThread != null) {
-                    synchronized (dedicatedThread.serialQ) {
-                        if (dedicatedThread.task != null && dedicatedThread.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                            dedicatedThread.interrupt();
-                        }
-                    }
-                }
+//                if (dedicatedThread != null) {
+//                    synchronized (dedicatedThread.serialQ) {
+//                        if (dedicatedThread.task != null && dedicatedThread.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
+//                            dedicatedThread.interrupt();
+//                        }
+//                    }
+//                }
             } while (dedicatedThread != null);
 
             if (block) {
@@ -489,10 +489,10 @@ final class Worker extends Thread {
             case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
                 return false;
 
-            case Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN:
-                if (interruptIfRunning) {
-                    task.cancel(interruptIfRunning, "Shutdown signal received with interruptIfRunning=true");
-                }
+//            case Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN:
+//                if (interruptIfRunning) {
+//                    task.cancel(interruptIfRunning, "Shutdown signal received with interruptIfRunning=true");
+//                }
             // continue to next case
 
             case Task.DEQUEUE_ON_SHUTDOWN:
