@@ -948,6 +948,11 @@ public class HttpGetter extends Task {
             }
             firstByteReceivedTime = System.currentTimeMillis();
             while (totalBytesRead < bytes.length) {
+                if (isShuttingDown()) {
+                    this.cancel(false, "HttpGetter fixed length pull end on shutting down");
+                    return 0;
+                }
+
                 final int br = inputStream.read(bytes, totalBytesRead, bytes.length - totalBytesRead);
                 if (br > 0) {
                     totalBytesRead += br;
@@ -988,6 +993,10 @@ public class HttpGetter extends Task {
         final long firstByteReceivedTime = System.currentTimeMillis();
         HttpGetter.networkActivity(netActivityKey);
         while (true) {
+            if (isShuttingDown()) {
+                this.cancel(false, "HttpGetter end on shutting down");
+                return 0;
+            }
             final int bytesRead = inputStream.read(readBuffer);
             HttpGetter.networkActivity(netActivityKey);
             if (bytesRead < 0) {
@@ -1195,8 +1204,8 @@ public class HttpGetter extends Task {
                     task.cancel();
                     netActivityKeepaliveTimerTask = null;
                 }
-                    netActivityState = newNetActivityState;
-                
+                netActivityState = newNetActivityState;
+
                 if (newNetActivityState == NetActivityListener.ACTIVE) {
                     notifyListeners(newNetActivityState);
                     nextNetKeepaliveTimeout = 0;

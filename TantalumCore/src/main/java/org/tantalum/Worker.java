@@ -64,6 +64,7 @@ final class Worker extends Thread {
     private static final Vector idleQ = new Vector();
     private static final Vector shutdownQ = new Vector();
     private static int runState = STATE_RUNNING;
+    volatile static boolean shuttingDown = false;
     private Task currentTask = null; // Access only within synchronized(q)
     private final boolean isDedicatedFastlaneWorker;
 
@@ -104,10 +105,13 @@ final class Worker extends Thread {
         }
     }
 
+    /**
+     * True during the shutdown process
+     * 
+     * @return 
+     */
     static boolean isShuttingDown() {
-        synchronized (q) {
-            return runState != STATE_RUNNING;
-        }
+        return shuttingDown;
     }
 
     private static void forkToUIThread(final Task task) {
@@ -378,6 +382,7 @@ final class Worker extends Thread {
             /*
              * Removed queued tasks which can be removed
              */
+            shuttingDown = true;
             synchronized (q) {
                 runState = STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS;
                 q.notifyAll();
