@@ -355,6 +355,9 @@ public abstract class Task {
         if (priority < Task.SHUTDOWN || priority > Task.DEDICATED_THREAD_PRIORITY) {
             throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
         }
+        if (priority == Task.SHUTDOWN) {
+            setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN);
+        }
         forkPriority = priority;
     }
 

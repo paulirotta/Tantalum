@@ -471,7 +471,6 @@ public final class PlatformUtils {
      * @param reason
      */
     public void shutdown(final boolean block, final String reason) {
-//        block &= !isUIThread();
         //#debug
         L.i(this, "Shutdown", reason + " - block up to 3 seconds=" + block);
         if (!isUIThread()) {

@@ -47,7 +47,7 @@ final class Worker extends Thread {
     private static final int STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
     private static final int STATE_RUNNING_SHUTDOWN_TASKS = 2;
     private static final int QUEUE_SIZE_LIMIT = 32;
-    private static final int SHUTDOWN_TIMEOUT = 1000; // ms, how long to hold the calling thread when system initiates a shutdown
+    private static final int SHUTDOWN_TIMEOUT = 15000; // ms, how long to hold the calling thread when system initiates a shutdown
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
@@ -412,31 +412,31 @@ final class Worker extends Thread {
             /*
              * Interrupt currently running tasks which can be interrupted
              */
-            synchronized (q) {
-                for (int i = 0; i < workers.length; i++) {
-                    if (workers[i] == Thread.currentThread()) {
-                        continue;
-                    }
+//            synchronized (q) {
+//                for (int i = 0; i < workers.length; i++) {
+//                    if (workers[i] == Thread.currentThread()) {
+//                        continue;
+//                    }
 //                    final Task t = workers[i].currentTask;
 //                    if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
 //                        workers[i].interrupt();
 //                        workers[i] = new Worker("Shutdown-replace-" + workers[i].getName(), workers[i].isDedicatedFastlaneWorker);
 //                        workers[i].start();
 //                    }
-                }
-            }
+//                }
+//            }
 
-            DedicatedThread dedicatedThread;
-            do {
-                synchronized (dedicatedThreads) {
-                    if (dedicatedThreads.size() > 0) {
-                        dedicatedThread = (DedicatedThread) dedicatedThreads.firstElement();
-                        dedicatedThreads.removeElementAt(0);
-                    } else {
-                        dedicatedThread = null;
-                    }
-                }
-
+//            DedicatedThread dedicatedThread;
+//            do {
+//                synchronized (dedicatedThreads) {
+//                    if (dedicatedThreads.size() > 0) {
+//                        dedicatedThread = (DedicatedThread) dedicatedThreads.firstElement();
+//                        dedicatedThreads.removeElementAt(0);
+//                    } else {
+//                        dedicatedThread = null;
+//                    }
+//                }
+//
 //                if (dedicatedThread != null) {
 //                    synchronized (dedicatedThread.serialQ) {
 //                        if (dedicatedThread.task != null && dedicatedThread.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
@@ -444,7 +444,7 @@ final class Worker extends Thread {
 //                        }
 //                    }
 //                }
-            } while (dedicatedThread != null);
+//            } while (dedicatedThread != null);
 
             if (block) {
                 final long shutdownTimeout = System.currentTimeMillis();
