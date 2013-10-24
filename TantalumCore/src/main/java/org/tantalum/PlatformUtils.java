@@ -267,15 +267,15 @@ public final class PlatformUtils {
      * The application calls this when all Workers have completed shutdown to
      * inform the phone that the program has closed itself.
      *
-     * Do not call this directly, call Worker.shutdown() to initiate a close
+     * Do not call this directly, call PlatformUtils.getInstance().shutdown() to initiate a close
      *
      * @param reasonDestroyed
      * @return
      */
-    boolean shutdownComplete(final String reasonDestroyed) {
+    void shutdownComplete(final String reasonDestroyed) {
         synchronized (MUTEX) {
             if (shutdownComplete) {
-                return shutdownComplete;
+                return;
             }
             shutdownComplete = true;
         }
@@ -297,13 +297,12 @@ public final class PlatformUtils {
             try {
                 PlatformUtils.class.wait(500);
             } catch (InterruptedException ex) {
+                //#debug
                 ex.printStackTrace();
             }
         }
 
         platformAdapter.shutdownComplete();
-
-        return true;
     }
 
     /**

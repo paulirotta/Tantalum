@@ -107,8 +107,8 @@ final class Worker extends Thread {
 
     /**
      * True during the shutdown process
-     * 
-     * @return 
+     *
+     * @return
      */
     static boolean isShuttingDown() {
         return shuttingDown;
@@ -447,32 +447,36 @@ final class Worker extends Thread {
 //            } while (dedicatedThread != null);
 
             if (block) {
-                final long shutdownTimeout = System.currentTimeMillis();
-                try {
-                    /*
-                     * Block this thread up to 3 seconds while remaining tasks complete normally
-                     */
-                    synchronized (q) {
-                        while (!shutdownQ.isEmpty() || !q.isEmpty() || !fastlaneQ.isEmpty() || !allWorkersIdleExceptThisOne()) {
-                            final long timeRemaining = shutdownTimeout + SHUTDOWN_TIMEOUT - System.currentTimeMillis();
-
-                            if (timeRemaining <= 0) {
-                                //#debug
-                                L.i("A worker blocked shutdown timeout", Worker.toStringWorkers());
-                                break;
-                            }
-                            q.wait(timeRemaining);
-                        }
-                    }
-                } finally {
-                    PlatformUtils.getInstance().shutdownComplete(reason
-                            + " - Blocking shutdown ending: shutdownTime="
-                            + (System.currentTimeMillis() - shutdownTimeout));
-                }
+                blockUntilShutdownComplete(reason);
             }
         } catch (InterruptedException ex) {
             //#debug
             L.e("Shutdown was interrupted", "", ex);
+        }
+    }
+
+    private static void blockUntilShutdownComplete(final String reason) throws InterruptedException {
+        final long shutdownTimeout = System.currentTimeMillis();
+        try {
+            /*
+             * Block this thread up to 3 seconds while remaining tasks complete normally
+             */
+            synchronized (q) {
+                while (!shutdownQ.isEmpty() || !q.isEmpty() || !fastlaneQ.isEmpty() || !allWorkersIdleExceptThisOne()) {
+                    final long timeRemaining = shutdownTimeout + SHUTDOWN_TIMEOUT - System.currentTimeMillis();
+
+                    if (timeRemaining <= 0) {
+                        //#debug
+                        L.i("A worker blocked shutdown timeout", Worker.toStringWorkers());
+                        break;
+                    }
+                    q.wait(timeRemaining);
+                }
+            }
+        } finally {
+            PlatformUtils.getInstance().shutdownComplete(reason
+                    + " - Blocking shutdown ending: shutdownTime="
+                    + (System.currentTimeMillis() - shutdownTimeout));
         }
     }
 
@@ -587,9 +591,9 @@ final class Worker extends Thread {
                                  * Nothing for this thread to do
                                  */
                                 if (runState == STATE_RUNNING_SHUTDOWN_TASKS
-                                        && allWorkersIdleExceptThisOne() && allDedicatedThreadsComplete()
-                                        && !PlatformUtils.getInstance().shutdownComplete("All workers idle except this thread")) {
-                                    q.notifyAll();
+                                        && allWorkersIdleExceptThisOne() /*&& allDedicatedThreadsComplete()*/) {
+                                    PlatformUtils.getInstance().shutdownComplete("All workers idle except this thread");
+                                    return;
                                 }
                                 q.wait();
                             } else {
