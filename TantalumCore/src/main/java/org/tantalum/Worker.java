@@ -61,6 +61,7 @@ final class Worker extends Thread {
      */
     private final Vector serialQ = new Vector();
     private static final Vector fastlaneQ = new Vector();
+    private static final Vector shutdownUI_Q = new Vector();
     private static final Vector idleQ = new Vector();
     private static final Vector shutdownQ = new Vector();
     private static int runState = STATE_RUNNING;
@@ -237,6 +238,10 @@ final class Worker extends Thread {
                     q.notifyAll();
                     break;
 
+                case Task.SHUTDOWN_UI:
+                    shutdownUI_Q.addElement(task);
+                    break;
+
                 case Task.SHUTDOWN:
                     shutdownQ.addElement(task);
                     q.notifyAll();
@@ -383,6 +388,23 @@ final class Worker extends Thread {
              * Removed queued tasks which can be removed
              */
             shuttingDown = true;
+            synchronized (shutdownUI_Q) {
+                while (!shutdownUI_Q.isEmpty()) {
+                    final Task t = (Task) shutdownUI_Q.firstElement();
+
+                    PlatformUtils.getInstance().runOnUiThread(new Runnable() {
+                        public void run() {
+                            try {
+                                t.executeTask(t.getValue());
+                            } catch (Exception e) {
+                                //#debug
+                                L.e("Can not run on SHUTDOWN_UI task", reason, e);
+                            }
+                        } 
+                    });
+                    shutdownUI_Q.removeElementAt(0);
+                }
+            }
             synchronized (q) {
                 runState = STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS;
                 q.notifyAll();
@@ -579,7 +601,10 @@ final class Worker extends Thread {
                                     break;
 
                                 case STATE_RUNNING_SHUTDOWN_TASKS:
-                                    getShutdownTask();
+                                    getNormalRunTask();
+                                    if (currentTask == null) {
+                                        getShutdownTask();
+                                    }
                                     break;
 
                                 default:
@@ -592,6 +617,7 @@ final class Worker extends Thread {
                                  */
                                 if (runState == STATE_RUNNING_SHUTDOWN_TASKS
                                         && allWorkersIdleExceptThisOne() /*&& allDedicatedThreadsComplete()*/) {
+                                    q.notifyAll(); // Let any hold-for-shutdown thread continue
                                     PlatformUtils.getInstance().shutdownComplete("All workers idle except this thread");
                                     return;
                                 }

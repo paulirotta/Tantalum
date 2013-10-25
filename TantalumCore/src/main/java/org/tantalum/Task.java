@@ -114,7 +114,7 @@ public abstract class Task {
      * Task.setShutdownBehaviour(Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) to
      * ensure that a Thread.interrupt() is sent.
      */
-    public static final int DEDICATED_THREAD_PRIORITY = 8;
+    public static final int DEDICATED_THREAD_PRIORITY = 9;
     /**
      * Queue the task the system UI thread where it will execute after any
      * pending system events like touch input.
@@ -136,7 +136,7 @@ public abstract class Task {
      * <code>Runnable</code> object can implement frequently-occurring display
      * events.
      */
-    public static final int UI_PRIORITY = 7;
+    public static final int UI_PRIORITY = 8;
     /**
      * Start the task as soon as possible, LIFO with no guaranteed sequence
      * order and higher absolute priority than
@@ -149,7 +149,7 @@ public abstract class Task {
      * the other threads are busy with tasks such as HTTP GET that can more than
      * a few milliseconds to complete.
      */
-    public static final int FASTLANE_PRIORITY = 6;
+    public static final int FASTLANE_PRIORITY = 7;
     /**
      * FIFO with guaranteed sequence. The task will execute on the same thread
      * making the call if that thread is a Worker or UI.
@@ -164,7 +164,7 @@ public abstract class Task {
      * holding one or more locks, and then safely execute these after the locks
      * are no longer held.
      */
-    public static final int SERIAL_CURRENT_THREAD_PRIORITY = 5;
+    public static final int SERIAL_CURRENT_THREAD_PRIORITY = 6;
     /**
      * FIFO with guaranteed sequence (single-thread concurrent execution, this
      * one thread also does
@@ -186,7 +186,7 @@ public abstract class Task {
      * <code>Task</code> chains to or forks other
      * <code>Task</code>s.
      */
-    public static final int SERIAL_PRIORITY = 4;
+    public static final int SERIAL_PRIORITY = 5;
     /**
      * LIFO with no guaranteed sequence (multi-thread concurrent execution)
      * start the task as soon as possible. The
@@ -202,7 +202,7 @@ public abstract class Task {
      * as this can block for a long time and then the fastlane is not so fast
      * anymore.
      */
-    public static final int HIGH_PRIORITY = 3;
+    public static final int HIGH_PRIORITY = 4;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * Start execution after any previously
@@ -210,7 +210,7 @@ public abstract class Task {
      * multiple Workers in parallel means that execution start and completion
      * order is not guaranteed.
      */
-    public static final int NORMAL_PRIORITY = 2;
+    public static final int NORMAL_PRIORITY = 3;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * Start execution if there is nothing else for the Workers to do. At least
@@ -219,7 +219,8 @@ public abstract class Task {
      * for background tasks such as pre-fetch and pre-processing of data that
      * doe not affect the current user view.
      */
-    public static final int IDLE_PRIORITY = 1;
+    public static final int IDLE_PRIORITY = 2;
+    public static final int SHUTDOWN_UI = 1;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * These tasks start when the application begins to close. The application
