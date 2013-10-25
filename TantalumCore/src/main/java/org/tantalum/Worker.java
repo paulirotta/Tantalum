@@ -434,19 +434,19 @@ final class Worker extends Thread {
             /*
              * Interrupt currently running tasks which can be interrupted
              */
-//            synchronized (q) {
-//                for (int i = 0; i < workers.length; i++) {
-//                    if (workers[i] == Thread.currentThread()) {
-//                        continue;
-//                    }
-//                    final Task t = workers[i].currentTask;
-//                    if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-//                        workers[i].interrupt();
-//                        workers[i] = new Worker("Shutdown-replace-" + workers[i].getName(), workers[i].isDedicatedFastlaneWorker);
-//                        workers[i].start();
-//                    }
-//                }
-//            }
+            synchronized (q) {
+                for (int i = 0; i < workers.length; i++) {
+                    if (workers[i] == Thread.currentThread()) {
+                        continue;
+                    }
+                    final Task t = workers[i].currentTask;
+                    if (t != null && t.getShutdownBehaviour() == Task.EXECUTE_NORMALLY_ON_SHUTDOWN) {
+                        // Replace this worker- we don't wait for any such task
+                        workers[i] = new Worker("Shutdown-replace-" + workers[i].getName(), workers[i].isDedicatedFastlaneWorker);
+                        workers[i].start();
+                    }
+                }
+            }
 
 //            DedicatedThread dedicatedThread;
 //            do {
@@ -526,6 +526,7 @@ final class Worker extends Thread {
 //                }
             // continue to next case
 
+            case Task.DO_NOT_WAIT_FOR_THIS_ON_SHUTDOWN:
             case Task.DEQUEUE_ON_SHUTDOWN:
                 return queue.removeElement(task);
 

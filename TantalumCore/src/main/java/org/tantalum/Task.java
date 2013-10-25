@@ -274,12 +274,16 @@ public abstract class Task {
     /**
      * Task will run without interruption or dequeue during shutdown
      */
-    public static final int EXECUTE_NORMALLY_ON_SHUTDOWN = 0;
+    public static final int DO_NOT_WAIT_FOR_THIS_ON_SHUTDOWN = 2;
+    /**
+     * Task will run without interruption or dequeue during shutdown
+     */
+    public static final int EXECUTE_NORMALLY_ON_SHUTDOWN = 1;
     /**
      * Tasks which have not yet started are removed from the task queue when an
      * application shutdown begins. This is the default behavior.
      */
-    public static final int DEQUEUE_ON_SHUTDOWN = 1;
+    public static final int DEQUEUE_ON_SHUTDOWN = 0;
     /**
      * Default shutdown behavior.
      *
@@ -447,7 +451,7 @@ public abstract class Task {
      */
     public final Task setShutdownBehaviour(final int shutdownBehaviour) {
         synchronized (mutex) {
-            if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_ON_SHUTDOWN /*Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN*/) {
+            if (shutdownBehaviour > Task.DO_NOT_WAIT_FOR_THIS_ON_SHUTDOWN || shutdownBehaviour < Task.DEQUEUE_ON_SHUTDOWN) {
                 throw new IllegalArgumentException(getClassName() + " invalid shutdownBehaviour value: " + shutdownBehaviour);
             }
 

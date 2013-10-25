@@ -591,7 +591,7 @@ public class StaticCache {
 
                 return useForm;
             }
-        }.setClassName("PutAsync").chain(nextTask).fork();
+        }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN).setClassName("PutAsync").chain(nextTask).fork();
 
         return useForm;
     }
