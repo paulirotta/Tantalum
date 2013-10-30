@@ -480,6 +480,7 @@ final class Worker extends Thread {
         final long shutdownTimeout = System.currentTimeMillis();
 
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+
         try {
             // Wait for all Workers to die except this thread
             if (workers != null) {
@@ -488,10 +489,19 @@ final class Worker extends Thread {
                         final Worker w = workers[i];
 
                         if (w == Thread.currentThread()) {
+                            //#debug
+                            L.i("Skipping current thread wait during shutdown", "reason=" + reason);
                             continue;
                         }
                         if (w.isAlive()) {
+                            //#debug
+                            L.i("Join active thread during shutdown", w.toString());
                             w.join();
+                            //#debug
+                            L.i("Continue after join active thread during shutdown", w.toString());
+                        } else {
+                            //#debug
+                            L.i("Idle thread during shutdown", w.toString());
                         }
                     } catch (Throwable t) {
                         //#debug
@@ -501,11 +511,19 @@ final class Worker extends Thread {
             }
 
             // Run all queues until empty
+            //#debug
+            L.i("Start executing shutdown tasks", "size=" + shutdownQ.size());
             Task task;
             do {
                 task = getShutdownTask();
-                task.executeTask(task.getValue());
+                if (task != null) {
+                    //#debug
+                    L.i("Start executing shutdown task", task.toString());
+                    task.executeTask(task.getValue());
+                }
             } while (task != null);
+            //#debug
+            L.i("Done with all shutdown tasks", "size=" + shutdownQ.size());            
 
 //            /*
 //             * Block this thread up to 3 seconds while remaining tasks complete normally
@@ -562,21 +580,21 @@ final class Worker extends Thread {
     static boolean dequeue(final Task task) {
         synchronized (q) {
             if (q.contains(task)) {
-                q.remove(task);
+                q.removeElement(task);
                 return true;
             }
         }
 
         synchronized (fastlaneQ) {
             if (fastlaneQ.contains(task)) {
-                fastlaneQ.remove(task);
+                fastlaneQ.removeElement(task);
                 return true;
             }
         }
 
         synchronized (idleQ) {
             if (idleQ.contains(task)) {
-                idleQ.remove(task);
+                idleQ.removeElement(task);
                 return true;
             }
         }
@@ -585,7 +603,7 @@ final class Worker extends Thread {
             for (int i = 0; i < workers.length; i++) {
                 synchronized (workers[i].serialQ) {
                     if (workers[i].serialQ.contains(task)) {
-                        workers[i].serialQ.remove(task);
+                        workers[i].serialQ.removeElement(task);
                         return true;
                     }
                 }
