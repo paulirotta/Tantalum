@@ -97,7 +97,7 @@ public abstract class JSONPoster extends HttpPoster {
         } catch (Exception e) {
             //#debug
             L.e("JSONPoster HTTP response problem", key + " : " + value, e);
-            cancel(false, "JSONPoster exception - " + key, e);
+            cancel("JSONPoster exception - " + key, e);
         }
 
         return jsonModel;

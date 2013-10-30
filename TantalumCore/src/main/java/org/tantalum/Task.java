@@ -272,19 +272,6 @@ public abstract class Task {
     public static final int CANCELED = 2;
     private static final String[] STATUS_STRINGS = {"PENDING", "FINISHED", "CANCELED"};
     /**
-     * Task will run without interruption or dequeue during shutdown
-     */
-    public static final int DO_NOT_WAIT_FOR_THIS_ON_SHUTDOWN = 2;
-    /**
-     * Task will run without interruption or dequeue during shutdown
-     */
-    public static final int EXECUTE_NORMALLY_ON_SHUTDOWN = 1;
-    /**
-     * Tasks which have not yet started are removed from the task queue when an
-     * application shutdown begins. This is the default behavior.
-     */
-    public static final int DEQUEUE_ON_SHUTDOWN = 0;
-    /**
      * Default shutdown behavior.
      *
      * If you explicitly do not want your Task to be cancel(true)ed during
@@ -301,13 +288,6 @@ public abstract class Task {
      * The current execution state, one of several predefined constants
      */
     protected int status = PENDING; // Always access within a synchronized block
-    /**
-     * All tasks are removed from the queue without notice automatically on
-     * shutdown unless specifically marked. For example, writing to flash memory
-     * may be required during shutdown, but HttpGetter could block or a long
-     * time and should be cancel()ed during shutdown to speed application close.
-     */
-    private int shutdownBehaviour = Task.DEQUEUE_ON_SHUTDOWN;
     /**
      * The next Task to be executed after this Task completes successfully. If
      * the current task is canceled or throws an exception, the chainedTask(s)
@@ -360,9 +340,6 @@ public abstract class Task {
         if (priority < Task.SHUTDOWN || priority > Task.DEDICATED_THREAD_PRIORITY) {
             throw new IllegalArgumentException("Can not set illegal Task priority " + priority + ". Use one of the constants such as Task.NORMAL_PRIORITY");
         }
-        if (priority == Task.SHUTDOWN) {
-            setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN);
-        }
         forkPriority = priority;
     }
 
@@ -409,55 +386,6 @@ public abstract class Task {
     public void unchain() {
         synchronized(mutex) {
             chainedTask = null;
-        }
-    }
-
-    /**
-     * Override this if, when this Task is running, you would like to perform an operation when shutdown begins
-     * 
-     */
-    protected void shutdownNotify() {
-        //#debug
-        L.i(this, "Task is running during shutdown", null);
-    }
-
-    /**
-     * Return the currently set shutdown behavior
-     *
-     * @return
-     */
-    public final int getShutdownBehaviour() {
-        synchronized (mutex) {
-            return shutdownBehaviour;
-        }
-    }
-
-    /**
-     * Override the default shutdown behavior
-     *
-     * If for example you want an ongoing task to finish if it has already
-     * started when the shutdown signal comes, but be removed from the queue if
-     * it has not yet started, set to Task.DEQUEUE_ON_SHUTDOWN
-     *
-     * Note that items passed to Worker.queueShutdownTask() ignore this value
-     * and will all run normally to completion during shutdown unless the
-     * platform (not the application) initiated the shutdown and slow shutdown
-     * Tasks result in a shutdown times-out. If this occurs during persistent
-     * state write operations, behavior is unpredictable, so it is best to write
-     * state as-you-go so that you can shut down quickly.
-     *
-     * @param shutdownBehaviour
-     * @return
-     */
-    public final Task setShutdownBehaviour(final int shutdownBehaviour) {
-        synchronized (mutex) {
-            if (shutdownBehaviour > Task.DO_NOT_WAIT_FOR_THIS_ON_SHUTDOWN || shutdownBehaviour < Task.DEQUEUE_ON_SHUTDOWN) {
-                throw new IllegalArgumentException(getClassName() + " invalid shutdownBehaviour value: " + shutdownBehaviour);
-            }
-
-            this.shutdownBehaviour = shutdownBehaviour;
-
-            return this;
         }
     }
 
@@ -846,7 +774,7 @@ public abstract class Task {
             });
             // Also cancel any chained Tasks expecting the output of this Task
             if (t != null) {
-                t.cancel(false, "Previous task in chain was canceled: " + this);
+                t.cancel("Previous task in chain was canceled: " + this);
             }
         }
     }
@@ -1005,7 +933,7 @@ public abstract class Task {
             final String s = "Exception during Task exec()";
             //#debug
             L.e(this, s, "" + this, t);
-            cancel(false, s + " : " + this, t);
+            cancel(s + " : " + this, t);
             out = null;
         }
 
@@ -1026,11 +954,6 @@ public abstract class Task {
     /**
      * Cancel execution of this Task
      *
-     * @param interruptIfRunning - if true and the Task is currently running,
-     * the worker thread running it will receive an interrupt(). This is useful
-     * for example to instantly end an HTTP connection. Make sure your code
-     * catches InterruptedException and closes resources and state
-     * appropriately.
      * @param reason - an explanation visible in the log line in debug builds.
      * This makes multi-threaded debugging easier to trace back to the origin
      * event.
@@ -1039,8 +962,8 @@ public abstract class Task {
      * completed, not found (is a chained task not executing), or already
      * started and no interrupt was requested
      */
-    public final boolean cancel(final boolean interruptIfRunning, final String reason) {
-        return cancel(interruptIfRunning, reason, null);
+    public final boolean cancel(final String reason) {
+        return cancel(reason, null);
     }
 
     /**
@@ -1054,16 +977,15 @@ public abstract class Task {
      * Override onCanceled() is the normal notification location, and is called
      * from the UI thread with Task state updates handled for you.
      *
-     * @param mayInterruptIfRunning
      * @param reason
      * @param t
      * @return true if a Task was actually canceled
      */
-    public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
-        return doCancel(mayInterruptIfRunning, reason, t, null);
+    public boolean cancel(final String reason, final Throwable t) {
+        return doCancel(reason, t, null);
     }
 
-    boolean doCancel(final boolean interruptIfRunning, final String reason, final Throwable t, Thread thread) {
+    boolean doCancel(final String reason, final Throwable t, Thread thread) {
         if (reason == null) {
             throw new NullPointerException("For clean debug, you must provide a reason for cancel(), null will not do");
         }
@@ -1087,27 +1009,27 @@ public abstract class Task {
             L.i(this, "Did not find/remove pending task from queue on cancel", reason);
         }
 
-        //#debug
-        L.i(this, "Begin cancel \"" + reason + "\" mayInterruptIfRunning=" + interruptIfRunning, s + " - " + this);
-        if (interruptIfRunning) {
-            if (thread != null) {
-                thread.interrupt();
-            } else {
-                thread = Worker.interruptTask(this);
-            }
-            //#debug
-            L.i(this, "cancel(\"" + reason + "\")", "interrupt sent to thread=" + thread);
-
-            synchronized (mutex) {
-                if (status >= Task.FINISHED) {
-                    //#debug
-                    L.i(this, "End cancel(\"" + reason + "\")", "Successful interrupt sent and received, thread=" + thread);
-                    return true;
-                }
-            }
-            //#debug
-            L.i(this, "cancel(\"" + reason + "\")", "Unable to find and interrupt() on known threads. Task is not currently running, so we will just change status and notify chained tasks by canceling them also");
-        }
+//        //#debug
+//        L.i(this, "Begin cancel \"" + reason + "\" mayInterruptIfRunning=" + interruptIfRunning, s + " - " + this);
+//        if (interruptIfRunning) {
+//            if (thread != null) {
+//                thread.interrupt();
+//            } else {
+//                thread = Worker.interruptTask(this);
+//            }
+//            //#debug
+//            L.i(this, "cancel(\"" + reason + "\")", "interrupt sent to thread=" + thread);
+//
+//            synchronized (mutex) {
+//                if (status >= Task.FINISHED) {
+//                    //#debug
+//                    L.i(this, "End cancel(\"" + reason + "\")", "Successful interrupt sent and received, thread=" + thread);
+//                    return true;
+//                }
+//            }
+//            //#debug
+//            L.i(this, "cancel(\"" + reason + "\")", "Unable to find and interrupt() on known threads. Task is not currently running, so we will just change status and notify chained tasks by canceling them also");
+//        }
         doSetStatus(CANCELED, s);
         //#debug
         L.i(this, "End cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " " + this);
@@ -1263,7 +1185,7 @@ public abstract class Task {
                 tasksToFork.copyInto(tasks);
             }
             for (int i = 0; i < tasks.length; i++) {
-                tasks[i].cancel(false, "Previous task in chain was canceled, then the chain split");
+                tasks[i].cancel("Previous task in chain was canceled, then the chain split");
             }
         }
 

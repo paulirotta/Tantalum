@@ -84,7 +84,7 @@ public class JSONGetterTest extends MockedStaticInitializers {
         @Override
         public Object exec(Object in) {
             super.exec(in);
-            cancel(false, "Test net cancel");
+            cancel("Test net cancel");
             
             return null;
         }

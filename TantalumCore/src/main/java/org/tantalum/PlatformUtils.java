@@ -466,12 +466,11 @@ public final class PlatformUtils {
      * must finish within 3 seconds or risk being terminated by the phone OS if
      * this is an system-initiated application close.
      *
-     * @param block
      * @param reason
      */
-    public void shutdown(final boolean block, final String reason) {
+    public void shutdown(final String reason) {
         //#debug
-        L.i(this, "Shutdown", reason + " - block=" + block + " timerThread=" + Task.isTimerThread() + " uiThread=" + PlatformUtils.getInstance().isUIThread());
+        L.i(this, "Shutdown", reason + " - timerThread=" + Task.isTimerThread() + " uiThread=" + PlatformUtils.getInstance().isUIThread());
         if (!isUIThread()) {
             Worker.shutdown(reason);
         } else {
@@ -484,10 +483,6 @@ public final class PlatformUtils {
                     Worker.shutdown(reason);
 
                     return in;
-                }
-
-                protected void shutdownNotify() {
-                    // No need for a confusing debug message for this Task- do nothing
                 }
             }.setClassName("ShutdownOnWorkerInsteadOfUIThread").fork();
         }

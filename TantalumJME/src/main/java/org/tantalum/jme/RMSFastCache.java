@@ -262,7 +262,7 @@ public class RMSFastCache extends FlashCache {
                 // Here we have duplicate value in the indexHash
                 L.i(this, "Duplicate value in indexHash. Two distinct keys point to equal value ", RMSKeyUtils.toKeyIndex((Long) theValue) + "-" + RMSKeyUtils.toValueIndex((Long) theValue));
                 dumpHash(copy);
-                PlatformUtils.getInstance().shutdown(true, "RMS is inconsistent");
+                PlatformUtils.getInstance().shutdown("RMS is inconsistent");
             }
 
             copy.put(theValue, dummyObject);
@@ -272,7 +272,7 @@ public class RMSFastCache extends FlashCache {
             // We have a problem
             L.i(this, "Size mismatch in indexHash", copy.size() + " != " + indexHash.size());
             dumpHash(copy);
-            PlatformUtils.getInstance().shutdown(true, "RMS size mismatch, is inconsistent");
+            PlatformUtils.getInstance().shutdown("RMS size mismatch, is inconsistent");
         }
         //#enddebug
     }

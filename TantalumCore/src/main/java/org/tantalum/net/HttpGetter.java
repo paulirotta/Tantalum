@@ -560,8 +560,6 @@ public class HttpGetter extends Task {
      */
     public HttpGetter(final int priority) {
         super(priority);
-
-        setShutdownBehaviour(Task.DO_NOT_WAIT_FOR_THIS_ON_SHUTDOWN);
     }
 
     /**
@@ -746,7 +744,7 @@ public class HttpGetter extends Task {
 
         if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
             final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
-            cancel(false, s);
+            cancel(s);
             return out;
         }
 
@@ -812,7 +810,7 @@ public class HttpGetter extends Task {
                 //#debug
                 L.i(this, "Exec", "No response. Stream is null, or length is 0");
             } else if (length > httpConn.getMaxLengthSupportedAsBlockOperation()) {
-                cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
+                cancel("Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
             } else if (length > 0 && HttpGetter.netActivityListenerDelegate.isEmpty()) {
                 final byte[] bytes = new byte[length];
                 firstByteTime = readBytesFixedLength(url, inputStream, bytes);
@@ -870,7 +868,7 @@ public class HttpGetter extends Task {
             } else {
                 //#debug
                 L.i(this, "No more retries", url);
-                cancel(false, "No more retries");
+                cancel("No more retries");
             }
         } finally {
             if (httpConn != null) {
@@ -894,7 +892,7 @@ public class HttpGetter extends Task {
             } else if (!success) {
                 //#debug
                 L.i("HTTP GET FAILED: about to HttpGetter.cancel() this and any chained Tasks", this.toString());
-                cancel(false, "HttpGetter failed response code and header check: " + this);
+                cancel("HttpGetter failed response code and header check: " + this);
             }
             //#debug
             L.i(this, "End", url + " status=" + getStatus() + " out=" + (out == null ? "null" : "(" + out.getBytes().length + " bytes)"));
@@ -908,19 +906,11 @@ public class HttpGetter extends Task {
         return out;
     }
 
-    /**
-     * Chained tasks will be unchained on shutdown. This prevents new actions
-     * from starting after the HTTP connection takes time to close.
-     */
-    protected void shutdownNotify() {
-        unchain();
-    }
-
-    public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
+    public boolean cancel(final String reason, final Throwable t) {
         //#debug
         L.i("The HttpGetter has been canceled. Retries Remaining is set to 0", reason);
         retriesRemaining = 0;
-        return super.cancel(mayInterruptIfRunning, reason, t);
+        return super.cancel(reason, t);
     }
 
     /**
@@ -948,7 +938,7 @@ public class HttpGetter extends Task {
             firstByteReceivedTime = System.currentTimeMillis();
             while (totalBytesRead < bytes.length) {
                 if (isShuttingDown()) {
-                    this.cancel(false, "HttpGetter fixed length pull end on shutting down");
+                    this.cancel("HttpGetter fixed length pull end on shutting down");
                     return 0;
                 }
 
@@ -993,7 +983,7 @@ public class HttpGetter extends Task {
         HttpGetter.networkActivity(netActivityKey);
         while (true) {
             if (isShuttingDown()) {
-                this.cancel(false, "HttpGetter end on shutting down");
+                this.cancel("HttpGetter end on shutting down");
                 return 0;
             }
             final int bytesRead = inputStream.read(readBuffer);

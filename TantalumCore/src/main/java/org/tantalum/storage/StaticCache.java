@@ -586,12 +586,12 @@ public class StaticCache {
                 } catch (FlashDatabaseException e) {
                     //#debug
                     L.e(this, "Can not synchronousFlashPut()", key, e);
-                    cancel(false, "Can not sync write to flash: " + key + " byte length=" + byteLength, e);
+                    cancel("Can not sync write to flash: " + key + " byte length=" + byteLength, e);
                 }
 
                 return useForm;
             }
-        }.setShutdownBehaviour(Task.EXECUTE_NORMALLY_ON_SHUTDOWN).setClassName("PutAsync").chain(nextTask).fork();
+        }.setClassName("PutAsync").chain(nextTask).fork();
 
         return useForm;
     }
@@ -891,7 +891,7 @@ public class StaticCache {
             if (in == null || !(in instanceof String)) {
                 //#debug
                 L.i(this, "ERROR", "Must receive a String url, but got " + in);
-                cancel(false, "StaticCache.GetLocalTask got bad input to exec(): " + in);
+                cancel("StaticCache.GetLocalTask got bad input to exec(): " + in);
 
                 return in;
             }
