@@ -66,6 +66,7 @@ final class Worker extends Thread {
     private static final Vector shutdownQ = new Vector();
     private static int runState = STATE_RUNNING;
     volatile static boolean shuttingDown = false;
+    volatile static boolean shutdownComplete = false;
     private Task currentTask = null; // Access only within synchronized(q)
     private final boolean isDedicatedFastlaneWorker;
 
@@ -377,16 +378,14 @@ final class Worker extends Thread {
      * shutdown Tasks are completed. Resources held by the system will be closed
      * and queued compute such as writing to the RMS or file system will
      * complete.
-     *
-     * @param block Block the calling thread up to three seconds to allow
-     * orderly shutdown. This is only needed in shutdown(true) which is called
-     * for example by the user pressing the red HANGUP button.
      */
-    static void shutdown(final boolean block, final String reason) {
+    static void shutdown(final String reason) {
         try {
             /*
              * Removed queued tasks which can be removed
              */
+            //#debug
+            L.i("shutdown called", "reason=" + reason);
             shuttingDown = true;
             synchronized (shutdownUI_Q) {
                 while (!shutdownUI_Q.isEmpty()) {
@@ -400,7 +399,7 @@ final class Worker extends Thread {
                                 //#debug
                                 L.e("Can not run on SHUTDOWN_UI task", reason, e);
                             }
-                        } 
+                        }
                     });
                     shutdownUI_Q.removeElementAt(0);
                 }
@@ -467,13 +466,16 @@ final class Worker extends Thread {
 //                    }
 //                }
 //            } while (dedicatedThread != null);
-
-            if (block) {
-                blockUntilShutdownComplete(reason);
-            }
-        } catch (InterruptedException ex) {
+            blockUntilShutdownComplete(reason);
+        } catch (Throwable ex) {
             //#debug
-            L.e("Shutdown was interrupted", "", ex);
+            L.e("Shutdown throwable", "", ex);
+        } finally {
+            shutdownComplete = true;
+            synchronized (q) {
+                q.notifyAll();
+            }
+            
         }
     }
 
@@ -525,7 +527,6 @@ final class Worker extends Thread {
 //                    task.cancel(interruptIfRunning, "Shutdown signal received with interruptIfRunning=true");
 //                }
             // continue to next case
-
             case Task.DO_NOT_WAIT_FOR_THIS_ON_SHUTDOWN:
             case Task.DEQUEUE_ON_SHUTDOWN:
                 return queue.removeElement(task);
@@ -574,7 +575,7 @@ final class Worker extends Thread {
      */
     public void run() {
         try {
-            while (true) {
+            while (!shutdownComplete) {
                 /*
                  * The following code is Thread-hardened such that Task.cancel(true, "blah")
                  * can generate a Thread.interrupt() at an point below _if_
@@ -619,7 +620,7 @@ final class Worker extends Thread {
                                 if (runState == STATE_RUNNING_SHUTDOWN_TASKS
                                         && allWorkersIdleExceptThisOne() /*&& allDedicatedThreadsComplete()*/) {
                                     q.notifyAll(); // Let any hold-for-shutdown thread continue
-                                    PlatformUtils.getInstance().shutdownComplete("All workers idle except this thread");
+//                                    PlatformUtils.getInstance().shutdownComplete("All workers idle except this thread");
                                     return;
                                 }
                                 q.wait();
@@ -848,9 +849,6 @@ final class Worker extends Thread {
         }
 
         return className;
-
-
-
 
     }
     //#enddebug

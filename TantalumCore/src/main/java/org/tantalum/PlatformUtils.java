@@ -471,9 +471,9 @@ public final class PlatformUtils {
      */
     public void shutdown(final boolean block, final String reason) {
         //#debug
-        L.i(this, "Shutdown", reason + " - block up to 3 seconds=" + block);
+        L.i(this, "Shutdown", reason + " - block=" + block + " timerThread=" + Task.isTimerThread() + " uiThread=" + PlatformUtils.getInstance().isUIThread());
         if (!isUIThread()) {
-            Worker.shutdown(block, reason);
+            Worker.shutdown(reason);
         } else {
             //#debug
             L.i(this, "WARNING: Can not shutdown() from the UI thread", "Automatically changing to Task.DEDICATED_THREAD_PRIORITY to initiate shutdown, function will return immediately to keep the shutdown smooth - " + reason);
@@ -481,7 +481,7 @@ public final class PlatformUtils {
                 protected Object exec(final Object in) throws CancellationException, TimeoutException, InterruptedException {
                     //#debug
                     L.i(this, "Shutdown (automatically changed to a Worker Thread)", reason);
-                    Worker.shutdown(false, reason);
+                    Worker.shutdown(reason);
 
                     return in;
                 }
