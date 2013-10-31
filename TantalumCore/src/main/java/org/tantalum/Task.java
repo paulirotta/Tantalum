@@ -369,6 +369,10 @@ public abstract class Task {
         return Worker.isShuttingDown();
     }
 
+    public static boolean isShutdownComplete() {
+        return Worker.isShutdownComplete();
+    }
+
     /**
      * Return a general use Timer thread singleton. Note that the Timer thread
      * is not created unless you call this method.
