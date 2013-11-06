@@ -510,6 +510,12 @@ public class HttpGetter extends Task {
      */
     public static final RollingAverage averageBaud = new RollingAverage(10, THRESHOLD_BAUD / 2);
     /**
+     * The user agent that will be set in every HTTP request.
+     *
+     * The platform may append some other user agents to it.
+     */
+    public static String permanentUserAgent = "";
+    /**
      * At what time earliest can the next HTTP request to a server can begin
      * when in slow connection mode
      */
@@ -695,6 +701,10 @@ public class HttpGetter extends Task {
         return this;
     }
 
+    public static void setPermanentUserAgent(final String userAgent) {
+        permanentUserAgent = userAgent;
+    }
+
     /**
      * Find the HTTP server's response code, or HTTP_OPERATION_PENDING if the
      * HTTP server has not yet been contacted.
@@ -753,6 +763,10 @@ public class HttpGetter extends Task {
         final String url = keyIncludingPostDataHashtoUrl((String) in);
         final Integer netActivityKey = new Integer(hashCode());
         HttpGetter.networkActivity(netActivityKey); // Notify listeners, net is in use
+
+        if(permanentUserAgent.compareTo("") != 0){
+            setRequestProperty("User-Agent",permanentUserAgent);
+        }
 
         //#debug
         L.i(this, "Start", url);
