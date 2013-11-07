@@ -687,6 +687,10 @@ public class StaticCache {
     public int size() {
         return ramCache.size();
     }
+    
+    public long getPersistentStorageSize() throws FlashDatabaseException{
+        return flashCache.getSize();
+    }
 
     /**
      * Note that delete from flash is synchronous, so while this operation does

@@ -209,6 +209,7 @@ public abstract class FlashCache {
      */
     public abstract long getFreespace() throws FlashDatabaseException;
 
+    public abstract long getSize() throws FlashDatabaseException;
     /**
      * Run finalization tasks and then close all cache resources
      *
