@@ -817,6 +817,15 @@ public class RMSFastCache extends FlashCache {
             throw new FlashDatabaseException("Can not get freespace: " + ex);
         }
     }
+    
+
+    public long getSize() throws FlashDatabaseException {
+        try {
+            return valueRS.getSize();
+        }catch(RecordStoreException ex) {
+            throw new FlashDatabaseException("can not determine size:" + ex);
+        }
+    }
 
     public void close() throws FlashDatabaseException {
         synchronized (mutex) {
