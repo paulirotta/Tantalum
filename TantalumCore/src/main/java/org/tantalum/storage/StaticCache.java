@@ -334,7 +334,7 @@ public class StaticCache {
                 if (o != null) {
                     //#debug            
                     L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
-                    accessOrder.addElement(key);
+                    accessOrder.addElement(digest);
                 }
 
                 return o;
