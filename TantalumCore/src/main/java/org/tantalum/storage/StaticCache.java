@@ -674,8 +674,8 @@ public class StaticCache {
             }
         }
 
-        if (spaceCleared >= minSpaceToClear) {
-            throw new FlashFullException("Caches cleared, but still no space (" + minSpaceToClear + ") for data");
+        if (spaceCleared < minSpaceToClear) {
+            throw new FlashFullException("Caches cleared amount: "+ spaceCleared+", but still no space (" + minSpaceToClear + ") for data");
         }
     }
 
