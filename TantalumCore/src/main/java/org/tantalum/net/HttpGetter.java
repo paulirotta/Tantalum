@@ -771,6 +771,14 @@ public class HttpGetter extends Task {
      */
     public Object exec(final Object in) throws InterruptedException {
         LOR out = null;
+        
+        if (Task.isShuttingDown()) {
+            //#debug
+            L.i("Attempt to run HttpGetter during shutdown", "ignored");
+            setRetriesRemaining(0);
+            cancel("Attempt to run HttpGetter during shutdown");
+            return out;
+        }
 
         if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
             final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
