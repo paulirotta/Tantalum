@@ -818,6 +818,16 @@ public class RMSFastCache extends FlashCache {
         }
     }
 
+    public long getSize() throws FlashDatabaseException {
+        try {
+            return keyRS.getSize() + valueRS.getSize();
+        } catch (RecordStoreNotOpenException ex) {
+            //#debug
+            L.e(this, "Can not get size", this.toString(), ex);
+            throw new FlashDatabaseException("Can not get size: " + ex);
+        }
+    }
+
     public void close() throws FlashDatabaseException {
         synchronized (mutex) {
             try {

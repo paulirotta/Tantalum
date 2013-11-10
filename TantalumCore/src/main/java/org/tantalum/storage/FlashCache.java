@@ -210,6 +210,15 @@ public abstract class FlashCache {
     public abstract long getFreespace() throws FlashDatabaseException;
 
     /**
+     * Find out how many bytes of space are used by the cache's storage
+     * medium (phone or memory card)
+     *
+     * @return
+     * @throws FlashDatabaseException
+     */
+    public abstract long getSize() throws FlashDatabaseException;
+
+    /**
      * Run finalization tasks and then close all cache resources
      *
      * This this FlashCache is part of a StaticCache, this will be called

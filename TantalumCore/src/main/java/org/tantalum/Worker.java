@@ -402,12 +402,12 @@ final class Worker extends Thread {
                     shutdownUI_Q.removeElementAt(0);
                 }
             }
-//            fastlaneQ.removeAllElements();
+            fastlaneQ.removeAllElements();
 //            for (int i = 0; i < workers.length; i++) {
 //                workers[i].serialQ.removeAllElements();
 //            }
             q.removeAllElements();
-//            idleQ.removeAllElements();
+            idleQ.removeAllElements();
 //            final DedicatedThread[] dt;
 //            synchronized (dedicatedThreads) {
 //                dt = new DedicatedThread[dedicatedThreads.size()];
@@ -427,19 +427,20 @@ final class Worker extends Thread {
             }
         }
     }
-    
+
     /**
-     * After 10 seconds, interrupt() any Worker which has not finished it's current task
-     * 
+     * After 10 seconds, interrupt() any Worker which has not finished it's
+     * current task
+     *
      * After 15 seconds, interrupt() the shutdown thread itself
-     * 
+     *
      * @param reason
-     * @return 
+     * @return
      */
     private static Timer startShutdownTimer(final String reason) {
         final Timer shutdownTimer = new Timer();
         final Thread shutdownThread = Thread.currentThread();
-        
+
         shutdownTimer.schedule(new TimerTask() {
             public void run() {
                 try {
@@ -484,7 +485,7 @@ final class Worker extends Thread {
                 }
             }
         }, Worker.SHUTDOWN_TIMEOUT_2);
-        
+
         return shutdownTimer;
     }
 
@@ -753,14 +754,24 @@ final class Worker extends Thread {
         return task;
     }
 
-    private static Task getShutdownTask() {
-        if (!q.isEmpty()) {
-            try {
-                return (Task) q.firstElement();
-            } finally {
-                q.removeElementAt(0);
+    private static Task getNormalTaskAnyWorkerDuringShutdown() {
+        for (int i = 0; i < workers.length; i++) {
+            final Task t = workers[i].getNormalRunTask();
+            if (t != null) {
+                return t;
             }
         }
+
+        return null;
+    }
+
+    private static Task getShutdownTask() {
+        final Task t = getNormalTaskAnyWorkerDuringShutdown();
+
+        if (t != null) {
+            return t;
+        }
+        
         if (!shutdownQ.isEmpty()) {
             try {
                 return (Task) shutdownQ.firstElement();
