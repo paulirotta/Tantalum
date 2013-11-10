@@ -467,6 +467,11 @@ public class HttpGetter extends Task {
      */
     public static final int HTTP_599_NETWORK_CONNECT_TIMEOUT_ERROR = 599;
     /**
+     * HTTP header request property
+     */
+    public static final String USER_AGENT = "User-Agent";
+
+    /**
      * The HTTP server has not yet been contacted, so no response code is yet
      * available
      */
@@ -540,6 +545,7 @@ public class HttpGetter extends Task {
      * Access only in static synchronized block
      */
     private static int upstreamDataCount = 0;
+    private static String userAgent = null;
     private volatile StreamWriter streamWriter = null;
     private volatile StreamReader streamReader = null;
     // Always access in a synchronized(HttpGetter.this) block
@@ -549,6 +555,30 @@ public class HttpGetter extends Task {
     static {
         HttpGetter.averageBaud.setLowerBound(HttpGetter.THRESHOLD_BAUD / 10);
         HttpGetter.averageResponseDelayMillis.setUpperBound(5000.0f);
+    }
+
+    /**
+     * This allows the user to override the platform default HTTP "User-Agent"
+     * request parameter. Note that based on the phone security model and
+     * digital application signing, your request to override the user agent
+     * field may or may not be honored.
+     *
+     * @param userAgent
+     */
+    public static synchronized void setUserAgent(final String userAgent) {
+        HttpGetter.userAgent = userAgent;
+    }
+
+    /**
+     * See the current HTTP "User-Agent" parameter.
+     *
+     * If null, the user agent is not asserted and the phone default for Java
+     * will be used.
+     *
+     * @return
+     */
+    public static synchronized String getUserAgent() {
+        return userAgent;
     }
 
     /**
@@ -753,6 +783,11 @@ public class HttpGetter extends Task {
         final String url = keyIncludingPostDataHashtoUrl((String) in);
         final Integer netActivityKey = new Integer(hashCode());
         HttpGetter.networkActivity(netActivityKey); // Notify listeners, net is in use
+
+        final String userAgent = HttpGetter.getUserAgent();
+        if (userAgent != null) {
+            this.setRequestProperty(USER_AGENT, userAgent);
+        }
 
         //#debug
         L.i(this, "Start", url);
@@ -1272,19 +1307,15 @@ public class HttpGetter extends Task {
      *
      * If the network was previously STALLED or INACTIVE,
      * <code>NetActivityListener</code>s will be notified the network is
-     * entering
-     * <code>NetActivityListener.ACTIVE</code> state.
+     * entering <code>NetActivityListener.ACTIVE</code> state.
      *
      * If no calls to this made before the 5 second timeout,
      * <code>NetActivityListener</code>s will be notified the network is
-     * entering
-     * <code>NetActivityListener.STALLED</code> state.
+     * entering <code>NetActivityListener.STALLED</code> state.
      *
      * From the STALLED state, if no calls to this made before the 30 second
-     * timeout,
-     * <code>NetActivityListener</code>s will be notified the network is
-     * entering
-     * <code>NetActivityListener.INACTIVE</code> state.
+     * timeout, <code>NetActivityListener</code>s will be notified the network
+     * is entering <code>NetActivityListener.INACTIVE</code> state.
      *
      * @param key identifies this source of network activity and should be
      * highly likely to be unique such as <code>new
@@ -1330,16 +1361,14 @@ public class HttpGetter extends Task {
 
     /**
      * Override the default 30 second INACTIVE no net activity timeouts. This
-     * alters how quickly all
-     * <code>NetActivityListener</code>s are notified that a network is not
-     * receiving expected data.
+     * alters how quickly all <code>NetActivityListener</code>s are notified
+     * that a network is not receiving expected data.
      *
      * @param inactiveTimeoutInMilliseconds - time without net activity before
      * entering INACTIVE state. The default is 30000.
      */
     public static void setNetActivityListenerTimeout(final int inactiveTimeoutInMilliseconds) {
         netActivityListenerInactiveTimeout = inactiveTimeoutInMilliseconds;
-
 
     }
 
