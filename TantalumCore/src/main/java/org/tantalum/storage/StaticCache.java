@@ -819,6 +819,16 @@ public class StaticCache {
         return flashCache.getFreespace();
     }
 
+    /**
+     * Get the flash memory used (bytes) by this cache in persistent storage.
+     *
+     * @return number of bytes available
+     * @throws FlashDatabaseException
+     */
+    public long getSize() throws FlashDatabaseException {
+        return flashCache.getSize();
+    }
+
 //#mdebug
     /**
      * For debugging use
