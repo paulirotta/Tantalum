@@ -771,7 +771,7 @@ public class HttpGetter extends Task {
      */
     public Object exec(final Object in) throws InterruptedException {
         LOR out = null;
-        
+
         if (Task.isShuttingDown()) {
             //#debug
             L.i("Attempt to run HttpGetter during shutdown", "ignored");
@@ -981,6 +981,7 @@ public class HttpGetter extends Task {
             firstByteReceivedTime = System.currentTimeMillis();
             while (totalBytesRead < bytes.length) {
                 if (isShuttingDown()) {
+                    this.setRetriesRemaining(0);
                     this.cancel("HttpGetter fixed length pull end on shutting down");
                     return 0;
                 }
@@ -1026,6 +1027,7 @@ public class HttpGetter extends Task {
         HttpGetter.networkActivity(netActivityKey);
         while (true) {
             if (isShuttingDown()) {
+                this.setRetriesRemaining(0);
                 this.cancel("HttpGetter end on shutting down");
                 return 0;
             }
