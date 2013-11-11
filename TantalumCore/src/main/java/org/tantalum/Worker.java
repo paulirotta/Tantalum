@@ -68,6 +68,7 @@ final class Worker extends Thread {
     volatile static boolean shutdownComplete = false;
     private Task currentTask = null; // Access only within synchronized(q)
     private final boolean isDedicatedFastlaneWorker;
+    private boolean threadDeath = false; // The thread is in last finally block, is done
 
     private Worker(final String name, final boolean isDedicatedFastlaneWorker) {
         super(name);
@@ -385,7 +386,6 @@ final class Worker extends Thread {
                     return;
                 }
                 shuttingDown = true;
-                Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
                 while (!shutdownUI_Q.isEmpty()) {
                     final Task t = (Task) shutdownUI_Q.firstElement();
 
@@ -402,6 +402,7 @@ final class Worker extends Thread {
                     shutdownUI_Q.removeElementAt(0);
                 }
             }
+//            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
             fastlaneQ.removeAllElements();
 //            for (int i = 0; i < workers.length; i++) {
 //                workers[i].serialQ.removeAllElements();
@@ -505,15 +506,19 @@ final class Worker extends Thread {
                             L.i("Skipping current thread wait during shutdown", "reason=" + reason);
                             continue;
                         }
-                        if (w.isAlive()) {
-                            //#debug
-                            L.i("Join active thread during shutdown", w.toString());
-                            w.join();
-                            //#debug
-                            L.i("Continue after join active thread during shutdown", w.toString());
-                        } else {
-                            //#debug
-                            L.i("Idle thread during shutdown", w.toString());
+                        synchronized (q) {
+                            if (!w.threadDeath) {
+                                //#debug
+                                L.i("Await active thread during shutdown", w.toString() + " task:" + w.currentTask);
+                                q.notifyAll();
+                                q.wait();
+//                            w.join();
+                                //#debug
+                                L.i("Continue after join active thread during shutdown", w.toString());
+                            } else {
+                                //#debug
+                                L.i("Idle thread during shutdown", w.toString());
+                            }
                         }
                     } catch (Throwable t) {
                         //#debug
@@ -674,6 +679,7 @@ final class Worker extends Thread {
             //#enddebug
         } finally {
             synchronized (q) {
+                threadDeath = true;
                 currentTask = null;
                 q.notifyAll();
             }
@@ -771,7 +777,7 @@ final class Worker extends Thread {
         if (t != null) {
             return t;
         }
-        
+
         if (!shutdownQ.isEmpty()) {
             try {
                 return (Task) shutdownQ.firstElement();
