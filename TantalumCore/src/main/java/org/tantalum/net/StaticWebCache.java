@@ -700,6 +700,11 @@ public final class StaticWebCache extends StaticCache {
         public boolean validateHttpResponse(final HttpGetter httpGetter, final byte[] bytesReceived) {
             final int responseCode = httpGetter.getResponseCode();
 
+            if (httpGetter.isCanceled()) {
+                //#debug
+                L.i(this, "HttpGetter canceled", responseCode + " received");
+                return false;
+            }
             if (responseCode >= HttpGetter.HTTP_500_INTERNAL_SERVER_ERROR) {
                 //#debug
                 L.i(this, "Invalid response code", responseCode + " received");

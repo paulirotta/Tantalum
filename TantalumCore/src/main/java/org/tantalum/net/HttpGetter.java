@@ -524,7 +524,7 @@ public class HttpGetter extends Task {
      * before giving up. This aids in working with low quality networks and
      * normal HTTP connection setup errors even on a "good" mobile network.
      */
-    protected int retriesRemaining = HTTP_GET_RETRIES;
+    protected volatile int retriesRemaining = HTTP_GET_RETRIES;
     /**
      * Data to be sent to the server as part of an HTTP POST operation
      */
@@ -943,6 +943,9 @@ public class HttpGetter extends Task {
         }
 
         if (!success) {
+            if (!isCanceled() && this.retriesRemaining <= 0) {
+                cancel("HttpGetter did not succeed");
+            }
             return null;
         }
 
