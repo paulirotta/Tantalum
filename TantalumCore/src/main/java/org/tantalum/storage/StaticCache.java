@@ -84,16 +84,6 @@ public class StaticCache {
      */
     protected final WeakHashCache ramCache = new WeakHashCache();
     /**
-     * The order in which object in the ramCache have been accessed since the
-     * program started. Each time an object is accessed, it moves to the
-     * beginning of the last. Least recently used objects are the ones most
-     * likely to be cleared when additional flash memory is needed. The heap
-     * memory WeakReferenceCache does not make use of this access order.
-     *
-     * Always access within a synchronized(ramCache) block
-     */
-    protected final LRUVector accessOrder = new LRUVector();
-    /**
      * This character serves as a market tag to distinguish the contents of this
      * ramCache from other caches which may also be stored in flash memory in a
      * flat name space. This must be unique like '0'..'9' or 'a'..'z'. Larger
@@ -307,10 +297,8 @@ public class StaticCache {
         final Object o = defaultCacheView.convertToUseForm(key, bytesReference);
 
         final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
-        synchronized (ramCache) {
-            accessOrder.addElement(digest);
-            ramCache.put(digest, o);
-        }
+        flashCache.markLeastRecentlyUsed(digest);
+        ramCache.put(digest, o);
         //#debug
         L.i(this, "End convert, elapsedTime=" + (System.currentTimeMillis() - startTime) + "ms", key);
 
@@ -328,17 +316,15 @@ public class StaticCache {
         try {
             final Long digest = new Long(CryptoUtils.getInstance().toDigest(key));
 
-            synchronized (ramCache) {
-                final Object o = ramCache.get(digest);
+            final Object o = ramCache.get(digest);
 
-                if (o != null) {
-                    //#debug            
-                    L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
-                    accessOrder.addElement(digest);
-                }
-
-                return o;
+            if (o != null) {
+                //#debug            
+                L.i(this, "Possible StaticCache hit in RAM (might be expired WeakReference)", key);
+                flashCache.markLeastRecentlyUsed(digest);
             }
+
+            return o;
         } catch (Exception e) {
             //#debug
             L.e(this, "Can not synchronousRAMCacheGet", key, e);
@@ -630,7 +616,7 @@ public class StaticCache {
             } catch (FlashFullException ex) {
                 //#debug
                 L.e("Clearning space for data, ABORTING", key + " (" + bytes.length + " bytes)", ex);
-                StaticCache.clearSpace(bytes.length);
+                StaticCache.clearSpaceAllCaches(bytes.length);
                 flashCache.put(key, bytes);
             }
         } catch (DigestException e) {
@@ -640,54 +626,48 @@ public class StaticCache {
         }
     }
 
-    /**
-     * Remove unused and then currently used items from the RMS ramCache to make
-     * room for new items.
-     *
-     * @param minSpaceToClear - in bytes
-     * @return true if the requested amount of space has been cleared
-     */
-    public static void clearSpace(final int minSpaceToClear) throws FlashFullException, FlashDatabaseException, DigestException {
-        int spaceCleared = 0;
-
+    public static int clearSpaceAllCaches(final int minSpaceToClear) throws FlashDatabaseException, DigestException {
         //#debug
-        L.i("Clearing RMS space", minSpaceToClear + " bytes");
+        L.i("Clearing RMS space all caches", minSpaceToClear + " bytes");
 
         final Enumeration cacheEnumeration = caches.elements();
+        int spaceCleared = 0;
 
         while (spaceCleared < minSpaceToClear && cacheEnumeration.hasMoreElements()) {
             final StaticCache cache = (StaticCache) cacheEnumeration.nextElement();
 
             //#debug
             L.i("Starting to clear space from cache " + cache.toString(), cache.flashCache.toString());
-            while (spaceCleared < minSpaceToClear && cache.numberOfElements() > 0) {
-                final long dig;
-                synchronized (cache.ramCache) {
-                    //#debug
-                    L.i("About to remove least-recently-used item from cache", cache.toString());
-                    final Long digest = (Long) cache.accessOrder.removeLeastRecentlyUsed();
-                    
-                    if (digest == null) {
-                        //#debug
-                        L.i("No LRU to remove, shift to next cache", "" + cache.flashCache.priority);
-                        continue;
-                    }
-                    cache.ramCache.remove(digest);
-                    dig = digest.longValue();
-                }
-                final byte[] bytes = cache.flashCache.get(dig);
-                cache.flashCache.removeData(dig);
-                //#debug
-                L.i("Cleared bytes from cache " + cache.flashCache.priority, "" + bytes.length + " totalSpaceCleared=" + spaceCleared + " cacheSize=" + cache.getSize() + " freespace=" + cache.getFreespace());
-                spaceCleared += bytes.length;
-            }
+            spaceCleared += cache.clearSpace(minSpaceToClear - spaceCleared);
+        }
+        if (spaceCleared < minSpaceToClear) {
             //#debug
-            L.i("Ending clear space from cache " + cache.toString(), cache.flashCache.toString());
+            L.i("*** We tried on all caches, but failed to clear sufficient space from flash", "minSpaceToClear=" + minSpaceToClear + " spaceCleared=" + spaceCleared);
+            throw new FlashDatabaseException("Could not clear enough space in flash: " + minSpaceToClear);
+        } else {
+            //#debug
+            L.i("We tried on all caches and succeeded to clear space from flash", "minSpaceToClear=" + minSpaceToClear + " spaceCleared=" + spaceCleared);
         }
 
-        if (spaceCleared < minSpaceToClear) {
-            throw new FlashFullException("Caches cleared, but still no space (" + minSpaceToClear + ") for data");
+        return spaceCleared;
+    }
+
+    private int clearSpace(final int minSpaceToClear) throws FlashDatabaseException, DigestException {
+        //#debug
+        L.i(this, "Clearing space", minSpaceToClear + " bytes");
+        
+        int spaceCleared = 0;
+        
+        final long[] digestsToClear = flashCache.getDigestsToClear(minSpaceToClear);
+        for (int i = 0; i < digestsToClear.length; i++) {
+            final byte[] bytes = flashCache.get(digestsToClear[i]);
+            
+            if (bytes != null && remove(digestsToClear[i])) {
+                spaceCleared += bytes.length;
+            }
         }
+        
+        return spaceCleared;
     }
 
     /**
@@ -715,10 +695,7 @@ public class StaticCache {
             try {
                 final Long l = new Long(digest);
 
-                synchronized (ramCache) {
-                    accessOrder.removeElement(l);
-                    ramCache.remove(l);
-                }
+                ramCache.remove(l);
                 flashCache.removeData(digest);
                 //#debug
                 L.i("Cache remove (from RAM and RMS)", Long.toString(digest, 16));
@@ -855,9 +832,11 @@ public class StaticCache {
         str.append(numberOfElements());
         str.append("\n");
 
-        synchronized (accessOrder) {
-            for (int i = 0; i < accessOrder.size(); i++) {
-                str.append(accessOrder.elementAt(i));
+        synchronized (ramCache) {
+            final Enumeration enu = ramCache.elements();
+            
+            while (enu.hasMoreElements()) {
+                str.append(enu.nextElement());
                 str.append("\n");
             }
         }

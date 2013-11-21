@@ -89,6 +89,24 @@ public class WeakHashCache {
     }
 
     /**
+     * All keys in the set, in no particular order
+     * 
+     * @return 
+     */
+    public synchronized Enumeration keys() {
+        return hash.keys();
+    }
+
+    /**
+     * All values in the set, in no particular order
+     * 
+     * @return 
+     */
+    public synchronized Enumeration elements() {
+        return hash.elements();
+    }
+
+    /**
      * Put an object into the heap memory cache.
      *
      * Note that you can feel free to put a very large number of objects into

@@ -35,6 +35,7 @@ import org.tantalum.Task;
 import org.tantalum.TimeoutException;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.LRUVector;
 import org.tantalum.util.StringUtils;
 
 /**
@@ -58,6 +59,16 @@ public abstract class FlashCache {
      *
      */
     protected final Vector shutdownTasks = new Vector();
+    /**
+     * The order in which object in the ramCache have been accessed since the
+     * program started. Each time an object is accessed, it moves to the
+     * beginning of the last. Least recently used objects are the ones most
+     * likely to be cleared when additional flash memory is needed. The heap
+     * memory WeakReferenceCache does not make use of this access order.
+     *
+     * Always access within a synchronized(ramCache) block
+     */
+    protected final LRUVector accessOrder = new LRUVector();
 
     /**
      * The priority must be unique in the application.
@@ -71,22 +82,76 @@ public abstract class FlashCache {
         this.priority = priority;
     }
 
+    public void markLeastRecentlyUsed(final Long digest) {
+        if (digest == null) {
+            throw new IllegalArgumentException("Can not mark null digest as least recently used");
+        }
+
+        synchronized (accessOrder) {
+            if (accessOrder.contains(digest)) {
+                accessOrder.addElement(digest);
+            } else {
+                //#debug
+                L.i(this, "Ignoring mark of digest " + digest + " not found in LRU", "normal race against serial write queue");
+            }
+        }
+    }
+
     /**
-     * Add a
-     * <code>Task</code> which will be run before the cache closes.
+     * Remove unused and then currently used items from the RMS ramCache to make
+     * room for new items.
+     *
+     * @param minSpaceToClear - in bytes
+     * @return true if the requested amount of space has been cleared
+     */
+    public long[] getDigestsToClear(final int minSpaceToClear) throws DigestException, FlashDatabaseException {
+        //#debug
+        L.i(this, "Identifying LRU digests to clear from FlashCache-" + this.priority, minSpaceToClear + " bytes. " + toString());
+
+        int potentialSpaceCleared = 0;
+        final Vector digestsToClear = new Vector();
+        final Long[] digests;
+
+        synchronized (accessOrder) {
+            digests = new Long[accessOrder.size()];
+            accessOrder.copyInto(digests);
+        }
+
+        int i = 0;
+        while (potentialSpaceCleared < minSpaceToClear && i < digests.length) {
+            final byte[] bytes = get(digests[i]);
+            
+            if (bytes != null) {
+                digestsToClear.addElement(digests[i]);
+                potentialSpaceCleared += bytes.length;
+            }
+        }
+        
+        final long[] targetDigests = new long[digestsToClear.size()];
+        for (i = 0; i < targetDigests.length; i++) {
+            targetDigests[i] = ((Long) digestsToClear.elementAt(i)).longValue();
+        }
+        
+        //#debug
+        L.i(this, "Identified " + targetDigests.length + " digests to clear", "FlashCache-" + this.priority);        
+        
+        return targetDigests;
+    }
+
+    /**
+     * Add a <code>Task</code> which will be run before the cache closes.
      *
      * This is normally useful to save in-memory data during shutdown.
      *
-     * The minimum run priority for a cache shutdown
-     * <code>Task</code> is
+     * The minimum run priority for a cache shutdown <code>Task</code> is
      * <code>Task.NORMAL_PRIORITY</code>
      *
      * Note that there is a limited amount of time between when the phone tells
      * the application to close, and when it must close. This varies by phone,
      * but about 3 seconds is typical. Thus like
-     * <code>Task.SHUTDOWN_PRIORITY</code>, a cache shutdown
-     * <code>Task</code> should not take long to complete or it may block other
-     * Tasks from completing.
+     * <code>Task.SHUTDOWN_PRIORITY</code>, a cache shutdown <code>Task</code>
+     * should not take long to complete or it may block other Tasks from
+     * completing.
      *
      * @param shutdownTask
      */
@@ -210,8 +275,8 @@ public abstract class FlashCache {
     public abstract long getFreespace() throws FlashDatabaseException;
 
     /**
-     * Find out how many bytes of space are used by the cache's storage
-     * medium (phone or memory card)
+     * Find out how many bytes of space are used by the cache's storage medium
+     * (phone or memory card)
      *
      * @return
      * @throws FlashDatabaseException
@@ -258,11 +323,11 @@ public abstract class FlashCache {
         sb.append(this.priority);
         sb.append(" numShutdownTasks=");
         sb.append(this.shutdownTasks.size());
-        
+
         return sb.toString();
     }
     //#enddebug
-    
+
     /**
      * An action you would like to perform on every cache entry at application
      * start
