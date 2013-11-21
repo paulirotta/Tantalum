@@ -254,9 +254,9 @@ public abstract class FlashCache {
     public String toString() {
         final StringBuffer sb = new StringBuffer();
 
-        sb.append("Cache priority=");
+        sb.append("FlashCache priority=");
         sb.append(this.priority);
-        sb.append("numShutdownTasks=");
+        sb.append(" numShutdownTasks=");
         sb.append(this.shutdownTasks.size());
         
         return sb.toString();

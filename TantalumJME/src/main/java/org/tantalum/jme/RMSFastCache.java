@@ -700,6 +700,9 @@ public class RMSFastCache extends FlashCache {
                     valueRS.deleteRecord(valueRecordId);
                     keyRS.deleteRecord(keyRecordId);
                     clearStoreFlag();
+                } else {
+                    //#debug
+                    L.i("*** Can not remove from RMS, digest not found", "" + digest + " - " + toString());
                 }
             } catch (RecordStoreException e) {
                 throw new FlashDatabaseException("Can not removeData from RMS: " + Long.toString(digest, 16) + " - " + e);
@@ -867,11 +870,11 @@ public class RMSFastCache extends FlashCache {
         }
         
         try {
-            sb.append("valueRMS.numRecords=");
+            sb.append(" valueRMS.numRecords=");
             sb.append(this.valueRS.getNumRecords());
-            sb.append(" keyRMS.getSize=");
+            sb.append(" valueRMS.getSize=");
             sb.append(this.valueRS.getSize());
-            sb.append(" keyRMS.getSizeAvailable=");
+            sb.append(" valueRMS.getSizeAvailable=");
             sb.append(this.valueRS.getSizeAvailable());
         } catch (Throwable t) {
             sb.append("(can not get valueRMS data");

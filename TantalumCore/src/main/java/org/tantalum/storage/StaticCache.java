@@ -663,6 +663,8 @@ public class StaticCache {
             while (spaceCleared < minSpaceToClear && cache.numberOfElements() > 0) {
                 final long dig;
                 synchronized (cache.ramCache) {
+                    //#debug
+                    L.i("About to remove least-recently-used item from cache", cache.toString());
                     final Long digest = (Long) cache.accessOrder.removeLeastRecentlyUsed();
                     cache.ramCache.remove(digest);
                     dig = digest.longValue();
