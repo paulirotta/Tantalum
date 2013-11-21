@@ -119,7 +119,7 @@ public abstract class FlashCache {
 
         int i = 0;
         while (potentialSpaceCleared < minSpaceToClear && i < digests.length) {
-            final byte[] bytes = get(digests[i]);
+            final byte[] bytes = get(digests[i].longValue());
             
             if (bytes != null) {
                 digestsToClear.addElement(digests[i]);
