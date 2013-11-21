@@ -666,6 +666,12 @@ public class StaticCache {
                     //#debug
                     L.i("About to remove least-recently-used item from cache", cache.toString());
                     final Long digest = (Long) cache.accessOrder.removeLeastRecentlyUsed();
+                    
+                    if (digest == null) {
+                        //#debug
+                        L.i("No LRU to remove, shift to next cache", "" + cache.flashCache.priority);
+                        continue;
+                    }
                     cache.ramCache.remove(digest);
                     dig = digest.longValue();
                 }
