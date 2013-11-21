@@ -250,6 +250,19 @@ public abstract class FlashCache {
         L.i(this, "FlashCache shutdown tasks complete", this.toString());
     }
 
+    //#mdebug
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+
+        sb.append("Cache priority=");
+        sb.append(this.priority);
+        sb.append("numShutdownTasks=");
+        sb.append(this.shutdownTasks.size());
+        
+        return sb.toString();
+    }
+    //#enddebug
+    
     /**
      * An action you would like to perform on every cache entry at application
      * start

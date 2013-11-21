@@ -374,8 +374,7 @@ public class StaticCache {
     /**
      * Retrieve an object from RAM or RMS storage.
      *
-     * You can choose to bypass RAM by setting
-     * <code>skipHeap = true</code>
+     * You can choose to bypass RAM by setting <code>skipHeap = true</code>
      *
      * @param key
      * @param priority
@@ -659,7 +658,9 @@ public class StaticCache {
         while (spaceCleared < minSpaceToClear && cacheEnumeration.hasMoreElements()) {
             final StaticCache cache = (StaticCache) cacheEnumeration.nextElement();
 
-            while (spaceCleared < minSpaceToClear && cache.size() > 0) {
+            //#debug
+            L.i("Starting to clear space from cache " + cache.toString(), cache.flashCache.toString());
+            while (spaceCleared < minSpaceToClear && cache.numberOfElements() > 0) {
                 final long dig;
                 synchronized (cache.ramCache) {
                     final Long digest = (Long) cache.accessOrder.removeLeastRecentlyUsed();
@@ -669,9 +670,11 @@ public class StaticCache {
                 final byte[] bytes = cache.flashCache.get(dig);
                 cache.flashCache.removeData(dig);
                 //#debug
-                L.i("Cleared bytes from cache " + cache.flashCache.priority, "" + bytes.length);
+                L.i("Cleared bytes from cache " + cache.flashCache.priority, "" + bytes.length + " totalSpaceCleared=" + spaceCleared + " cacheSize=" + cache.getSize() + " freespace=" + cache.getFreespace());
                 spaceCleared += bytes.length;
             }
+            //#debug
+            L.i("Ending clear space from cache " + cache.toString(), cache.flashCache.toString());
         }
 
         if (spaceCleared < minSpaceToClear) {
@@ -684,7 +687,7 @@ public class StaticCache {
      *
      * @return
      */
-    public int size() {
+    public int numberOfElements() {
         return ramCache.size();
     }
 
@@ -841,7 +844,7 @@ public class StaticCache {
         str.append("StaticCache --- priority: ");
         str.append(cachePriorityChar);
         str.append(" size: ");
-        str.append(size());
+        str.append(numberOfElements());
         str.append("\n");
 
         synchronized (accessOrder) {

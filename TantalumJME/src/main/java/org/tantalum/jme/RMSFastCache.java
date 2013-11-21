@@ -6,6 +6,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.microedition.rms.InvalidRecordIDException;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
@@ -847,6 +849,40 @@ public class RMSFastCache extends FlashCache {
             }
         }
     }
+
+    //#mdebug
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+        
+        sb.append(super.toString());
+        sb.append("\n");
+        try {
+            sb.append("keyRMS.numRecords=");
+            sb.append(this.keyRS.getNumRecords());
+            sb.append(" keyRMS.getSize=");
+            sb.append(this.keyRS.getSize());
+            sb.append(" keyRMS.getSizeAvailable=");
+            sb.append(this.keyRS.getSizeAvailable());
+        } catch (Throwable t) {
+            sb.append("(can not get keyRMS data");
+            sb.append(t);
+        }
+        
+        try {
+            sb.append("valueRMS.numRecords=");
+            sb.append(this.valueRS.getNumRecords());
+            sb.append(" keyRMS.getSize=");
+            sb.append(this.valueRS.getSize());
+            sb.append(" keyRMS.getSizeAvailable=");
+            sb.append(this.valueRS.getSizeAvailable());
+        } catch (Throwable t) {
+            sb.append("(can not get valueRMS data");
+            sb.append(t);
+        }
+        
+        return sb.toString();
+    }
+    //#enddebug
 
     /**
      * Extend this to perform an operation on all records in a record store
