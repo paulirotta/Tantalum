@@ -661,11 +661,16 @@ public class StaticCache {
         final long[] digestsToClear = flashCache.getDigestsToClear(minSpaceToClear);
         for (int i = 0; i < digestsToClear.length; i++) {
             //#debug
-            L.i(this, "start cleardigest", i + " of " + digestsToClear.length);
+            L.i(this, "start cleardigest", (i+1) + " of " + digestsToClear.length);
             final byte[] bytes = flashCache.get(digestsToClear[i]);
 
             if (bytes != null && remove(digestsToClear[i])) {
                 spaceCleared += bytes.length;
+                //#debug
+                L.i(this, "success cleardigest", (i+1) + " of " + digestsToClear.length + " cleared " + bytes.length + " bytes");
+            } else {
+                //#debug
+                L.i(this, "** fail cleardigest", (i+1) + " of " + digestsToClear.length + " did not find in digest");
             }
         }
         //#debug

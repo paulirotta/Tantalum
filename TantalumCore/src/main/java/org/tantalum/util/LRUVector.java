@@ -100,7 +100,7 @@ public class LRUVector extends Vector {
         final Object o = getLeastRecentlyUsed();
 
         if (o != null) {
-            removeElementAt(0);
+            removeElement(o);
         }
 
         return o;
