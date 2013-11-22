@@ -28,6 +28,7 @@
 package org.tantalum.storage;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.security.DigestException;
 import java.util.Enumeration;
 import org.tantalum.CancellationException;
@@ -37,7 +38,6 @@ import org.tantalum.TimeoutException;
 import org.tantalum.util.Comparator;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
-import org.tantalum.util.LRUVector;
 import org.tantalum.util.LOR;
 import org.tantalum.util.SortedVector;
 import org.tantalum.util.WeakHashCache;
@@ -654,19 +654,23 @@ public class StaticCache {
 
     private int clearSpace(final int minSpaceToClear) throws FlashDatabaseException, DigestException {
         //#debug
-        L.i(this, "Clearing space", minSpaceToClear + " bytes");
-        
+        L.i(this, "Start clearing space, cache-" + this.getPriority(), minSpaceToClear + " bytes still to clear");
+
         int spaceCleared = 0;
-        
+
         final long[] digestsToClear = flashCache.getDigestsToClear(minSpaceToClear);
         for (int i = 0; i < digestsToClear.length; i++) {
+            //#debug
+            L.i(this, "start cleardigest", i + " of " + digestsToClear.length);
             final byte[] bytes = flashCache.get(digestsToClear[i]);
-            
+
             if (bytes != null && remove(digestsToClear[i])) {
                 spaceCleared += bytes.length;
             }
         }
-        
+        //#debug
+        L.i(this, "End clearing space, cache-" + this.getPriority(), spaceCleared + " bytes cleared");
+
         return spaceCleared;
     }
 
@@ -698,10 +702,10 @@ public class StaticCache {
                 ramCache.remove(l);
                 flashCache.removeData(digest);
                 //#debug
-                L.i("Cache remove (from RAM and RMS)", Long.toString(digest, 16));
+                L.i(this, "Cache remove (from RAM and RMS)", Long.toString(digest, 16));
             } catch (FlashDatabaseException e) {
                 //#debug
-                L.e("Couldn't remove object from cache", Long.toString(digest, 16), e);
+                L.e(this, "Couldn't remove object from cache", Long.toString(digest, 16), e);
             }
         }
 
@@ -834,9 +838,16 @@ public class StaticCache {
 
         synchronized (ramCache) {
             final Enumeration enu = ramCache.elements();
-            
+
             while (enu.hasMoreElements()) {
-                str.append(enu.nextElement());
+                final WeakReference wr = (WeakReference) enu.nextElement();
+                final Object o = wr.get();
+
+                if (o != null) {
+                    str.append(o);
+                } else {
+                    str.append("(expired WeakReference)");
+                }
                 str.append("\n");
             }
         }

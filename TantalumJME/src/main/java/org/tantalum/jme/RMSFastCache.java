@@ -606,14 +606,15 @@ public class RMSFastCache extends FlashCache {
      */
     public byte[] get(final long digest) throws FlashDatabaseException {
         synchronized (mutex) {
-            final Long hashValue = ((Long) indexHash.get(new Long(digest)));
+            final Long dig = new Long(digest);
+            final Long hashValue = ((Long) indexHash.get(dig));
 
             if (hashValue != null) {
                 try {
                     final int valueIndex = RMSKeyUtils.toValueIndex(hashValue);
                     final byte[] bytes = valueRS.getRecord(valueIndex);
                     
-                    accessOrder.addElement(hashValue);
+                    accessOrder.addElement(dig);
                     
                     return bytes;
                 } catch (Exception ex) {
