@@ -611,7 +611,11 @@ public class RMSFastCache extends FlashCache {
             if (hashValue != null) {
                 try {
                     final int valueIndex = RMSKeyUtils.toValueIndex(hashValue);
-                    return valueRS.getRecord(valueIndex);
+                    final byte[] bytes = valueRS.getRecord(valueIndex);
+                    
+                    accessOrder.addElement(hashValue);
+                    
+                    return bytes;
                 } catch (Exception ex) {
                     throw new FlashDatabaseException("Can not getData from RMS: " + Long.toString(digest, 16) + " - " + ex);
                 }
@@ -662,7 +666,7 @@ public class RMSFastCache extends FlashCache {
                     L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value overwrite to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length);
                 }
                 clearStoreFlag();
-
+                accessOrder.addElement(new Long(digest));
             } catch (RecordStoreFullException e) {
                 //#debug
                 L.e(this, "Can not write", "key=" + key, e);
@@ -692,7 +696,8 @@ public class RMSFastCache extends FlashCache {
                 final Long indexEntry = indexHashGet(digest);
 
                 if (indexEntry != null) {
-                    indexHash.remove(new Long(digest));
+                    final Long dig = new Long(digest);
+                    indexHash.remove(dig);
                     final int valueRecordId = RMSKeyUtils.toValueIndex(indexEntry);
                     final int keyRecordId = RMSKeyUtils.toKeyIndex(indexEntry);
 
@@ -700,6 +705,7 @@ public class RMSFastCache extends FlashCache {
                     valueRS.deleteRecord(valueRecordId);
                     keyRS.deleteRecord(keyRecordId);
                     clearStoreFlag();
+                    accessOrder.removeElement(dig);
                 } else {
                     //#debug
                     L.i("*** Can not remove from RMS, digest not found", "" + digest + " - " + toString());

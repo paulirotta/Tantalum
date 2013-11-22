@@ -106,7 +106,7 @@ public abstract class FlashCache {
      */
     public long[] getDigestsToClear(final int minSpaceToClear) throws DigestException, FlashDatabaseException {
         //#debug
-        L.i(this, "Identifying LRU digests to clear from FlashCache-" + this.priority, minSpaceToClear + " bytes. " + toString());
+        L.i(this, "Identifying LRU digests to clear from FlashCache-" + this.priority, minSpaceToClear + " bytes. " + toString() + " accessOrderSize=" + accessOrder.size());
 
         int potentialSpaceCleared = 0;
         final Vector digestsToClear = new Vector();
@@ -133,7 +133,7 @@ public abstract class FlashCache {
         }
         
         //#debug
-        L.i(this, "Identified " + targetDigests.length + " digests to clear", "FlashCache-" + this.priority);        
+        L.i(this, "Identified " + targetDigests.length + " digests to clear", "FlashCache-" + this.priority + " accessOrderSize=" + accessOrder.size());        
         
         return targetDigests;
     }
