@@ -663,7 +663,7 @@ public class StaticCache {
             if (bytes != null && remove(dig)) {
                 spaceCleared += bytes.length;
                 //#debug
-                L.i(this, "success cleardigest", "Cleared " + bytes.length + " bytes");
+                L.i(this, "success cleardigest", "Cleared " + bytes.length + " bytes (spaceCeared=" + spaceCleared + " + #itemsInCache= " + this.ramCache.size() + ")");
             } else {
                 //#debug
                 L.i(this, "** fail cleardigest", "Did not find in digest");
