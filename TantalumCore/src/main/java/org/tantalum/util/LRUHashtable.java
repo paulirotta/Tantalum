@@ -32,7 +32,7 @@ public class LRUHashtable {
         final Object value = hash.get(key);
 
         if (value != null) {
-            v.add(key);
+            v.addElement(key);
         }
 
         return value;
@@ -55,7 +55,7 @@ public class LRUHashtable {
         final Object value = hash.remove(key);
 
         if (value != null) {
-            v.remove(key);
+            v.removeElement(key);
         }
 
         return value;

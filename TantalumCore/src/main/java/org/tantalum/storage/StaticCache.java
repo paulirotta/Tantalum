@@ -646,7 +646,7 @@ public class StaticCache {
         return spaceCleared;
     }
 
-    private int clearSpace(final int minSpaceToClear) throws FlashDatabaseException, DigestException {
+    public int clearSpace(final int minSpaceToClear) throws FlashDatabaseException, DigestException {
         //#debug
         L.i(this, "Start clearing space, cache-" + this.cachePriorityChar, minSpaceToClear + " bytes still to clear");
 
