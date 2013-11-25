@@ -658,7 +658,7 @@ public class StaticCache {
             //#debug
             L.i(this, "start cleardigest", "" + ++i);
             final long dig = ((Long) digests.nextElement()).longValue();
-            final byte[] bytes = flashCache.get(dig);
+            final byte[] bytes = flashCache.get(dig, false);
 
             if (bytes != null && remove(dig)) {
                 spaceCleared += bytes.length;

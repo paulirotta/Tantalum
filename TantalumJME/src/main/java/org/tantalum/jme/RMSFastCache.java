@@ -613,7 +613,7 @@ public final class RMSFastCache extends FlashCache {
      * @return the bytes of the value
      * @throws FlashDatabaseException
      */
-    public byte[] get(final long digest) throws FlashDatabaseException {
+    public byte[] get(final long digest, final boolean markAsLeastRecentlyUsed) throws FlashDatabaseException {
         synchronized (mutex) {
             final Long dig = new Long(digest);
             final Long hashValue = ((Long) indexHash.get(dig));
@@ -623,7 +623,9 @@ public final class RMSFastCache extends FlashCache {
                     final int valueIndex = RMSKeyUtils.toValueIndex(hashValue);
                     final byte[] bytes = valueRS.getRecord(valueIndex);
                     
-                    indexHash.get(dig); // Update as recently used
+                    if (markAsLeastRecentlyUsed) {
+                        indexHash.get(dig);
+                    }
                     
                     return bytes;
                 } catch (Exception ex) {

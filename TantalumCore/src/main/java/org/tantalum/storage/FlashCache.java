@@ -146,7 +146,7 @@ public abstract class FlashCache {
         //#debug
         L.i(this, "get(" + key + ")", "digest=" + StringUtils.byteArrayToHexString(CryptoUtils.getInstance().longToBytes(digest)));
 
-        return get(digest);
+        return get(digest, true);
     }
 
     /**
@@ -157,7 +157,7 @@ public abstract class FlashCache {
      * @throws DigestException
      * @throws FlashDatabaseException
      */
-    public abstract byte[] get(long digest) throws DigestException, FlashDatabaseException;
+    public abstract byte[] get(long digest, boolean markAsLeastRecentlyUsed) throws DigestException, FlashDatabaseException;
 
     /**
      * Store the data object to persistent memory
