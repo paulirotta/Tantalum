@@ -18,12 +18,13 @@ import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.LRUHashtable;
 
 /**
  *
  * @author phou
  */
-public class RMSFastCache extends FlashCache {
+public final class RMSFastCache extends FlashCache {
 
     /**
      * Longer hashes use more RAM as they are stored as keys in a Hashtable. The
@@ -33,15 +34,15 @@ public class RMSFastCache extends FlashCache {
      * The length should probably be evenly divisible by 8
      */
     static final char RECORD_HASH_PREFIX = '_';
-    private final RecordStore keyRS;
-    private final RecordStore valueRS;
-    private final Object mutex = new Object();
     /*
      * The Integer index of each key record in the hashtable
      * 
      * Always access within a synchronized(MUTEX) block
      */
-    private final Hashtable indexHash;
+    private final LRUHashtable indexHash = new LRUHashtable();
+    private final RecordStore keyRS;
+    private final RecordStore valueRS;
+    private final Object mutex = new Object();
     private final org.tantalum.jme.RMSKeyUtils RMSKeyUtils = new org.tantalum.jme.RMSKeyUtils();
 
     public RMSFastCache(final char priority, final FlashCache.StartupTask startupTask) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException, NoSuchAlgorithmException, InvalidRecordIDException, DigestException, UnsupportedEncodingException {
@@ -51,10 +52,18 @@ public class RMSFastCache extends FlashCache {
         keyRS = RMSUtils.getInstance().getRecordStore(getKeyRSName(), true);
         valueRS = RMSUtils.getInstance().getRecordStore(getValueRSName(), true);
         final int numberOfKeys = keyRS.getNumRecords();
-        indexHash = new Hashtable(numberOfKeys);
         initIndex(numberOfKeys, startupTask);
     }
 
+
+    public void markLeastRecentlyUsed(final Long digest) {
+        if (digest == null) {
+            throw new IllegalArgumentException("Can not mark null digest as least recently used");
+        }
+        
+        indexHash.get(digest);
+    }
+    
     private String getFlagRMSName() {
         return "dirty+" + getKeyRSName();
     }
@@ -252,9 +261,9 @@ public class RMSFastCache extends FlashCache {
         initDeleteIndexEntriesPointingToNonexistantValues(keyRMSIndexHash, valueIntegers);
         //#mdebug
         // Validate that no two keys have the same value
-        Hashtable copy = new Hashtable();
+        final Hashtable copy = new Hashtable();
 
-        Enumeration enumeration = indexHash.elements();
+        final Enumeration enumeration = indexHash.elements();
         while (enumeration.hasMoreElements()) {
             final Object dummyObject = new Object();
             Object theValue = enumeration.nextElement();
@@ -614,7 +623,7 @@ public class RMSFastCache extends FlashCache {
                     final int valueIndex = RMSKeyUtils.toValueIndex(hashValue);
                     final byte[] bytes = valueRS.getRecord(valueIndex);
                     
-                    accessOrder.addElement(dig);
+                    indexHash.get(dig); // Update as recently used
                     
                     return bytes;
                 } catch (Exception ex) {
@@ -667,7 +676,6 @@ public class RMSFastCache extends FlashCache {
                     L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value overwrite to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length);
                 }
                 clearStoreFlag();
-                accessOrder.addElement(new Long(digest));
             } catch (RecordStoreFullException e) {
                 //#debug
                 L.e(this, "Can not write", "key=" + key, e);
@@ -706,7 +714,6 @@ public class RMSFastCache extends FlashCache {
                     valueRS.deleteRecord(valueRecordId);
                     keyRS.deleteRecord(keyRecordId);
                     clearStoreFlag();
-                    accessOrder.removeElement(dig);
                 } else {
                     //#debug
                     L.i("*** Can not remove from RMS, digest not found", "" + digest + " - " + toString());
@@ -723,16 +730,9 @@ public class RMSFastCache extends FlashCache {
      * @return an array of byte[] digest-of-key objects in the cache
      * @throws FlashDatabaseException
      */
-    public long[] getDigests() throws FlashDatabaseException {
+    public Enumeration getDigests() {
         synchronized (mutex) {
-            final long[] digests = new long[indexHash.size()];
-            final Enumeration enu = indexHash.keys();
-
-            for (int i = 0; i < digests.length; i++) {
-                digests[i] = ((Long) enu.nextElement()).longValue();
-            }
-
-            return digests;
+            return indexHash.keys();
         }
     }
 

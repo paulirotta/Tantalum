@@ -29,13 +29,13 @@ package org.tantalum.storage;
 
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
+import java.util.Enumeration;
 import java.util.Vector;
 import org.tantalum.CancellationException;
 import org.tantalum.Task;
 import org.tantalum.TimeoutException;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
-import org.tantalum.util.LRUVector;
 import org.tantalum.util.StringUtils;
 
 /**
@@ -68,7 +68,7 @@ public abstract class FlashCache {
      *
      * Always access within a synchronized(ramCache) block
      */
-    protected final LRUVector accessOrder = new LRUVector();
+//    protected final LRUVector accessOrder = new LRUVector();
 
     /**
      * The priority must be unique in the application.
@@ -82,61 +82,7 @@ public abstract class FlashCache {
         this.priority = priority;
     }
 
-    public void markLeastRecentlyUsed(final Long digest) {
-        if (digest == null) {
-            throw new IllegalArgumentException("Can not mark null digest as least recently used");
-        }
-
-        synchronized (accessOrder) {
-            if (accessOrder.contains(digest)) {
-                accessOrder.addElement(digest);
-            } else {
-                //#debug
-                L.i(this, "Ignoring mark of digest " + digest + " not found in LRU", "normal race against serial write queue");
-            }
-        }
-    }
-
-    /**
-     * Remove unused and then currently used items from the RMS ramCache to make
-     * room for new items.
-     *
-     * @param minSpaceToClear - in bytes
-     * @return true if the requested amount of space has been cleared
-     */
-    public long[] getDigestsToClear(final int minSpaceToClear) throws DigestException, FlashDatabaseException {
-        //#debug
-        L.i(this, "Identifying LRU digests to clear from FlashCache-" + this.priority, minSpaceToClear + " bytes. " + toString() + " accessOrderSize=" + accessOrder.size());
-
-        int potentialSpaceCleared = 0;
-        final Vector digestsToClear = new Vector();
-        final Long[] digests;
-
-        synchronized (accessOrder) {
-            digests = new Long[accessOrder.size()];
-            accessOrder.copyInto(digests);
-        }
-
-        int i = 0;
-        while (potentialSpaceCleared < minSpaceToClear && i < digests.length) {
-            final byte[] bytes = get(digests[i].longValue());
-            
-            if (bytes != null) {
-                digestsToClear.addElement(digests[i]);
-                potentialSpaceCleared += bytes.length;
-            }
-        }
-        
-        final long[] targetDigests = new long[digestsToClear.size()];
-        for (i = 0; i < targetDigests.length; i++) {
-            targetDigests[i] = ((Long) digestsToClear.elementAt(i)).longValue();
-        }
-        
-        //#debug
-        L.i(this, "Identified " + targetDigests.length + " digests to clear", "FlashCache-" + this.priority + " accessOrderSize=" + accessOrder.size());        
-        
-        return targetDigests;
-    }
+    public abstract void markLeastRecentlyUsed(final Long digest);
 
     /**
      * Add a <code>Task</code> which will be run before the cache closes.
@@ -257,7 +203,7 @@ public abstract class FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public abstract long[] getDigests() throws FlashDatabaseException;
+    public abstract Enumeration getDigests();
 
     /**
      * Remove all items from this flash cache

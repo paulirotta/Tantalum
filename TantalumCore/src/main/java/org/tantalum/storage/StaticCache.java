@@ -211,17 +211,11 @@ public class StaticCache {
      * @throws FlashDatabaseException
      */
     private void init() throws FlashDatabaseException {
-        final long[] digests;
-        try {
-            digests = flashCache.getDigests();
-        } catch (FlashDatabaseException ex) {
-            //#debug
-            L.e(this, "Can not load keys to RAM during init() cache", "cache priority=" + cachePriorityChar, ex);
-            throw new FlashDatabaseException("Can not load cache keys during init for cache '" + cachePriorityChar + "' : " + ex);
-        }
+        final Enumeration digests = flashCache.getDigests();
+        
         synchronized (ramCache) {
-            for (int i = 0; i < digests.length; i++) {
-                ramCache.markContains(new Long(digests[i]));
+            while (digests.hasMoreElements()) {
+                ramCache.markContains((Long) digests.nextElement());
             }
         }
         new Task(Task.SHUTDOWN) {
@@ -643,7 +637,7 @@ public class StaticCache {
         if (spaceCleared < minSpaceToClear) {
             //#debug
             L.i("*** We tried on all caches, but failed to clear sufficient space from flash", "minSpaceToClear=" + minSpaceToClear + " spaceCleared=" + spaceCleared);
-            throw new FlashDatabaseException("Could not clear enough space in flash: " + minSpaceToClear);
+//            throw new FlashDatabaseException("Could not clear enough space in flash: " + minSpaceToClear);
         } else {
             //#debug
             L.i("We tried on all caches and succeeded to clear space from flash", "minSpaceToClear=" + minSpaceToClear + " spaceCleared=" + spaceCleared);
@@ -654,23 +648,25 @@ public class StaticCache {
 
     private int clearSpace(final int minSpaceToClear) throws FlashDatabaseException, DigestException {
         //#debug
-        L.i(this, "Start clearing space, cache-" + this.getPriority(), minSpaceToClear + " bytes still to clear");
+        L.i(this, "Start clearing space, cache-" + this.cachePriorityChar, minSpaceToClear + " bytes still to clear");
 
         int spaceCleared = 0;
 
-        final long[] digestsToClear = flashCache.getDigestsToClear(minSpaceToClear);
-        for (int i = 0; i < digestsToClear.length; i++) {
+        final Enumeration digests = flashCache.getDigests();
+        int i = 0;
+        while (spaceCleared < minSpaceToClear && digests.hasMoreElements()) {
             //#debug
-            L.i(this, "start cleardigest", (i+1) + " of " + digestsToClear.length);
-            final byte[] bytes = flashCache.get(digestsToClear[i]);
+            L.i(this, "start cleardigest", "" + ++i);
+            final long dig = ((Long) digests.nextElement()).longValue();
+            final byte[] bytes = flashCache.get(dig);
 
-            if (bytes != null && remove(digestsToClear[i])) {
+            if (bytes != null && remove(dig)) {
                 spaceCleared += bytes.length;
                 //#debug
-                L.i(this, "success cleardigest", (i+1) + " of " + digestsToClear.length + " cleared " + bytes.length + " bytes");
+                L.i(this, "success cleardigest", "Cleared " + bytes.length + " bytes");
             } else {
                 //#debug
-                L.i(this, "** fail cleardigest", (i+1) + " of " + digestsToClear.length + " did not find in digest");
+                L.i(this, "** fail cleardigest", "Did not find in digest");
             }
         }
         //#debug
@@ -729,15 +725,15 @@ public class StaticCache {
      * @throws DigestException
      * @throws FlashDatabaseException
      */
-    public Task clearAsync(Task nextTask) throws FlashDatabaseException {
-        final long[] digests = flashCache.getDigests();
+    public Task clearAsync(final Task nextTask) throws FlashDatabaseException {
+        final Enumeration digests = flashCache.getDigests();
 
         return new Task(Task.SERIAL_PRIORITY) {
             protected Object exec(final Object in) {
                 //#debug
                 L.i("Start Cache Clear", "ID=" + cachePriorityChar);
-                for (int i = 0; i < digests.length; i++) {
-                    remove(digests[i]);
+                while (digests.hasMoreElements()) {
+                    remove(((Long) digests.nextElement()).longValue());
                 }
                 //#debug
                 L.i("Cache cleared", "ID=" + cachePriorityChar);
@@ -791,7 +787,7 @@ public class StaticCache {
      *
      * @return
      */
-    public int getPriority() {
+    public char getPriority() {
         return cachePriorityChar;
     }
 
