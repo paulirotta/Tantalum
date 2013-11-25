@@ -27,6 +27,12 @@ import org.tantalum.util.LRUHashtable;
 public final class RMSFastCache extends FlashCache {
 
     /**
+     * Always accessed from a synchronized block. How big the RMS is after we
+     * close it. RMS does not shrink to this size until we close it
+     * (experimentally determined implementation detail)
+     */
+    private long rmsByteSize = 0;
+    /**
      * Longer hashes use more RAM as they are stored as keys in a Hashtable. The
      * longer hashes may also take longer to calculate, but reduce the
      * theoretical probability of two Strings producing the exact same digest.
@@ -53,17 +59,17 @@ public final class RMSFastCache extends FlashCache {
         valueRS = RMSUtils.getInstance().getRecordStore(getValueRSName(), true);
         final int numberOfKeys = keyRS.getNumRecords();
         initIndex(numberOfKeys, startupTask);
+        rmsByteSize = keyRS.getSize() + valueRS.getSize();
     }
-
 
     public void markLeastRecentlyUsed(final Long digest) {
         if (digest == null) {
             throw new IllegalArgumentException("Can not mark null digest as least recently used");
         }
-        
+
         indexHash.get(digest);
     }
-    
+
     private String getFlagRMSName() {
         return "dirty+" + getKeyRSName();
     }
@@ -622,11 +628,11 @@ public final class RMSFastCache extends FlashCache {
                 try {
                     final int valueIndex = RMSKeyUtils.toValueIndex(hashValue);
                     final byte[] bytes = valueRS.getRecord(valueIndex);
-                    
+
                     if (markAsLeastRecentlyUsed) {
                         indexHash.get(dig);
                     }
-                    
+
                     return bytes;
                 } catch (Exception ex) {
                     throw new FlashDatabaseException("Can not getData from RMS: " + Long.toString(digest, 16) + " - " + ex);
@@ -663,9 +669,10 @@ public final class RMSFastCache extends FlashCache {
                 final int keyRecordId;
 
                 setStoreFlag();
+                byte[] byteKey = null;
                 if (indexEntry == null) {
                     valueRecordId = valueRS.addRecord(value, 0, value.length);
-                    final byte[] byteKey = RMSKeyUtils.toIndexBytes(key, valueRecordId);
+                    byteKey = RMSKeyUtils.toIndexBytes(key, valueRecordId);
                     keyRecordId = keyRS.addRecord(byteKey, 0, byteKey.length);
                     indexHashPut(digest, keyRecordId, valueRecordId);
 
@@ -678,6 +685,7 @@ public final class RMSFastCache extends FlashCache {
                     L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value overwrite to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length);
                 }
                 clearStoreFlag();
+                rmsByteSize += value.length + (byteKey == null ? 0 : byteKey.length);
             } catch (RecordStoreFullException e) {
                 //#debug
                 L.e(this, "Can not write", "key=" + key, e);
@@ -707,15 +715,25 @@ public final class RMSFastCache extends FlashCache {
                 final Long indexEntry = indexHashGet(digest);
 
                 if (indexEntry != null) {
+
                     final Long dig = new Long(digest);
                     indexHash.remove(dig);
                     final int valueRecordId = RMSKeyUtils.toValueIndex(indexEntry);
                     final int keyRecordId = RMSKeyUtils.toKeyIndex(indexEntry);
-
+                    int size = 0;
+                    try {
+                        final byte[] keyBytes = keyRS.getRecord(keyRecordId);
+                        final byte[] valueBytes = valueRS.getRecord(valueRecordId);
+                        size = valueBytes.length + keyBytes.length;
+                    } catch (Exception e) {
+                        //#debug
+                        L.e(this, "removeData", "can't read", e);
+                    }
                     setStoreFlag();
                     valueRS.deleteRecord(valueRecordId);
                     keyRS.deleteRecord(keyRecordId);
                     clearStoreFlag();
+                    rmsByteSize -= size;
                 } else {
                     //#debug
                     L.i("*** Can not remove from RMS, digest not found", "" + digest + " - " + toString());
@@ -830,13 +848,9 @@ public final class RMSFastCache extends FlashCache {
         }
     }
 
-    public long getSize() throws FlashDatabaseException {
-        try {
-            return keyRS.getSize() + valueRS.getSize();
-        } catch (RecordStoreNotOpenException ex) {
-            //#debug
-            L.e(this, "Can not get size", this.toString(), ex);
-            throw new FlashDatabaseException("Can not get size: " + ex);
+    public long getSize() {
+        synchronized (mutex) {
+            return rmsByteSize;
         }
     }
 
@@ -863,7 +877,7 @@ public final class RMSFastCache extends FlashCache {
     //#mdebug
     public String toString() {
         final StringBuffer sb = new StringBuffer();
-        
+
         sb.append(super.toString());
         sb.append("\n");
         try {
@@ -877,7 +891,7 @@ public final class RMSFastCache extends FlashCache {
             sb.append("(can not get keyRMS data");
             sb.append(t);
         }
-        
+
         try {
             sb.append(" valueRMS.numRecords=");
             sb.append(this.valueRS.getNumRecords());
@@ -889,7 +903,7 @@ public final class RMSFastCache extends FlashCache {
             sb.append("(can not get valueRMS data");
             sb.append(t);
         }
-        
+
         return sb.toString();
     }
     //#enddebug
