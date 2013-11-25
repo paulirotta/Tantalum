@@ -27,10 +27,53 @@
  */
 package org.tantalum.util;
 
+import java.util.Enumeration;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
 /**
  *
  * @author phou
  */
 public class LRUHashtableTest {
-    
+
+    @Test
+    public void testAddElement() {
+        System.out.println("testAddElement");
+        LRUHashtable instance = new LRUHashtable();
+        instance.put("a", "A");
+        assertEquals("Size 1", 1, instance.size());
+        instance.put("b", "B");
+        assertEquals("Size 2", 2, instance.size());
+    }
+
+    @Test
+    public void testGetAndLRUKey() {
+        System.out.println("testGetAndLRUKey");
+        LRUHashtable instance = new LRUHashtable();
+        instance.put("a", "A");
+        instance.put("b", "B");
+        instance.put("c", "C");
+        instance.get("a");
+        assertEquals("LRU is b", "b", instance.getLeastRecentlyUsedKey());
+    }
+
+    @Test
+    public void testKeyEnumeration() {
+        System.out.println("testKeyEnumeration");
+        LRUHashtable instance = new LRUHashtable();
+        String[] keys = {"a", "b", "c", "d" };
+        instance.put("a", "A");
+        instance.put("b", "B");
+        instance.put("c", "C");
+        instance.put("d", "D");
+        Enumeration enu = instance.keys();
+        instance.get("c");
+        instance.remove("b");
+        int i = 0;
+        while (enu.hasMoreElements()) {
+            String s = (String) enu.nextElement();
+            assertEquals("LRU element " + i + " sequence", keys[i++], s);            
+        }
+    }
 }

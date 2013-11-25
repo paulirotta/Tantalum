@@ -29,7 +29,6 @@ package org.tantalum.util;
 
 import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
-import org.tantalum.util.LRUVector;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

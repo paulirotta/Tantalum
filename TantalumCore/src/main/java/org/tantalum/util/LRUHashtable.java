@@ -138,4 +138,8 @@ public class LRUHashtable {
         hash.clear();
         v.removeAllElements();
     }
+    
+    public synchronized Object getLeastRecentlyUsedKey() {
+        return v.getLeastRecentlyUsed();
+    }
 }
