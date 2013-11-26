@@ -419,6 +419,7 @@ final class Worker extends Thread {
                 q.removeAllElements();
                 q.notifyAll();
             }
+            Thread.yield();
             runShutdownTasks(reason);
         } catch (Throwable t) {
             //#debug
@@ -518,9 +519,6 @@ final class Worker extends Thread {
                                 q.wait();
                                 //#debug
                                 L.i("Continue after wait for active Worker during shutdown", w.toString());
-                            } else {
-                                //#debug
-                                L.i("Idle thread during shutdown", w.toString());
                             }
                         }
                     } catch (Throwable t) {
