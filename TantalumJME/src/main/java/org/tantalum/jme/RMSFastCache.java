@@ -26,6 +26,8 @@ import org.tantalum.util.LRUHashtable;
  */
 public final class RMSFastCache extends FlashCache {
 
+    private static final boolean INDIVIDUAL_WRITE_DIRTY_FLAG = true; // Set true is slower to write and shutdown app, but less likely to wipe cache in event of unexpected shutdown
+
     /**
      * Always accessed from a synchronized block. How big the RMS is after we
      * close it. RMS does not shrink to this size until we close it
@@ -84,7 +86,9 @@ public final class RMSFastCache extends FlashCache {
 
         try {
             flagRMS = RMSUtils.getInstance().getRecordStore(getFlagRMSName(), false); // Just see if the RMS exists, do not create
-            storeFlagRMS = RMSUtils.getInstance().getRecordStore(getStoreFlagRMSName(), false); // Just see if the RMS exists, do not create
+            if (INDIVIDUAL_WRITE_DIRTY_FLAG) {
+                storeFlagRMS = RMSUtils.getInstance().getRecordStore(getStoreFlagRMSName(), false); // Just see if the RMS exists, do not create
+            }
         } catch (RecordStoreException e) {
             //#debug
             L.e("*** Cache \'" + priority + "\'", "Had trouble checking dirty flag", e);
@@ -97,10 +101,12 @@ public final class RMSFastCache extends FlashCache {
             try {
                 if (flagRMS != null) {
                     flagRMS.closeRecordStore();
-                    if (storeFlagRMS != null) {
+                    if (!INDIVIDUAL_WRITE_DIRTY_FLAG || storeFlagRMS != null) {
                         //#debug
                         L.i("*** Cache \'" + priority + "\' is possibly dirty after incomplete shutdown last run, deleting entire cache to avoid possible deadlock", null);
-                        storeFlagRMS.closeRecordStore();
+                        if (INDIVIDUAL_WRITE_DIRTY_FLAG) {
+                            storeFlagRMS.closeRecordStore();
+                        }
                         deleteDataFiles(priority);
                     }
                 }
@@ -154,34 +160,38 @@ public final class RMSFastCache extends FlashCache {
     }
 
     private void clearStoreFlag() throws RecordStoreException {
-        //#debug
-        L.i("Start: clear corrupted store flag after adding/deleting/closing the record", "cache \'" + priority + "\'");
-        RecordStore.deleteRecordStore(getStoreFlagRMSName());
-        //#debug
-        L.i("Success: clear corrupted store flag after adding/deleting/closing the record", "cache \'" + priority + "\'");
+        if (INDIVIDUAL_WRITE_DIRTY_FLAG) {
+            //#debug
+            L.i("Start: clear corrupted store flag after adding/deleting/closing the record", "cache \'" + priority + "\'");
+            RecordStore.deleteRecordStore(getStoreFlagRMSName());
+            //#debug
+            L.i("Success: clear corrupted store flag after adding/deleting/closing the record", "cache \'" + priority + "\'");
+        }
     }
 
     private void setStoreFlag() throws RecordStoreException {
-        RecordStore flagRMS = null;
+        if (INDIVIDUAL_WRITE_DIRTY_FLAG) {
+            RecordStore flagRMS = null;
 
-        try {
-            flagRMS = RMSUtils.getInstance().getRecordStore(getStoreFlagRMSName(), true); // Just create the RMS, does not matter what is inside
-        } catch (RecordStoreException e) {
-            //#debug
-            L.e("*** Cache \'" + priority + "\'", "Had trouble setting corrupted store flag", e);
-            RMSUtils.getInstance().wipeRMS();
-        } catch (FlashDatabaseException e) {
-            //#debug
-            L.e("*** Cache \'" + priority + "\'", "Had trouble setting corrupted store flag", e);
-            RMSUtils.getInstance().wipeRMS();
-        } finally {
-            if (flagRMS != null) {
-                try {
-                    flagRMS.closeRecordStore();
-                } catch (RecordStoreException ex) {
-                    //#debug
-                    L.e("*** Cache \'" + priority + "\'", "Had trouble closing corrupted sotre flag after creation", ex);
-                    RMSUtils.getInstance().wipeRMS();
+            try {
+                flagRMS = RMSUtils.getInstance().getRecordStore(getStoreFlagRMSName(), true); // Just create the RMS, does not matter what is inside
+            } catch (RecordStoreException e) {
+                //#debug
+                L.e("*** Cache \'" + priority + "\'", "Had trouble setting corrupted store flag", e);
+                RMSUtils.getInstance().wipeRMS();
+            } catch (FlashDatabaseException e) {
+                //#debug
+                L.e("*** Cache \'" + priority + "\'", "Had trouble setting corrupted store flag", e);
+                RMSUtils.getInstance().wipeRMS();
+            } finally {
+                if (flagRMS != null) {
+                    try {
+                        flagRMS.closeRecordStore();
+                    } catch (RecordStoreException ex) {
+                        //#debug
+                        L.e("*** Cache \'" + priority + "\'", "Had trouble closing corrupted sotre flag after creation", ex);
+                        RMSUtils.getInstance().wipeRMS();
+                    }
                 }
             }
         }
@@ -858,13 +868,11 @@ public final class RMSFastCache extends FlashCache {
         synchronized (mutex) {
             try {
                 super.close();
-                setStoreFlag();
                 try {
                     valueRS.closeRecordStore();
                 } finally {
                     keyRS.closeRecordStore();
                 }
-                clearStoreFlag();
                 clearDirtyFlagAfterNormalShutdown();
             } catch (RecordStoreException ex) {
                 //#debug

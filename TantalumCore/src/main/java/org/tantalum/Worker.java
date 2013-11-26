@@ -68,7 +68,7 @@ final class Worker extends Thread {
     volatile static boolean shutdownComplete = false;
     private Task currentTask = null; // Access only within synchronized(q)
     private final boolean isDedicatedFastlaneWorker;
-    private boolean threadDeath = false; // The thread is in last finally block, is done
+    private volatile boolean threadDeath = false; // The thread is in last finally block, is done
 
     private Worker(final String name, final boolean isDedicatedFastlaneWorker) {
         super(name);
@@ -456,7 +456,9 @@ final class Worker extends Thread {
                                 continue;
                             }
                             try {
-                                if (w.isAlive()) {
+                                if (!w.threadDeath) {
+                                    //#debug
+                                    L.i(this, "*** HUNG WORKER IN SHUTDOWN", w.toString());
                                     w.interrupt();
                                 }
                             } catch (Throwable t) {
@@ -678,8 +680,8 @@ final class Worker extends Thread {
             }
             //#enddebug
         } finally {
+            threadDeath = true;
             synchronized (q) {
-                threadDeath = true;
                 currentTask = null;
                 q.notifyAll();
             }
