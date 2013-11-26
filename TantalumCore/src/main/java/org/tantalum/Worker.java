@@ -402,21 +402,23 @@ final class Worker extends Thread {
                     shutdownUI_Q.removeElementAt(0);
                 }
             }
-//            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
             fastlaneQ.removeAllElements();
 //            for (int i = 0; i < workers.length; i++) {
 //                workers[i].serialQ.removeAllElements();
 //            }
-            q.removeAllElements();
             idleQ.removeAllElements();
-//            final DedicatedThread[] dt;
-//            synchronized (dedicatedThreads) {
-//                dt = new DedicatedThread[dedicatedThreads.size()];
-//                dedicatedThreads.copyInto(dt);
-//            }
-//            for (int i = 0; i < dt.length; i++) {
-//                dt[i].serialQ.removeAllElements();
-//            }
+            final DedicatedThread[] dt;
+            synchronized (dedicatedThreads) {
+                dt = new DedicatedThread[dedicatedThreads.size()];
+                dedicatedThreads.copyInto(dt);
+            }
+            for (int i = 0; i < dt.length; i++) {
+                dt[i].serialQ.removeAllElements();
+            }
+            synchronized (q) {
+                q.removeAllElements();
+                q.notifyAll();
+            }
             runShutdownTasks(reason);
         } catch (Throwable t) {
             //#debug
@@ -514,9 +516,8 @@ final class Worker extends Thread {
                                 L.i("Await active thread during shutdown", w.toString() + " task:" + w.currentTask);
                                 q.notifyAll();
                                 q.wait();
-//                            w.join();
                                 //#debug
-                                L.i("Continue after join active thread during shutdown", w.toString());
+                                L.i("Continue after wait for active Worker during shutdown", w.toString());
                             } else {
                                 //#debug
                                 L.i("Idle thread during shutdown", w.toString());
@@ -548,8 +549,11 @@ final class Worker extends Thread {
             L.e("Thowable during shutdown task execution", "", t);
             if (workers != null) {
                 for (int i = 0; i < workers.length; i++) {
+                    if (workers[i] == Thread.currentThread()) {
+                        continue;
+                    }
                     try {
-                        if (workers[i].isAlive()) {
+                        if (!workers[i].threadDeath) {
                             //#debug
                             L.i("Interrrupting non-closed thread", workers[i].toString());
                             workers[i].interrupt();
