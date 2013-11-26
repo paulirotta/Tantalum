@@ -13,6 +13,7 @@ import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.tantalum.PlatformUtils;
+import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
@@ -57,11 +58,34 @@ public final class RMSFastCache extends FlashCache {
         super(priority);
 
         clearCacheIfLastCloseWasDirty();
-        keyRS = RMSUtils.getInstance().getRecordStore(getKeyRSName(), true);
-        valueRS = RMSUtils.getInstance().getRecordStore(getValueRSName(), true);
+        keyRS = openRMS(getKeyRSName());
+        valueRS = openRMS(getValueRSName());
         final int numberOfKeys = keyRS.getNumRecords();
         initIndex(numberOfKeys, startupTask);
         rmsByteSize = keyRS.getSize() + valueRS.getSize();
+    }
+
+    private RecordStore openRMS(final String name) throws FlashDatabaseException, RecordStoreException {
+        return RMSUtils.getInstance().getRecordStore(name, true);
+    }
+
+    private void toggleRMS(final String name, final RecordStore rs) throws FlashDatabaseException, RecordStoreException {
+        if (Task.isShuttingDown()) {
+            return;
+        }
+        //#debug
+        L.i(this, "toggleRMS - Closing and re-opening rms", name);
+        synchronized (mutex) {
+            try {
+                rs.closeRecordStore();
+            } catch (Exception e) {
+                //#debug
+                L.e(this, "Problem with toggleRMS closing and re-opening rms", name, e);
+            }
+            RMSUtils.getInstance().getRecordStore(name, true);
+        }
+        //#debug
+        L.i(this, "End toggleRMS", name);
     }
 
     public void markLeastRecentlyUsed(final Long digest) {
@@ -921,6 +945,23 @@ public final class RMSFastCache extends FlashCache {
         return sb.toString();
     }
     //#enddebug
+
+    public void maintainDatabase() throws FlashDatabaseException {
+        try {
+            toggleRMS(this.getKeyRSName(), keyRS);
+        } catch (RecordStoreException ex) {
+            //#debug
+            L.e(this, "maintainDatabase", getKeyRSName(), ex);
+            throw new FlashDatabaseException("Can not toggle " + getKeyRSName());
+        }
+        try {
+            toggleRMS(this.getValueRSName(), valueRS);
+        } catch (RecordStoreException ex) {
+            //#debug
+            L.e(this, "maintainDatabase", getValueRSName(), ex);
+            throw new FlashDatabaseException("Can not toggle " + getValueRSName());
+        }
+    }
 
     /**
      * Extend this to perform an operation on all records in a record store

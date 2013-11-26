@@ -59,6 +59,7 @@ public abstract class FlashCache {
      *
      */
     protected final Vector shutdownTasks = new Vector();
+
     /**
      * The order in which object in the ramCache have been accessed since the
      * program started. Each time an object is accessed, it moves to the
@@ -228,6 +229,8 @@ public abstract class FlashCache {
      * @throws FlashDatabaseException
      */
     public abstract long getSize() throws FlashDatabaseException;
+
+    public abstract void maintainDatabase() throws FlashDatabaseException;
 
     /**
      * Run finalization tasks and then close all cache resources
