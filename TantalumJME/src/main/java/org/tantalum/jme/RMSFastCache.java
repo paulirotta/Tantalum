@@ -869,10 +869,16 @@ public final class RMSFastCache extends FlashCache {
             try {
                 super.close();
                 try {
+                    //#debug
+                    L.i(this, "Close", "valueRS");
                     valueRS.closeRecordStore();
                 } finally {
+                    //#debug
+                    L.i(this, "Close", "keyRS");
                     keyRS.closeRecordStore();
                 }
+                //#debug
+                L.i(this, "Close", "valurRS and keyRS closed");
                 clearDirtyFlagAfterNormalShutdown();
             } catch (RecordStoreException ex) {
                 //#debug
