@@ -62,7 +62,13 @@ public final class RMSFastCache extends FlashCache {
         valueRS = openRMS(getValueRSName());
         final int numberOfKeys = keyRS.getNumRecords();
         initIndex(numberOfKeys, startupTask);
+    }
+
+    private void updateRMSByteSize() throws RecordStoreNotOpenException {
+        final long previous = rmsByteSize;
         rmsByteSize = keyRS.getSize() + valueRS.getSize();
+        //#debug
+        L.i(this, "updateRMSByteSize", previous + " -> " + rmsByteSize);
     }
 
     private RecordStore openRMS(final String name) throws FlashDatabaseException, RecordStoreException {
@@ -74,7 +80,7 @@ public final class RMSFastCache extends FlashCache {
             return;
         }
         //#debug
-        L.i(this, "toggleRMS - Closing and re-opening rms", name);
+        L.i(this, "toggleRMS - Closing and re-opening rms", name + " ");
         synchronized (mutex) {
             try {
                 rs.closeRecordStore();
@@ -83,6 +89,7 @@ public final class RMSFastCache extends FlashCache {
                 L.e(this, "Problem with toggleRMS closing and re-opening rms", name, e);
             }
             RMSUtils.getInstance().getRecordStore(name, true);
+            updateRMSByteSize();
         }
         //#debug
         L.i(this, "End toggleRMS", name);
