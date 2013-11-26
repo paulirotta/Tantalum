@@ -6,6 +6,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.microedition.rms.InvalidRecordIDException;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
@@ -49,8 +51,8 @@ public final class RMSFastCache extends FlashCache {
      * Always access within a synchronized(MUTEX) block
      */
     private final LRUHashtable indexHash = new LRUHashtable();
-    private final RecordStore keyRS;
-    private final RecordStore valueRS;
+    private RecordStore keyRS;
+    private RecordStore valueRS;
     private final Object mutex = new Object();
     private final org.tantalum.jme.RMSKeyUtils RMSKeyUtils = new org.tantalum.jme.RMSKeyUtils();
 
@@ -75,24 +77,27 @@ public final class RMSFastCache extends FlashCache {
         return RMSUtils.getInstance().getRecordStore(name, true);
     }
 
-    private void toggleRMS(final String name, final RecordStore rs) throws FlashDatabaseException, RecordStoreException {
+    private RecordStore toggleRMS(final String name, final RecordStore rs) throws FlashDatabaseException, RecordStoreException {
         if (Task.isShuttingDown()) {
-            return;
+            return rs;
         }
+
+        RecordStore newRS = null;
+
         //#debug
         L.i(this, "toggleRMS - Closing and re-opening rms", name + " ");
-        synchronized (mutex) {
-            try {
-                rs.closeRecordStore();
-            } catch (Exception e) {
-                //#debug
-                L.e(this, "Problem with toggleRMS closing and re-opening rms", name, e);
-            }
-            RMSUtils.getInstance().getRecordStore(name, true);
-            updateRMSByteSize();
+        try {
+            rs.closeRecordStore();
+        } catch (Exception e) {
+            //#debug
+            L.e(this, "Problem with toggleRMS closing and re-opening rms", name, e);
         }
+        newRS = RMSUtils.getInstance().getRecordStore(name, true);
+        updateRMSByteSize();
         //#debug
         L.i(this, "End toggleRMS", name);
+
+        return newRS;
     }
 
     public void markLeastRecentlyUsed(final Long digest) {
@@ -876,6 +881,12 @@ public final class RMSFastCache extends FlashCache {
                 //#debug
                 L.e("Can not clear RMS keys", "aborting", ex);
             }
+            try {
+                updateRMSByteSize();
+            } catch (RecordStoreNotOpenException ex) {
+                //#debug
+                L.e("Can not updateRMSByteSize", "after clear()", ex);
+            }
         }
     }
 
@@ -921,48 +932,54 @@ public final class RMSFastCache extends FlashCache {
 
     //#mdebug
     public String toString() {
-        final StringBuffer sb = new StringBuffer();
+        synchronized (mutex) {
+            final StringBuffer sb = new StringBuffer();
 
-        sb.append(super.toString());
-        sb.append("\n");
-        try {
-            sb.append("keyRMS.numRecords=");
-            sb.append(this.keyRS.getNumRecords());
-            sb.append(" keyRMS.getSize=");
-            sb.append(this.keyRS.getSize());
-            sb.append(" keyRMS.getSizeAvailable=");
-            sb.append(this.keyRS.getSizeAvailable());
-        } catch (Throwable t) {
-            sb.append("(can not get keyRMS data");
-            sb.append(t);
+            sb.append(super.toString());
+            sb.append("\n");
+            try {
+                sb.append("keyRMS.numRecords=");
+                sb.append(this.keyRS.getNumRecords());
+                sb.append(" keyRMS.getSize=");
+                sb.append(this.keyRS.getSize());
+                sb.append(" keyRMS.getSizeAvailable=");
+                sb.append(this.keyRS.getSizeAvailable());
+            } catch (Throwable t) {
+                sb.append("(can not get keyRMS data");
+                sb.append(t);
+            }
+
+            try {
+                sb.append(" valueRMS.numRecords=");
+                sb.append(this.valueRS.getNumRecords());
+                sb.append(" valueRMS.getSize=");
+                sb.append(this.valueRS.getSize());
+                sb.append(" valueRMS.getSizeAvailable=");
+                sb.append(this.valueRS.getSizeAvailable());
+            } catch (Throwable t) {
+                sb.append("(can not get valueRMS data");
+                sb.append(t);
+            }
+
+            return sb.toString();
         }
-
-        try {
-            sb.append(" valueRMS.numRecords=");
-            sb.append(this.valueRS.getNumRecords());
-            sb.append(" valueRMS.getSize=");
-            sb.append(this.valueRS.getSize());
-            sb.append(" valueRMS.getSizeAvailable=");
-            sb.append(this.valueRS.getSizeAvailable());
-        } catch (Throwable t) {
-            sb.append("(can not get valueRMS data");
-            sb.append(t);
-        }
-
-        return sb.toString();
     }
     //#enddebug
 
     public void maintainDatabase() throws FlashDatabaseException {
         try {
-            toggleRMS(this.getKeyRSName(), keyRS);
+            synchronized (mutex) {
+                keyRS = toggleRMS(this.getKeyRSName(), keyRS);
+            }
         } catch (RecordStoreException ex) {
             //#debug
             L.e(this, "maintainDatabase", getKeyRSName(), ex);
             throw new FlashDatabaseException("Can not toggle " + getKeyRSName());
         }
         try {
-            toggleRMS(this.getValueRSName(), valueRS);
+            synchronized (mutex) {
+                valueRS = toggleRMS(this.getValueRSName(), valueRS);
+            }
         } catch (RecordStoreException ex) {
             //#debug
             L.e(this, "maintainDatabase", getValueRSName(), ex);
