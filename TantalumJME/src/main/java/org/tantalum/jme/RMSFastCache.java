@@ -115,7 +115,7 @@ public final class RMSFastCache extends FlashCache {
                 return valueRS;
             }
 
-            final String name = getKeyRSName();
+            final String name = getValueRSName();
 
             //#debug
             L.i(this, "getValueRS - Opening", name);
