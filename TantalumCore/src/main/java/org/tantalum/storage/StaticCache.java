@@ -645,6 +645,13 @@ public class StaticCache {
 
         return spaceCleared;
     }
+    
+    /**
+     * Perform periodic database maintenance
+     */
+    public void maintainDatabase() {
+        flashCache.maintainDatabase();
+    }
 
     public int clearSpace(final int minSpaceToClear) throws FlashDatabaseException, DigestException {
         //#debug
@@ -668,9 +675,6 @@ public class StaticCache {
                 //#debug
                 L.i(this, "** fail cleardigest", "Did not find in digest");
             }
-        }
-        if (spaceCleared > 0) {
-            flashCache.maintainDatabase();
         }
         //#debug
         L.i(this, "End clearing space, cache-" + this.getPriority(), spaceCleared + " bytes cleared");

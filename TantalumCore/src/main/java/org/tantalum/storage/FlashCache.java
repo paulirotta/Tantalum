@@ -230,7 +230,12 @@ public abstract class FlashCache {
      */
     public abstract long getSize() throws FlashDatabaseException;
 
-    public abstract void maintainDatabase() throws FlashDatabaseException;
+    /**
+     * Close database files periodically to force maintenance in increments.
+     * This will speed up the final application shutdown which might otherwise
+     * take many seconds after heavy use for a long time.
+     */
+    public abstract void maintainDatabase();
 
     /**
      * Run finalization tasks and then close all cache resources
