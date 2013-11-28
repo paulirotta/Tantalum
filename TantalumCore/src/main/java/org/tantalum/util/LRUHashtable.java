@@ -58,10 +58,27 @@ public class LRUHashtable {
         v = new LRUVector(size);
     }
 
-    public synchronized Object get(final Object key) {
+    /**
+     * Get the object, and mark it as the most recently used object
+     * 
+     * @param key
+     * @return 
+     */
+    public Object get(final Object key) {
+        return get(key, true);
+    }
+
+    /**
+     * Get the object, and optionally mark it as the most recently used object
+     * 
+     * @param key
+     * @param markLeastRecentlyUsed
+     * @return 
+     */
+    public synchronized Object get(final Object key, final boolean markLeastRecentlyUsed) {
         final Object value = hash.get(key);
 
-        if (value != null) {
+        if (markLeastRecentlyUsed && value != null) {
             v.addElement(key);
         }
 

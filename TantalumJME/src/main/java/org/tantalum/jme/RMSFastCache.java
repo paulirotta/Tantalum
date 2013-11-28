@@ -135,7 +135,7 @@ public final class RMSFastCache extends FlashCache {
             throw new IllegalArgumentException("Can not mark null digest as least recently used");
         }
 
-        indexHash.get(digest);
+        indexHash.get(digest, true);
     }
 
     private String getFlagRMSName() {
@@ -638,9 +638,9 @@ public final class RMSFastCache extends FlashCache {
      * @param digest
      * @return
      */
-    private Long indexHashGet(final long digest) {
+    private Long indexHashGet(final long digest, final boolean markLeastRecentlyUsed) {
         synchronized (mutex) {
-            return (Long) indexHash.get(new Long(digest));
+            return (Long) indexHash.get(new Long(digest), markLeastRecentlyUsed);
         }
     }
 
@@ -655,7 +655,7 @@ public final class RMSFastCache extends FlashCache {
      */
     public String getKey(final long digest) throws FlashDatabaseException {
         synchronized (mutex) {
-            final Long keyAndValueIndexes = indexHashGet(digest);
+            final Long keyAndValueIndexes = indexHashGet(digest, false);
 
             if (keyAndValueIndexes == null) {
                 return null;
@@ -703,22 +703,19 @@ public final class RMSFastCache extends FlashCache {
      * Get the value associated with this key digest from phone flash memory
      *
      * @param digest
+     * @param markAsLeastRecentlyUsed
      * @return the bytes of the value
      * @throws FlashDatabaseException
      */
     public byte[] get(final long digest, final boolean markAsLeastRecentlyUsed) throws FlashDatabaseException {
         synchronized (mutex) {
             final Long dig = new Long(digest);
-            final Long hashValue = ((Long) indexHash.get(dig));
+            final Long hashValue = ((Long) indexHash.get(dig, markAsLeastRecentlyUsed));
 
             if (hashValue != null) {
                 try {
                     final int valueIndex = RMSKeyUtils.toValueIndex(hashValue);
                     final byte[] bytes = getValueRS().getRecord(valueIndex);
-
-                    if (markAsLeastRecentlyUsed) {
-                        indexHash.get(dig);
-                    }
 
                     return bytes;
                 } catch (Exception ex) {
@@ -751,7 +748,7 @@ public final class RMSFastCache extends FlashCache {
         synchronized (mutex) {
             try {
                 final long digest = CryptoUtils.getInstance().toDigest(key);
-                final Long indexEntry = indexHashGet(digest);
+                final Long indexEntry = indexHashGet(digest, true);
                 final int valueRecordId;
                 final int keyRecordId;
 
@@ -801,7 +798,7 @@ public final class RMSFastCache extends FlashCache {
     public void removeData(final long digest) throws FlashDatabaseException {
         synchronized (mutex) {
             try {
-                final Long indexEntry = indexHashGet(digest);
+                final Long indexEntry = indexHashGet(digest, false);
 
                 if (indexEntry != null) {
 

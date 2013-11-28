@@ -134,6 +134,17 @@ final class Worker extends Thread {
         }
     }
 
+    private static Task cancelTasksAboveMaxQueueSize(final Vector queue) {
+        if (queue.size() >= QUEUE_SIZE_LIMIT) {
+            final Task task = (Task) queue.elementAt(queue.size() - 1);
+            queue.removeElementAt(queue.size() - 1);
+
+            return task;
+        }
+
+        return null;
+    }
+
     /**
      * Task.HIGH_PRIORITY : Jump an object to the beginning of the forkSerial
      * (LIFO - Last In First Out).
@@ -169,6 +180,8 @@ final class Worker extends Thread {
         final int priority = task.getForkPriority();
         //#debug
         L.i(task, "Fork", "priority=" + task.getPriorityString());
+        Task taskToCancel = null; // If the max queue length is exceeded, cancel the task after releasing the q lock
+
         synchronized (q) {
             switch (priority) {
                 case Task.DEDICATED_THREAD_PRIORITY:
@@ -184,9 +197,7 @@ final class Worker extends Thread {
 
                 case Task.FASTLANE_PRIORITY:
                     fastlaneQ.insertElementAt(task, 0);
-                    if (fastlaneQ.size() > QUEUE_SIZE_LIMIT) {
-                        fastlaneQ.removeElementAt(fastlaneQ.size() - 1);
-                    }
+                    taskToCancel = cancelTasksAboveMaxQueueSize(fastlaneQ);
                     /**
                      * notify() vs notifyAll(): Any thread will do as all
                      * Workers (and nothing else) waits on this lock and will
@@ -213,16 +224,12 @@ final class Worker extends Thread {
 
                 case Task.HIGH_PRIORITY:
                     q.insertElementAt(task, 0);
-                    if (q.size() > QUEUE_SIZE_LIMIT) {
-                        q.removeElementAt(q.size() - 1);
-                    }
+                    taskToCancel = cancelTasksAboveMaxQueueSize(q);
                     q.notifyAll();
                     break;
 
                 case Task.NORMAL_PRIORITY:
-                    if (q.size() >= QUEUE_SIZE_LIMIT) {
-                        q.removeElementAt(q.size() - 1);
-                    }
+                    taskToCancel = cancelTasksAboveMaxQueueSize(q);
                     q.addElement(task);
                     q.notifyAll();
                     break;
@@ -244,9 +251,13 @@ final class Worker extends Thread {
                 default:
                     throw new IllegalArgumentException("Illegal priority '" + priority + "'");
             }
-
-            return task;
         }
+        
+        if (taskToCancel != null) {
+            taskToCancel.cancel("Max queue length exceeded");
+        }
+
+        return task;
     }
 
     static Task[] fork(final Task[] tasks) {
