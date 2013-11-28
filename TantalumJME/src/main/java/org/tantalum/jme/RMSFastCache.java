@@ -99,7 +99,7 @@ public final class RMSFastCache extends FlashCache {
             //#debug
             L.i(this, "getKeyRS - Opening", name);
             try {
-                keyRS = RMSUtils.getInstance().getRecordStore(name, true);
+                keyRS = openRMS(name);
             } catch (Exception e) {
                 //#debug
                 L.e(this, "getKeyRS - Problem opening key rms", name, e);
@@ -120,7 +120,7 @@ public final class RMSFastCache extends FlashCache {
             //#debug
             L.i(this, "getValueRS - Opening", name);
             try {
-                valueRS = RMSUtils.getInstance().getRecordStore(name, true);
+                valueRS = openRMS(name);
                 updateRMSByteSize();
             } catch (Exception e) {
                 //#debug
@@ -207,7 +207,7 @@ public final class RMSFastCache extends FlashCache {
         RecordStore flagRMS = null;
 
         try {
-            flagRMS = RMSUtils.getInstance().getRecordStore(getFlagRMSName(), true); // Just create the RMS, does not matter what is inside
+            flagRMS = openRMS(getFlagRMSName()); // Just create the RMS, does not matter what is inside
         } catch (RecordStoreException e) {
             //#debug
             L.e("*** Cache \'" + priority + "\'", "Had trouble setting dirty flag", e);
@@ -232,10 +232,10 @@ public final class RMSFastCache extends FlashCache {
     private void clearStoreFlag() throws RecordStoreException {
         if (INDIVIDUAL_WRITE_DIRTY_FLAG) {
             //#debug
-            L.i("Start: clear corrupted store flag after adding/deleting/closing the record", "cache \'" + priority + "\'");
+            final Long t = System.currentTimeMillis();
             RecordStore.deleteRecordStore(getStoreFlagRMSName());
             //#debug
-            L.i("Success: clear corrupted store flag after adding/deleting/closing the record", "cache \'" + priority + "\'");
+            L.i("clearStoreFlag", "cache \'" + priority + "\' elapsed time=" + (System.currentTimeMillis() - t));
         }
     }
 
@@ -246,8 +246,10 @@ public final class RMSFastCache extends FlashCache {
 
         RecordStore flagRMS = null;
 
+        //#debug
+        final long t = System.currentTimeMillis();
         try {
-            flagRMS = RMSUtils.getInstance().getRecordStore(getStoreFlagRMSName(), true); // Just create the RMS, does not matter what is inside
+            flagRMS = openRMS(getStoreFlagRMSName()); // Just create the RMS, does not matter what is inside
         } catch (RecordStoreException e) {
             //#debug
             L.e("*** Cache \'" + priority + "\'", "Had trouble setting corrupted store flag", e);
@@ -260,6 +262,8 @@ public final class RMSFastCache extends FlashCache {
             if (flagRMS != null) {
                 try {
                     flagRMS.closeRecordStore();
+                    //#debug
+                    L.i(this, "setStoreFlag", "time elapsed=" + (System.currentTimeMillis() - t));
                 } catch (RecordStoreException ex) {
                     //#debug
                     L.e("*** Cache \'" + priority + "\'", "Had trouble closing corrupted sotre flag after creation", ex);
