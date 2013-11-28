@@ -26,7 +26,6 @@ import org.tantalum.util.LRUHashtable;
  * @author phou
  */
 public final class RMSFastCache extends FlashCache {
-
     private static final int SLEEP_TIME_DURING_CLOSE_OPEN_RMS = 1000;
     private static final boolean INDIVIDUAL_WRITE_DIRTY_FLAG = true; // Set true is slower to write and shutdown app, but less likely to wipe cache in event of unexpected shutdown
 
@@ -232,7 +231,7 @@ public final class RMSFastCache extends FlashCache {
     private void clearStoreFlag() throws RecordStoreException {
         if (INDIVIDUAL_WRITE_DIRTY_FLAG) {
             //#debug
-            final Long t = System.currentTimeMillis();
+            final long t = System.currentTimeMillis();
             RecordStore.deleteRecordStore(getStoreFlagRMSName());
             //#debug
             L.i("clearStoreFlag", "cache \'" + priority + "\' elapsed time=" + (System.currentTimeMillis() - t));
