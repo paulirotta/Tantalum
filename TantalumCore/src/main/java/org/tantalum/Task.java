@@ -271,6 +271,7 @@ public abstract class Task {
      */
     public static final int CANCELED = 2;
     private static final String[] STATUS_STRINGS = {"PENDING", "FINISHED", "CANCELED"};
+    public static final String QUEUE_LENGTH_EXCEEDED = "IGNORE";
     /**
      * Default shutdown behavior.
      *
@@ -382,13 +383,13 @@ public abstract class Task {
     public static Timer getTimer() {
         return TimerHolder.timer;
     }
-    
+
     /**
      * Remove all chained tasks
-     * 
+     *
      */
     public void unchain() {
-        synchronized(mutex) {
+        synchronized (mutex) {
             chainedTask = null;
         }
     }
@@ -778,7 +779,7 @@ public abstract class Task {
             });
             // Also cancel any chained Tasks expecting the output of this Task
             if (t != null) {
-                t.cancel("Previous task in chain was canceled: " + this);
+                t.cancel("Previous task in chain was canceled: " + this + ", reason: " + reason);
             }
         }
     }
@@ -1189,7 +1190,7 @@ public abstract class Task {
                 tasksToFork.copyInto(tasks);
             }
             for (int i = 0; i < tasks.length; i++) {
-                tasks[i].cancel("Previous task in chain was canceled, then the chain split");
+                tasks[i].cancel("Previous task in chain was canceled, reason: " + reason + ", then the chain split");
             }
         }
 

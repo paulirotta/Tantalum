@@ -254,7 +254,7 @@ final class Worker extends Thread {
         }
         
         if (taskToCancel != null) {
-            taskToCancel.cancel("Max queue length exceeded");
+            taskToCancel.cancel(Task.QUEUE_LENGTH_EXCEEDED);
         }
 
         return task;
