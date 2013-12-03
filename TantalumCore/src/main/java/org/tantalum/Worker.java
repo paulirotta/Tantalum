@@ -135,14 +135,16 @@ final class Worker extends Thread {
     }
 
     private static Task cancelTasksAboveMaxQueueSize(final Vector queue) {
-        if (queue.size() >= QUEUE_SIZE_LIMIT) {
-            final Task task = (Task) queue.elementAt(queue.size() - 1);
-            queue.removeElementAt(queue.size() - 1);
+        synchronized (queue) {
+            if (queue.size() >= QUEUE_SIZE_LIMIT) {
+                final Task task = (Task) queue.elementAt(queue.size() - 1);
+                queue.removeElementAt(queue.size() - 1);
 
-            return task;
+                return task;
+            }
+
+            return null;
         }
-
-        return null;
     }
 
     /**

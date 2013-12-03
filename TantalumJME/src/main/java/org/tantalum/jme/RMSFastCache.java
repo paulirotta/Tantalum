@@ -87,7 +87,7 @@ public final class RMSFastCache extends FlashCache {
         return RMSUtils.getInstance().getRecordStore(name, true);
     }
 
-    private RecordStore getKeyRS() throws RecordStoreNotOpenException {
+    private RecordStore getKeyRS() throws RecordStoreNotOpenException, FlashDatabaseException, RecordStoreException {
         synchronized (mutex) {
             if (keyRS != null) {
                 return keyRS;
@@ -97,18 +97,18 @@ public final class RMSFastCache extends FlashCache {
 
             //#debug
             L.i(this, "getKeyRS - Opening", name);
-            try {
+//            try {
                 keyRS = openRMS(name);
-            } catch (Exception e) {
-                //#debug
-                L.e(this, "getKeyRS - Problem opening key rms", name, e);
-            }
+//            } catch (Exception e) {
+//                //#debug
+//                L.e(this, "getKeyRS - Problem opening key rms", name, e);
+//            }
 
             return keyRS;
         }
     }
 
-    private RecordStore getValueRS() throws RecordStoreNotOpenException {
+    private RecordStore getValueRS() throws RecordStoreNotOpenException, FlashDatabaseException, RecordStoreException {
         synchronized (mutex) {
             if (valueRS != null) {
                 return valueRS;
@@ -118,13 +118,13 @@ public final class RMSFastCache extends FlashCache {
 
             //#debug
             L.i(this, "getValueRS - Opening", name);
-            try {
+//            try {
                 valueRS = openRMS(name);
                 updateRMSByteSize();
-            } catch (Exception e) {
-                //#debug
-                L.e(this, "getValueRS - Problem opening value rms", name, e);
-            }
+//            } catch (Exception e) {
+//                //#debug
+//                L.e(this, "getValueRS - Problem opening value rms", name, e);
+//            }
 
             return valueRS;
         }
@@ -919,17 +919,16 @@ public final class RMSFastCache extends FlashCache {
             indexHash.clear();
             try {
                 clear(getKeyRS());
-            } catch (RecordStoreException ex) {
+            } catch (Exception ex) {
                 //#debug
                 L.e("Can not clear RMS keys", "aborting", ex);
             }
             try {
                 clear(getValueRS());
-            } catch (RecordStoreException ex) {
+            } catch (Exception ex) {
                 //#debug
                 L.e("Can not clear RMS values", "aborting", ex);
             }
-            updateRMSByteSize();
         }
     }
 
@@ -937,6 +936,14 @@ public final class RMSFastCache extends FlashCache {
         try {
             return getKeyRS().getSizeAvailable();
         } catch (RecordStoreNotOpenException ex) {
+            //#debug
+            L.e(this, "Can not get freespace", this.toString(), ex);
+            throw new FlashDatabaseException("Can not get freespace: " + ex);
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e(this, "Can not get freespace", this.toString(), ex);
+            throw new FlashDatabaseException("Can not get freespace: " + ex);
+        } catch (RecordStoreException ex) {
             //#debug
             L.e(this, "Can not get freespace", this.toString(), ex);
             throw new FlashDatabaseException("Can not get freespace: " + ex);
