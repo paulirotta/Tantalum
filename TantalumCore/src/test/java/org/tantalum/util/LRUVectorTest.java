@@ -29,7 +29,6 @@ package org.tantalum.util;
 
 import org.junit.Test;
 import org.tantalum.MockedStaticInitializers;
-import org.tantalum.util.LRUVector;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -99,19 +98,19 @@ public class LRUVectorTest extends MockedStaticInitializers {
     public void testRemoveLeastRecentlyUsed() {
         System.out.println("removeLeastRecentlyUsed");
         LRUVector instance = new LRUVector();
-        Object expResult_1 = "a";
-        instance.addElement(expResult_1);
+        Object expResult_1 = true;
+        instance.addElement("a");
         instance.addElement("b");
         instance.addElement("c");
         instance.addElement("d");
         instance.addElement("e");
         instance.addElement("f");
-        Object result_1 = instance.removeLeastRecentlyUsed();
+        Object result_1 = instance.contains("a");
         assertEquals("Least recently used", expResult_1, result_1);
-        instance.addElement("b");
-        instance.contains("c");
+        instance.addElement("a");
+        instance.contains("b");
         Object result_2 = instance.removeLeastRecentlyUsed();
-        assertEquals("Least recently used", "d", result_2);
+        assertEquals("Least recently used", "c", result_2);
     }
 
     /**

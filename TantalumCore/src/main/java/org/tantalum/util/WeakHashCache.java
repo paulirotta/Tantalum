@@ -89,6 +89,24 @@ public class WeakHashCache {
     }
 
     /**
+     * All keys in the set, in no particular order
+     * 
+     * @return 
+     */
+    public synchronized Enumeration keys() {
+        return hash.keys();
+    }
+
+    /**
+     * All values in the set, in no particular order
+     * 
+     * @return 
+     */
+    public synchronized Enumeration elements() {
+        return hash.elements();
+    }
+
+    /**
      * Put an object into the heap memory cache.
      *
      * Note that you can feel free to put a very large number of objects into
@@ -194,6 +212,8 @@ public class WeakHashCache {
     public synchronized void clear() {
         hash.clear();
     }
+    
+    private final Vector purgeList = new Vector();
 
     /**
      * Remove from the list all elements for which the WeakReference has
@@ -204,12 +224,12 @@ public class WeakHashCache {
      * WeakHashCache without concern the response will be affected by reference
      * expiry.
      *
-     * @return the number of items removed
+     * @return the size after items were removed
      */
     public synchronized int purgeExpiredWeakReferences() {
         final Enumeration keys = hash.keys();
-        final Vector purgeList = new Vector();
 
+        purgeList.removeAllElements();
         while (keys.hasMoreElements()) {
             final Object key = keys.nextElement();
             final Object o = this.get(key);
@@ -224,7 +244,7 @@ public class WeakHashCache {
             remove(purgeList.elementAt(i));
         }
 
-        return n;
+        return hash.size();
     }
 
     /**

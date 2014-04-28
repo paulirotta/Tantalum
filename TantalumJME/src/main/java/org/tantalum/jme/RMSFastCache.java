@@ -13,18 +13,28 @@ import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 import org.tantalum.PlatformUtils;
+import org.tantalum.Task;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.FlashFullException;
 import org.tantalum.util.CryptoUtils;
 import org.tantalum.util.L;
+import org.tantalum.util.LRUHashtable;
 
 /**
  *
  * @author phou
  */
-public class RMSFastCache extends FlashCache {
+public final class RMSFastCache extends FlashCache {
+    private static final int SLEEP_TIME_DURING_CLOSE_OPEN_RMS = 1000;
+    private static final boolean INDIVIDUAL_WRITE_DIRTY_FLAG = true; // Set true is slower to write and shutdown app, but less likely to wipe cache in event of unexpected shutdown
 
+    /**
+     * Always accessed from a synchronized block. How big the RMS is after we
+     * close it. RMS does not shrink to this size until we close it
+     * (experimentally determined implementation detail)
+     */
+    private long rmsByteSize = 0;
     /**
      * Longer hashes use more RAM as they are stored as keys in a Hashtable. The
      * longer hashes may also take longer to calculate, but reduce the
@@ -33,52 +43,141 @@ public class RMSFastCache extends FlashCache {
      * The length should probably be evenly divisible by 8
      */
     static final char RECORD_HASH_PREFIX = '_';
-    private final RecordStore keyRS;
-    private final RecordStore valueRS;
-    private final Object mutex = new Object();
     /*
      * The Integer index of each key record in the hashtable
      * 
      * Always access within a synchronized(MUTEX) block
      */
-    private final Hashtable indexHash;
+    private final LRUHashtable indexHash = new LRUHashtable();
+    private RecordStore keyRS;
+    private RecordStore valueRS;
+    private final Object mutex = new Object();
     private final org.tantalum.jme.RMSKeyUtils RMSKeyUtils = new org.tantalum.jme.RMSKeyUtils();
 
     public RMSFastCache(final char priority, final FlashCache.StartupTask startupTask) throws FlashDatabaseException, RecordStoreNotOpenException, RecordStoreException, NoSuchAlgorithmException, InvalidRecordIDException, DigestException, UnsupportedEncodingException {
         super(priority);
 
         clearCacheIfLastCloseWasDirty();
-        keyRS = RMSUtils.getInstance().getRecordStore(getKeyRSName(), true);
-        valueRS = RMSUtils.getInstance().getRecordStore(getValueRSName(), true);
+        keyRS = openRMS(getKeyRSName());
+        valueRS = openRMS(getValueRSName());
         final int numberOfKeys = keyRS.getNumRecords();
-        indexHash = new Hashtable(numberOfKeys);
         initIndex(numberOfKeys, startupTask);
+        updateRMSByteSize();
+    }
+
+    private void updateRMSByteSize() {
+        synchronized (mutex) {
+            try {
+                if (Task.isShuttingDown() || keyRS == null || valueRS == null) {
+                    return;
+                }
+
+                final long previous = rmsByteSize;
+                rmsByteSize = keyRS.getSize() + valueRS.getSize();
+                //#debug
+                L.i(this, "updateRMSByteSize", previous + " -> " + rmsByteSize);
+            } catch (RecordStoreNotOpenException e) {
+                //#debug
+                L.e(this, "updateRMSByteSize", "RMS not open: oldRmsByteSize was " + rmsByteSize, e);
+            }
+        }
+    }
+
+    private RecordStore openRMS(final String name) throws FlashDatabaseException, RecordStoreException {
+        return RMSUtils.getInstance().getRecordStore(name, true);
+    }
+
+    private RecordStore getKeyRS() throws RecordStoreNotOpenException, FlashDatabaseException, RecordStoreException {
+        synchronized (mutex) {
+            if (keyRS != null) {
+                return keyRS;
+            }
+
+            final String name = getKeyRSName();
+
+            //#debug
+            L.i(this, "getKeyRS - Opening", name);
+//            try {
+                keyRS = openRMS(name);
+//            } catch (Exception e) {
+//                //#debug
+//                L.e(this, "getKeyRS - Problem opening key rms", name, e);
+//            }
+
+            return keyRS;
+        }
+    }
+
+    private RecordStore getValueRS() throws RecordStoreNotOpenException, FlashDatabaseException, RecordStoreException {
+        synchronized (mutex) {
+            if (valueRS != null) {
+                return valueRS;
+            }
+
+            final String name = getValueRSName();
+
+            //#debug
+            L.i(this, "getValueRS - Opening", name);
+//            try {
+                valueRS = openRMS(name);
+                updateRMSByteSize();
+//            } catch (Exception e) {
+//                //#debug
+//                L.e(this, "getValueRS - Problem opening value rms", name, e);
+//            }
+
+            return valueRS;
+        }
+    }
+
+    public void markLeastRecentlyUsed(final Long digest) {
+        if (digest == null) {
+            throw new IllegalArgumentException("Can not mark null digest as least recently used");
+        }
+
+        indexHash.get(digest, true);
     }
 
     private String getFlagRMSName() {
         return "dirty+" + getKeyRSName();
     }
 
+    private String getStoreFlagRMSName() {
+        return "IO+" + getKeyRSName();
+    }
+
     private void clearCacheIfLastCloseWasDirty() {
         RecordStore flagRMS = null;
+        RecordStore storeFlagRMS = null;
 
         try {
             flagRMS = RMSUtils.getInstance().getRecordStore(getFlagRMSName(), false); // Just see if the RMS exists, do not create
+            if (INDIVIDUAL_WRITE_DIRTY_FLAG) {
+                storeFlagRMS = RMSUtils.getInstance().getRecordStore(getStoreFlagRMSName(), false); // Just see if the RMS exists, do not create
+            }
         } catch (RecordStoreException e) {
             //#debug
             L.e("*** Cache \'" + priority + "\'", "Had trouble checking dirty flag", e);
+            maintainDatabase();
             deleteDataFiles(priority);
         } catch (FlashDatabaseException e) {
             //#debug
             L.e("*** Cache \'" + priority + "\'", "Had trouble checking dirty flag", e);
+            maintainDatabase();
             deleteDataFiles(priority);
         } finally {
             try {
                 if (flagRMS != null) {
-                    //#debug
-                    L.i("*** Cache \'" + priority + "\' is possibly dirty after incomplete shutdown last run, deleting entire cache to avoid possible deadlock", null);
                     flagRMS.closeRecordStore();
-                    deleteDataFiles(priority);
+                    if (!INDIVIDUAL_WRITE_DIRTY_FLAG || storeFlagRMS != null) {
+                        //#debug
+                        L.i("*** Cache \'" + priority + "\' is possibly dirty after incomplete shutdown last run, deleting entire cache to avoid possible deadlock", null);
+                        if (INDIVIDUAL_WRITE_DIRTY_FLAG) {
+                            storeFlagRMS.closeRecordStore();
+                        }
+                        maintainDatabase();
+                        deleteDataFiles(priority);
+                    }
                 }
             } catch (RecordStoreException ex) {
                 //#debug
@@ -107,7 +206,7 @@ public class RMSFastCache extends FlashCache {
         RecordStore flagRMS = null;
 
         try {
-            flagRMS = RMSUtils.getInstance().getRecordStore(getFlagRMSName(), true); // Just create the RMS, does not matter what is inside
+            flagRMS = openRMS(getFlagRMSName()); // Just create the RMS, does not matter what is inside
         } catch (RecordStoreException e) {
             //#debug
             L.e("*** Cache \'" + priority + "\'", "Had trouble setting dirty flag", e);
@@ -126,6 +225,52 @@ public class RMSFastCache extends FlashCache {
                     RMSUtils.getInstance().wipeRMS();
                 }
             }
+        }
+    }
+
+    private void clearStoreFlag() throws RecordStoreException {
+        if (INDIVIDUAL_WRITE_DIRTY_FLAG) {
+            //#debug
+            final long t = System.currentTimeMillis();
+            RecordStore.deleteRecordStore(getStoreFlagRMSName());
+            //#debug
+            L.i("clearStoreFlag", "cache \'" + priority + "\' elapsed time=" + (System.currentTimeMillis() - t));
+        }
+    }
+
+    private boolean setStoreFlag() throws RecordStoreException {
+        if (!INDIVIDUAL_WRITE_DIRTY_FLAG || Task.isShuttingDown()) {
+            return false;
+        }
+
+        RecordStore flagRMS = null;
+
+        //#debug
+        final long t = System.currentTimeMillis();
+        try {
+            flagRMS = openRMS(getStoreFlagRMSName()); // Just create the RMS, does not matter what is inside
+        } catch (RecordStoreException e) {
+            //#debug
+            L.e("*** Cache \'" + priority + "\'", "Had trouble setting corrupted store flag", e);
+            RMSUtils.getInstance().wipeRMS();
+        } catch (FlashDatabaseException e) {
+            //#debug
+            L.e("*** Cache \'" + priority + "\'", "Had trouble setting corrupted store flag", e);
+            RMSUtils.getInstance().wipeRMS();
+        } finally {
+            if (flagRMS != null) {
+                try {
+                    flagRMS.closeRecordStore();
+                    //#debug
+                    L.i(this, "setStoreFlag", "time elapsed=" + (System.currentTimeMillis() - t));
+                } catch (RecordStoreException ex) {
+                    //#debug
+                    L.e("*** Cache \'" + priority + "\'", "Had trouble closing corrupted sotre flag after creation", ex);
+                    RMSUtils.getInstance().wipeRMS();
+                }
+            }
+
+            return true;
         }
     }
 
@@ -209,9 +354,9 @@ public class RMSFastCache extends FlashCache {
         initDeleteIndexEntriesPointingToNonexistantValues(keyRMSIndexHash, valueIntegers);
         //#mdebug
         // Validate that no two keys have the same value
-        Hashtable copy = new Hashtable();
+        final Hashtable copy = new Hashtable();
 
-        Enumeration enumeration = indexHash.elements();
+        final Enumeration enumeration = indexHash.elements();
         while (enumeration.hasMoreElements()) {
             final Object dummyObject = new Object();
             Object theValue = enumeration.nextElement();
@@ -219,7 +364,7 @@ public class RMSFastCache extends FlashCache {
                 // Here we have duplicate value in the indexHash
                 L.i(this, "Duplicate value in indexHash. Two distinct keys point to equal value ", RMSKeyUtils.toKeyIndex((Long) theValue) + "-" + RMSKeyUtils.toValueIndex((Long) theValue));
                 dumpHash(copy);
-                PlatformUtils.getInstance().shutdown(true, "RMS is inconsistent");
+                PlatformUtils.getInstance().shutdown("RMS is inconsistent");
             }
 
             copy.put(theValue, dummyObject);
@@ -229,7 +374,7 @@ public class RMSFastCache extends FlashCache {
             // We have a problem
             L.i(this, "Size mismatch in indexHash", copy.size() + " != " + indexHash.size());
             dumpHash(copy);
-            PlatformUtils.getInstance().shutdown(true, "RMS size mismatch, is inconsistent");
+            PlatformUtils.getInstance().shutdown("RMS size mismatch, is inconsistent");
         }
         //#enddebug
     }
@@ -493,9 +638,9 @@ public class RMSFastCache extends FlashCache {
      * @param digest
      * @return
      */
-    private Long indexHashGet(final long digest) {
+    private Long indexHashGet(final long digest, final boolean markLeastRecentlyUsed) {
         synchronized (mutex) {
-            return (Long) indexHash.get(new Long(digest));
+            return (Long) indexHash.get(new Long(digest), markLeastRecentlyUsed);
         }
     }
 
@@ -510,7 +655,7 @@ public class RMSFastCache extends FlashCache {
      */
     public String getKey(final long digest) throws FlashDatabaseException {
         synchronized (mutex) {
-            final Long keyAndValueIndexes = indexHashGet(digest);
+            final Long keyAndValueIndexes = indexHashGet(digest, false);
 
             if (keyAndValueIndexes == null) {
                 return null;
@@ -558,17 +703,21 @@ public class RMSFastCache extends FlashCache {
      * Get the value associated with this key digest from phone flash memory
      *
      * @param digest
+     * @param markAsLeastRecentlyUsed
      * @return the bytes of the value
      * @throws FlashDatabaseException
      */
-    public byte[] get(final long digest) throws FlashDatabaseException {
+    public byte[] get(final long digest, final boolean markAsLeastRecentlyUsed) throws FlashDatabaseException {
         synchronized (mutex) {
-            final Long hashValue = ((Long) indexHash.get(new Long(digest)));
+            final Long dig = new Long(digest);
+            final Long hashValue = ((Long) indexHash.get(dig, markAsLeastRecentlyUsed));
 
             if (hashValue != null) {
                 try {
                     final int valueIndex = RMSKeyUtils.toValueIndex(hashValue);
-                    return valueRS.getRecord(valueIndex);
+                    final byte[] bytes = getValueRS().getRecord(valueIndex);
+
+                    return bytes;
                 } catch (Exception ex) {
                     throw new FlashDatabaseException("Can not getData from RMS: " + Long.toString(digest, 16) + " - " + ex);
                 }
@@ -599,23 +748,30 @@ public class RMSFastCache extends FlashCache {
         synchronized (mutex) {
             try {
                 final long digest = CryptoUtils.getInstance().toDigest(key);
-                final Long indexEntry = indexHashGet(digest);
+                final Long indexEntry = indexHashGet(digest, true);
                 final int valueRecordId;
                 final int keyRecordId;
 
+                final boolean storeFlagSet = setStoreFlag();
+                byte[] byteKey = null;
                 if (indexEntry == null) {
-                    valueRecordId = valueRS.addRecord(value, 0, value.length);
-                    final byte[] byteKey = RMSKeyUtils.toIndexBytes(key, valueRecordId);
-                    keyRecordId = keyRS.addRecord(byteKey, 0, byteKey.length);
+                    valueRecordId = getValueRS().addRecord(value, 0, value.length);
+                    byteKey = RMSKeyUtils.toIndexBytes(key, valueRecordId);
+                    keyRecordId = getKeyRS().addRecord(byteKey, 0, byteKey.length);
                     indexHashPut(digest, keyRecordId, valueRecordId);
+
                     //#debug
-                    L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value added to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length + " keyIndex=" + keyRecordId);
+                    L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value added to RMS=" + getValueRS().getName() + " index=" + valueRecordId + " bytes=" + value.length + " keyIndex=" + keyRecordId);
                 } else {
                     valueRecordId = RMSKeyUtils.toValueIndex(indexEntry);
-                    valueRS.setRecord(valueRecordId, value, 0, value.length);
+                    getValueRS().setRecord(valueRecordId, value, 0, value.length);
                     //#debug
-                    L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value overwrite to RMS=" + valueRS.getName() + " index=" + valueRecordId + " bytes=" + value.length);
+                    L.i(this, "put(" + key + ") digest=" + Long.toString(digest, 16), "Value overwrite to RMS=" + getValueRS().getName() + " index=" + valueRecordId + " bytes=" + value.length);
                 }
+                if (storeFlagSet) {
+                    clearStoreFlag();
+                }
+                rmsByteSize += value.length + (byteKey == null ? 0 : byteKey.length);
             } catch (RecordStoreFullException e) {
                 //#debug
                 L.e(this, "Can not write", "key=" + key, e);
@@ -642,14 +798,36 @@ public class RMSFastCache extends FlashCache {
     public void removeData(final long digest) throws FlashDatabaseException {
         synchronized (mutex) {
             try {
-                final Long indexEntry = indexHashGet(digest);
+                final Long indexEntry = indexHashGet(digest, false);
 
                 if (indexEntry != null) {
-                    indexHash.remove(new Long(digest));
+
+                    final Long dig = new Long(digest);
+                    indexHash.remove(dig);
                     final int valueRecordId = RMSKeyUtils.toValueIndex(indexEntry);
                     final int keyRecordId = RMSKeyUtils.toKeyIndex(indexEntry);
-                    valueRS.deleteRecord(valueRecordId);
-                    keyRS.deleteRecord(keyRecordId);
+                    int size = 0;
+
+                    if (!Task.isShuttingDown()) {
+                        try {
+                            final byte[] keyBytes = getKeyRS().getRecord(keyRecordId);
+                            final byte[] valueBytes = getValueRS().getRecord(valueRecordId);
+                            size = valueBytes.length + keyBytes.length;
+                        } catch (Exception e) {
+                            //#debug
+                            L.e(this, "removeData", "can't read", e);
+                        }
+                    }
+                    final boolean storeFlagSet = setStoreFlag();
+                    getValueRS().deleteRecord(valueRecordId);
+                    getKeyRS().deleteRecord(keyRecordId);
+                    if (storeFlagSet) {
+                        clearStoreFlag();
+                    }
+                    rmsByteSize -= size;
+                } else {
+                    //#debug
+                    L.i("*** Can not remove from RMS, digest not found", "" + digest + " - " + toString());
                 }
             } catch (RecordStoreException e) {
                 throw new FlashDatabaseException("Can not removeData from RMS: " + Long.toString(digest, 16) + " - " + e);
@@ -663,16 +841,9 @@ public class RMSFastCache extends FlashCache {
      * @return an array of byte[] digest-of-key objects in the cache
      * @throws FlashDatabaseException
      */
-    public long[] getDigests() throws FlashDatabaseException {
+    public Enumeration getDigests() {
         synchronized (mutex) {
-            final long[] digests = new long[indexHash.size()];
-            final Enumeration enu = indexHash.keys();
-
-            for (int i = 0; i < digests.length; i++) {
-                digests[i] = ((Long) enu.nextElement()).longValue();
-            }
-
-            return digests;
+            return indexHash.keys();
         }
     }
 
@@ -721,6 +892,9 @@ public class RMSFastCache extends FlashCache {
      * @throws RecordStoreNotOpenException
      */
     private void clear(final RecordStore recordStore) throws RecordStoreException {
+        if (recordStore == null) {
+            return;
+        }
         forEachRecord(recordStore, new RecordTask() {
             void exec() {
                 try {
@@ -744,27 +918,41 @@ public class RMSFastCache extends FlashCache {
             L.i("Clearing RMSFastCache", "" + priority);
             indexHash.clear();
             try {
-                clear(valueRS);
-            } catch (RecordStoreException ex) {
-                //#debug
-                L.e("Can not clear RMS values", "aborting", ex);
-            }
-            try {
-                clear(keyRS);
-            } catch (RecordStoreException ex) {
+                clear(getKeyRS());
+            } catch (Exception ex) {
                 //#debug
                 L.e("Can not clear RMS keys", "aborting", ex);
+            }
+            try {
+                clear(getValueRS());
+            } catch (Exception ex) {
+                //#debug
+                L.e("Can not clear RMS values", "aborting", ex);
             }
         }
     }
 
     public long getFreespace() throws FlashDatabaseException {
         try {
-            return valueRS.getSizeAvailable();
+            return getKeyRS().getSizeAvailable();
         } catch (RecordStoreNotOpenException ex) {
             //#debug
             L.e(this, "Can not get freespace", this.toString(), ex);
             throw new FlashDatabaseException("Can not get freespace: " + ex);
+        } catch (FlashDatabaseException ex) {
+            //#debug
+            L.e(this, "Can not get freespace", this.toString(), ex);
+            throw new FlashDatabaseException("Can not get freespace: " + ex);
+        } catch (RecordStoreException ex) {
+            //#debug
+            L.e(this, "Can not get freespace", this.toString(), ex);
+            throw new FlashDatabaseException("Can not get freespace: " + ex);
+        }
+    }
+
+    public long getSize() {
+        synchronized (mutex) {
+            return rmsByteSize;
         }
     }
 
@@ -772,17 +960,145 @@ public class RMSFastCache extends FlashCache {
         synchronized (mutex) {
             try {
                 super.close();
-
                 try {
-                    valueRS.closeRecordStore();
+                    if (valueRS != null) {
+                        //#debug
+                        L.i(this, "Close", "valueRS");
+                        valueRS.closeRecordStore();
+                    }
                 } finally {
-                    keyRS.closeRecordStore();
+                    if (keyRS != null) {
+                        //#debug
+                        L.i(this, "Close", "keyRS");
+                        keyRS.closeRecordStore();
+                    }
                 }
+                //#debug
+                L.i(this, "Close", "valurRS and keyRS closed");
                 clearDirtyFlagAfterNormalShutdown();
             } catch (RecordStoreException ex) {
                 //#debug
                 L.e(this, "RMS close exception", this.toString(), ex);
                 throw new FlashDatabaseException("RMS close exception: " + ex);
+            } finally {
+                valueRS = null;
+                keyRS = null;
+            }
+        }
+    }
+
+    //#mdebug
+    public String toString() {
+        synchronized (mutex) {
+            final StringBuffer sb = new StringBuffer();
+
+            sb.append(super.toString());
+            sb.append("\n");
+            try {
+                if (keyRS == null) {
+                    sb.append(" (keyRMS is closed)");
+                } else {
+                    sb.append("keyRMS.numRecords=");
+                    sb.append(this.keyRS.getNumRecords());
+                    sb.append(" keyRMS.getSize=");
+                    sb.append(this.keyRS.getSize());
+                    sb.append(" keyRMS.getSizeAvailable=");
+                    sb.append(this.keyRS.getSizeAvailable());
+                }
+            } catch (Throwable t) {
+                sb.append("(can not get keyRMS data");
+                sb.append(t);
+            }
+
+            try {
+                if (valueRS == null) {
+                    sb.append(" (valueRMS is closed)");
+                } else {
+                    sb.append(" valueRMS.numRecords=");
+                    sb.append(this.valueRS.getNumRecords());
+                    sb.append(" valueRMS.getSize=");
+                    sb.append(this.valueRS.getSize());
+                    sb.append(" valueRMS.getSizeAvailable=");
+                    sb.append(this.valueRS.getSizeAvailable());
+                }
+            } catch (Throwable t) {
+                sb.append("(can not get valueRMS data");
+                sb.append(t);
+            }
+
+            return sb.toString();
+        }
+    }
+    //#enddebug
+
+    /**
+     * Close database files periodically to force maintenance in increments.
+     * This will speed up the final application shutdown which might otherwise
+     * take many seconds after heavy use for a long time.
+     *
+     * The associated database files will be re-opened when next needed. Note
+     * that the RMS implementation may throw an error if you re-open immediately
+     * after closing. To guard against this, we hold on to the mutex for some
+     * time after closing.
+     */
+    public void maintainDatabase() {
+        synchronized (mutex) {
+            boolean closed = false;
+
+            if (keyRS != null) {
+                //#debug
+                L.i(this, "maintainDatabase", "Closing key rms");
+
+                try {
+                    keyRS.closeRecordStore();
+                } catch (RecordStoreException e) {
+                    //#debug
+                    L.e(this, "maintainDatabase", "Problem closing key rms", e);
+                } finally {
+                    keyRS = null;
+                    closed = true;
+
+                    //#debug
+                    L.i(this, "maintainDatabase", "Key rms closed");
+                }
+            }
+
+            if (valueRS != null) {
+                //#debug
+                L.i(this, "maintainDatabase", "Closing value rms");
+
+                try {
+                    valueRS.closeRecordStore();
+                } catch (RecordStoreException e) {
+                    //#debug
+                    L.e(this, "maintainDatabase", "Problem closing value rms", e);
+                } finally {
+                    valueRS = null;
+                    closed = true;
+
+                    //#debug
+                    L.i(this, "maintainDatabase", "Value rms closed");
+                }
+            }
+
+            if (closed) {
+                //#debug
+                L.i(this, "maintainDatabase", "Start sleep after RMS close");
+
+                try {
+                    if (SLEEP_TIME_DURING_CLOSE_OPEN_RMS > 0) {
+                        /*
+                         We find the database can not be re-opened immediately or an
+                         exception is thrown. Guard against this by holding the lock
+                         for some time after close
+                         */
+                        Thread.sleep(SLEEP_TIME_DURING_CLOSE_OPEN_RMS);
+                    }
+                } catch (InterruptedException e) {
+                } finally {
+                    //#debug
+                    L.i(this, "maintainDatabase", "End sleep after RMS close");
+                }
             }
         }
     }

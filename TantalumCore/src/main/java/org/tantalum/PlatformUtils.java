@@ -281,15 +281,15 @@ public final class PlatformUtils {
      * The application calls this when all Workers have completed shutdown to
      * inform the phone that the program has closed itself.
      *
-     * Do not call this directly, call Worker.shutdown() to initiate a close
+     * Do not call this directly, call PlatformUtils.getInstance().shutdown() to initiate a close
      *
      * @param reasonDestroyed
      * @return
      */
-    boolean shutdownComplete(final String reasonDestroyed) {
+    void shutdownComplete(final String reasonDestroyed) {
         synchronized (MUTEX) {
             if (shutdownComplete) {
-                return shutdownComplete;
+                return;
             }
             shutdownComplete = true;
         }
@@ -299,10 +299,10 @@ public final class PlatformUtils {
         //#enddebug
 
         /**
-         * Add a magic wait for one half second on shutdown to reduce platform errors
-         * thrown by some phones some of the time. This may give underlying, not
-         * completely thread-safe, C code drivers a moment more to clean
-         * themselves up before exiting the app
+         * Add a magic wait for one half second on shutdown to reduce platform
+         * errors thrown by some phones some of the time. This may give
+         * underlying, not completely thread-safe, C code drivers a moment more
+         * to clean themselves up before exiting the app
          *
          * We wait in a lock because Thread.sleep() is disabled on the UI and
          * perhaps other Threads like the system thread. Undocumented behavior.
@@ -311,13 +311,12 @@ public final class PlatformUtils {
             try {
                 PlatformUtils.class.wait(500);
             } catch (InterruptedException ex) {
+                //#debug
                 ex.printStackTrace();
             }
         }
 
         platformAdapter.shutdownComplete();
-
-        return true;
     }
 
     /**
@@ -481,24 +480,23 @@ public final class PlatformUtils {
      * must finish within 3 seconds or risk being terminated by the phone OS if
      * this is an system-initiated application close.
      *
-     * @param block
      * @param reason
      */
-    public void shutdown(final boolean block, final String reason) {
+    public void shutdown(final String reason) {
         //#debug
-        L.i(this, "Shutdown", reason + " - block up to 3 seconds=" + block);
+        L.i(this, "Shutdown", reason + " - timerThread=" + Task.isTimerThread() + " uiThread=" + PlatformUtils.getInstance().isUIThread());
         if (!isUIThread()) {
-            Worker.shutdown(block, reason);
+            Worker.shutdown(reason);
         } else {
             //#debug
-            L.i(this, "WARNING: Can not shutdown() from the UI thread", "Automatically changing to FASTLANE to initiate shutdown, function will return immediately to keep the shutdown smooth - " + reason);
-            new Task(Task.FASTLANE_PRIORITY) {
-                protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
+            L.i(this, "WARNING: Can not shutdown() from the UI thread", "Automatically changing to Task.DEDICATED_THREAD_PRIORITY to initiate shutdown, function will return immediately to keep the shutdown smooth - " + reason);
+            new Task(Task.DEDICATED_THREAD_PRIORITY) {
+                protected Object exec(final Object in) throws CancellationException, TimeoutException, InterruptedException {
                     //#debug
                     L.i(this, "Shutdown (automatically changed to a Worker Thread)", reason);
-                    Worker.shutdown(false, reason);
+                    Worker.shutdown(reason);
 
-                    return null;
+                    return in;
                 }
             }.setClassName("ShutdownOnWorkerInsteadOfUIThread").fork();
         }

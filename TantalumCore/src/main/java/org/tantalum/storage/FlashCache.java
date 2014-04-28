@@ -29,6 +29,7 @@ package org.tantalum.storage;
 
 import java.io.UnsupportedEncodingException;
 import java.security.DigestException;
+import java.util.Enumeration;
 import java.util.Vector;
 import org.tantalum.CancellationException;
 import org.tantalum.Task;
@@ -60,6 +61,17 @@ public abstract class FlashCache {
     protected final Vector shutdownTasks = new Vector();
 
     /**
+     * The order in which object in the ramCache have been accessed since the
+     * program started. Each time an object is accessed, it moves to the
+     * beginning of the last. Least recently used objects are the ones most
+     * likely to be cleared when additional flash memory is needed. The heap
+     * memory WeakReferenceCache does not make use of this access order.
+     *
+     * Always access within a synchronized(ramCache) block
+     */
+//    protected final LRUVector accessOrder = new LRUVector();
+
+    /**
      * The priority must be unique in the application.
      *
      * Caches with lower priority are garbage collected to save space before
@@ -71,22 +83,22 @@ public abstract class FlashCache {
         this.priority = priority;
     }
 
+    public abstract void markLeastRecentlyUsed(final Long digest);
+
     /**
-     * Add a
-     * <code>Task</code> which will be run before the cache closes.
+     * Add a <code>Task</code> which will be run before the cache closes.
      *
      * This is normally useful to save in-memory data during shutdown.
      *
-     * The minimum run priority for a cache shutdown
-     * <code>Task</code> is
+     * The minimum run priority for a cache shutdown <code>Task</code> is
      * <code>Task.NORMAL_PRIORITY</code>
      *
      * Note that there is a limited amount of time between when the phone tells
      * the application to close, and when it must close. This varies by phone,
      * but about 3 seconds is typical. Thus like
-     * <code>Task.SHUTDOWN_PRIORITY</code>, a cache shutdown
-     * <code>Task</code> should not take long to complete or it may block other
-     * Tasks from completing.
+     * <code>Task.SHUTDOWN_PRIORITY</code>, a cache shutdown <code>Task</code>
+     * should not take long to complete or it may block other Tasks from
+     * completing.
      *
      * @param shutdownTask
      */
@@ -135,7 +147,7 @@ public abstract class FlashCache {
         //#debug
         L.i(this, "get(" + key + ")", "digest=" + StringUtils.byteArrayToHexString(CryptoUtils.getInstance().longToBytes(digest)));
 
-        return get(digest);
+        return get(digest, true);
     }
 
     /**
@@ -146,7 +158,7 @@ public abstract class FlashCache {
      * @throws DigestException
      * @throws FlashDatabaseException
      */
-    public abstract byte[] get(long digest) throws DigestException, FlashDatabaseException;
+    public abstract byte[] get(long digest, boolean markAsLeastRecentlyUsed) throws DigestException, FlashDatabaseException;
 
     /**
      * Store the data object to persistent memory
@@ -192,7 +204,7 @@ public abstract class FlashCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public abstract long[] getDigests() throws FlashDatabaseException;
+    public abstract Enumeration getDigests();
 
     /**
      * Remove all items from this flash cache
@@ -208,6 +220,22 @@ public abstract class FlashCache {
      * @throws FlashDatabaseException
      */
     public abstract long getFreespace() throws FlashDatabaseException;
+
+    /**
+     * Find out how many bytes of space are used by the cache's storage medium
+     * (phone or memory card)
+     *
+     * @return
+     * @throws FlashDatabaseException
+     */
+    public abstract long getSize() throws FlashDatabaseException;
+
+    /**
+     * Close database files periodically to force maintenance in increments.
+     * This will speed up the final application shutdown which might otherwise
+     * take many seconds after heavy use for a long time.
+     */
+    public abstract void maintainDatabase();
 
     /**
      * Run finalization tasks and then close all cache resources
@@ -240,6 +268,19 @@ public abstract class FlashCache {
         //#debug
         L.i(this, "FlashCache shutdown tasks complete", this.toString());
     }
+
+    //#mdebug
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+
+        sb.append("FlashCache priority=");
+        sb.append(this.priority);
+        sb.append(" numShutdownTasks=");
+        sb.append(this.shutdownTasks.size());
+
+        return sb.toString();
+    }
+    //#enddebug
 
     /**
      * An action you would like to perform on every cache entry at application

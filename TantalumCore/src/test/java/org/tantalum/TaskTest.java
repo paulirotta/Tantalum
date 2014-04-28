@@ -331,7 +331,7 @@ public class TaskTest extends MockedStaticInitializers {
         }).fork();
         Thread.sleep(100);
         assertEquals("Forked task instance is PENDING", Task.PENDING, instance.getStatus());
-        t2.cancel(true, "testing");
+        t2.cancel("testing");
     }
 
     /**
@@ -420,15 +420,14 @@ public class TaskTest extends MockedStaticInitializers {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        assertEquals("Cancel queued but not started task", true, testCancelInstance3.cancel(false, "testing"));
-        testCancelInstance2.cancel(true, "testing");
+        assertEquals("Cancel queued but not started task", true, testCancelInstance3.cancel("testing"));
+        testCancelInstance2.cancel("testing");
         try {
             Thread.sleep(100);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        assertEquals("Soft cancel running task", false, testCancelInstance.cancel(false, "testing"));
-        assertEquals("Hard cancel running task", true, testCancelInstance2.cancel(true, "testing"));
+        assertEquals("Soft cancel running task", false, testCancelInstance.cancel("testing"));
         try {
             testCancelInstance.get(); // Cleanup for next test
         } catch (Exception ex) {
@@ -471,7 +470,7 @@ public class TaskTest extends MockedStaticInitializers {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        instance4.cancel(true, "testing");
+        instance4.cancel("testing");
         try {
             Thread.sleep(100);
         } catch (InterruptedException ex) {
@@ -479,8 +478,7 @@ public class TaskTest extends MockedStaticInitializers {
         }
         try {
             assertEquals("I AM DONE", testCancelRunsToEnd.get());
-            assertEquals(false, testCancelRunsToEnd.cancel(true, "testing"));
-            assertEquals(false, testCancelRunsToEnd.cancel(false, "testing"));
+            assertEquals(false, testCancelRunsToEnd.cancel("testing"));
             for (int i = 0; i < errors.size(); i++) {
                 fail((String) errors.elementAt(i));
             }
@@ -520,7 +518,7 @@ public class TaskTest extends MockedStaticInitializers {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        instance.cancel(true, "testing");
+        instance.cancel("testing");
         try {
             Thread.sleep(100);
         } catch (InterruptedException ex) {
@@ -641,7 +639,7 @@ public class TaskTest extends MockedStaticInitializers {
         instance3.fork();
         instanceA.fork();
         assertEquals(Task.PENDING, instanceA.getStatus());
-        instance2.cancel(true, "testing");
+        instance2.cancel("testing");
         try {
             Thread.sleep(200);
         } catch (InterruptedException ex) {
@@ -678,14 +676,14 @@ public class TaskTest extends MockedStaticInitializers {
         };
         final Task task5a = new Task(Task.FASTLANE_PRIORITY, "fail_a") {
             protected Object exec(Object in) {
-                this.cancel(false, "testing");
+                this.cancel("testing");
 
                 return in + "fail";
             }
         };
         final Task task5b = new Task(Task.FASTLANE_PRIORITY, "fail_b") {
             protected Object exec(Object in) {
-                this.cancel(false, "testing");
+                this.cancel("testing");
 
                 return in + "fail";
             }
@@ -787,7 +785,7 @@ public class TaskTest extends MockedStaticInitializers {
             public void run(Object result) {
                 // TEST FOR LOGIC ERROR- you can not cancel() after background execution completes
                 try {
-                    cancel(true, "testing");
+                    cancel("testing");
                     fail("cancel() after run should have been stopped");
                 } catch (Exception e) {
                 }
@@ -796,21 +794,21 @@ public class TaskTest extends MockedStaticInitializers {
         final Task task2 = new Task(Task.FASTLANE_PRIORITY, "5") {
             @Override
             protected Object exec(Object in) {
-                cancel(true, "testing");
+                cancel("testing");
 
                 return in + "6";
             }
         };
         final Task task3 = new Task(Task.FASTLANE_PRIORITY, "B") {
             protected Object exec(Object in) {
-                cancel(false, "testing");
+                cancel("testing");
 
                 return in + "C";
             }
         };
         final Task task4 = new Task(Task.FASTLANE_PRIORITY, "D") {
             protected Object exec(Object in) {
-                cancel(false, "testing");
+                cancel("testing");
 
                 return in + "E";
             }
@@ -862,7 +860,7 @@ public class TaskTest extends MockedStaticInitializers {
             @Override
             protected Object exec(Object in) {
                 assertNotEquals("doInBackground() blue must not run on UI thread", true, PlatformUtils.getInstance().isUIThread());
-                cancel(false, "Test cancel thread");
+                cancel("Test cancel thread");
                 return (String) in + "2";
             }
 

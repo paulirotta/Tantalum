@@ -30,6 +30,7 @@ package org.tantalum.net.json;
 import org.tantalum.Task;
 import org.tantalum.net.HttpGetter;
 import org.tantalum.util.L;
+import org.tantalum.util.LOR;
 
 /**
  *
@@ -84,7 +85,7 @@ public class JSONGetter extends HttpGetter {
         String value = null;
         
         try {
-            value = new String((byte[]) super.exec(in), "UTF8").trim();
+            value = new String(((LOR) super.exec(in)).getBytes(), "UTF-8").trim();
             if (value.startsWith("[")) {
                 // Parser expects non-array base object- add one
                 value = "{\"base:\"" + value + "}";
@@ -95,7 +96,7 @@ public class JSONGetter extends HttpGetter {
         } catch (Exception e) {
             //#debug
             L.e("JSONGetter HTTP response problem", "value=" + value, e);
-            cancel(false, "JSONGetter exception - " + value, e);
+            cancel("JSONGetter exception - " + value, e);
         }
 
         return null;

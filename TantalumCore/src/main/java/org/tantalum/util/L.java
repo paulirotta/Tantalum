@@ -149,10 +149,13 @@ public abstract class L {
         sb.append(millis);
         sb.append(" (");
         String threadName = PlatformUtils.getInstance().isUIThread() ? "UI" : Thread.currentThread().getName();
+        threadName = Task.isTimerThread() ? "Timer" : threadName;
         sb.append(threadName);
         if (callingObject != null) {
             sb.append(' ');
             sb.append(Task.getClassName(callingObject));
+            sb.append('-');
+            sb.append(Integer.toHexString(callingObject.hashCode()));
         }
         sb.append("): ");
         sb.append(tag);

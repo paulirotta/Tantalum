@@ -7,7 +7,7 @@ import java.io.UnsupportedEncodingException;
  *
  * @author Kai Inkinen <kai.inkinen@futurice.com>; github.com/kaiinkinen
  */
-public class RMSKeyUtils {
+public final class RMSKeyUtils {
 
     /**
      * Combine two 4 byte integers into one Long object for indexHash storage

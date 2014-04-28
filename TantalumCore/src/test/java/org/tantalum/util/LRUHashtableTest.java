@@ -25,37 +25,55 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
-package org.tantalum.android;
+package org.tantalum.util;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import org.tantalum.storage.ImageCacheView;
-import org.tantalum.util.L;
-import org.tantalum.util.LOR;
+import java.util.Enumeration;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 /**
- * This is a helper class for creating an image class. It automatically converts
- * the byte[] to an Image as the data is loaded from the network or cache.
  *
- * @author tsaa
+ * @author phou
  */
-public class AndroidImageCacheView extends ImageCacheView {
+public class LRUHashtableTest {
 
-    public Object convertToUseForm(final Object key, final LOR bytesReference) {
-        try {
-            final byte[] bytes = bytesReference.getBytes();
-            bytesReference.clear();
-            final Bitmap b = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            
-            if (maxWidth == SCALING_DISABLED || maxHeight == SCALING_DISABLED) {
-                return b;
-            }
-            
-            return Bitmap.createScaledBitmap(b, maxWidth, maxHeight, true);
-        } catch (final IllegalArgumentException e) {
-            //#debug
-            L.e("Exception converting bytes to image", "key=" + key, e);
-            throw e;
+    @Test
+    public void testAddElement() {
+        System.out.println("testAddElement");
+        LRUHashtable instance = new LRUHashtable();
+        instance.put("a", "A");
+        assertEquals("Size 1", 1, instance.size());
+        instance.put("b", "B");
+        assertEquals("Size 2", 2, instance.size());
+    }
+
+    @Test
+    public void testGetAndLRUKey() {
+        System.out.println("testGetAndLRUKey");
+        LRUHashtable instance = new LRUHashtable();
+        instance.put("a", "A");
+        instance.put("b", "B");
+        instance.put("c", "C");
+        instance.get("a");
+        assertEquals("LRU is b", "b", instance.getLeastRecentlyUsedKey());
+    }
+
+    @Test
+    public void testKeyEnumeration() {
+        System.out.println("testKeyEnumeration");
+        LRUHashtable instance = new LRUHashtable();
+        String[] keys = {"a", "b", "c", "d" };
+        instance.put("a", "A");
+        instance.put("b", "B");
+        instance.put("c", "C");
+        instance.put("d", "D");
+        Enumeration enu = instance.keys();
+        instance.get("c");
+        instance.remove("b");
+        int i = 0;
+        while (enu.hasMoreElements()) {
+            String s = (String) enu.nextElement();
+            assertEquals("LRU element " + i + " sequence", keys[i++], s);            
         }
     }
 }

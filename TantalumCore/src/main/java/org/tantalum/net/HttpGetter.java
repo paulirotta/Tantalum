@@ -70,6 +70,7 @@ public class HttpGetter extends Task {
 
     private static final int READ_BUFFER_LENGTH = 8192; //8k read buffer if no Content-Length header from server
     private static final int OUTPUT_BUFFER_INITIAL_LENGTH = 8192; //8k read buffer if no Content-Length header from server
+    private static final int SLEEP_TIME_IF_READ_ZERO_BYTES = 10;
     /**
      * HTTP GET is the default operation
      */
@@ -466,6 +467,11 @@ public class HttpGetter extends Task {
      */
     public static final int HTTP_599_NETWORK_CONNECT_TIMEOUT_ERROR = 599;
     /**
+     * HTTP header request property
+     */
+    public static final String USER_AGENT = "User-Agent";
+
+    /**
      * The HTTP server has not yet been contacted, so no response code is yet
      * available
      */
@@ -518,7 +524,7 @@ public class HttpGetter extends Task {
      * before giving up. This aids in working with low quality networks and
      * normal HTTP connection setup errors even on a "good" mobile network.
      */
-    protected int retriesRemaining = HTTP_GET_RETRIES;
+    protected volatile int retriesRemaining = HTTP_GET_RETRIES;
     /**
      * Data to be sent to the server as part of an HTTP POST operation
      */
@@ -539,6 +545,7 @@ public class HttpGetter extends Task {
      * Access only in static synchronized block
      */
     private static int upstreamDataCount = 0;
+    private static String userAgent = null;
     private volatile StreamWriter streamWriter = null;
     private volatile StreamReader streamReader = null;
     // Always access in a synchronized(HttpGetter.this) block
@@ -551,6 +558,30 @@ public class HttpGetter extends Task {
     }
 
     /**
+     * This allows the user to override the platform default HTTP "User-Agent"
+     * request parameter. Note that based on the phone security model and
+     * digital application signing, your request to override the user agent
+     * field may or may not be honored.
+     *
+     * @param userAgent
+     */
+    public static synchronized void setUserAgent(final String userAgent) {
+        HttpGetter.userAgent = userAgent;
+    }
+
+    /**
+     * See the current HTTP "User-Agent" parameter.
+     *
+     * If null, the user agent is not asserted and the phone default for Java
+     * will be used.
+     *
+     * @return
+     */
+    public static synchronized String getUserAgent() {
+        return userAgent;
+    }
+
+    /**
      * Get the byte[] from the URL specified by the input argument when
      * exec(url) is called. This may be chained from a previous chain()ed
      * asynchronous task.
@@ -559,8 +590,6 @@ public class HttpGetter extends Task {
      */
     public HttpGetter(final int priority) {
         super(priority);
-
-        setShutdownBehaviour(Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN);
     }
 
     /**
@@ -603,7 +632,7 @@ public class HttpGetter extends Task {
      *
      * @throws InterruptedException
      */
-    public static void staggerHeaderStartTime() throws InterruptedException {
+    public static long staggerHeaderStartTime() throws InterruptedException {
         long t = System.currentTimeMillis();
         long t2;
         boolean staggerStartMode;
@@ -616,6 +645,8 @@ public class HttpGetter extends Task {
         if (staggerStartMode) {
             nextHeaderStartTime = t + (((int) HttpGetter.averageResponseDelayMillis.value()) * 7) / 8;
         }
+
+        return t;
     }
 
     /**
@@ -741,18 +772,30 @@ public class HttpGetter extends Task {
     public Object exec(final Object in) throws InterruptedException {
         LOR out = null;
 
-        if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
-            final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
-            cancel(false, s);
+        if (Task.isShuttingDown()) {
+            //#debug
+            L.i("Attempt to run HttpGetter during shutdown", "ignored");
+            setRetriesRemaining(0);
+            cancel("Attempt to run HttpGetter during shutdown");
             return out;
         }
 
-        staggerHeaderStartTime();
+        if (!(in instanceof String) || ((String) in).indexOf(':') <= 0) {
+            final String s = "HTTP operation was passed a bad url=" + in + ". Check calling method or previous chained task: " + this;
+            cancel(s);
+            return out;
+        }
 
-        startTime = System.currentTimeMillis();
+        startTime = staggerHeaderStartTime();
+
         String url = keyIncludingPostDataHashtoUrl((String) in);
-        final Integer netActivityKey = new Integer(url.hashCode());
+        final Integer netActivityKey = new Integer(hashCode());
         HttpGetter.networkActivity(netActivityKey); // Notify listeners, net is in use
+
+        final String userAgent = HttpGetter.getUserAgent();
+        if (userAgent != null) {
+            this.setRequestProperty(USER_AGENT, userAgent);
+        }
 
         //#debug
         L.i(this, "Start", url);
@@ -810,7 +853,7 @@ public class HttpGetter extends Task {
                 //#debug
                 L.i(this, "Exec", "No response. Stream is null, or length is 0");
             } else if (length > httpConn.getMaxLengthSupportedAsBlockOperation()) {
-                cancel(false, "Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
+                cancel("Http server sent Content-Length > " + httpConn.getMaxLengthSupportedAsBlockOperation() + " which might cause out-of-memory on this platform");
             } else if (length > 0 && HttpGetter.netActivityListenerDelegate.isEmpty()) {
                 final byte[] bytes = new byte[length];
                 firstByteTime = readBytesFixedLength(url, inputStream, bytes);
@@ -844,7 +887,7 @@ public class HttpGetter extends Task {
             if (out != null) {
                 addDownstreamDataCount(dataLength);
                 //#debug
-                L.i(this, "End read", "url=" + url + " bytes=" + out.getBytes().length);
+                L.i(this, "End read", "url=" + url + " bytes=" + dataLength);
             }
             synchronized (this) {
                 success = checkResponseCode(url, responseCode, responseHeaders);
@@ -860,7 +903,7 @@ public class HttpGetter extends Task {
             L.e(this, "HttpGetter has null pointer", url, e);
             throw e;
         } catch (IOException e) {
-            if (responseCode == 302) {
+            if (responseCode == HTTP_301_MOVED_PERMANENTLY || responseCode == HTTP_302_FOUND) {
                 Object locations = responseHeaders.get("Location");
                 if (locations != null) {
                     if (((String[]) locations).length > 0) {
@@ -880,7 +923,7 @@ public class HttpGetter extends Task {
             } else if (!tryAgain) {
                 //#debug
                 L.i(this, "No more retries", url);
-                cancel(false, "No more retries");
+                cancel("No more retries");
             }
         } finally {
             if (httpConn != null) {
@@ -892,28 +935,19 @@ public class HttpGetter extends Task {
                 }
                 httpConn = null;
             }
-            try {
-                if (bos != null) {
-                    bos.close();
-                }
-            } catch (Exception e) {
-                //#debug
-                L.e(this, "HttpGetter byteArrayOutputStream close error", url, e);
-            } finally {
-                bos = null;
-            }
+            bos = null;
 
-            if (tryAgain) {
-                try {
-                    Thread.sleep(HTTP_RETRY_DELAY);
-                } catch (InterruptedException ex) {
-                    cancel(false, "Interrupted HttpGetter while sleeping between retries: " + this);
-                }
-                out = (LOR) exec(url);
+            if (tryAgain && status == Task.PENDING) {
+//                try {
+                Thread.sleep(HTTP_RETRY_DELAY);
+//                } catch (InterruptedException ex) {
+//                    cancel(false, "Interrupted HttpGetter while sleeping between retries: " + this);
+//                }
+//                out = (LOR) exec(url);
             } else if (!success) {
                 //#debug
                 L.i("HTTP GET FAILED: about to HttpGetter.cancel() this and any chained Tasks", this.toString());
-                cancel(false, "HttpGetter failed response code and header check: " + this);
+                cancel("HttpGetter failed response code and header check: " + this);
             }
             //#debug
             L.i(this, "End", url + " status=" + getStatus() + " out=" + (out == null ? "null" : "(" + out.getBytes().length + " bytes)"));
@@ -921,10 +955,20 @@ public class HttpGetter extends Task {
         }
 
         if (!success) {
+            if (!isCanceled() && this.retriesRemaining <= 0) {
+                cancel("HttpGetter did not succeed");
+            }
             return null;
         }
 
         return out;
+    }
+
+    public boolean cancel(final String reason, final Throwable t) {
+        //#debug
+        L.i("The HttpGetter has been canceled. Retries Remaining is set to 0", reason);
+        retriesRemaining = 0;
+        return super.cancel(reason, t);
     }
 
     /**
@@ -937,7 +981,7 @@ public class HttpGetter extends Task {
      * @return time of first byte received
      * @throws IOException
      */
-    private long readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException {
+    private long readBytesFixedLength(final String url, final InputStream inputStream, final byte[] bytes) throws IOException, InterruptedException {
         long firstByteReceivedTime = Long.MAX_VALUE;
 
         if (bytes.length != 0) {
@@ -951,12 +995,17 @@ public class HttpGetter extends Task {
             }
             firstByteReceivedTime = System.currentTimeMillis();
             while (totalBytesRead < bytes.length) {
+                if (isShuttingDown()) {
+                    this.setRetriesRemaining(0);
+                    this.cancel("HttpGetter fixed length pull end on shutting down");
+                    return 0;
+                }
+
                 final int br = inputStream.read(bytes, totalBytesRead, bytes.length - totalBytesRead);
-                if (br >= 0) {
+                if (br > 0) {
                     totalBytesRead += br;
-                    if (totalBytesRead < bytes.length) {
-                        Thread.currentThread().yield();
-                    }
+                } else if (br == 0) {
+                    Thread.sleep(SLEEP_TIME_IF_READ_ZERO_BYTES);
                 } else {
                     prematureEOF(url, totalBytesRead, bytes.length);
                 }
@@ -981,7 +1030,7 @@ public class HttpGetter extends Task {
      * @return time of first byte received
      * @throws IOException
      */
-    private long readBytesVariableLength(final InputStream inputStream, final OutputStream bos, final Integer netActivityKey) throws IOException {
+    private long readBytesVariableLength(final InputStream inputStream, final OutputStream bos, final Integer netActivityKey) throws IOException, InterruptedException {
         final byte[] readBuffer = new byte[READ_BUFFER_LENGTH];
 
         final int b = inputStream.read(); // Prime the read loop before mistakenly synchronizing on a net stream that has no data available yet
@@ -992,12 +1041,20 @@ public class HttpGetter extends Task {
         final long firstByteReceivedTime = System.currentTimeMillis();
         HttpGetter.networkActivity(netActivityKey);
         while (true) {
+            if (isShuttingDown()) {
+                this.setRetriesRemaining(0);
+                this.cancel("HttpGetter end on shutting down");
+                return 0;
+            }
             final int bytesRead = inputStream.read(readBuffer);
             HttpGetter.networkActivity(netActivityKey);
             if (bytesRead < 0) {
                 break;
+            } else if (bytesRead == 0) {
+                Thread.sleep(SLEEP_TIME_IF_READ_ZERO_BYTES);
+            } else {
+                bos.write(readBuffer, 0, bytesRead);
             }
-            bos.write(readBuffer, 0, bytesRead);
         }
 
         return firstByteReceivedTime;
@@ -1177,13 +1234,13 @@ public class HttpGetter extends Task {
     public static void unregisterNetActivityListener(final NetActivityListener listener) {
         HttpGetter.netActivityListenerDelegate.unregisterListener(listener);
     }
-    private static volatile int netActivityState = NetActivityListener.INACTIVE; // Compare to the last notification to see if state is new
-    private static volatile int netActivityListenerStallTimeout = 10000; // ms
-    private static volatile int netActivityListenerInactiveTimeout = 30000; // ms
-    private static volatile long nextNetStallTimeout = 0; // ms, when should we transition to NetActivityListener.STALLED state unless something changes in the meantime
+    private static volatile int netActivityState = NetActivityListener.INACTIVE; // Compare to the last notification to see if state is new, only changed on UI thread
+    private static volatile int netActivityListenerInactiveTimeout = 30000; // ms, this much inactivity means net is dead so notify listeners of that
+    private static volatile int netActivityListenerKeepaliveTimeout = 3000; // ms, this much activity is simulated after end of real activity to prevent flashing effects in net activity UIs
     private static volatile long nextNetInactiveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
-    private static volatile TimerTask netActivityStallTimerTask = null;
+    private static volatile long nextNetKeepaliveTimeout = 0; // ms, when should we transition to idle state unless something changes in the meantime
     private static volatile TimerTask netActivityInactiveTimerTask = null;
+    private static volatile TimerTask netActivityKeepaliveTimerTask = null;
     private static final WeakHashCache networkActivityActorsHash = new WeakHashCache();
     private static final Runnable uiThreadNetworkStateChange = new Runnable() {
         public void run() {
@@ -1191,56 +1248,54 @@ public class HttpGetter extends Task {
             final int newNetActivityState = getCurrentNetActivityState();
 
             if (netActivityState != newNetActivityState) {
-                final Object[] listeners = netActivityListenerDelegate.getAllListeners();
-
-                for (int i = 0; i < listeners.length; i++) {
-                    ((NetActivityListener) listeners[i]).netActivityStateChanged(netActivityState, newNetActivityState);
+                final TimerTask task = netActivityKeepaliveTimerTask;
+                if (task != null) {
+                    task.cancel();
+                    netActivityKeepaliveTimerTask = null;
                 }
-
                 netActivityState = newNetActivityState;
+
+                if (newNetActivityState == NetActivityListener.ACTIVE) {
+                    notifyListeners(newNetActivityState);
+                    nextNetKeepaliveTimeout = 0;
+                } else {
+                    // INACTIVE
+                    final long t = System.currentTimeMillis();
+                    if (t > nextNetKeepaliveTimeout) {
+                        notifyListeners(newNetActivityState);
+                    } else {
+                        // start delay timer to make change to INACTIVE if no more activity received
+                        netActivityKeepaliveTimerTask = new TimerTask() {
+                            public void run() {
+                                netActivityKeepaliveTimerTask = null;
+                                PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+                            }
+                        };
+                        nextNetKeepaliveTimeout = t + netActivityListenerKeepaliveTimeout;
+                        Task.getTimer().schedule(netActivityKeepaliveTimerTask, netActivityListenerKeepaliveTimeout);
+                    }
+                }
+            }
+        }
+
+        private void notifyListeners(final int newNetActivityState) {
+            final Object[] listeners = netActivityListenerDelegate.getAllListeners();
+
+            for (int i = 0; i < listeners.length; i++) {
+                ((NetActivityListener) listeners[i]).netActivityStateChanged(netActivityState, newNetActivityState);
             }
         }
     };
 
     private static int getCurrentNetActivityState() {
-        networkActivityActorsHash.purgeExpiredWeakReferences();
-        final long t;
+        synchronized (networkActivityActorsHash) {
+            final int size = networkActivityActorsHash.purgeExpiredWeakReferences();
 
-        if (networkActivityActorsHash.size() == 0 || (t = System.currentTimeMillis()) >= nextNetInactiveTimeout) {
-            return NetActivityListener.INACTIVE;
-        }
+            if (size == 0 || System.currentTimeMillis() >= nextNetInactiveTimeout) {
+                return NetActivityListener.INACTIVE;
+            }
 
-        if (t >= nextNetStallTimeout) {
-            return NetActivityListener.STALLED;
-        }
-
-        return NetActivityListener.ACTIVE;
-    }
-
-    /**
-     * Check in 5 sec if the net state has changed
-     *
-     * @param deltaT
-     */
-    private static void conditionalStartStallTimer(final long deltaT) {
-        if (netActivityStallTimerTask == null) {
-            final TimerTask tt = new TimerTask() {
-                public void run() {
-                    netActivityStallTimerTask = null;
-                    final long t = System.currentTimeMillis();
-                    final long t2 = nextNetStallTimeout;
-
-                    if (t >= t2) {
-                        // Update possible state change to stalled
-                        PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
-                    } else {
-                        // Net was active. Test again at the revised stall time
-                        conditionalStartStallTimer(t2 - t);
-                    }
-                }
-            };
-            netActivityStallTimerTask = tt;
-            Task.getTimer().schedule(tt, deltaT);
+            return NetActivityListener.ACTIVE;
         }
     }
 
@@ -1249,25 +1304,23 @@ public class HttpGetter extends Task {
      *
      * @param deltaT
      */
-    private static void conditionalStartInactiveTimer(final long deltaT) {
+    private static void conditionalStartInactiveTimer() {
         if (netActivityInactiveTimerTask == null) {
             final TimerTask tt = new TimerTask() {
                 public void run() {
                     netActivityInactiveTimerTask = null;
-                    final long t = System.currentTimeMillis();
-                    final long t2 = nextNetInactiveTimeout;
 
-                    if (t >= t2) {
+                    if (System.currentTimeMillis() >= nextNetInactiveTimeout) {
                         // Update possible state change to inactive
                         PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
                     } else {
                         // Net was active. Test again at the revised inactive time
-                        conditionalStartInactiveTimer(t2 - t);
+                        conditionalStartInactiveTimer();
                     }
                 }
             };
             netActivityInactiveTimerTask = tt;
-            Task.getTimer().schedule(tt, deltaT);
+            Task.getTimer().schedule(tt, netActivityListenerInactiveTimeout);
         }
     }
 
@@ -1279,37 +1332,33 @@ public class HttpGetter extends Task {
      *
      * If the network was previously STALLED or INACTIVE,
      * <code>NetActivityListener</code>s will be notified the network is
-     * entering
-     * <code>NetActivityListener.ACTIVE</code> state.
+     * entering <code>NetActivityListener.ACTIVE</code> state.
      *
      * If no calls to this made before the 5 second timeout,
      * <code>NetActivityListener</code>s will be notified the network is
-     * entering
-     * <code>NetActivityListener.STALLED</code> state.
+     * entering <code>NetActivityListener.STALLED</code> state.
      *
      * From the STALLED state, if no calls to this made before the 30 second
-     * timeout,
-     * <code>NetActivityListener</code>s will be notified the network is
-     * entering
-     * <code>NetActivityListener.INACTIVE</code> state.
+     * timeout, <code>NetActivityListener</code>s will be notified the network
+     * is entering <code>NetActivityListener.INACTIVE</code> state.
      *
      * @param key identifies this source of network activity and should be
      * highly likely to be unique such as <code>new
      * Integer(this.hashCode()</code>
      */
     public static void networkActivity(final Integer key) {
-        if (!networkActivityActorsHash.containsKey(key)) {
-            networkActivityActorsHash.put(key, key);
-        }
-        final long t = System.currentTimeMillis();
-        nextNetStallTimeout = t + netActivityListenerStallTimeout;
-        conditionalStartStallTimer(netActivityListenerStallTimeout);
-        nextNetInactiveTimeout = t + netActivityListenerInactiveTimeout;
-        conditionalStartInactiveTimer(netActivityListenerInactiveTimeout);
+        synchronized (networkActivityActorsHash) {
+            if (!networkActivityActorsHash.containsKey(key)) {
+                networkActivityActorsHash.put(key, key);
+            }
+            final long t = System.currentTimeMillis();
+            nextNetInactiveTimeout = t + netActivityListenerInactiveTimeout;
+            conditionalStartInactiveTimer();
 
-        if (netActivityState != NetActivityListener.ACTIVE) {
-            // Update possible state change to inactive
-            PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+            if (netActivityState != NetActivityListener.ACTIVE) {
+                // Update possible state change to inactive
+                PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+            }
         }
     }
 
@@ -1325,28 +1374,27 @@ public class HttpGetter extends Task {
      * Integer(this.hashCode()</code>
      */
     public static void endNetworkActivity(final Integer key) {
-        networkActivityActorsHash.remove(key);
+        synchronized (networkActivityActorsHash) {
+            networkActivityActorsHash.remove(key);
 
-        if (networkActivityActorsHash.size() == 0) {
-            // Update possible state change to inactive
-            PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+            if (networkActivityActorsHash.size() == 0) {
+                // Update possible state change to inactive
+                PlatformUtils.getInstance().runOnUiThread(uiThreadNetworkStateChange);
+            }
         }
     }
 
     /**
-     * Override the default 10 second stall and 30 second INACTIVE no net
-     * activity timeouts. This alters how quickly all
-     * <code>NetActivityListener</code>s are notified that a network is not
-     * receiving expected data.
+     * Override the default 30 second INACTIVE no net activity timeouts. This
+     * alters how quickly all <code>NetActivityListener</code>s are notified
+     * that a network is not receiving expected data.
      *
-     * @param stallTimeoutInMilliseconds - time without net activity before
-     * entering STALLED state. The default is 10000.
      * @param inactiveTimeoutInMilliseconds - time without net activity before
      * entering INACTIVE state. The default is 30000.
      */
-    public static void setNetActivityListenerTimeouts(final int stallTimeoutInMilliseconds, final int inactiveTimeoutInMilliseconds) {
-        netActivityListenerStallTimeout = stallTimeoutInMilliseconds;
+    public static void setNetActivityListenerTimeout(final int inactiveTimeoutInMilliseconds) {
         netActivityListenerInactiveTimeout = inactiveTimeoutInMilliseconds;
+
     }
 
     /**
@@ -1367,11 +1415,6 @@ public class HttpGetter extends Task {
          * seconds
          */
         int ACTIVE = 1;
-        /**
-         * One or more requests have been made, but no network data has been
-         * received during the last 5 seconds
-         */
-        int STALLED = 2;
 
         /**
          * An update received on the UI thread indicating changes in network

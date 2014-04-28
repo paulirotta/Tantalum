@@ -27,6 +27,8 @@
  */
 package org.tantalum;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 import org.tantalum.util.L;
 
@@ -43,9 +45,9 @@ final class Worker extends Thread {
      * The following are state variables. During application shutdown, all tasks
      * from the previous state must complete before the next state is entered.
      */
-    private static final int STATE_RUNNING = 0;
-    private static final int STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS = 1;
-    private static final int STATE_RUNNING_SHUTDOWN_TASKS = 2;
+    private static final int QUEUE_SIZE_LIMIT = 32;
+    private static final int SHUTDOWN_TIMEOUT_1 = 10000; // ms, how long to hold the shutdown before interrupt unresponsive Workers
+    private static final int SHUTDOWN_TIMEOUT_2 = 15000; // ms, how long to hold the shutdown before interrupt shutdown thread
     /*
      * Genearal forkSerial of tasks to be done by any Worker thread
      */
@@ -59,12 +61,14 @@ final class Worker extends Thread {
      */
     private final Vector serialQ = new Vector();
     private static final Vector fastlaneQ = new Vector();
+    private static final Vector shutdownUI_Q = new Vector();
     private static final Vector idleQ = new Vector();
     private static final Vector shutdownQ = new Vector();
-    private static int currentlyIdleCount = 0;
-    private static int runState = STATE_RUNNING;
+    volatile static boolean shuttingDown = false;
+    volatile static boolean shutdownComplete = false;
     private Task currentTask = null; // Access only within synchronized(q)
     private final boolean isDedicatedFastlaneWorker;
+    private volatile boolean threadDeath = false; // The thread is in last finally block, is done
 
     private Worker(final String name, final boolean isDedicatedFastlaneWorker) {
         super(name);
@@ -92,6 +96,19 @@ final class Worker extends Thread {
         }
     }
 
+    /**
+     * True during the shutdown process
+     *
+     * @return
+     */
+    static boolean isShuttingDown() {
+        return shuttingDown;
+    }
+
+    static boolean isShutdownComplete() {
+        return shutdownComplete;
+    }
+
     private static void forkToUIThread(final Task task) {
         PlatformUtils.getInstance().runOnUiThread(new Runnable() {
             public void run() {
@@ -111,9 +128,22 @@ final class Worker extends Thread {
         if (currentThread instanceof Worker) {
             ((Worker) currentThread).serialQ.addElement(task);
         } else if (currentThread instanceof DedicatedThread) {
-            ((DedicatedThread) currentThread).taskRunnable.serialQ.addElement(task);
+            ((DedicatedThread) currentThread).serialQ.addElement(task);
         } else {
             throw new IllegalArgumentException("You must be in a Task running on a Tantalum Worker thread or DedicatedThread to fork a new Task.SERIAL_CURRENT_THREAD_PRIORITY");
+        }
+    }
+
+    private static Task cancelTasksAboveMaxQueueSize(final Vector queue) {
+        synchronized (queue) {
+            if (queue.size() >= QUEUE_SIZE_LIMIT) {
+                final Task task = (Task) queue.elementAt(queue.size() - 1);
+                queue.removeElementAt(queue.size() - 1);
+
+                return task;
+            }
+
+            return null;
         }
     }
 
@@ -152,10 +182,14 @@ final class Worker extends Thread {
         final int priority = task.getForkPriority();
         //#debug
         L.i(task, "Fork", "priority=" + task.getPriorityString());
+        Task taskToCancel = null; // If the max queue length is exceeded, cancel the task after releasing the q lock
+
         synchronized (q) {
             switch (priority) {
                 case Task.DEDICATED_THREAD_PRIORITY:
-                    final DedicatedThread thread = new DedicatedThread(new DedicatedThread.TaskRunnable(task), task.getClassName());
+                    final DedicatedThread thread = DedicatedThread.getDedicatedThread();
+
+                    thread.serialQ.addElement(task);
                     thread.start();
                     break;
 
@@ -165,6 +199,7 @@ final class Worker extends Thread {
 
                 case Task.FASTLANE_PRIORITY:
                     fastlaneQ.insertElementAt(task, 0);
+                    taskToCancel = cancelTasksAboveMaxQueueSize(fastlaneQ);
                     /**
                      * notify() vs notifyAll(): Any thread will do as all
                      * Workers (and nothing else) waits on this lock and will
@@ -191,10 +226,12 @@ final class Worker extends Thread {
 
                 case Task.HIGH_PRIORITY:
                     q.insertElementAt(task, 0);
+                    taskToCancel = cancelTasksAboveMaxQueueSize(q);
                     q.notifyAll();
                     break;
 
                 case Task.NORMAL_PRIORITY:
+                    taskToCancel = cancelTasksAboveMaxQueueSize(q);
                     q.addElement(task);
                     q.notifyAll();
                     break;
@@ -202,6 +239,10 @@ final class Worker extends Thread {
                 case Task.IDLE_PRIORITY:
                     idleQ.addElement(task);
                     q.notifyAll();
+                    break;
+
+                case Task.SHUTDOWN_UI:
+                    shutdownUI_Q.addElement(task);
                     break;
 
                 case Task.SHUTDOWN:
@@ -212,9 +253,13 @@ final class Worker extends Thread {
                 default:
                     throw new IllegalArgumentException("Illegal priority '" + priority + "'");
             }
-
-            return task;
         }
+        
+        if (taskToCancel != null) {
+            taskToCancel.cancel(Task.QUEUE_LENGTH_EXCEEDED);
+        }
+
+        return task;
     }
 
     static Task[] fork(final Task[] tasks) {
@@ -307,7 +352,7 @@ final class Worker extends Thread {
                     continue;
                 }
 
-                if (task.equals(dedicatedThread.taskRunnable.task)) {
+                if (task.equals(dedicatedThread.task)) {
                     //#debug
                     L.i(task, "cancel() is sending Thread.interrupt()", "thread=" + workers[i].getName() + " task=" + task);
                     /*
@@ -339,151 +384,250 @@ final class Worker extends Thread {
      * shutdown Tasks are completed. Resources held by the system will be closed
      * and queued compute such as writing to the RMS or file system will
      * complete.
-     *
-     * @param block Block the calling thread up to three seconds to allow
-     * orderly shutdown. This is only needed in shutdown(true) which is called
-     * for example by the user pressing the red HANGUP button.
      */
-    static void shutdown(final boolean block, final String reason) {
+    static void shutdown(final String reason) {
         try {
             /*
              * Removed queued tasks which can be removed
              */
-            synchronized (q) {
-                runState = STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS;
-                q.notifyAll();
+            //#debug
+            L.i("shutdown called", "reason=" + reason);
+            synchronized (shutdownUI_Q) {
+                if (shuttingDown) {
+                    //#debug
+                    L.i("Ignoring repeat shutdown request", Worker.toStringWorkers());
+                    return;
+                }
+                shuttingDown = true;
+                while (!shutdownUI_Q.isEmpty()) {
+                    final Task t = (Task) shutdownUI_Q.firstElement();
+
+                    PlatformUtils.getInstance().runOnUiThread(new Runnable() {
+                        public void run() {
+                            try {
+                                t.executeTask(t.getValue());
+                            } catch (Exception e) {
+                                //#debug
+                                L.e("Can not run on SHUTDOWN_UI task", reason, e);
+                            }
+                        }
+                    });
+                    shutdownUI_Q.removeElementAt(0);
+                }
             }
-            dequeueOrCancelOnShutdown(fastlaneQ);
-            for (int i = 0; i < workers.length; i++) {
-                Worker.dequeueOrCancelOnShutdown(workers[i].serialQ);
-            }
-            dequeueOrCancelOnShutdown(q);
-            dequeueOrCancelOnShutdown(idleQ);
+            fastlaneQ.removeAllElements();
+//            for (int i = 0; i < workers.length; i++) {
+//                workers[i].serialQ.removeAllElements();
+//            }
+            idleQ.removeAllElements();
             final DedicatedThread[] dt;
             synchronized (dedicatedThreads) {
                 dt = new DedicatedThread[dedicatedThreads.size()];
                 dedicatedThreads.copyInto(dt);
             }
             for (int i = 0; i < dt.length; i++) {
-                Worker.dequeueOrCancelOnShutdown(dt[i].taskRunnable.serialQ);
+                dt[i].serialQ.removeAllElements();
             }
-
-            /*
-             * Interrupt currently running tasks which can be interrupted
-             */
             synchronized (q) {
-                for (int i = 0; i < workers.length; i++) {
-                    final Task t = workers[i].currentTask;
-                    if (t != null && t.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                        workers[i].interrupt();
-                    }
-                }
+                q.removeAllElements();
+                q.notifyAll();
             }
-
-            DedicatedThread dedicatedThread;
-            do {
-                synchronized (dedicatedThreads) {
-                    if (dedicatedThreads.size() > 0) {
-                        dedicatedThread = (DedicatedThread) dedicatedThreads.firstElement();
-                        dedicatedThreads.removeElementAt(0);
-                    } else {
-                        dedicatedThread = null;
-                    }
-                }
-                if (dedicatedThread != null) {
-                    synchronized (dedicatedThread.taskRunnable.serialQ) {
-                        if (dedicatedThread.taskRunnable.task.getShutdownBehaviour() == Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                            dedicatedThread.interrupt();
-                        }
-                    }
-                }
-            } while (dedicatedThread != null);
-
-            if (block) {
-                final long shutdownTimeout = System.currentTimeMillis();
-                try {
-                    /*
-                     * Block this thread up to 3 seconds while remaining tasks complete normally
-                     */
-                    synchronized (q) {
-                        if (Thread.currentThread() instanceof Worker) {
-                            // A Worker initialized shutdown. Adjust so this does not corrupt shutdown end state transition detection
-                            currentlyIdleCount++;
-                        }
-                        while (currentlyIdleCount < workers.length - 1 || !shutdownQ.isEmpty() || !q.isEmpty() || !fastlaneQ.isEmpty()) {
-                            final long timeRemaining = shutdownTimeout + 3000 - System.currentTimeMillis();
-
-                            if (timeRemaining <= 0) {
-                                //#debug
-                                L.i("A worker blocked shutdown timeout", Worker.toStringWorkers());
-                                break;
-                            }
-                            q.wait(timeRemaining);
-                        }
-                    }
-                } finally {
-                    PlatformUtils.getInstance().shutdownComplete(reason
-                            + " - Blocking shutdown ending: shutdownTime="
-                            + (System.currentTimeMillis() - shutdownTimeout));
-                }
-            }
-        } catch (InterruptedException ex) {
+            Thread.yield();
+            runShutdownTasks(reason);
+        } catch (Throwable t) {
             //#debug
-            L.e("Shutdown was interrupted", "", ex);
+            L.e("Shutdown throwable", "", t);
+        } finally {
+            shutdownComplete = true;
+            synchronized (q) {
+                q.notifyAll();
+            }
         }
     }
 
-    private static void dequeueOrCancelOnShutdown(final Vector queue) {
-        if (queue == null) {
-            return;
-        }
-        final Task[] tasks = copyOfQueueTasks(queue);
+    /**
+     * After 10 seconds, interrupt() any Worker which has not finished it's
+     * current task
+     *
+     * After 15 seconds, interrupt() the shutdown thread itself
+     *
+     * @param reason
+     * @return
+     */
+    private static Timer startShutdownTimer(final String reason) {
+        final Timer shutdownTimer = new Timer();
+        final Thread shutdownThread = Thread.currentThread();
 
-        for (int i = tasks.length - 1; i >= 0; i--) {
-            dequeue(tasks[i], queue, true);
-        }
-    }
-
-    static boolean dequeue(final Task task, final Vector queue, final boolean interruptIfRunning) {
-        final int sd = task.getShutdownBehaviour();
-
-        switch (sd) {
-            case Task.EXECUTE_NORMALLY_ON_SHUTDOWN:
-                return false;
-
-            case Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN:
-                if (interruptIfRunning) {
-                    task.cancel(interruptIfRunning, "Shutdown signal received with interruptIfRunning=true");
+        shutdownTimer.schedule(new TimerTask() {
+            public void run() {
+                try {
+                    //#debug
+                    L.i("Shutdown 1 timeout", "Sending interrupt to non-responsive workers");
+                    if (workers != null) {
+                        for (int i = 0; i < workers.length; i++) {
+                            final Worker w = workers[i];
+                            if (w == Thread.currentThread()) {
+                                //#debug
+                                L.i("Skipping interrupt current thread wait during shutdown", "reason=" + reason);
+                                continue;
+                            }
+                            try {
+                                if (!w.threadDeath) {
+                                    //#debug
+                                    L.i(this, "*** HUNG WORKER IN SHUTDOWN", w.toString());
+                                    w.interrupt();
+                                }
+                            } catch (Throwable t) {
+                                //#debug
+                                L.e("Interrupt non-responsive Worker throwable", reason, t);
+                            }
+                        }
+                    }
+                    //#debug
+                    L.i("End shutdown 1 timeout", reason);
+                } catch (Exception e) {
+                    //#debug
+                    L.e("Problem sending interrupt to non-closing shutdown thread", reason, e);
                 }
-            // continue to next case
+            }
+        }, Worker.SHUTDOWN_TIMEOUT_1);
 
-            case Task.DEQUEUE_ON_SHUTDOWN:
-                return queue.removeElement(task);
+        shutdownTimer.schedule(new TimerTask() {
+            public void run() {
+                try {
+                    //#debug
+                    L.i("Shutdown 2 timeout", "Sending interrupt to non-closing shutdown thread");
+                    shutdownThread.interrupt();
+                } catch (Exception e) {
+                    //#debug
+                    L.e("Problem sending interrupt to non-closing shutdown thread", reason, e);
+                }
+            }
+        }, Worker.SHUTDOWN_TIMEOUT_2);
 
-            default:
-                throw new IllegalStateException("Can not dequeue Task, illegal shutdown behaviour state: " + sd);
+        return shutdownTimer;
+    }
+
+    private static void runShutdownTasks(final String reason) throws InterruptedException {
+        final long shutdownStartTime = System.currentTimeMillis();
+        final Timer shutdownTimer = startShutdownTimer(reason);
+
+        try {
+            // Wait for all Workers to end current work and die except this thread
+            if (workers != null) {
+                for (int i = 0; i < workers.length; i++) {
+                    try {
+                        final Worker w = workers[i];
+
+                        if (w == Thread.currentThread()) {
+                            //#debug
+                            L.i("Skipping current thread wait during shutdown", "reason=" + reason);
+                            continue;
+                        }
+                        synchronized (q) {
+                            if (!w.threadDeath) {
+                                //#debug
+                                L.i("Await active thread during shutdown", w.toString() + " task:" + w.currentTask);
+                                q.notifyAll();
+                                q.wait();
+                                //#debug
+                                L.i("Continue after wait for active Worker during shutdown", w.toString());
+                            }
+                        }
+                    } catch (Throwable t) {
+                        //#debug
+                        L.e("Problem waiting for a worker to die", "", t);
+                    }
+                }
+            }
+
+            // Run all queues until empty
+            //#debug
+            L.i("Start executing shutdown tasks", "size=" + shutdownQ.size());
+            Task task;
+            do {
+                task = getShutdownTask();
+                if (task != null) {
+                    //#debug
+                    L.i("Start executing shutdown task", task.toString());
+                    task.executeTask(task.getValue());
+                }
+            } while (task != null);
+            //#debug
+            L.i("Done with all shutdown tasks", "size=" + shutdownQ.size());
+        } catch (Throwable t) {
+            //#debug
+            L.e("Thowable during shutdown task execution", "", t);
+            if (workers != null) {
+                for (int i = 0; i < workers.length; i++) {
+                    if (workers[i] == Thread.currentThread()) {
+                        continue;
+                    }
+                    try {
+                        if (!workers[i].threadDeath) {
+                            //#debug
+                            L.i("Interrrupting non-closed thread", workers[i].toString());
+                            workers[i].interrupt();
+                        }
+                    } catch (Exception e) {
+                        //#debug
+                        L.e("Problem interrrupting non-closed thread", workers[i].toString(), e);
+                    }
+                }
+            }
+        } finally {
+            try {
+                shutdownTimer.cancel();
+            } catch (Exception e) {
+                //#debug
+                L.e("Shutdown timer cancel error", "", e);
+            }
+            PlatformUtils.getInstance().shutdownComplete(reason
+                    + " - Shutdown ending: shutdownTime="
+                    + (System.currentTimeMillis() - shutdownStartTime));
         }
     }
 
+    /**
+     * Remove a canceled task from any queue
+     *
+     * @param task
+     * @return
+     */
     static boolean dequeue(final Task task) {
-        boolean removed = dequeue(task, q, false);
-
-        if (!removed) {
-            removed = dequeue(task, fastlaneQ, false);
+        synchronized (q) {
+            if (q.contains(task)) {
+                q.removeElement(task);
+                return true;
+            }
         }
-        if (!removed && workers != null) {
+
+        synchronized (fastlaneQ) {
+            if (fastlaneQ.contains(task)) {
+                fastlaneQ.removeElement(task);
+                return true;
+            }
+        }
+
+        synchronized (idleQ) {
+            if (idleQ.contains(task)) {
+                idleQ.removeElement(task);
+                return true;
+            }
+        }
+
+        if (workers != null) {
             for (int i = 0; i < workers.length; i++) {
-                removed = dequeue(task, workers[i].serialQ, false);
-                if (removed) {
-                    break;
+                synchronized (workers[i].serialQ) {
+                    if (workers[i].serialQ.contains(task)) {
+                        workers[i].serialQ.removeElement(task);
+                        return true;
+                    }
                 }
             }
         }
-        if (!removed) {
-            removed = dequeue(task, idleQ, false);
-        }
 
-        return removed;
+        return false;
     }
 
     /**
@@ -504,7 +648,7 @@ final class Worker extends Thread {
      */
     public void run() {
         try {
-            while (true) {
+            while (!shuttingDown) {
                 /*
                  * The following code is Thread-hardened such that Task.cancel(true, "blah")
                  * can generate a Thread.interrupt() at an point below _if_
@@ -513,55 +657,22 @@ final class Worker extends Thread {
                  * of race a condition.
                  */
                 try {
-                    Object in = null;
-
                     synchronized (q) {
                         try {
                             currentTask = null;
-                            switch (runState) {
-                                case STATE_WAIT_FOR_FINISH_OR_INTERRUPT_TASKS_THAT_EXPLICITLY_PERMIT_INTERRUPT_BEFORE_STARTING_SHUTDOWN_TASKS:
-                                    if (allWorkersIdleExceptThisOne()) {
-                                        runState = STATE_RUNNING_SHUTDOWN_TASKS;
-                                        q.notifyAll();
-                                        break;
-                                    }
-
-                                // Continue from previous
-                                case STATE_RUNNING:
-                                    getNormalRunTask();
-                                    break;
-
-                                case STATE_RUNNING_SHUTDOWN_TASKS:
-                                    getShutdownTask();
-                                    break;
-
-                                default:
-                                    throw new IllegalStateException("Illegal Worker run state: " + runState);
-                            }
+                            currentTask = getNormalRunTask();
                         } finally {
                             if (currentTask == null) {
                                 /*
                                  * Nothing for this thread to do
                                  */
-                                try {
-                                    ++currentlyIdleCount;
-                                    if (runState == STATE_RUNNING_SHUTDOWN_TASKS
-                                            && allWorkersIdleExceptThisOne() && allDedicatedThreadsComplete()
-                                            && !PlatformUtils.getInstance().shutdownComplete("currentlyIdleCount=" + currentlyIdleCount)) {
-                                        q.notifyAll();
-                                    }
-                                    q.wait();
-                                } finally {
-                                    --currentlyIdleCount;
-                                }
-                            } else {
-                                in = currentTask.getValue();
+                                q.wait();
                             }
                         }
                     }
 
                     if (currentTask != null) {
-                        currentTask.executeTask(in);
+                        currentTask.executeTask(currentTask.getValue());
                     }
                 } catch (InterruptedException e) {
                     //#mdebug
@@ -584,16 +695,32 @@ final class Worker extends Thread {
             }
             //#enddebug
         } finally {
+            threadDeath = true;
             synchronized (q) {
                 currentTask = null;
+                q.notifyAll();
             }
         }
-        //#debug
-        L.i("Thread shutdown", "currentlyIdleCount=" + currentlyIdleCount);
+        //#mdebug
+        try {
+            L.i(this, "Thread shutdown", null);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        //#enddebug
     }
 
-    private boolean allWorkersIdleExceptThisOne() {
-        return currentlyIdleCount == workers.length - 1;
+    private static boolean allWorkersIdleExceptThisOne() {
+        for (int i = 0; i < workers.length; i++) {
+            if (workers[i] == Thread.currentThread()) {
+                continue;
+            }
+            if (workers[i].currentTask != null) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private boolean allDedicatedThreadsComplete() {
@@ -604,82 +731,85 @@ final class Worker extends Thread {
      * Hardened against async interrupt
      *
      */
-    private void getFastlaneTask() {
+    private Task getSerialTask() {
         try {
-            currentTask = (Task) fastlaneQ.firstElement();
-        } finally {
-            fastlaneQ.removeElementAt(0);
-        }
-    }
-
-    /**
-     * Hardened against async interrupt
-     *
-     */
-    private void getSerialTask() {
-        try {
-            currentTask = (Task) serialQ.firstElement();
+            return (Task) serialQ.firstElement();
         } finally {
             serialQ.removeElementAt(0);
         }
     }
 
     /**
-     * Hardened against async interrupt
-     *
-     */
-    private void getNormalTask() {
-        try {
-            currentTask = (Task) q.firstElement();
-        } finally {
-            // Ensure we don't re-run in case of interrupt
-            q.removeElementAt(0);
-        }
-
-    }
-
-    /**
      * Get the next task (if any) appropriate for this thread in the normal
      * running state (not shutdown)
      */
-    private void getNormalRunTask() {
-        if (!serialQ.isEmpty()) {
-            getSerialTask();
+    private Task getNormalRunTask() {
+        Task task = null;
+
+        if (serialQ.size() > 8) {
+            task = getSerialTask();
         } else if (!Worker.fastlaneQ.isEmpty()) {
-            getFastlaneTask();
+            try {
+                task = (Task) fastlaneQ.firstElement();
+            } finally {
+                fastlaneQ.removeElementAt(0);
+            }
         } else if (!isDedicatedFastlaneWorker) {
             if (!Worker.q.isEmpty()) {
-                getNormalTask();
+                try {
+                    task = (Task) q.firstElement();
+                } finally {
+                    q.removeElementAt(0);
+                }
+            } else if (!serialQ.isEmpty()) {
+                task = getSerialTask();
             } else if (!idleQ.isEmpty() && allWorkersIdleExceptThisOne()) {
-                getIdleTask();
+                try {
+                    task = (Task) idleQ.firstElement();
+                } finally {
+                    idleQ.removeElementAt(0);
+                }
+            }
+        } else if (!serialQ.isEmpty()) {
+            task = getSerialTask();
+        }
+
+        return task;
+    }
+
+    private static Task getNormalTaskAnyWorkerDuringShutdown() {
+        for (int i = 0; i < workers.length; i++) {
+            final Task t = workers[i].getNormalRunTask();
+            if (t != null) {
+                return t;
             }
         }
+
+        return null;
     }
 
-    private void getIdleTask() {
-        try {
-            currentTask = (Task) idleQ.firstElement();
-        } finally {
-            idleQ.removeElementAt(0);
+    private static Task getShutdownTask() {
+        final Task t = getNormalTaskAnyWorkerDuringShutdown();
+
+        if (t != null) {
+            return t;
         }
-    }
 
-    private void getShutdownTask() {
         if (!shutdownQ.isEmpty()) {
             try {
-                currentTask = (Task) shutdownQ.firstElement();
+                return (Task) shutdownQ.firstElement();
             } finally {
                 shutdownQ.removeElementAt(0);
             }
         }
+
+        return null;
     }
 
     //#mdebug
     private static String toStringWorkers() {
         final StringBuffer sb = new StringBuffer();
 
-        sb.append("WORKERS: currentlyIdleCount=");
-        sb.append(Worker.currentlyIdleCount);
         sb.append(" q.size()=");
         sb.append(Worker.q.size());
         sb.append(" shutdownQ.size()=");
@@ -758,9 +888,6 @@ final class Worker extends Thread {
 
         return className;
 
-
-
-
     }
     //#enddebug
 
@@ -774,53 +901,78 @@ final class Worker extends Thread {
      */
     private static class DedicatedThread extends Thread {
 
-        final DedicatedThread.TaskRunnable taskRunnable;
+        private static DedicatedThread prebuildDedicatedThread = null;
+        Task task = null;
+        final Vector serialQ = new Vector();
+        static int dedicatedThreadCounter = 0;
 
-        static class TaskRunnable implements Runnable {
+        static synchronized DedicatedThread getDedicatedThread() {
+            final DedicatedThread t;
 
-            Task task = null;
-            final Vector serialQ = new Vector();
-
-            TaskRunnable(final Task firstTask) {
-                if (firstTask == null) {
-                    throw new IllegalArgumentException("Can not create a DedicatedThread with null Task (no work to do)");
-                }
-
-                serialQ.addElement(firstTask);
+            if (prebuildDedicatedThread != null) {
+                t = prebuildDedicatedThread;
+                prebuildDedicatedThread = null;
+            } else {
+                t = new DedicatedThread();
             }
+            makeNextThread();
 
-            public void run() {
-                try {
-                    while (true) {
-                        synchronized (serialQ) {
-                            if (serialQ.isEmpty()) {
-                                task = null;
-                                break;
+            return t;
+        }
+
+        private static void makeNextThread() {
+            if (!isShuttingDown()) {
+                new Task(Task.FASTLANE_PRIORITY) {
+                    protected Object exec(Object in) throws CancellationException, TimeoutException, InterruptedException {
+                        synchronized (DedicatedThread.class) {
+                            if (prebuildDedicatedThread == null) {
+                                prebuildDedicatedThread = new DedicatedThread();
                             }
-                            task = (Task) serialQ.firstElement();
-                            serialQ.removeElementAt(0);
-                        }
 
-                        try {
-                            task.executeTask(task.getValue());
-                        } catch (final Throwable t) {
-                            //mdebug
-                            L.e("Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
+                            return in;
                         }
                     }
-                } finally {
-                    dedicatedThreads.removeElement(currentThread());
-                    synchronized (q) {
-                        q.notifyAll(); // Shutdown sequence may need this notification to complete
-                    }
-                }
+                }.setClassName("PrebuildDedicatedThread").fork();
             }
         }
 
-        DedicatedThread(final DedicatedThread.TaskRunnable taskRunnable, final String threadName) {
-            super(taskRunnable, threadName);
+        public void run() {
+            try {
+                while (!shuttingDown) {
+                    synchronized (serialQ) {
+                        if (serialQ.isEmpty()) {
+                            task = null;
+                            break;
+                        }
+                        task = (Task) serialQ.firstElement();
+                        serialQ.removeElementAt(0);
+                    }
 
-            this.taskRunnable = taskRunnable;
+                    try {
+                        task.executeTask(task.getValue());
+                    } catch (final Throwable t) {
+                        //mdebug
+                        L.e("Uncaught Task exception on DEDICATED_THREAD_PRIORITY thread", "task=" + task, t);
+                    }
+                }
+            } finally {
+                dedicatedThreads.removeElement(currentThread());
+                synchronized (q) {
+                    q.notifyAll(); // Shutdown sequence may need this notification to complete
+                }
+                //#mdebug
+                try {
+                    L.i("DedicatedThread end", this.getName());
+                } catch (Throwable t) {
+                    //#debug
+                    System.err.println(t);
+                }
+                //#enddebug
+            }
+        }
+
+        private DedicatedThread() {
+            super("DedicatedThread" + dedicatedThreadCounter++);
             dedicatedThreads.addElement(this);
         }
     }

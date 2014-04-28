@@ -91,8 +91,10 @@ public final class StaticWebCache extends StaticCache {
      * @param defaultCacheView
      * @return
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final CacheView cacheView) throws FlashDatabaseException {
-        return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, cacheView, DEFAULT_HTTP_GETTER_FACTORY, null);
+    public static StaticWebCache getWebCache(final char priority, final CacheView cacheView) throws FlashDatabaseException {
+        synchronized (caches) {
+            return getWebCache(priority, PlatformUtils.PHONE_DATABASE_CACHE, cacheView, DEFAULT_HTTP_GETTER_FACTORY, null);
+        }
     }
 
     /**
@@ -115,15 +117,17 @@ public final class StaticWebCache extends StaticCache {
      * @return
      * @throws FlashDatabaseException
      */
-    public static synchronized StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
-        StaticWebCache c = (StaticWebCache) getExistingCache(priority, cacheView, httpTaskFactory, StaticWebCache.class);
+    public static StaticWebCache getWebCache(final char priority, final int cacheType, final CacheView cacheView, final HttpTaskFactory httpTaskFactory, final FlashCache.StartupTask startupTask) throws FlashDatabaseException {
+        synchronized (caches) {
+            StaticWebCache c = (StaticWebCache) getExistingCache(priority, cacheView, httpTaskFactory, StaticWebCache.class);
 
-        if (c == null) {
-            c = new StaticWebCache(priority, cacheType, cacheView, httpTaskFactory, startupTask);
-            caches.addElement(c);
+            if (c == null) {
+                c = new StaticWebCache(priority, cacheType, cacheView, httpTaskFactory, startupTask);
+                caches.addElement(c);
+            }
+
+            return c;
         }
-
-        return c;
     }
 
     /**
@@ -308,7 +312,7 @@ public final class StaticWebCache extends StaticCache {
      * @param postMessage - HTTP POST will be used if this value is non-null,
      * otherwise HTTP GET is used
      * @param priority
-     * @param *
+     * @param * *
      * getType <code>StaticWebCache.GET_ANYWHERE</code>, <code>StaticWebCache.GET_WEB</code>
      * or <code>StaticWebCache.GET_LOCAL</code>
      * @param nextTask - your <code>Task</code> which is given the data returned
@@ -358,7 +362,7 @@ public final class StaticWebCache extends StaticCache {
                 getterPriority = preventWebTaskFromUsingFastLane(priority);
                 getTask = getHttpGetter(getterPriority, url, postMessage, nextTask, taskFactory, cacheView);
                 if (getTask == null) {
-                    nextTask.cancel(false, "StaticWebCache was told by " + taskFactory.getClass().getName() + " not to complete the get operation (null returned): " + url);
+                    nextTask.cancel("StaticWebCache was told by " + taskFactory.getClass().getName() + " not to complete the get operation (null returned): " + url);
                     return null;
                 }
                 break;
@@ -495,7 +499,7 @@ public final class StaticWebCache extends StaticCache {
             if (in == null || !(in instanceof String)) {
                 //#debug
                 L.i(this, "ERROR", "Must receive a String url, but got " + (in == null ? "null" : in.toString()));
-                cancel(false, getClassName() + " got bad url: " + in);
+                cancel(getClassName() + " got bad url: " + in);
             } else {
                 try {
                     final String url = (String) in;
@@ -510,9 +514,9 @@ public final class StaticWebCache extends StaticCache {
                             //#debug
                             L.i(this, getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter", url);
                             final String s = getClassName() + " was told by " + StaticWebCache.this.httpTaskFactory.getClass().getName() + " not to complete the HTTP operation at this time by returning a null HttpGetter: " + url;
-                            cancel(false, s);
+                            cancel(s);
                             if (nextTask != null) {
-                                nextTask.cancel(false, s);
+                                nextTask.cancel(s);
                             }
                         } else {
                             httpGetter.fork();
@@ -524,7 +528,7 @@ public final class StaticWebCache extends StaticCache {
                     //#debug
                     L.e(this, "Can not get", (String) in, e);
                     chain(nextTask);
-                    cancel(false, "Can not GET_ANYWHERE, in=" + (String) in, e);
+                    cancel("Can not GET_ANYWHERE, in=" + (String) in, e);
                 }
             }
             //#mdebug
@@ -583,14 +587,14 @@ public final class StaticWebCache extends StaticCache {
                 if (!taskFactory.validateHttpResponse(httpGetter, bytesReference.getBytes())) {
                     //#debug
                     L.i(this, "Rejected server response", httpGetter.toString());
-                    cancel(false, "StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
+                    cancel("StaticWebCache.GetWebTask failed HttpTaskFactory validation: " + url);
                 } else {
                     try {
                         out = put(url, bytesReference, cacheView, null);
                     } catch (FlashDatabaseException ex) {
                         //#debug
                         L.e(this, "Can not put web service response to heap cache", url, ex);
-                        cancel(false, "Can not put web service response to heap cache: " + url + " : " + ex);
+                        cancel("Can not put web service response to heap cache: " + url + " : " + ex);
                     }
                 }
 
@@ -618,7 +622,7 @@ public final class StaticWebCache extends StaticCache {
          * improve user experience (UX) on slow network. Delays are self-tuning
          * based on current network conditions.
          */
-        public volatile boolean getSequencerEnabled = false;
+        public volatile boolean getSequencerEnabled = true;
         /**
          * A measure of how long on average the last 10 HTTP operations to fetch
          * from the server have taken. If the get sequencer is enabled, this is
@@ -696,6 +700,11 @@ public final class StaticWebCache extends StaticCache {
         public boolean validateHttpResponse(final HttpGetter httpGetter, final byte[] bytesReceived) {
             final int responseCode = httpGetter.getResponseCode();
 
+            if (httpGetter.isCanceled()) {
+                //#debug
+                L.i(this, "HttpGetter canceled", responseCode + " received");
+                return false;
+            }
             if (responseCode >= HttpGetter.HTTP_500_INTERNAL_SERVER_ERROR) {
                 //#debug
                 L.i(this, "Invalid response code", responseCode + " received");

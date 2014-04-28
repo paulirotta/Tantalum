@@ -28,6 +28,7 @@
 package org.tantalum;
 
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 import org.tantalum.util.L;
 
@@ -113,7 +114,7 @@ public abstract class Task {
      * Task.setShutdownBehaviour(Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) to
      * ensure that a Thread.interrupt() is sent.
      */
-    public static final int DEDICATED_THREAD_PRIORITY = 8;
+    public static final int DEDICATED_THREAD_PRIORITY = 9;
     /**
      * Queue the task the system UI thread where it will execute after any
      * pending system events like touch input.
@@ -135,7 +136,7 @@ public abstract class Task {
      * <code>Runnable</code> object can implement frequently-occurring display
      * events.
      */
-    public static final int UI_PRIORITY = 7;
+    public static final int UI_PRIORITY = 8;
     /**
      * Start the task as soon as possible, LIFO with no guaranteed sequence
      * order and higher absolute priority than
@@ -148,7 +149,7 @@ public abstract class Task {
      * the other threads are busy with tasks such as HTTP GET that can more than
      * a few milliseconds to complete.
      */
-    public static final int FASTLANE_PRIORITY = 6;
+    public static final int FASTLANE_PRIORITY = 7;
     /**
      * FIFO with guaranteed sequence. The task will execute on the same thread
      * making the call if that thread is a Worker or UI.
@@ -163,7 +164,7 @@ public abstract class Task {
      * holding one or more locks, and then safely execute these after the locks
      * are no longer held.
      */
-    public static final int SERIAL_CURRENT_THREAD_PRIORITY = 5;
+    public static final int SERIAL_CURRENT_THREAD_PRIORITY = 6;
     /**
      * FIFO with guaranteed sequence (single-thread concurrent execution, this
      * one thread also does
@@ -185,7 +186,7 @@ public abstract class Task {
      * <code>Task</code> chains to or forks other
      * <code>Task</code>s.
      */
-    public static final int SERIAL_PRIORITY = 4;
+    public static final int SERIAL_PRIORITY = 5;
     /**
      * LIFO with no guaranteed sequence (multi-thread concurrent execution)
      * start the task as soon as possible. The
@@ -201,7 +202,7 @@ public abstract class Task {
      * as this can block for a long time and then the fastlane is not so fast
      * anymore.
      */
-    public static final int HIGH_PRIORITY = 3;
+    public static final int HIGH_PRIORITY = 4;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * Start execution after any previously
@@ -209,7 +210,7 @@ public abstract class Task {
      * multiple Workers in parallel means that execution start and completion
      * order is not guaranteed.
      */
-    public static final int NORMAL_PRIORITY = 2;
+    public static final int NORMAL_PRIORITY = 3;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * Start execution if there is nothing else for the Workers to do. At least
@@ -218,7 +219,8 @@ public abstract class Task {
      * for background tasks such as pre-fetch and pre-processing of data that
      * doe not affect the current user view.
      */
-    public static final int IDLE_PRIORITY = 1;
+    public static final int IDLE_PRIORITY = 2;
+    public static final int SHUTDOWN_UI = 1;
     /**
      * FIFO with no guaranteed sequence (multi-thread concurrent execution).
      * These tasks start when the application begins to close. The application
@@ -269,15 +271,7 @@ public abstract class Task {
      */
     public static final int CANCELED = 2;
     private static final String[] STATUS_STRINGS = {"PENDING", "FINISHED", "CANCELED"};
-    /**
-     * Task will run without interruption or dequeue during shutdown
-     */
-    public static final int EXECUTE_NORMALLY_ON_SHUTDOWN = 0;
-    /**
-     * Tasks which have not yet started are removed from the task queue when an
-     * application shutdown begins. This is the default behavior.
-     */
-    public static final int DEQUEUE_ON_SHUTDOWN = 1;
+    public static final String QUEUE_LENGTH_EXCEEDED = "IGNORE";
     /**
      * Default shutdown behavior.
      *
@@ -289,19 +283,12 @@ public abstract class Task {
      * An alternative to this is to create a Task that is run at shutdown time
      * using Worker.queueShutdownTask(Task).
      */
-    public static final int DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN = 2;
+//    public static final int DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN = 2;
     private Object value = null; // Always access within a synchronized block
     /**
      * The current execution state, one of several predefined constants
      */
     protected int status = PENDING; // Always access within a synchronized block
-    /**
-     * All tasks are removed from the queue without notice automatically on
-     * shutdown unless specifically marked. For example, writing to flash memory
-     * may be required during shutdown, but HttpGetter could block or a long
-     * time and should be cancel()ed during shutdown to speed application close.
-     */
-    private int shutdownBehaviour = Task.DEQUEUE_ON_SHUTDOWN;
     /**
      * The next Task to be executed after this Task completes successfully. If
      * the current task is canceled or throws an exception, the chainedTask(s)
@@ -310,6 +297,7 @@ public abstract class Task {
     private Task chainedTask = null; // Run afterwords, passing output as input parameter
     private final int forkPriority;
     private final Object mutex = new Object();
+    static volatile Thread timerThread = null;
 
     /**
      * Init on first request. Many apps will not use this extra thread, and this
@@ -319,6 +307,23 @@ public abstract class Task {
     private static class TimerHolder {
 
         static Timer timer = new Timer();
+
+        static {
+            timer.schedule(new TimerTask() {
+                public void run() {
+                    timerThread = Thread.currentThread();
+                }
+            }, 0);
+        }
+    }
+
+    /**
+     * Is the current thread the Timer singleton convenience created by Task?
+     *
+     * @return
+     */
+    public static boolean isTimerThread() {
+        return Thread.currentThread() == timerThread;
     }
 
     /**
@@ -361,6 +366,14 @@ public abstract class Task {
         set(initialValue);
     }
 
+    public static boolean isShuttingDown() {
+        return Worker.isShuttingDown();
+    }
+
+    public static boolean isShutdownComplete() {
+        return Worker.isShutdownComplete();
+    }
+
     /**
      * Return a general use Timer thread singleton. Note that the Timer thread
      * is not created unless you call this method.
@@ -372,42 +385,12 @@ public abstract class Task {
     }
 
     /**
-     * Return the currently set shutdown behavior
+     * Remove all chained tasks
      *
-     * @return
      */
-    public final int getShutdownBehaviour() {
+    public void unchain() {
         synchronized (mutex) {
-            return shutdownBehaviour;
-        }
-    }
-
-    /**
-     * Override the default shutdown behavior
-     *
-     * If for example you want an ongoing task to finish if it has already
-     * started when the shutdown signal comes, but be removed from the queue if
-     * it has not yet started, set to Task.DEQUEUE_ON_SHUTDOWN
-     *
-     * Note that items passed to Worker.queueShutdownTask() ignore this value
-     * and will all run normally to completion during shutdown unless the
-     * platform (not the application) initiated the shutdown and slow shutdown
-     * Tasks result in a shutdown times-out. If this occurs during persistent
-     * state write operations, behavior is unpredictable, so it is best to write
-     * state as-you-go so that you can shut down quickly.
-     *
-     * @param shutdownBehaviour
-     * @return
-     */
-    public final Task setShutdownBehaviour(final int shutdownBehaviour) {
-        synchronized (mutex) {
-            if (shutdownBehaviour < Task.EXECUTE_NORMALLY_ON_SHUTDOWN || shutdownBehaviour > Task.DEQUEUE_OR_INTERRUPT_ON_SHUTDOWN) {
-                throw new IllegalArgumentException(getClassName() + " invalid shutdownBehaviour value: " + shutdownBehaviour);
-            }
-
-            this.shutdownBehaviour = shutdownBehaviour;
-
-            return this;
+            chainedTask = null;
         }
     }
 
@@ -697,7 +680,7 @@ public abstract class Task {
             throw new IllegalArgumentException("Can not joinAll() with timeout < 0: timeout=" + timeout);
         }
         //#mdebug
-        if (PlatformUtils.getInstance().isUIThread() && timeout > 100) {
+        if (PlatformUtils.getInstance().isUIThread() && timeout > 200) {
             L.i("WARNING- slow", "Task.joinAll(" + timeout + ") on UI Thread");
         }
         //#enddebug
@@ -796,7 +779,7 @@ public abstract class Task {
             });
             // Also cancel any chained Tasks expecting the output of this Task
             if (t != null) {
-                t.cancel(false, "Previous task in chain was canceled: " + this);
+                t.cancel("Previous task in chain was canceled: " + this + ", reason: " + reason);
             }
         }
     }
@@ -952,10 +935,10 @@ public abstract class Task {
                 t.fork();
             }
         } catch (final Throwable t) {
-            final String s = "Exception during Task exec(): ";
+            final String s = "Exception during Task exec()";
             //#debug
             L.e(this, s, "" + this, t);
-            cancel(false, s + " : " + this, t);
+            cancel(s + " : " + this, t);
             out = null;
         }
 
@@ -976,12 +959,16 @@ public abstract class Task {
     /**
      * Cancel execution of this Task
      *
-     * @param interruptIfRunning
-     * @param reason
-     * @return
+     * @param reason - an explanation visible in the log line in debug builds.
+     * This makes multi-threaded debugging easier to trace back to the origin
+     * event.
+     * @return - true if the Task was removed from the queue before being
+     * started or interrupted before it was completed, false if already
+     * completed, not found (is a chained task not executing), or already
+     * started and no interrupt was requested
      */
-    public final boolean cancel(final boolean interruptIfRunning, final String reason) {
-        return doCancel(interruptIfRunning, reason, null, null);
+    public final boolean cancel(final String reason) {
+        return cancel(reason, null);
     }
 
     /**
@@ -995,16 +982,15 @@ public abstract class Task {
      * Override onCanceled() is the normal notification location, and is called
      * from the UI thread with Task state updates handled for you.
      *
-     * @param mayInterruptIfRunning
      * @param reason
      * @param t
      * @return true if a Task was actually canceled
      */
-    public boolean cancel(final boolean mayInterruptIfRunning, final String reason, final Throwable t) {
-        return doCancel(mayInterruptIfRunning, reason, t, null);
+    public boolean cancel(final String reason, final Throwable t) {
+        return doCancel(reason, t, null);
     }
 
-    boolean doCancel(final boolean interruptIfRunning, final String reason, final Throwable t, Thread thread) {
+    boolean doCancel(final String reason, final Throwable t, Thread thread) {
         if (reason == null) {
             throw new NullPointerException("For clean debug, you must provide a reason for cancel(), null will not do");
         }
@@ -1028,27 +1014,27 @@ public abstract class Task {
             L.i(this, "Did not find/remove pending task from queue on cancel", reason);
         }
 
-        //#debug
-        L.i(this, "Begin cancel \"" + reason + "\" mayInterruptIfRunning=" + interruptIfRunning, s + " - " + this);
-        if (interruptIfRunning) {
-            if (thread != null) {
-                thread.interrupt();
-            } else {
-                thread = Worker.interruptTask(this);
-            }
-            //#debug
-            L.i(this, "cancel(\"" + reason + "\")", "interrupt sent to thread=" + thread);
-
-            synchronized (mutex) {
-                if (status >= Task.FINISHED) {
-                    //#debug
-                    L.i(this, "End cancel(\"" + reason + "\")", "Successful interrupt sent and received, thread=" + thread);
-                    return true;
-                }
-            }
-            //#debug
-            L.i(this, "cancel(\"" + reason + "\")", "Unable to find and interrupt() on known threads. Task is not currently running, so we will just change status and notify chained tasks by canceling them also");
-        }
+//        //#debug
+//        L.i(this, "Begin cancel \"" + reason + "\" mayInterruptIfRunning=" + interruptIfRunning, s + " - " + this);
+//        if (interruptIfRunning) {
+//            if (thread != null) {
+//                thread.interrupt();
+//            } else {
+//                thread = Worker.interruptTask(this);
+//            }
+//            //#debug
+//            L.i(this, "cancel(\"" + reason + "\")", "interrupt sent to thread=" + thread);
+//
+//            synchronized (mutex) {
+//                if (status >= Task.FINISHED) {
+//                    //#debug
+//                    L.i(this, "End cancel(\"" + reason + "\")", "Successful interrupt sent and received, thread=" + thread);
+//                    return true;
+//                }
+//            }
+//            //#debug
+//            L.i(this, "cancel(\"" + reason + "\")", "Unable to find and interrupt() on known threads. Task is not currently running, so we will just change status and notify chained tasks by canceling them also");
+//        }
         doSetStatus(CANCELED, s);
         //#debug
         L.i(this, "End cancel(\"" + reason + "\")", "status=" + this.getStatusString() + " " + this);
@@ -1204,7 +1190,7 @@ public abstract class Task {
                 tasksToFork.copyInto(tasks);
             }
             for (int i = 0; i < tasks.length; i++) {
-                tasks[i].cancel(false, "Previous task in chain was canceled, then the chain split");
+                tasks[i].cancel("Previous task in chain was canceled, reason: " + reason + ", then the chain split");
             }
         }
 
@@ -1228,7 +1214,7 @@ public abstract class Task {
         }
 //#enddebug
     }
-    private static String[] PRIORITY_STRINGS = {"SHUTDOWN", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "SERIAL_CURRENT_THREAD_PRIORITY", "FASTLANE_PRIORITY", "UI_PRIORITY", "DEDICATED_THREAD_PRIORITY"};
+    private static String[] PRIORITY_STRINGS = {"SHUTDOWN", "SHUTDOWN_UI", "IDLE_PRIORITY", "NORMAL_PRIORITY", "HIGH_PRIORITY", "SERIAL_PRIORITY", "SERIAL_CURRENT_THREAD_PRIORITY", "FASTLANE_PRIORITY", "UI_PRIORITY", "DEDICATED_THREAD_PRIORITY"};
 
     String getPriorityString() {
         return PRIORITY_STRINGS[getForkPriority()];
