@@ -62,7 +62,7 @@ public class DetailsForm extends Form implements ActionListener {
     public DetailsForm(String title, RSSReader midlet) throws FlashDatabaseException {
         super(title);
         
-        this.imageCache = StaticWebCache.getWebCache('1', PlatformUtils.PHONE_DATABASE_CACHE, new LWUITImageTypeHandler(), null, null);
+        this.imageCache = StaticWebCache.getWebCache('1', new LWUITImageTypeHandler());
         
         this.midlet = midlet;
         pubDateLabel = new Label("");

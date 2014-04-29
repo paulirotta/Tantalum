@@ -13,6 +13,7 @@
 dist/
 private/
 .gradle/
+Local/
 
 # Gradle build output
 build/

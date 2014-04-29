@@ -36,10 +36,7 @@ import java.io.Writer;
 public final class StringWriter extends Writer {
 
     final private StringBuffer buf;
-
-    /**
-     * 
-     */
+    
     public StringWriter() {
         super();
         buf = new StringBuffer();
@@ -85,17 +82,9 @@ public final class StringWriter extends Writer {
         buf.append(str.substring(off, len));
     }
 
-    /**
-     * 
-     * @throws IOException 
-     */
     public void flush() throws IOException {
     }
 
-    /**
-     * 
-     * @throws IOException 
-     */
     public void close() throws IOException {
     }
 }

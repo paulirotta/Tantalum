@@ -25,10 +25,6 @@ public final class JSONException extends Exception {
         this.cause = t;
     }
 
-    /**
-     * 
-     * @return 
-     */
     public Throwable getCause() {
         return this.cause;
     }

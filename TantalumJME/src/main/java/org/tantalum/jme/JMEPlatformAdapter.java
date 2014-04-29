@@ -37,9 +37,9 @@ import javax.microedition.io.HttpConnection;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Image;
 import javax.microedition.midlet.MIDlet;
+import org.tantalum.PlatformAdapter;
 import org.tantalum.PlatformUtils;
 import org.tantalum.PlatformUtils.HttpConn;
-import org.tantalum.PlatformAdapter;
 import org.tantalum.storage.FlashCache;
 import org.tantalum.storage.FlashDatabaseException;
 import org.tantalum.storage.ImageCacheView;
@@ -191,7 +191,7 @@ public final class JMEPlatformAdapter implements PlatformAdapter {
             final JMEHttpConn httpConn = new JMEHttpConn(url, requestPropertyKeys, requestPropertyValues);
             httpConn.httpConnection.setRequestMethod(requestMethod);
             if (bytes != null) {
-                out = httpConn.httpConnection.openOutputStream();
+                out = httpConn.getOutputStream();
                 out.write(bytes);
             }
 

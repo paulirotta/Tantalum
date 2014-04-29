@@ -788,7 +788,7 @@ public class HttpGetter extends Task {
 
         startTime = staggerHeaderStartTime();
 
-        final String url = keyIncludingPostDataHashtoUrl((String) in);
+        String url = keyIncludingPostDataHashtoUrl((String) in);
         final Integer netActivityKey = new Integer(hashCode());
         HttpGetter.networkActivity(netActivityKey); // Notify listeners, net is in use
 
@@ -903,12 +903,24 @@ public class HttpGetter extends Task {
             L.e(this, "HttpGetter has null pointer", url, e);
             throw e;
         } catch (IOException e) {
+            if (responseCode == HTTP_301_MOVED_PERMANENTLY || responseCode == HTTP_302_FOUND) {
+                Object locations = responseHeaders.get("Location");
+                if (locations != null) {
+                    if (((String[]) locations).length > 0) {
+                        String newUrl = ((String[])locations)[0];
+                        L.i(this, "Response", "HTTP response code indicates a redirect, new url=" + newUrl);
+                        url = newUrl;
+                        tryAgain = true;
+                        success = true;
+                    }
+                }
+            }
             //#debug
             L.e(this, "Retries remaining", url + ", retries=" + retriesRemaining, e);
             if (retriesRemaining > 0) {
                 retriesRemaining--;
                 tryAgain = true;
-            } else {
+            } else if (!tryAgain) {
                 //#debug
                 L.i(this, "No more retries", url);
                 cancel("No more retries");

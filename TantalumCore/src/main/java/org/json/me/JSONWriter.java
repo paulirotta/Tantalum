@@ -95,8 +95,6 @@ public class JSONWriter {
 
     /**
      * Make a fresh JSONWriter. It can be used to build one JSON text.
-     * 
-     * @param w 
      */
     public JSONWriter(final Writer w) {
         this.comma = false;

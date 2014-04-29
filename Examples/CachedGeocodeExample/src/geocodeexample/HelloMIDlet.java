@@ -3,7 +3,7 @@ package geocodeexample;
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
-import org.tantalum.PlatformUtils;
+import org.tantalum.jme.TantalumJME;
 import org.tantalum.Task;
 import org.tantalum.net.StaticWebCache;
 import org.tantalum.storage.CacheView;
@@ -35,7 +35,8 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
     private boolean midletPaused = false;
 
     public HelloMIDlet() throws FlashDatabaseException {
-        this.locationsCache = StaticWebCache.getWebCache('0', PlatformUtils.PHONE_DATABASE_CACHE, new CacheView() {
+        TantalumJME.start(this);
+        this.locationsCache = StaticWebCache.getWebCache('0', new CacheView() {
             /**
              * This method converts the JSON byte[] received from the web
              * service, or stored in local flash memory, into an object we can
@@ -48,19 +49,19 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
                 String out = "";
                 String s = new String(bytes);
                 try {
-                    JSONObject src = new JSONObject(s);
-                    JSONObject results = src.getJSONObject("results");
-                    JSONObject geometry = results.getJSONObject("geometry");
-                    JSONArray location = geometry.getJSONArray("location");
+                    JSONArray inn = src.getJSONArray("results");
+                    JSONObject arr = inn.getJSONObject(0);
+                    JSONObject d = arr.getJSONObject("geometry");
+                    JSONObject f = d.getJSONObject("location");
 
-                    out = "Lat: " + location.getString(0) + " & Lon: " + location.getString(1);
+                    out = "Lat: " + f.getDouble("lat") + " & Lon: " + f.getDouble("lng");
                 } catch (JSONException ex) {
                     L.e("Can not parse JSON", s, ex);
                 }
 
                 return out;
             }
-        }, null, null);
+        });
     }
     /*
      * Cache as like a Hashtable of key-value pairs, where the key is the
@@ -296,7 +297,7 @@ public class HelloMIDlet extends MIDlet implements CommandListener {
      * Exits MIDlet.
      */
     public void exitMIDlet() {
-        PlatformUtils.getInstance().shutdown(true, "exitMIDlet() called");
+        TantalumJME.stop("exitMIDlet() called");
     }
 
     /**

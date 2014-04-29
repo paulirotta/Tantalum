@@ -137,6 +137,11 @@
             <include name="${dist.jar}"/>
         </patternset>
     </target>
+    <!--blackberry-init-->
+    <target name="blackberry-init">
+        <available file="${platform.home}/bin/rapc.jar" property="blackberry.trigger"/>
+        <available file="${platform.home}/bin/Settings.rc" property="blackberry.settings.trigger"/>
+    </target>
     <!--cdc-init-->
     <target name="cdc-init">
         <condition property="cdc-platform.trigger">
@@ -297,7 +302,7 @@
     <!--init-->
     <target name="pre-init"/>
     <target name="post-init"/>
-    <target name="init" depends="pre-init,load-properties,basic-init,cldc-init,cdc-init,semc-init,savaje-init,sjmc-init,ojec-init,cdc-hi-init,nokiaS80-init,post-init"/>
+    <target name="init" depends="pre-init,load-properties,basic-init,cldc-init,blackberry-init,cdc-init,semc-init,savaje-init,sjmc-init,ojec-init,cdc-hi-init,nokiaS80-init,post-init"/>
     <!--conditional clean-->
     <target name="conditional-clean-init">
         <uptodate property="no.clean.before.build" targetfile="${build.dir}/.timestamp">
@@ -660,10 +665,54 @@
             <fileset dir="${resources.dir}"/>
         </copy>
     </target>
+    <!--create-cod-->
+    <target name="create-cod" if="blackberry.trigger">
+        <property file="${dist.dir}/${dist.jad}"/>
+        <condition property="rapc.command" value="-midlet">
+            <isset property="MIDlet-1"/>
+        </condition>
+        <property name="rapc.command" value="-cldc"/>
+        <exec dir="${dist.dir}" executable="java" failonerror="true">
+            <arg value="-cp"/>
+            <arg value="${platform.home}/bin/rapc.jar"/>
+            <arg value="net.rim.tools.compiler.Compiler"/>
+            <arg value="import=${platform.bootclasspath}"/>
+            <arg value="codename=${name}"/>
+            <arg value="${rapc.command}"/>
+            <arg value="jad=${basedir}/${dist.dir}/${dist.jad}"/>
+            <arg value="${basedir}/${dist.dir}/${dist.jar}"/>
+        </exec>
+        <property file="${dist.dir}/${dist.jad}"/>
+        <echo file="${basedir}/${dist.dir}/${name}.alx">
+&lt;loader version="1.0"&gt;
+    &lt;application id="${name}"&gt;
+        &lt;name&gt;
+            ${MIDlet-Name}
+        &lt;/name&gt;
+        &lt;description&gt;
+            ${MIDlet-Description}
+        &lt;/description&gt;
+        &lt;version&gt;
+            ${MIDlet-Version}
+        &lt;/version&gt;
+        &lt;vendor&gt;
+            ${MIDlet-Vendor}
+        &lt;/vendor&gt;
+        &lt;copyright&gt;
+            ${MIDlet-Copyright}
+        &lt;/copyright&gt;
+        &lt;fileset Java="1.0"&gt;
+            &lt;directory/&gt;
+            &lt;files&gt;${name}.cod&lt;/files&gt;
+        &lt;/fileset&gt;
+    &lt;/application&gt;
+&lt;/loader&gt;
+        </echo>
+    </target>
     <!--jar-->
     <target name="pre-jar"/>
     <target name="post-jar"/>
-    <target name="jar" depends="preverify,pre-jar,set-password,create-jad,do-extra-libs,nokiaS80-create-manifest,jad-jsr211-properties,semc-build-j9,do-jar,do-jar-no-manifest,update-jad,sign-jar,savaje-build-jnlp,post-jar" description="Build jar and application descriptor."/>
+    <target name="jar" depends="preverify,pre-jar,set-password,create-jad,do-extra-libs,nokiaS80-create-manifest,jad-jsr211-properties,semc-build-j9,do-jar,do-jar-no-manifest,update-jad,sign-jar,savaje-build-jnlp,create-cod,post-jar" description="Build jar and application descriptor."/>
     <!--override-jad-->
     <target name="override-jad" if="override.jarurl.trigger">
         <property name="deployment.jarurl" value="${dist.jar}"/>
@@ -766,6 +815,12 @@
     <target name="pre-build"/>
     <target name="post-build"/>
     <target name="build" depends="jar,pre-build,override-jad,semc-sis,increment-app-version,post-build" description="Builds final distribution of the application."/>
+    <!--blackberry-pre-run-->
+    <target name="blackberry-pre-run" if="blackberry.trigger">
+        <copy todir="${platform.home}/simulator">
+            <fileset dir="${dist.dir}" includes="${name}.*"/>
+        </copy>
+    </target>
     <!--open-netmon-->
     <target name="netmon.check">
         <condition property="netmon.allowed">
@@ -891,8 +946,25 @@
     </target>
     <!--run-->
     <target name="pre-run"/>
-    <target name="run" depends="jar,pre-run,open-netmon,cldc-run,semc-run,savaje-run,sjmc-run,ojec-run,nokiaS80-run,cdc-hi-run,open-profiler" description="Run MIDlet suite."/>
-    <target name="run-no-build" depends="init,pre-run,open-netmon,cldc-run,semc-run,savaje-run,sjmc-run,ojec-run,nokiaS80-run,cdc-hi-run,open-profiler" description="Quick Run already built MIDlet suite."/>
+    <target name="run" depends="jar,pre-run,blackberry-pre-run,open-netmon,cldc-run,semc-run,savaje-run,sjmc-run,ojec-run,nokiaS80-run,cdc-hi-run,open-profiler" description="Run MIDlet suite."/>
+    <target name="run-no-build" depends="init,pre-run,blackberry-pre-run,open-netmon,cldc-run,semc-run,savaje-run,sjmc-run,ojec-run,nokiaS80-run,cdc-hi-run,open-profiler" description="Quick Run already built MIDlet suite."/>
+    <!--blackberry-pre-debug-->
+    <target name="blackberry-load-setings" if="blackberry.settings.trigger">
+        <loadproperties srcfile="${platform.home}/bin/Settings.rc">
+            <filterchain>
+                <containsregex pattern="^JDWPPort="/>
+            </filterchain>
+        </loadproperties>
+    </target>
+    <target name="blackberry-pre-debug" depends="blackberry-load-setings" if="blackberry.trigger">
+        <copy todir="${platform.home}/simulator">
+            <fileset dir="${dist.dir}" includes="${name}.*"/>
+            <fileset dir="${dist.dir}" includes="*.debug"/>
+        </copy>
+        <condition property="jpda.port" value="${JDWPPort}" else="8000">
+            <isset property="JDWPPort"/>
+        </condition>
+    </target>
     <!--cldc-debug-->
     <target name="cldc-debug" if="cldc-platform.trigger">
         <parallel>
@@ -1013,7 +1085,7 @@
         <delete file="$/.timestamp"/>
     </target>
     <target name="pre-debug"/>
-    <target name="debug" description="Debug project." depends="clean,jar,remove-timestamp,pre-debug,cldc-debug,semc-debug,savaje-debug,sjmc-debug,ojec-debug,cdc-hi-debug,nokiaS80-debug"/>
+    <target name="debug" description="Debug project." depends="clean,jar,remove-timestamp,pre-debug,blackberry-pre-debug,cldc-debug,semc-debug,savaje-debug,sjmc-debug,ojec-debug,cdc-hi-debug,nokiaS80-debug"/>
     <target name="nbdebug" description="Start NetBeans debugger" if="netbeans.home">
         <property name="debug.delay" value="5000"/>
         <nb-mobility-debug address="${jpda.port}" name="${app.codename}" delay="${debug.delay}" timeout="${debug.timeout}" period="2000"/>
@@ -1128,6 +1200,18 @@
     <target name="clean-ojec" if="ojec-platform.trigger">
         <delete dir="${dist.dir}/lib"/>
     </target>
+    <!--clean-blackberry-->
+    <target name="clean-blackberry" if="blackberry.trigger">
+        <delete file="${dist.dir}/${name}.cod" failonerror="false"/>
+        <delete file="${dist.dir}/${name}.cso" failonerror="false"/>
+        <delete file="${dist.dir}/${name}.debug" failonerror="false"/>
+        <delete failonerror="false">
+            <fileset dir="${platform.home}/simulator">
+                <include name="**/${name}.*"/>
+                <include name="**/*.debug"/>
+            </fileset>
+        </delete>
+    </target>
     <!--clean-->
     <target name="pre-clean"/>
     <target name="post-clean"/>
@@ -1180,7 +1264,7 @@
         <delete dir="build" quiet="true"/>
         <delete dir="dist" quiet="true"/>
     </target>
-    <target name="do-clean" depends="pre-clean,clean-timestamp,clean-preprocessed,clean-classes,clean-obfuscated,clean-preverified,clean-manifest,clean-jar,clean-jad,clean-javadoc,clean-j9,clean-semc,clean-savaje,clean-sjmc,clean-ojec,-clean-default-configuration-root,-clean-configuration-root,-clean-completely,post-clean"/>
+    <target name="do-clean" depends="pre-clean,clean-timestamp,clean-preprocessed,clean-classes,clean-obfuscated,clean-preverified,clean-manifest,clean-jar,clean-jad,clean-javadoc,clean-j9,clean-semc,clean-savaje,clean-sjmc,clean-ojec,clean-blackberry,-clean-default-configuration-root,-clean-configuration-root,-clean-completely,post-clean"/>
     <target name="clean" depends="conditional-clean" if="no.clean.before.build" description="Clean build products.">
         <antcall target="do-clean" inheritall="true" inheritrefs="true"/>
     </target>
